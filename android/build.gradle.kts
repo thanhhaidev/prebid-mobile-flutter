@@ -1,4 +1,4 @@
-group = "com.prebid.prebid_mobile_flutter"
+group = "com.prebid.prebid_mobile_sdk"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -27,7 +27,7 @@ plugins {
 }
 
 android {
-    namespace = "com.prebid.prebid_mobile_flutter"
+    namespace = "com.prebid.prebid_mobile_sdk"
 
     compileSdk = 36
 

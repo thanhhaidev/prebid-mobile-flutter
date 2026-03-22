@@ -10,9 +10,9 @@ Pod::Spec.new do |s|
 A Flutter plugin that wraps the Prebid Mobile SDK for Android and iOS,
 providing banner, interstitial, and rewarded ad formats.
                        DESC
-  s.homepage         = 'https://github.com/prebid/prebid-mobile-flutter'
+  s.homepage         = 'https://github.com/thanhhaidev/prebid-mobile-flutter'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Prebid' => 'info@prebid.org' }
+  s.author           = { 'thanhhaidev' => 'hai2571998@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'

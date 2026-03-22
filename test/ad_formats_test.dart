@@ -24,8 +24,7 @@ void main() {
       );
 
       await ad.loadAd();
-      // Using verify to loosely match exact argument arrays since capturing array params exactly can be tricky across pigeon boundaries
-      verify(mockApi.loadAd(any, 'config-1', any)).called(1);
+      verify(mockApi.loadAd(any, 'config-1', any, any)).called(1);
 
       await ad.show();
       verify(mockApi.show(any)).called(1);
@@ -97,7 +96,7 @@ void main() {
       final ad = PrebidMultiformatAd(
         configId: 'config-4',
         bannerSizes: [const Size(300, 250)],
-        includeVideo: true,
+        videoParameters: const VideoParameters(mimes: ['video/mp4']),
       );
 
       when(mockApi.fetchDemand(any, any)).thenAnswer(

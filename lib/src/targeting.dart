@@ -283,4 +283,54 @@ class PrebidTargeting {
   static Future<void> setDomain(String? domain) async {
     api.setDomain(domain);
   }
+
+  // ---------------------------------------------------------------------------
+  // US Privacy / CCPA
+  // ---------------------------------------------------------------------------
+
+  /// Set the IAB US Privacy String for CCPA compliance.
+  ///
+  /// The string follows the IAB US Privacy String format (e.g., `"1YNN"`).
+  /// Pass `null` to clear.
+  static Future<void> setUSPrivacyString(String? usPrivacy) async {
+    api.setUSPrivacyString(usPrivacy);
+  }
+
+  /// Get the current US Privacy String.
+  static Future<String?> getUSPrivacyString() async {
+    return api.getUSPrivacyString();
+  }
+
+  // ---------------------------------------------------------------------------
+  // User Ext Data — First-Party Data (user.ext.data)
+  // ---------------------------------------------------------------------------
+
+  /// Append a value to the user ext data for a given key.
+  ///
+  /// This adds first-party data to the `user.ext.data` section of the
+  /// OpenRTB request.
+  static Future<void> addUserExtData({
+    required String key,
+    required String value,
+  }) async {
+    api.addUserExtData(key, value);
+  }
+
+  /// Replace all user ext data values for a given key.
+  static Future<void> updateUserExtData({
+    required String key,
+    required Set<String> value,
+  }) async {
+    api.updateUserExtData(key, value.toList());
+  }
+
+  /// Remove all user ext data for a given key.
+  static Future<void> removeUserExtData(String key) async {
+    api.removeUserExtData(key);
+  }
+
+  /// Clear all user ext data entries.
+  static Future<void> clearUserExtData() async {
+    api.clearUserExtData();
+  }
 }

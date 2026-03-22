@@ -482,12 +482,147 @@ class NativeAdData {
   int get hashCode => Object.hashAll(_toList());
 }
 
+/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+class ExternalUserIdData {
+  ExternalUserIdData({
+    required this.source,
+    required this.identifier,
+    this.atype,
+    this.ext,
+  });
+
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  String source;
+
+  /// The user ID value.
+  String identifier;
+
+  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
+  int? atype;
+
+  /// Optional extra data.
+  Map<String?, Object?>? ext;
+
+  List<Object?> _toList() {
+    return <Object?>[source, identifier, atype, ext];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static ExternalUserIdData decode(Object result) {
+    result as List<Object?>;
+    return ExternalUserIdData(
+      source: result[0]! as String,
+      identifier: result[1]! as String,
+      atype: result[2] as int?,
+      ext: (result[3] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! ExternalUserIdData || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(encode(), other.encode());
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => Object.hashAll(_toList());
+}
+
+/// Video parameters configuration for OpenRTB video objects.
+class VideoParametersConfig {
+  VideoParametersConfig({
+    required this.mimes,
+    this.protocols,
+    this.playbackMethods,
+    this.placement,
+    this.maxDuration,
+    this.minDuration,
+    this.api,
+  });
+
+  /// Supported content MIME types (e.g., ["video/mp4"]).
+  List<String> mimes;
+
+  /// Supported VAST protocol IDs.
+  List<int?>? protocols;
+
+  /// Playback method IDs.
+  List<int?>? playbackMethods;
+
+  /// Placement type (1=in-stream, 2=in-banner, 3=in-article, 4=in-feed).
+  int? placement;
+
+  /// Maximum video duration in seconds.
+  int? maxDuration;
+
+  /// Minimum video duration in seconds.
+  int? minDuration;
+
+  /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
+  List<int?>? api;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      mimes,
+      protocols,
+      playbackMethods,
+      placement,
+      maxDuration,
+      minDuration,
+      api,
+    ];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static VideoParametersConfig decode(Object result) {
+    result as List<Object?>;
+    return VideoParametersConfig(
+      mimes: (result[0]! as List<Object?>).cast<String>(),
+      protocols: (result[1] as List<Object?>?)?.cast<int?>(),
+      playbackMethods: (result[2] as List<Object?>?)?.cast<int?>(),
+      placement: result[3] as int?,
+      maxDuration: result[4] as int?,
+      minDuration: result[5] as int?,
+      api: (result[6] as List<Object?>?)?.cast<int?>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! VideoParametersConfig || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(encode(), other.encode());
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => Object.hashAll(_toList());
+}
+
 /// Configuration for a multiformat ad request.
 class MultiformatAdRequestConfig {
   MultiformatAdRequestConfig({
     required this.configId,
     this.bannerSizes,
-    this.includeVideo = false,
+    this.videoConfig,
     this.nativeConfig,
     this.isInterstitial = false,
     this.isRewarded = false,
@@ -498,7 +633,7 @@ class MultiformatAdRequestConfig {
   /// Banner sizes as [width, height, width, height, ...]
   List<int?>? bannerSizes;
 
-  bool includeVideo;
+  VideoParametersConfig? videoConfig;
 
   NativeAdRequestConfig? nativeConfig;
 
@@ -510,7 +645,7 @@ class MultiformatAdRequestConfig {
     return <Object?>[
       configId,
       bannerSizes,
-      includeVideo,
+      videoConfig,
       nativeConfig,
       isInterstitial,
       isRewarded,
@@ -526,7 +661,7 @@ class MultiformatAdRequestConfig {
     return MultiformatAdRequestConfig(
       configId: result[0]! as String,
       bannerSizes: (result[1] as List<Object?>?)?.cast<int?>(),
-      includeVideo: result[2]! as bool,
+      videoConfig: result[2] as VideoParametersConfig?,
       nativeConfig: result[3] as NativeAdRequestConfig?,
       isInterstitial: result[4]! as bool,
       isRewarded: result[5]! as bool,
@@ -687,14 +822,20 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is NativeAdData) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatAdRequestConfig) {
+    } else if (value is ExternalUserIdData) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatBidResult) {
+    } else if (value is VideoParametersConfig) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    } else if (value is InstreamVideoAdRequestConfig) {
+    } else if (value is MultiformatAdRequestConfig) {
       buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    } else if (value is MultiformatBidResult) {
+      buffer.putUint8(139);
+      writeValue(buffer, value.encode());
+    } else if (value is InstreamVideoAdRequestConfig) {
+      buffer.putUint8(140);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -719,10 +860,14 @@ class _PigeonCodec extends StandardMessageCodec {
       case 135:
         return NativeAdData.decode(readValue(buffer)!);
       case 136:
-        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+        return ExternalUserIdData.decode(readValue(buffer)!);
       case 137:
-        return MultiformatBidResult.decode(readValue(buffer)!);
+        return VideoParametersConfig.decode(readValue(buffer)!);
       case 138:
+        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+      case 139:
+        return MultiformatBidResult.decode(readValue(buffer)!);
+      case 140:
         return InstreamVideoAdRequestConfig.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1007,6 +1152,82 @@ class PrebidMobileHostApi {
       isNullValid: true,
     );
   }
+
+  Future<void> setExternalUserIds(List<ExternalUserIdData> userIds) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setExternalUserIds$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[userIds],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<List<ExternalUserIdData>> getExternalUserIds() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getExternalUserIds$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<ExternalUserIdData>();
+  }
+
+  Future<void> clearExternalUserIds() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearExternalUserIds$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String> getSdkVersion() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getSdkVersion$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
+  }
 }
 
 /// Targeting and privacy settings.
@@ -1200,6 +1421,45 @@ class TargetingHostApi {
       isNullValid: true,
     );
     return pigeonVar_replyValue as bool?;
+  }
+
+  Future<void> setUSPrivacyString(String? value) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setUSPrivacyString$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[value],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String?> getUSPrivacyString() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUSPrivacyString$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
   }
 
   Future<void> addUserKeyword(String keyword) async {
@@ -1455,6 +1715,84 @@ class TargetingHostApi {
     );
   }
 
+  Future<void> addUserExtData(String key, String value) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserExtData$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[key, value],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> updateUserExtData(String key, List<String> value) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateUserExtData$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[key, value],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> removeUserExtData(String key) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserExtData$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[key],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> clearUserExtData() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserExtData$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
   Future<void> addBidderToAccessControlList(String bidderName) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addBidderToAccessControlList$pigeonVar_messageChannelSuffix';
@@ -1655,6 +1993,7 @@ class InterstitialAdHostApi {
     int adId,
     String configId,
     List<String>? adFormats,
+    VideoParametersConfig? videoConfig,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -1664,7 +2003,7 @@ class InterstitialAdHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[adId, configId, adFormats],
+      <Object?>[adId, configId, adFormats, videoConfig],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

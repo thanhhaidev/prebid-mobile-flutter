@@ -394,6 +394,108 @@ data class NativeAdData (
 }
 
 /**
+ * External user ID for third-party identity modules (UID2, SharedID, etc.).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class ExternalUserIdData (
+  /** ID source (e.g., "uidapi.com", "sharedid.org"). */
+  val source: String,
+  /** The user ID value. */
+  val identifier: String,
+  /** ID type per OpenRTB: 1=device, 2=person, 3=user, etc. */
+  val atype: Long? = null,
+  /** Optional extra data. */
+  val ext: Map<String?, Any?>? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): ExternalUserIdData {
+      val source = pigeonVar_list[0] as String
+      val identifier = pigeonVar_list[1] as String
+      val atype = pigeonVar_list[2] as Long?
+      val ext = pigeonVar_list[3] as Map<String?, Any?>?
+      return ExternalUserIdData(source, identifier, atype, ext)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      source,
+      identifier,
+      atype,
+      ext,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is ExternalUserIdData) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return PrebidApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/**
+ * Video parameters configuration for OpenRTB video objects.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class VideoParametersConfig (
+  /** Supported content MIME types (e.g., ["video/mp4"]). */
+  val mimes: List<String>,
+  /** Supported VAST protocol IDs. */
+  val protocols: List<Long?>? = null,
+  /** Playback method IDs. */
+  val playbackMethods: List<Long?>? = null,
+  /** Placement type (1=in-stream, 2=in-banner, 3=in-article, 4=in-feed). */
+  val placement: Long? = null,
+  /** Maximum video duration in seconds. */
+  val maxDuration: Long? = null,
+  /** Minimum video duration in seconds. */
+  val minDuration: Long? = null,
+  /** Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.). */
+  val api: List<Long?>? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): VideoParametersConfig {
+      val mimes = pigeonVar_list[0] as List<String>
+      val protocols = pigeonVar_list[1] as List<Long?>?
+      val playbackMethods = pigeonVar_list[2] as List<Long?>?
+      val placement = pigeonVar_list[3] as Long?
+      val maxDuration = pigeonVar_list[4] as Long?
+      val minDuration = pigeonVar_list[5] as Long?
+      val api = pigeonVar_list[6] as List<Long?>?
+      return VideoParametersConfig(mimes, protocols, playbackMethods, placement, maxDuration, minDuration, api)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      mimes,
+      protocols,
+      playbackMethods,
+      placement,
+      maxDuration,
+      minDuration,
+      api,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is VideoParametersConfig) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return PrebidApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
+
+/**
  * Configuration for a multiformat ad request.
  *
  * Generated class from Pigeon that represents data sent in messages.
@@ -402,7 +504,7 @@ data class MultiformatAdRequestConfig (
   val configId: String,
   /** Banner sizes as [width, height, width, height, ...] */
   val bannerSizes: List<Long?>? = null,
-  val includeVideo: Boolean,
+  val videoConfig: VideoParametersConfig? = null,
   val nativeConfig: NativeAdRequestConfig? = null,
   val isInterstitial: Boolean,
   val isRewarded: Boolean
@@ -412,18 +514,18 @@ data class MultiformatAdRequestConfig (
     fun fromList(pigeonVar_list: List<Any?>): MultiformatAdRequestConfig {
       val configId = pigeonVar_list[0] as String
       val bannerSizes = pigeonVar_list[1] as List<Long?>?
-      val includeVideo = pigeonVar_list[2] as Boolean
+      val videoConfig = pigeonVar_list[2] as VideoParametersConfig?
       val nativeConfig = pigeonVar_list[3] as NativeAdRequestConfig?
       val isInterstitial = pigeonVar_list[4] as Boolean
       val isRewarded = pigeonVar_list[5] as Boolean
-      return MultiformatAdRequestConfig(configId, bannerSizes, includeVideo, nativeConfig, isInterstitial, isRewarded)
+      return MultiformatAdRequestConfig(configId, bannerSizes, videoConfig, nativeConfig, isInterstitial, isRewarded)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       configId,
       bannerSizes,
-      includeVideo,
+      videoConfig,
       nativeConfig,
       isInterstitial,
       isRewarded,
@@ -560,15 +662,25 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
       }
       136.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatAdRequestConfig.fromList(it)
+          ExternalUserIdData.fromList(it)
         }
       }
       137.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatBidResult.fromList(it)
+          VideoParametersConfig.fromList(it)
         }
       }
       138.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatAdRequestConfig.fromList(it)
+        }
+      }
+      139.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatBidResult.fromList(it)
+        }
+      }
+      140.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           InstreamVideoAdRequestConfig.fromList(it)
         }
@@ -606,16 +718,24 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
         stream.write(135)
         writeValue(stream, value.toList())
       }
-      is MultiformatAdRequestConfig -> {
+      is ExternalUserIdData -> {
         stream.write(136)
         writeValue(stream, value.toList())
       }
-      is MultiformatBidResult -> {
+      is VideoParametersConfig -> {
         stream.write(137)
         writeValue(stream, value.toList())
       }
-      is InstreamVideoAdRequestConfig -> {
+      is MultiformatAdRequestConfig -> {
         stream.write(138)
+        writeValue(stream, value.toList())
+      }
+      is MultiformatBidResult -> {
+        stream.write(139)
+        writeValue(stream, value.toList())
+      }
+      is InstreamVideoAdRequestConfig -> {
+        stream.write(140)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -643,6 +763,10 @@ interface PrebidMobileHostApi {
   fun setCreativeFactoryTimeout(timeout: Long)
   fun setCreativeFactoryTimeoutPreRenderContent(timeout: Long)
   fun setCustomStatusEndpoint(endpoint: String)
+  fun setExternalUserIds(userIds: List<ExternalUserIdData>)
+  fun getExternalUserIds(): List<ExternalUserIdData>
+  fun clearExternalUserIds()
+  fun getSdkVersion(): String
 
   companion object {
     /** The codec used by PrebidMobileHostApi. */
@@ -887,6 +1011,70 @@ interface PrebidMobileHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setExternalUserIds$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val userIdsArg = args[0] as List<ExternalUserIdData>
+            val wrapped: List<Any?> = try {
+              api.setExternalUserIds(userIdsArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getExternalUserIds$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getExternalUserIds())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearExternalUserIds$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.clearExternalUserIds()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getSdkVersion$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getSdkVersion())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -905,6 +1093,8 @@ interface TargetingHostApi {
   fun setPurposeConsents(value: String?)
   fun getPurposeConsents(): String?
   fun getDeviceAccessConsent(): Boolean?
+  fun setUSPrivacyString(value: String?)
+  fun getUSPrivacyString(): String?
   fun addUserKeyword(keyword: String)
   fun addUserKeywords(keywords: List<String>)
   fun removeUserKeyword(keyword: String)
@@ -918,6 +1108,10 @@ interface TargetingHostApi {
   fun updateAppExtData(key: String, value: List<String>)
   fun removeAppExtData(key: String)
   fun clearAppExtData()
+  fun addUserExtData(key: String, value: String)
+  fun updateUserExtData(key: String, value: List<String>)
+  fun removeUserExtData(key: String)
+  fun clearUserExtData()
   fun addBidderToAccessControlList(bidderName: String)
   fun removeBidderFromAccessControlList(bidderName: String)
   fun clearAccessControlList()
@@ -1075,6 +1269,39 @@ interface TargetingHostApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getDeviceAccessConsent())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setUSPrivacyString$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val valueArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setUSPrivacyString(valueArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUSPrivacyString$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getUSPrivacyString())
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)
             }
@@ -1312,6 +1539,78 @@ interface TargetingHostApi {
         }
       }
       run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserExtData$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keyArg = args[0] as String
+            val valueArg = args[1] as String
+            val wrapped: List<Any?> = try {
+              api.addUserExtData(keyArg, valueArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateUserExtData$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keyArg = args[0] as String
+            val valueArg = args[1] as List<String>
+            val wrapped: List<Any?> = try {
+              api.updateUserExtData(keyArg, valueArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserExtData$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keyArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.removeUserExtData(keyArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserExtData$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.clearUserExtData()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addBidderToAccessControlList$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
@@ -1477,7 +1776,7 @@ interface TargetingHostApi {
  * Generated interface from Pigeon that represents a handler of messages from Flutter.
  */
 interface InterstitialAdHostApi {
-  fun loadAd(adId: Long, configId: String, adFormats: List<String>?)
+  fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?)
   fun show(adId: Long)
   fun destroy(adId: Long)
 
@@ -1498,8 +1797,9 @@ interface InterstitialAdHostApi {
             val adIdArg = args[0] as Long
             val configIdArg = args[1] as String
             val adFormatsArg = args[2] as List<String>?
+            val videoConfigArg = args[3] as VideoParametersConfig?
             val wrapped: List<Any?> = try {
-              api.loadAd(adIdArg, configIdArg, adFormatsArg)
+              api.loadAd(adIdArg, configIdArg, adFormatsArg, videoConfigArg)
               listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)

@@ -119,6 +119,62 @@ class NativeAdData {
   final String? clickUrl;
 }
 
+/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+class ExternalUserIdData {
+  ExternalUserIdData({
+    required this.source,
+    required this.identifier,
+    this.atype,
+    this.ext,
+  });
+
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  final String source;
+
+  /// The user ID value.
+  final String identifier;
+
+  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
+  final int? atype;
+
+  /// Optional extra data.
+  final Map<String?, Object?>? ext;
+}
+
+/// Video parameters configuration for OpenRTB video objects.
+class VideoParametersConfig {
+  VideoParametersConfig({
+    required this.mimes,
+    this.protocols,
+    this.playbackMethods,
+    this.placement,
+    this.maxDuration,
+    this.minDuration,
+    this.api,
+  });
+
+  /// Supported content MIME types (e.g., ["video/mp4"]).
+  final List<String> mimes;
+
+  /// Supported VAST protocol IDs.
+  final List<int?>? protocols;
+
+  /// Playback method IDs.
+  final List<int?>? playbackMethods;
+
+  /// Placement type (1=in-stream, 2=in-banner, 3=in-article, 4=in-feed).
+  final int? placement;
+
+  /// Maximum video duration in seconds.
+  final int? maxDuration;
+
+  /// Minimum video duration in seconds.
+  final int? minDuration;
+
+  /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
+  final List<int?>? api;
+}
+
 // =============================================================================
 // Host APIs (Dart → Native)
 // =============================================================================
@@ -141,6 +197,14 @@ abstract class PrebidMobileHostApi {
   void setCreativeFactoryTimeout(int timeout);
   void setCreativeFactoryTimeoutPreRenderContent(int timeout);
   void setCustomStatusEndpoint(String endpoint);
+
+  // External User IDs
+  void setExternalUserIds(List<ExternalUserIdData> userIds);
+  List<ExternalUserIdData> getExternalUserIds();
+  void clearExternalUserIds();
+
+  // SDK Version
+  String getSdkVersion();
 }
 
 /// Targeting and privacy settings.
@@ -161,6 +225,10 @@ abstract class TargetingHostApi {
   String? getPurposeConsents();
   bool? getDeviceAccessConsent();
 
+  // US Privacy / CCPA
+  void setUSPrivacyString(String? value);
+  String? getUSPrivacyString();
+
   // User Keywords
   void addUserKeyword(String keyword);
   void addUserKeywords(List<String> keywords);
@@ -179,6 +247,12 @@ abstract class TargetingHostApi {
   void updateAppExtData(String key, List<String> value);
   void removeAppExtData(String key);
   void clearAppExtData();
+
+  // User Ext Data (user.ext.data)
+  void addUserExtData(String key, String value);
+  void updateUserExtData(String key, List<String> value);
+  void removeUserExtData(String key);
+  void clearUserExtData();
 
   // Access Control List
   void addBidderToAccessControlList(String bidderName);
@@ -199,7 +273,12 @@ abstract class TargetingHostApi {
 /// Interstitial ad operations (Dart → Native).
 @HostApi()
 abstract class InterstitialAdHostApi {
-  void loadAd(int adId, String configId, List<String>? adFormats);
+  void loadAd(
+    int adId,
+    String configId,
+    List<String>? adFormats,
+    VideoParametersConfig? videoConfig,
+  );
   void show(int adId);
   void destroy(int adId);
 }
@@ -226,7 +305,7 @@ class MultiformatAdRequestConfig {
   MultiformatAdRequestConfig({
     required this.configId,
     this.bannerSizes,
-    this.includeVideo = false,
+    this.videoConfig,
     this.nativeConfig,
     this.isInterstitial = false,
     this.isRewarded = false,
@@ -235,7 +314,7 @@ class MultiformatAdRequestConfig {
 
   /// Banner sizes as [width, height, width, height, ...]
   final List<int?>? bannerSizes;
-  final bool includeVideo;
+  final VideoParametersConfig? videoConfig;
   final NativeAdRequestConfig? nativeConfig;
   final bool isInterstitial;
   final bool isRewarded;

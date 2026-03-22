@@ -25,6 +25,13 @@ class PrebidBannerAd extends StatefulWidget {
   /// Whether the ad should load automatically when the widget is created.
   final bool autoLoad;
 
+  /// Auto-refresh interval in seconds.
+  ///
+  /// If set, the banner will automatically request new ads at this interval.
+  /// Minimum recommended value is `30` seconds.
+  /// Set to `null` (default) to disable auto-refresh.
+  final int? refreshIntervalSeconds;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
 
@@ -36,6 +43,7 @@ class PrebidBannerAd extends StatefulWidget {
     required this.height,
     this.isVideo = false,
     this.autoLoad = true,
+    this.refreshIntervalSeconds,
     this.listener,
   });
 
@@ -52,6 +60,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       'height': widget.height,
       'isVideo': widget.isVideo,
       'autoLoad': widget.autoLoad,
+      if (widget.refreshIntervalSeconds != null)
+        'refreshIntervalSeconds': widget.refreshIntervalSeconds,
     };
 
     return SizedBox(

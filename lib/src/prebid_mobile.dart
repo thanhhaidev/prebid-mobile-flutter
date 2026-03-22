@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
+import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
 
 /// Core Prebid Mobile SDK configuration and initialization.
@@ -9,6 +10,7 @@ import 'generated/prebid_api.g.dart';
 /// - **Initializing the SDK** with your Prebid Server URL and account ID.
 /// - **Configuring global settings** such as timeouts, geo location, debug mode, and log level.
 /// - **Managing stored responses** for deterministic testing.
+/// - **External User IDs** for third-party identity modules.
 ///
 /// All methods are static and can be called from anywhere after the SDK is initialized.
 ///
@@ -162,5 +164,64 @@ class PrebidMobile {
   /// the server is reachable and configured correctly.
   static Future<void> setCustomStatusEndpoint(String endpoint) async {
     api.setCustomStatusEndpoint(endpoint);
+  }
+
+  // ---------------------------------------------------------------------------
+  // External User IDs
+  // ---------------------------------------------------------------------------
+
+  /// Set external user IDs from third-party identity modules.
+  ///
+  /// These IDs are included in every bid request, enabling bidders to
+  /// better identify users and improve fill rates.
+  ///
+  /// ```dart
+  /// await PrebidMobile.setExternalUserIds([
+  ///   ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc', atype: 3),
+  ///   ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
+  /// ]);
+  /// ```
+  static Future<void> setExternalUserIds(List<ExternalUserId> userIds) async {
+    final data = userIds
+        .map(
+          (u) => ExternalUserIdData(
+            source: u.source,
+            identifier: u.identifier,
+            atype: u.atype,
+            ext: u.ext?.map((k, v) => MapEntry(k, v)),
+          ),
+        )
+        .toList();
+    api.setExternalUserIds(data);
+  }
+
+  /// Get all currently set external user IDs.
+  static Future<List<ExternalUserId>> getExternalUserIds() async {
+    final data = await api.getExternalUserIds();
+    return data
+        .map(
+          (d) => ExternalUserId(
+            source: d.source,
+            identifier: d.identifier,
+            atype: d.atype,
+          ),
+        )
+        .toList();
+  }
+
+  /// Clear all external user IDs.
+  static Future<void> clearExternalUserIds() async {
+    api.clearExternalUserIds();
+  }
+
+  // ---------------------------------------------------------------------------
+  // SDK Version
+  // ---------------------------------------------------------------------------
+
+  /// Get the native Prebid Mobile SDK version string.
+  ///
+  /// Returns the version of the underlying Android or iOS Prebid SDK.
+  static Future<String> getSdkVersion() async {
+    return api.getSdkVersion();
   }
 }

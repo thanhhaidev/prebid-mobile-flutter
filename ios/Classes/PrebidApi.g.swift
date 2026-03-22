@@ -438,6 +438,107 @@ struct NativeAdData: Hashable {
   }
 }
 
+/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct ExternalUserIdData: Hashable {
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  var source: String
+  /// The user ID value.
+  var identifier: String
+  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
+  var atype: Int64? = nil
+  /// Optional extra data.
+  var ext: [String?: Any?]? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> ExternalUserIdData? {
+    let source = pigeonVar_list[0] as! String
+    let identifier = pigeonVar_list[1] as! String
+    let atype: Int64? = nilOrValue(pigeonVar_list[2])
+    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[3])
+
+    return ExternalUserIdData(
+      source: source,
+      identifier: identifier,
+      atype: atype,
+      ext: ext
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      source,
+      identifier,
+      atype,
+      ext,
+    ]
+  }
+  static func == (lhs: ExternalUserIdData, rhs: ExternalUserIdData) -> Bool {
+    return deepEqualsPrebidApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashPrebidApi(value: toList(), hasher: &hasher)
+  }
+}
+
+/// Video parameters configuration for OpenRTB video objects.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct VideoParametersConfig: Hashable {
+  /// Supported content MIME types (e.g., ["video/mp4"]).
+  var mimes: [String]
+  /// Supported VAST protocol IDs.
+  var protocols: [Int64?]? = nil
+  /// Playback method IDs.
+  var playbackMethods: [Int64?]? = nil
+  /// Placement type (1=in-stream, 2=in-banner, 3=in-article, 4=in-feed).
+  var placement: Int64? = nil
+  /// Maximum video duration in seconds.
+  var maxDuration: Int64? = nil
+  /// Minimum video duration in seconds.
+  var minDuration: Int64? = nil
+  /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
+  var api: [Int64?]? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> VideoParametersConfig? {
+    let mimes = pigeonVar_list[0] as! [String]
+    let protocols: [Int64?]? = nilOrValue(pigeonVar_list[1])
+    let playbackMethods: [Int64?]? = nilOrValue(pigeonVar_list[2])
+    let placement: Int64? = nilOrValue(pigeonVar_list[3])
+    let maxDuration: Int64? = nilOrValue(pigeonVar_list[4])
+    let minDuration: Int64? = nilOrValue(pigeonVar_list[5])
+    let api: [Int64?]? = nilOrValue(pigeonVar_list[6])
+
+    return VideoParametersConfig(
+      mimes: mimes,
+      protocols: protocols,
+      playbackMethods: playbackMethods,
+      placement: placement,
+      maxDuration: maxDuration,
+      minDuration: minDuration,
+      api: api
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      mimes,
+      protocols,
+      playbackMethods,
+      placement,
+      maxDuration,
+      minDuration,
+      api,
+    ]
+  }
+  static func == (lhs: VideoParametersConfig, rhs: VideoParametersConfig) -> Bool {
+    return deepEqualsPrebidApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashPrebidApi(value: toList(), hasher: &hasher)
+  }
+}
+
 /// Configuration for a multiformat ad request.
 ///
 /// Generated class from Pigeon that represents data sent in messages.
@@ -445,7 +546,7 @@ struct MultiformatAdRequestConfig: Hashable {
   var configId: String
   /// Banner sizes as [width, height, width, height, ...]
   var bannerSizes: [Int64?]? = nil
-  var includeVideo: Bool
+  var videoConfig: VideoParametersConfig? = nil
   var nativeConfig: NativeAdRequestConfig? = nil
   var isInterstitial: Bool
   var isRewarded: Bool
@@ -455,7 +556,7 @@ struct MultiformatAdRequestConfig: Hashable {
   static func fromList(_ pigeonVar_list: [Any?]) -> MultiformatAdRequestConfig? {
     let configId = pigeonVar_list[0] as! String
     let bannerSizes: [Int64?]? = nilOrValue(pigeonVar_list[1])
-    let includeVideo = pigeonVar_list[2] as! Bool
+    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[2])
     let nativeConfig: NativeAdRequestConfig? = nilOrValue(pigeonVar_list[3])
     let isInterstitial = pigeonVar_list[4] as! Bool
     let isRewarded = pigeonVar_list[5] as! Bool
@@ -463,7 +564,7 @@ struct MultiformatAdRequestConfig: Hashable {
     return MultiformatAdRequestConfig(
       configId: configId,
       bannerSizes: bannerSizes,
-      includeVideo: includeVideo,
+      videoConfig: videoConfig,
       nativeConfig: nativeConfig,
       isInterstitial: isInterstitial,
       isRewarded: isRewarded
@@ -473,7 +574,7 @@ struct MultiformatAdRequestConfig: Hashable {
     return [
       configId,
       bannerSizes,
-      includeVideo,
+      videoConfig,
       nativeConfig,
       isInterstitial,
       isRewarded,
@@ -579,10 +680,14 @@ private class PrebidApiPigeonCodecReader: FlutterStandardReader {
     case 135:
       return NativeAdData.fromList(self.readValue() as! [Any?])
     case 136:
-      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
     case 137:
-      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
     case 138:
+      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+    case 139:
+      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+    case 140:
       return InstreamVideoAdRequestConfig.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -613,14 +718,20 @@ private class PrebidApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? NativeAdData {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatAdRequestConfig {
+    } else if let value = value as? ExternalUserIdData {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatBidResult {
+    } else if let value = value as? VideoParametersConfig {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? InstreamVideoAdRequestConfig {
+    } else if let value = value as? MultiformatAdRequestConfig {
       super.writeByte(138)
+      super.writeValue(value.toList())
+    } else if let value = value as? MultiformatBidResult {
+      super.writeByte(139)
+      super.writeValue(value.toList())
+    } else if let value = value as? InstreamVideoAdRequestConfig {
+      super.writeByte(140)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -660,6 +771,10 @@ protocol PrebidMobileHostApi {
   func setCreativeFactoryTimeout(timeout: Int64) throws
   func setCreativeFactoryTimeoutPreRenderContent(timeout: Int64) throws
   func setCustomStatusEndpoint(endpoint: String) throws
+  func setExternalUserIds(userIds: [ExternalUserIdData]) throws
+  func getExternalUserIds() throws -> [ExternalUserIdData]
+  func clearExternalUserIds() throws
+  func getSdkVersion() throws -> String
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -863,6 +978,60 @@ class PrebidMobileHostApiSetup {
     } else {
       setCustomStatusEndpointChannel.setMessageHandler(nil)
     }
+    let setExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setExternalUserIdsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let userIdsArg = args[0] as! [ExternalUserIdData]
+        do {
+          try api.setExternalUserIds(userIds: userIdsArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setExternalUserIdsChannel.setMessageHandler(nil)
+    }
+    let getExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getExternalUserIdsChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getExternalUserIds()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getExternalUserIdsChannel.setMessageHandler(nil)
+    }
+    let clearExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearExternalUserIdsChannel.setMessageHandler { _, reply in
+        do {
+          try api.clearExternalUserIds()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      clearExternalUserIdsChannel.setMessageHandler(nil)
+    }
+    let getSdkVersionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getSdkVersion\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getSdkVersionChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getSdkVersion()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getSdkVersionChannel.setMessageHandler(nil)
+    }
   }
 }
 /// Targeting and privacy settings.
@@ -878,6 +1047,8 @@ protocol TargetingHostApi {
   func setPurposeConsents(value: String?) throws
   func getPurposeConsents() throws -> String?
   func getDeviceAccessConsent() throws -> Bool?
+  func setUSPrivacyString(value: String?) throws
+  func getUSPrivacyString() throws -> String?
   func addUserKeyword(keyword: String) throws
   func addUserKeywords(keywords: [String]) throws
   func removeUserKeyword(keyword: String) throws
@@ -891,6 +1062,10 @@ protocol TargetingHostApi {
   func updateAppExtData(key: String, value: [String]) throws
   func removeAppExtData(key: String) throws
   func clearAppExtData() throws
+  func addUserExtData(key: String, value: String) throws
+  func updateUserExtData(key: String, value: [String]) throws
+  func removeUserExtData(key: String) throws
+  func clearUserExtData() throws
   func addBidderToAccessControlList(bidderName: String) throws
   func removeBidderFromAccessControlList(bidderName: String) throws
   func clearAccessControlList() throws
@@ -1032,6 +1207,34 @@ class TargetingHostApiSetup {
       }
     } else {
       getDeviceAccessConsentChannel.setMessageHandler(nil)
+    }
+    let setUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setUSPrivacyStringChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let valueArg: String? = nilOrValue(args[0])
+        do {
+          try api.setUSPrivacyString(value: valueArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setUSPrivacyStringChannel.setMessageHandler(nil)
+    }
+    let getUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getUSPrivacyStringChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getUSPrivacyString()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getUSPrivacyStringChannel.setMessageHandler(nil)
     }
     let addUserKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
@@ -1222,6 +1425,66 @@ class TargetingHostApiSetup {
     } else {
       clearAppExtDataChannel.setMessageHandler(nil)
     }
+    let addUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      addUserExtDataChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let keyArg = args[0] as! String
+        let valueArg = args[1] as! String
+        do {
+          try api.addUserExtData(key: keyArg, value: valueArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      addUserExtDataChannel.setMessageHandler(nil)
+    }
+    let updateUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      updateUserExtDataChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let keyArg = args[0] as! String
+        let valueArg = args[1] as! [String]
+        do {
+          try api.updateUserExtData(key: keyArg, value: valueArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      updateUserExtDataChannel.setMessageHandler(nil)
+    }
+    let removeUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      removeUserExtDataChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let keyArg = args[0] as! String
+        do {
+          try api.removeUserExtData(key: keyArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      removeUserExtDataChannel.setMessageHandler(nil)
+    }
+    let clearUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearUserExtDataChannel.setMessageHandler { _, reply in
+        do {
+          try api.clearUserExtData()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      clearUserExtDataChannel.setMessageHandler(nil)
+    }
     let addBidderToAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addBidderToAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addBidderToAccessControlListChannel.setMessageHandler { message, reply in
@@ -1359,7 +1622,7 @@ class TargetingHostApiSetup {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol InterstitialAdHostApi {
-  func loadAd(adId: Int64, configId: String, adFormats: [String]?) throws
+  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?) throws
   func show(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
@@ -1377,8 +1640,9 @@ class InterstitialAdHostApiSetup {
         let adIdArg = args[0] as! Int64
         let configIdArg = args[1] as! String
         let adFormatsArg: [String]? = nilOrValue(args[2])
+        let videoConfigArg: VideoParametersConfig? = nilOrValue(args[3])
         do {
-          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg)
+          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))

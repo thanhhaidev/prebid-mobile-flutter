@@ -181,6 +181,47 @@ class MockPrebidMobileHostApi extends _i1.Mock
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setExternalUserIds(List<_i2.ExternalUserIdData>? userIds) =>
+      (super.noSuchMethod(
+            Invocation.method(#setExternalUserIds, [userIds]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<_i2.ExternalUserIdData>> getExternalUserIds() =>
+      (super.noSuchMethod(
+            Invocation.method(#getExternalUserIds, []),
+            returnValue: _i4.Future<List<_i2.ExternalUserIdData>>.value(
+              <_i2.ExternalUserIdData>[],
+            ),
+          )
+          as _i4.Future<List<_i2.ExternalUserIdData>>);
+
+  @override
+  _i4.Future<void> clearExternalUserIds() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearExternalUserIds, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String> getSdkVersion() =>
+      (super.noSuchMethod(
+            Invocation.method(#getSdkVersion, []),
+            returnValue: _i4.Future<String>.value(
+              _i3.dummyValue<String>(
+                this,
+                Invocation.method(#getSdkVersion, []),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
 }
 
 /// A class which mocks [TargetingHostApi].
@@ -277,6 +318,23 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValue: _i4.Future<bool?>.value(),
           )
           as _i4.Future<bool?>);
+
+  @override
+  _i4.Future<void> setUSPrivacyString(String? value) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUSPrivacyString, [value]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String?> getUSPrivacyString() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUSPrivacyString, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
 
   @override
   _i4.Future<void> addUserKeyword(String? keyword) =>
@@ -395,6 +453,42 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> addUserExtData(String? key, String? value) =>
+      (super.noSuchMethod(
+            Invocation.method(#addUserExtData, [key, value]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> updateUserExtData(String? key, List<String>? value) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUserExtData, [key, value]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> removeUserExtData(String? key) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeUserExtData, [key]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> clearUserExtData() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearUserExtData, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> addBidderToAccessControlList(String? bidderName) =>
       (super.noSuchMethod(
             Invocation.method(#addBidderToAccessControlList, [bidderName]),
@@ -500,9 +594,15 @@ class MockInterstitialAdHostApi extends _i1.Mock
     int? adId,
     String? configId,
     List<String>? adFormats,
+    _i2.VideoParametersConfig? videoConfig,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#loadAd, [adId, configId, adFormats]),
+            Invocation.method(#loadAd, [
+              adId,
+              configId,
+              adFormats,
+              videoConfig,
+            ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

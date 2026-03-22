@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
 import 'native_ad.dart';
+import 'video_parameters.dart';
 
 /// Result of a multiformat bid request.
 class PrebidMultiformatBidResponse {
@@ -67,8 +68,11 @@ class PrebidMultiformatAd {
   /// Banner sizes to request (e.g., [Size(300, 250), Size(728, 90)]).
   final List<Size>? bannerSizes;
 
-  /// Whether to include video format in the bid request.
-  final bool includeVideo;
+  /// Video parameters for the bid request.
+  ///
+  /// If non-null, video format will be included in the request with
+  /// the specified MIME types, protocols, playback methods, etc.
+  final VideoParameters? videoParameters;
 
   /// Native assets to include in the bid request.
   final List<NativeAsset>? nativeAssets;
@@ -86,7 +90,7 @@ class PrebidMultiformatAd {
   PrebidMultiformatAd({
     required this.configId,
     this.bannerSizes,
-    this.includeVideo = false,
+    this.videoParameters,
     this.nativeAssets,
     this.nativeEventTrackers,
     this.isInterstitial = false,
@@ -118,10 +122,26 @@ class PrebidMultiformatAd {
       }
     }
 
+    // Build video config if parameters provided
+    VideoParametersConfig? videoConfig;
+    if (videoParameters != null) {
+      videoConfig = VideoParametersConfig(
+        mimes: videoParameters!.mimes,
+        protocols: videoParameters!.protocols?.map((p) => p.value).toList(),
+        playbackMethods: videoParameters!.playbackMethods
+            ?.map((m) => m.value)
+            .toList(),
+        placement: videoParameters!.placement?.value,
+        maxDuration: videoParameters!.maxDuration,
+        minDuration: videoParameters!.minDuration,
+        api: videoParameters!.api?.map((a) => a.value).toList(),
+      );
+    }
+
     final config = MultiformatAdRequestConfig(
       configId: configId,
       bannerSizes: flatSizes,
-      includeVideo: includeVideo,
+      videoConfig: videoConfig,
       nativeConfig: nativeConfig,
       isInterstitial: isInterstitial,
       isRewarded: isRewarded,

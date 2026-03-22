@@ -42,6 +42,7 @@ library;
 
 export 'src/ad_enums.dart';
 export 'src/ad_listener.dart';
+export 'src/external_user_id.dart';
 export 'src/native_ad.dart';
 export 'src/native_ad_enums.dart';
 export 'src/prebid_exception.dart';
@@ -51,3 +52,4 @@ export 'src/banner_ad.dart';
 export 'src/interstitial_ad.dart';
 export 'src/multiformat_ad.dart';
 export 'src/video_ad.dart';
+export 'src/video_parameters.dart';

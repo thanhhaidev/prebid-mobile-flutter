@@ -124,6 +124,37 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         Prebid.shared.customStatusEndpoint = endpoint
     }
     
+    // External User IDs
+    func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
+        let ids = userIds.map { data -> PrebidMobile.ExternalUserId in
+            var uid = PrebidMobile.ExternalUserId(source: data.source, identifier: data.identifier)
+            if let atype = data.atype {
+                uid.atype = NSNumber(value: atype)
+            }
+            return uid
+        }
+        Targeting.shared.setExternalUserIds(ids)
+    }
+    
+    func getExternalUserIds() throws -> [ExternalUserIdData] {
+        let ids = Targeting.shared.getExternalUserIds()
+        return ids.map { uid in
+            ExternalUserIdData(
+                source: uid.source,
+                identifier: uid.identifier,
+                atype: uid.atype?.int64Value
+            )
+        }
+    }
+    
+    func clearExternalUserIds() throws {
+        Targeting.shared.setExternalUserIds([])
+    }
+    
+    func getSdkVersion() throws -> String {
+        return Prebid.shared.version
+    }
+    
     // =========================================================================
     // TargetingHostApi
     // =========================================================================
@@ -141,6 +172,18 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func getPurposeConsents() throws -> String? { Targeting.shared.purposeConsents }
     func getDeviceAccessConsent() throws -> Bool? { Targeting.shared.getDeviceAccessConsent() }
     
+    // US Privacy / CCPA
+    func setUSPrivacyString(value: String?) throws {
+        if let val_ = value {
+            UserDefaults.standard.set(val_, forKey: "IABUSPrivacy_String")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "IABUSPrivacy_String")
+        }
+    }
+    func getUSPrivacyString() throws -> String? {
+        return UserDefaults.standard.string(forKey: "IABUSPrivacy_String")
+    }
+    
     func addUserKeyword(keyword: String) throws { Targeting.shared.addUserKeyword(keyword) }
     func addUserKeywords(keywords: [String]) throws { Targeting.shared.addUserKeywords(Set(keywords)) }
     func removeUserKeyword(keyword: String) throws { Targeting.shared.removeUserKeyword(keyword) }
@@ -156,6 +199,12 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func updateAppExtData(key: String, value: [String]) throws { Targeting.shared.updateAppExtData(key: key, value: Set(value)) }
     func removeAppExtData(key: String) throws { Targeting.shared.removeAppExtData(for: key) }
     func clearAppExtData() throws { Targeting.shared.clearAppExtData() }
+    
+    // User Ext Data
+    func addUserExtData(key: String, value: String) throws { Targeting.shared.addUserData(key: key, value: value) }
+    func updateUserExtData(key: String, value: [String]) throws { Targeting.shared.updateUserData(key: key, value: Set(value)) }
+    func removeUserExtData(key: String) throws { Targeting.shared.removeUserData(for: key) }
+    func clearUserExtData() throws { Targeting.shared.clearUserData() }
     
     func addBidderToAccessControlList(bidderName: String) throws { Targeting.shared.addBidderToAccessControlList(bidderName) }
     func removeBidderFromAccessControlList(bidderName: String) throws { Targeting.shared.removeBidderFromAccessControlList(bidderName) }
@@ -173,7 +222,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // InterstitialAdHostApi
     // =========================================================================
     
-    func loadAd(adId: Int64, configId: String, adFormats: [String]?) throws {
+    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?) throws {
         let adUnit = InterstitialRenderingAdUnit(configID: configId)
         
         if let formats = adFormats {
@@ -183,6 +232,23 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
                 if f == "video" { adUnitFormats.insert(.video) }
             }
             if !adUnitFormats.isEmpty { adUnit.adFormats = adUnitFormats }
+        }
+        
+        // Apply video parameters if provided
+        if let vc = videoConfig {
+            let vp = VideoParameters(mimes: vc.mimes)
+            if let protocols = vc.protocols {
+                vp.protocols = protocols.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) }
+            }
+            if let methods = vc.playbackMethods {
+                vp.playbackMethod = methods.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) }
+            }
+            if let placement = vc.placement {
+                vp.placement = Signals.Placement(integerLiteral: Int(placement))
+            }
+            if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
+            if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
+            adUnit.videoParameters = vp
         }
         
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi!)
@@ -316,10 +382,6 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func trackClick(adId: Int64) throws {
         // Click tracking is handled automatically by the native SDK
     }
-    
-    // NativeAdHostApi.destroy - different from InterstitialAdHostApi.destroy
-    // Swift distinguishes by protocol context since NativeAdHostApi has loadAd(adId:config:)
-    // vs InterstitialAdHostApi has loadAd(adId:configId:adFormats:)
 }
 
 // MARK: - Interstitial Delegate
@@ -450,8 +512,20 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
         
         // Build video parameters
         var videoParams: VideoParameters?
-        if config.includeVideo {
-            videoParams = VideoParameters(mimes: ["video/mp4"])
+        if let vc = config.videoConfig {
+            let vp = VideoParameters(mimes: vc.mimes)
+            if let protocols = vc.protocols {
+                vp.protocols = protocols.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) }
+            }
+            if let methods = vc.playbackMethods {
+                vp.playbackMethod = methods.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) }
+            }
+            if let placement = vc.placement {
+                vp.placement = Signals.Placement(integerLiteral: Int(placement))
+            }
+            if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
+            if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
+            videoParams = vp
         }
         
         // Build native parameters

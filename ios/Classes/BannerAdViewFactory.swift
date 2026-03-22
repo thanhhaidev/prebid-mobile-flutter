@@ -45,6 +45,7 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         let height = args["height"] as? Int ?? 50
         let isVideo = args["isVideo"] as? Bool ?? false
         let autoLoad = args["autoLoad"] as? Bool ?? true
+        let refreshInterval = args["refreshIntervalSeconds"] as? Int
         
         let adSize = CGSize(width: width, height: height)
         
@@ -63,6 +64,10 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         
         if isVideo {
             bannerView.adFormat = .video
+        }
+        
+        if let interval = refreshInterval, interval > 0 {
+            bannerView.refreshInterval = TimeInterval(interval)
         }
         
         bannerView.delegate = self

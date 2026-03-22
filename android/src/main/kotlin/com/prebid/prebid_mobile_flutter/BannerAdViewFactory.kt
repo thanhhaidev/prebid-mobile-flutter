@@ -38,6 +38,7 @@ class BannerAdPlatformView(
         val height = params["height"] as? Int ?: 50
         val isVideo = params["isVideo"] as? Boolean ?: false
         val autoLoad = params["autoLoad"] as? Boolean ?: true
+        val refreshInterval = params["refreshIntervalSeconds"] as? Int
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_flutter/banner_ad_$viewId")
 
@@ -45,6 +46,10 @@ class BannerAdPlatformView(
 
         if (isVideo) {
             bannerView.videoPlacementType = org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+        }
+
+        if (refreshInterval != null && refreshInterval > 0) {
+            bannerView.setAutoRefreshDelay(refreshInterval)
         }
 
         bannerView.setBannerListener(object : BannerViewListener {

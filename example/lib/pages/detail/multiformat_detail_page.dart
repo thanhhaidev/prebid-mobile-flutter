@@ -55,7 +55,7 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
       bannerSizes: [
         ui.Size(widget.tc.width.toDouble(), widget.tc.height.toDouble()),
       ],
-      includeVideo: true,
+      videoParameters: const VideoParameters(mimes: ['video/mp4']),
       nativeAssets: const [
         NativeAsset.title(length: 90, required: true),
         NativeAsset.image(imageType: NativeImageType.main, required: true),

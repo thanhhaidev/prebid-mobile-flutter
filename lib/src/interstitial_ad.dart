@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'ad_enums.dart';
 import 'ad_listener.dart';
 import 'generated/prebid_api.g.dart';
+import 'video_parameters.dart';
 
 /// A fullscreen interstitial ad using Prebid rendering.
 ///
@@ -21,12 +22,21 @@ class PrebidInterstitialAd {
   /// The ad formats to request (banner, video, or both).
   final Set<AdFormat>? adFormats;
 
+  /// Video playback parameters (protocols, playback methods, etc.).
+  ///
+  /// Only used when [adFormats] includes [AdFormat.video].
+  final VideoParameters? videoParameters;
+
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
   /// Creates a [PrebidInterstitialAd].
-  PrebidInterstitialAd({required this.configId, this.adFormats, this.listener})
-    : _adId = _nextId++ {
+  PrebidInterstitialAd({
+    required this.configId,
+    this.adFormats,
+    this.videoParameters,
+    this.listener,
+  }) : _adId = _nextId++ {
     // Register this ad for receiving events
     _AdEventRouter.instance.registerInterstitial(_adId, this);
   }
@@ -34,7 +44,21 @@ class PrebidInterstitialAd {
   /// Load the interstitial ad.
   Future<void> loadAd() async {
     final formats = adFormats?.map((f) => f.name).toList();
-    api.loadAd(_adId, configId, formats);
+    VideoParametersConfig? videoConfig;
+    if (videoParameters != null) {
+      videoConfig = VideoParametersConfig(
+        mimes: videoParameters!.mimes,
+        protocols: videoParameters!.protocols?.map((p) => p.value).toList(),
+        playbackMethods: videoParameters!.playbackMethods
+            ?.map((m) => m.value)
+            .toList(),
+        placement: videoParameters!.placement?.value,
+        maxDuration: videoParameters!.maxDuration,
+        minDuration: videoParameters!.minDuration,
+        api: videoParameters!.api?.map((a) => a.value).toList(),
+      );
+    }
+    api.loadAd(_adId, configId, formats, videoConfig);
   }
 
   /// Show the interstitial ad.

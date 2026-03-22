@@ -5,6 +5,7 @@ import android.content.Context
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import org.prebid.mobile.ExternalUserId
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.TargetingParams
 import org.prebid.mobile.api.data.InitializationStatus
@@ -144,6 +145,35 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         PrebidMobile.setCustomStatusEndpoint(endpoint)
     }
 
+    // External User IDs
+    override fun setExternalUserIds(userIds: List<ExternalUserIdData>) {
+        val ids = userIds.map { data ->
+            ExternalUserId(data.source, data.identifier).apply {
+                data.atype?.let { this.atype = it.toInt() }
+            }
+        }
+        PrebidMobile.setExternalUserIds(ArrayList(ids))
+    }
+
+    override fun getExternalUserIds(): List<ExternalUserIdData> {
+        val ids = PrebidMobile.getExternalUserIds() ?: return emptyList()
+        return ids.map { uid ->
+            ExternalUserIdData(
+                source = uid.source ?: "",
+                identifier = uid.identifier ?: "",
+                atype = uid.atype?.toLong()
+            )
+        }
+    }
+
+    override fun clearExternalUserIds() {
+        PrebidMobile.setExternalUserIds(null)
+    }
+
+    override fun getSdkVersion(): String {
+        return PrebidMobile.SDK_VERSION
+    }
+
     // =========================================================================
     // TargetingHostApi
     // =========================================================================
@@ -168,6 +198,21 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     }
     override fun getPurposeConsents(): String? = TargetingParams.getPurposeConsents()
     override fun getDeviceAccessConsent(): Boolean? = TargetingParams.getDeviceAccessConsent()
+
+    // US Privacy / CCPA
+    override fun setUSPrivacyString(value: String?) {
+        // Android SDK reads IABUSPrivacy_String from SharedPreferences, but we can store it
+        val prefs = context.getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE)
+        if (value != null) {
+            prefs.edit().putString("IABUSPrivacy_String", value).apply()
+        } else {
+            prefs.edit().remove("IABUSPrivacy_String").apply()
+        }
+    }
+    override fun getUSPrivacyString(): String? {
+        val prefs = context.getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE)
+        return prefs.getString("IABUSPrivacy_String", null)
+    }
 
     override fun addUserKeyword(keyword: String) { TargetingParams.addUserKeyword(keyword) }
     override fun addUserKeywords(keywords: List<String>) { keywords.forEach { TargetingParams.addUserKeyword(it) } }
@@ -197,6 +242,20 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         try { TargetingParams.clearExtData() } catch (_: Exception) {}
     }
 
+    // User Ext Data (user.ext.data)
+    override fun addUserExtData(key: String, value: String) {
+        try { TargetingParams.addUserData(key, value) } catch (_: Exception) {}
+    }
+    override fun updateUserExtData(key: String, value: List<String>) {
+        try { TargetingParams.updateUserData(key, HashSet(value)) } catch (_: Exception) {}
+    }
+    override fun removeUserExtData(key: String) {
+        try { TargetingParams.removeUserData(key) } catch (_: Exception) {}
+    }
+    override fun clearUserExtData() {
+        try { TargetingParams.clearUserData() } catch (_: Exception) {}
+    }
+
     override fun addBidderToAccessControlList(bidderName: String) { TargetingParams.addBidderToAccessControlList(bidderName) }
     override fun removeBidderFromAccessControlList(bidderName: String) { TargetingParams.removeBidderFromAccessControlList(bidderName) }
     override fun clearAccessControlList() { TargetingParams.clearAccessControlList() }
@@ -215,7 +274,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     // InterstitialAdHostApi
     // =========================================================================
 
-    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?) {
+    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?) {
         val act = activity ?: return
 
         // Build EnumSet for ad formats
@@ -231,6 +290,21 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         }
 
         val adUnit = org.prebid.mobile.api.rendering.InterstitialAdUnit(act, configId, formats)
+
+        // Apply video parameters if provided
+        if (videoConfig != null && formats.contains(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)) {
+            val vp = org.prebid.mobile.VideoParameters(videoConfig.mimes)
+            videoConfig.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
+                vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
+            }
+            videoConfig.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
+                vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
+            }
+            videoConfig.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
+            videoConfig.maxDuration?.let { vp.maxDuration = it.toInt() }
+            videoConfig.minDuration?.let { vp.minDuration = it.toInt() }
+            adUnit.videoParameters = vp
+        }
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
@@ -433,9 +507,6 @@ class NativeAdHostApiImpl(
     }
 }
 
-// Separate class to implement RewardedAdHostApi since Kotlin can't have
-// two interfaces with same method names on one class
-
 
 // Multiformat ad handler
 class MultiformatAdHostApiImpl(
@@ -468,8 +539,19 @@ class MultiformatAdHostApiImpl(
             request.setBannerParameters(params)
         }
 
-        if (config.includeVideo) {
-            request.setVideoParameters(org.prebid.mobile.VideoParameters(listOf("video/mp4")))
+        if (config.videoConfig != null) {
+            val vc = config.videoConfig
+            val vp = org.prebid.mobile.VideoParameters(vc.mimes)
+            vc.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
+                vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
+            }
+            vc.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
+                vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
+            }
+            vc.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
+            vc.maxDuration?.let { vp.maxDuration = it.toInt() }
+            vc.minDuration?.let { vp.minDuration = it.toInt() }
+            request.setVideoParameters(vp)
         }
 
         // Build native params if provided

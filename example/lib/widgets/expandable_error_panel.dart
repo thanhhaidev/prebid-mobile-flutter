@@ -41,22 +41,30 @@ class _ExpandableErrorPanelState extends State<ExpandableErrorPanel>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline,
-                      size: 16, color: Colors.red.shade700),
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: Colors.red.shade700,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _expanded ? widget.error : summary,
                       style: TextStyle(
-                          fontSize: 12, color: Colors.red.shade700),
+                        fontSize: 12,
+                        color: Colors.red.shade700,
+                      ),
                     ),
                   ),
                   if (isLong)
                     AnimatedRotation(
                       turns: _expanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 200),
-                      child: Icon(Icons.expand_more,
-                          size: 18, color: Colors.red.shade400),
+                      child: Icon(
+                        Icons.expand_more,
+                        size: 18,
+                        color: Colors.red.shade400,
+                      ),
                     ),
                 ],
               ),
@@ -74,8 +82,10 @@ class _ExpandableErrorPanelState extends State<ExpandableErrorPanel>
                       Clipboard.setData(ClipboardData(text: widget.error));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Error copied to clipboard',
-                              style: TextStyle(fontSize: 11)),
+                          content: Text(
+                            'Error copied to clipboard',
+                            style: TextStyle(fontSize: 11),
+                          ),
                           duration: Duration(milliseconds: 800),
                         ),
                       );
@@ -84,9 +94,13 @@ class _ExpandableErrorPanelState extends State<ExpandableErrorPanel>
                       children: [
                         Icon(Icons.copy, size: 12, color: Colors.red.shade400),
                         const SizedBox(width: 4),
-                        Text('Copy',
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.red.shade600)),
+                        Text(
+                          'Copy',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red.shade600,
+                          ),
+                        ),
                       ],
                     ),
                   ),

@@ -32,17 +32,26 @@ class AboutPage extends StatelessWidget {
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(Icons.ads_click,
-                      size: 36, color: theme.colorScheme.primary),
+                  child: Icon(
+                    Icons.ads_click,
+                    size: 36,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text('Prebid Flutter Demo',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Prebid Flutter Demo',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('In-App Rendering Example',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: Colors.grey)),
+                Text(
+                  'In-App Rendering Example',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
+                ),
               ],
             ),
           ),
@@ -54,7 +63,10 @@ class AboutPage extends StatelessWidget {
             _infoRow('Prebid Mobile SDK', _prebidSdkVersion),
             _infoRow('Flutter', Platform.version.split(' ').first),
             _infoRow('Dart', Platform.version.split(' ').first),
-            _infoRow('Platform', '${Platform.operatingSystem} ${Platform.operatingSystemVersion}'),
+            _infoRow(
+              'Platform',
+              '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+            ),
           ]),
           const SizedBox(height: 16),
 
@@ -94,10 +106,18 @@ class AboutPage extends StatelessWidget {
           _sectionTitle(context, 'Links'),
           const SizedBox(height: 8),
           _linkTile(context, Icons.code, 'Source Code', _repoUrl),
-          _linkTile(context, Icons.book, 'Prebid Documentation',
-              'https://docs.prebid.org/prebid-mobile/prebid-mobile.html'),
-          _linkTile(context, Icons.bug_report, 'Report Issue',
-              '$_repoUrl/issues'),
+          _linkTile(
+            context,
+            Icons.book,
+            'Prebid Documentation',
+            'https://docs.prebid.org/prebid-mobile/prebid-mobile.html',
+          ),
+          _linkTile(
+            context,
+            Icons.bug_report,
+            'Report Issue',
+            '$_repoUrl/issues',
+          ),
           const SizedBox(height: 24),
 
           // Footer
@@ -117,7 +137,9 @@ class AboutPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withAlpha(80),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Theme.of(context).dividerColor.withAlpha(60)),
       ),
@@ -132,15 +154,17 @@ class AboutPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 12, fontFamily: 'monospace'),
-                textAlign: TextAlign.end),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),
@@ -148,13 +172,15 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _sectionTitle(BuildContext context, String title) {
-    return Text(title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.5,
-        ));
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.primary,
+        letterSpacing: 0.5,
+      ),
+    );
   }
 
   Widget _featureChip(String label) {
@@ -167,16 +193,25 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _linkTile(
-      BuildContext context, IconData icon, String title, String url) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    String url,
+  ) {
     return ListTile(
       leading: Icon(icon, size: 20),
       title: Text(title, style: const TextStyle(fontSize: 13)),
-      subtitle:
-          Text(url, style: const TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        url,
+        style: const TextStyle(fontSize: 10),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: const Icon(Icons.open_in_new, size: 14),
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      onTap: () =>
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
     );
   }
 }

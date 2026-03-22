@@ -46,7 +46,10 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
     }
 
-    _log.log('Video', 'Fetching demand: ${widget.tc.configId} (${widget.tc.width}x${widget.tc.height})');
+    _log.log(
+      'Video',
+      'Fetching demand: ${widget.tc.configId} (${widget.tc.width}x${widget.tc.height})',
+    );
     _ad = PrebidInstreamVideoAd(
       configId: widget.tc.configId,
       size: ui.Size(widget.tc.width.toDouble(), widget.tc.height.toDouble()),
@@ -66,7 +69,11 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       });
     } else {
       _tracker.track('onRequestFailed', result.resultCode);
-      _log.log('Video', 'Demand failed in ${elapsed}ms: ${result.resultCode}', level: LogLevel.error);
+      _log.log(
+        'Video',
+        'Demand failed in ${elapsed}ms: ${result.resultCode}',
+        level: LogLevel.error,
+      );
       setState(() {
         _resultInfo = 'Result: ${result.resultCode}';
         _loadTimeMs = elapsed;
@@ -90,10 +97,14 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Text('AdUnitId: ${widget.tc.configId}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-              Text('Size: ${widget.tc.width}x${widget.tc.height}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text(
+                'AdUnitId: ${widget.tc.configId}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+              Text(
+                'Size: ${widget.tc.width}x${widget.tc.height}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
               const SizedBox(height: 12),
               ActionButton(label: 'Fetch Demand', onPressed: _fetchDemand),
               const Divider(),
@@ -110,9 +121,13 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(_resultInfo!,
-                      style:
-                          const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  child: Text(
+                    _resultInfo!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 12),

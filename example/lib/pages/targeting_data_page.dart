@@ -136,10 +136,18 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
     final storeUrl = _storeUrlController.text.trim();
     final domain = _domainController.text.trim();
 
-    if (contentUrl.isNotEmpty) await PrebidTargeting.setContentUrl(contentUrl);
-    if (publisherName.isNotEmpty) await PrebidTargeting.setPublisherName(publisherName);
-    if (storeUrl.isNotEmpty) await PrebidTargeting.setStoreUrl(storeUrl);
-    if (domain.isNotEmpty) await PrebidTargeting.setDomain(domain);
+    if (contentUrl.isNotEmpty) {
+      await PrebidTargeting.setContentUrl(contentUrl);
+    }
+    if (publisherName.isNotEmpty) {
+      await PrebidTargeting.setPublisherName(publisherName);
+    }
+    if (storeUrl.isNotEmpty) {
+      await PrebidTargeting.setStoreUrl(storeUrl);
+    }
+    if (domain.isNotEmpty) {
+      await PrebidTargeting.setDomain(domain);
+    }
 
     _showSnack('App info applied');
   }
@@ -155,8 +163,10 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
   void _showSnack(String msg) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg, style: const TextStyle(fontSize: 12)),
-            duration: const Duration(seconds: 1)),
+        SnackBar(
+          content: Text(msg, style: const TextStyle(fontSize: 12)),
+          duration: const Duration(seconds: 1),
+        ),
       );
     }
   }
@@ -252,13 +262,20 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: _extDataEntries.map((e) =>
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 1),
-                    child: Text('${e.key} = ${e.value}',
-                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace')),
-                  ),
-                ).toList(),
+                children: _extDataEntries
+                    .map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 1),
+                        child: Text(
+                          '${e.key} = ${e.value}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             _clearButton('Clear All', _clearExtData),
@@ -300,7 +317,10 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
             alignment: Alignment.centerRight,
             child: FilledButton.tonal(
               onPressed: _applyOrtbConfig,
-              child: const Text('Apply ORTB Config', style: TextStyle(fontSize: 12)),
+              child: const Text(
+                'Apply ORTB Config',
+                style: TextStyle(fontSize: 12),
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -312,63 +332,78 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
   // ---- Helpers ----
 
   Widget _sectionHeader(String title, Color color) => Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.5,
-        ),
-      );
+    title,
+    style: TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      color: color,
+      letterSpacing: 0.5,
+    ),
+  );
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-      );
+    hintText: hint,
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+  );
 
   Widget _smallField(String label, TextEditingController ctrl) => TextField(
-        controller: ctrl,
-        decoration: _inputDecoration(label),
-        style: const TextStyle(fontSize: 13),
-      );
+    controller: ctrl,
+    decoration: _inputDecoration(label),
+    style: const TextStyle(fontSize: 13),
+  );
 
   Widget _iconButton(IconData icon, VoidCallback onPressed) => IconButton(
-        icon: Icon(icon, size: 24),
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-      );
+    icon: Icon(icon, size: 24),
+    onPressed: onPressed,
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+  );
 
-  Widget _chipWrap(List<String> items, Future<void> Function(String) onDelete, MaterialColor color) {
+  Widget _chipWrap(
+    List<String> items,
+    Future<void> Function(String) onDelete,
+    MaterialColor color,
+  ) {
     if (items.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text('No items', style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontStyle: FontStyle.italic)),
+        child: Text(
+          'No items',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade400,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       );
     }
     return Wrap(
       spacing: 4,
       runSpacing: 4,
-      children: items.map((kw) => Chip(
-        label: Text(kw, style: const TextStyle(fontSize: 11)),
-        deleteIcon: const Icon(Icons.close, size: 14),
-        onDeleted: () => onDelete(kw),
-        backgroundColor: color.shade50,
-        side: BorderSide(color: color.shade200),
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      )).toList(),
+      children: items
+          .map(
+            (kw) => Chip(
+              label: Text(kw, style: const TextStyle(fontSize: 11)),
+              deleteIcon: const Icon(Icons.close, size: 14),
+              onDeleted: () => onDelete(kw),
+              backgroundColor: color.shade50,
+              side: BorderSide(color: color.shade200),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          )
+          .toList(),
     );
   }
 
   Widget _clearButton(String label, VoidCallback onPressed) => Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: onPressed,
-          icon: const Icon(Icons.clear_all, size: 14),
-          label: Text(label, style: const TextStyle(fontSize: 11)),
-        ),
-      );
+    alignment: Alignment.centerRight,
+    child: TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.clear_all, size: 14),
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+    ),
+  );
 }

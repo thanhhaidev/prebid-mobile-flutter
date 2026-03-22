@@ -16,7 +16,8 @@ class PrebidException implements Exception {
   });
 
   @override
-  String toString() => 'PrebidException($code): $message'
+  String toString() =>
+      'PrebidException($code): $message'
       '${details != null ? ' ($details)' : ''}';
 }
 

@@ -22,11 +22,8 @@ class PrebidInterstitialAd {
   final PrebidInterstitialAdListener? listener;
 
   /// Creates a [PrebidInterstitialAd].
-  PrebidInterstitialAd({
-    required this.configId,
-    this.adFormats,
-    this.listener,
-  }) : _adId = _nextId++ {
+  PrebidInterstitialAd({required this.configId, this.adFormats, this.listener})
+    : _adId = _nextId++ {
     // Register this ad for receiving events
     _AdEventRouter.instance.registerInterstitial(_adId, this);
   }
@@ -66,10 +63,8 @@ class PrebidRewardedAd {
   final PrebidRewardedAdListener? listener;
 
   /// Creates a [PrebidRewardedAd].
-  PrebidRewardedAd({
-    required this.configId,
-    this.listener,
-  }) : _adId = _nextId++ {
+  PrebidRewardedAd({required this.configId, this.listener})
+    : _adId = _nextId++ {
     _AdEventRouter.instance.registerRewarded(_adId, this);
   }
 
@@ -164,10 +159,12 @@ class _AdEventRouter implements AdFlutterApi {
         listener.onAdClicked?.call();
       case 'onUserEarnedReward':
         if (event.reward != null) {
-          listener.onUserEarnedReward?.call(PrebidReward(
-            type: event.reward!.type ?? '',
-            count: event.reward!.count ?? 0,
-          ));
+          listener.onUserEarnedReward?.call(
+            PrebidReward(
+              type: event.reward!.type ?? '',
+              count: event.reward!.count ?? 0,
+            ),
+          );
         }
     }
   }

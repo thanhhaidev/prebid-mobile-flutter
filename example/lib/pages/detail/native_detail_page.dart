@@ -46,7 +46,10 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
     _log.log('Native', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     if (widget.tc.storedResponse != null) {
-      _log.log('Native', 'Setting stored response: ${widget.tc.storedResponse}');
+      _log.log(
+        'Native',
+        'Setting stored response: ${widget.tc.storedResponse}',
+      );
       await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
     }
 
@@ -56,11 +59,17 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
       assets: const [
         NativeAsset.title(length: 90, required: true),
         NativeAsset.image(
-            imageType: NativeImageType.main,
-            widthMin: 200, heightMin: 50, required: true),
+          imageType: NativeImageType.main,
+          widthMin: 200,
+          heightMin: 50,
+          required: true,
+        ),
         NativeAsset.image(
-            imageType: NativeImageType.icon,
-            widthMin: 20, heightMin: 20, required: true),
+          imageType: NativeImageType.icon,
+          widthMin: 20,
+          heightMin: 20,
+          required: true,
+        ),
         NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
         NativeAsset.data(dataType: NativeDataType.desc, required: true),
         NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
@@ -78,7 +87,10 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
         onAdLoaded: (response) {
           _stopwatch.stop();
           _tracker.track('onAdLoaded');
-          _log.log('Native', 'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms: title="${response.title}"');
+          _log.log(
+            'Native',
+            'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms: title="${response.title}"',
+          );
           setState(() {
             _response = response;
             _isLoading = false;
@@ -88,7 +100,11 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
         onAdFailed: (e) {
           _stopwatch.stop();
           _tracker.track('onAdFailed', e);
-          _log.log('Native', 'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e', level: LogLevel.error);
+          _log.log(
+            'Native',
+            'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e',
+            level: LogLevel.error,
+          );
           setState(() {
             _isLoading = false;
             _errorMessage = e;
@@ -131,7 +147,8 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
                   color: Colors.green.shade50,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('🧩 Native Ad',
+                child: Text(
+                  '🧩 Native Ad',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -154,10 +171,16 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                       SizedBox(width: 8),
-                      Text('Loading native ad...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(
+                        'Loading native ad...',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -171,7 +194,10 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
               EventCounterList(
                 tracker: _tracker,
                 events: const [
-                  'onAdLoaded', 'onAdFailed', 'onAdImpression', 'onAdClicked',
+                  'onAdLoaded',
+                  'onAdFailed',
+                  'onAdImpression',
+                  'onAdClicked',
                 ],
               ),
               const SizedBox(height: 12),

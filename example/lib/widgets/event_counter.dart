@@ -31,7 +31,11 @@ class EventTracker extends ChangeNotifier {
 class EventCounterList extends StatelessWidget {
   final EventTracker tracker;
   final List<String> events;
-  const EventCounterList({super.key, required this.tracker, required this.events});
+  const EventCounterList({
+    super.key,
+    required this.tracker,
+    required this.events,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +55,13 @@ class EventCounterList extends StatelessWidget {
                     '$e called',
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: hasCount ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: hasCount
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: hasCount
-                          ? (isError ? Colors.red.shade700 : Colors.green.shade700)
+                          ? (isError
+                                ? Colors.red.shade700
+                                : Colors.green.shade700)
                           : Colors.grey.shade500,
                     ),
                   ),
@@ -64,7 +72,9 @@ class EventCounterList extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: hasCount ? FontWeight.bold : FontWeight.normal,
                     color: hasCount
-                        ? (isError ? Colors.red.shade700 : Colors.green.shade700)
+                        ? (isError
+                              ? Colors.red.shade700
+                              : Colors.green.shade700)
                         : Colors.grey.shade500,
                   ),
                 ),
@@ -82,8 +92,10 @@ class EventCounterList extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: Colors.red.shade200),
             ),
-            child: Text('Error: ${tracker.lastError}',
-                style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+            child: Text(
+              'Error: ${tracker.lastError}',
+              style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+            ),
           ),
       ],
     );

@@ -20,10 +20,11 @@ class ConfigInfoPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withAlpha(80),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-            color: Theme.of(context).dividerColor.withAlpha(60)),
+        border: Border.all(color: Theme.of(context).dividerColor.withAlpha(60)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,10 +37,13 @@ class ConfigInfoPanel extends StatelessWidget {
               tc.format == DemoAdFormat.videoBanner)
             _row('Size', '${tc.width}x${tc.height}'),
           if (loadTimeMs != null)
-            _row('Load Time', '${loadTimeMs}ms',
-                valueColor: loadTimeMs! < 2000
-                    ? Colors.green.shade700
-                    : Colors.orange.shade800),
+            _row(
+              'Load Time',
+              '${loadTimeMs}ms',
+              valueColor: loadTimeMs! < 2000
+                  ? Colors.green.shade700
+                  : Colors.orange.shade800,
+            ),
         ],
       ),
     );
@@ -53,18 +57,24 @@ class ConfigInfoPanel extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text('$label:',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    color: valueColor)),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 11,
+                fontFamily: 'monospace',
+                color: valueColor,
+              ),
+            ),
           ),
         ],
       ),
@@ -79,23 +89,30 @@ class ConfigInfoPanel extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text('$label:',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+            ),
           ),
           GestureDetector(
             onTap: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Copied: $value',
-                      style: const TextStyle(fontSize: 11)),
+                  content: Text(
+                    'Copied: $value',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   duration: const Duration(milliseconds: 800),
                 ),
               );

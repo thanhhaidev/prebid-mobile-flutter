@@ -1,18 +1,18 @@
 import 'package:pigeon/pigeon.dart';
 
-@ConfigurePigeon(PigeonOptions(
-  dartOut: 'lib/src/generated/prebid_api.g.dart',
-  dartPackageName: 'prebid_mobile_flutter',
-  kotlinOut:
-      'android/src/main/kotlin/com/prebid/prebid_mobile_flutter/PrebidApi.g.kt',
-  kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_flutter'),
-  swiftOut: 'ios/Classes/PrebidApi.g.swift',
-))
-
+@ConfigurePigeon(
+  PigeonOptions(
+    dartOut: 'lib/src/generated/prebid_api.g.dart',
+    dartPackageName: 'prebid_mobile_flutter',
+    kotlinOut:
+        'android/src/main/kotlin/com/prebid/prebid_mobile_flutter/PrebidApi.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_flutter'),
+    swiftOut: 'ios/Classes/PrebidApi.g.swift',
+  ),
+)
 // =============================================================================
 // Data Classes
 // =============================================================================
-
 /// Result of SDK initialization.
 class InitializationResult {
   InitializationResult({required this.status, this.error});
@@ -30,7 +30,13 @@ class RewardData {
 
 /// Ad event sent from native to Flutter.
 class AdEvent {
-  AdEvent({required this.adId, required this.eventName, this.error, this.reward, this.nativeAd});
+  AdEvent({
+    required this.adId,
+    required this.eventName,
+    this.error,
+    this.reward,
+    this.nativeAd,
+  });
   final int adId;
   final String eventName;
   final String? error;
@@ -52,6 +58,7 @@ class NativeAssetConfig {
     this.dataType,
     this.dataLength,
   });
+
   /// "title", "image", or "data"
   final String assetType;
   final bool required_;
@@ -120,8 +127,7 @@ class NativeAdData {
 @HostApi()
 abstract class PrebidMobileHostApi {
   @async
-  InitializationResult initializeSdk(
-      String prebidServerUrl, String accountId);
+  InitializationResult initializeSdk(String prebidServerUrl, String accountId);
 
   void setTimeoutMillis(int timeoutMillis);
   void setShareGeoLocation(bool share);
@@ -226,6 +232,7 @@ class MultiformatAdRequestConfig {
     this.isRewarded = false,
   });
   final String configId;
+
   /// Banner sizes as [width, height, width, height, ...]
   final List<int?>? bannerSizes;
   final bool includeVideo;
@@ -243,6 +250,7 @@ class MultiformatBidResult {
     this.nativeAdCacheId,
   });
   final String resultCode;
+
   /// "banner", "video", or "native"
   final String? winningFormat;
   final Map<String?, String?>? targetingKeywords;
@@ -273,7 +281,10 @@ class InstreamVideoAdRequestConfig {
 @HostApi()
 abstract class InstreamVideoAdHostApi {
   @async
-  MultiformatBidResult fetchDemand(int adId, InstreamVideoAdRequestConfig config);
+  MultiformatBidResult fetchDemand(
+    int adId,
+    InstreamVideoAdRequestConfig config,
+  );
   void destroy(int adId);
 }
 

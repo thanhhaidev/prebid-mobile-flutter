@@ -54,11 +54,9 @@ class AppSettings {
   static Future<void> setShareGeo(bool v) async =>
       _prefs?.setBool(_keyShareGeo, v);
 
-  static Future<void> setCoppa(bool v) async =>
-      _prefs?.setBool(_keyCoppa, v);
+  static Future<void> setCoppa(bool v) async => _prefs?.setBool(_keyCoppa, v);
 
-  static Future<void> setGdpr(bool v) async =>
-      _prefs?.setBool(_keyGdpr, v);
+  static Future<void> setGdpr(bool v) async => _prefs?.setBool(_keyGdpr, v);
 
   static Future<void> setGdprConsent(String v) async =>
       _prefs?.setString(_keyGdprConsent, v);

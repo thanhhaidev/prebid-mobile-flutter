@@ -15,8 +15,9 @@ class PrebidDemoApp extends StatefulWidget {
   const PrebidDemoApp({super.key});
 
   /// Public notifier for dark mode toggling from settings page.
-  static final ValueNotifier<bool> darkModeNotifier =
-      ValueNotifier(AppSettings.darkMode);
+  static final ValueNotifier<bool> darkModeNotifier = ValueNotifier(
+    AppSettings.darkMode,
+  );
 
   @override
   State<PrebidDemoApp> createState() => _PrebidDemoAppState();
@@ -58,7 +59,8 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
       accountId: accountId,
       completion: (status, error) {
         setState(() {
-          _sdkReady = status == InitializationStatus.succeeded ||
+          _sdkReady =
+              status == InitializationStatus.succeeded ||
               status == InitializationStatus.serverStatusWarning;
           _sdkStatus = switch (status) {
             InitializationStatus.succeeded => '✅ SDK Ready',
@@ -66,8 +68,11 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
             InitializationStatus.failed => '❌ Failed: ${error ?? "unknown"}',
           };
         });
-        _log.log('SDK', 'Init result: $_sdkStatus',
-            level: _sdkReady ? LogLevel.info : LogLevel.error);
+        _log.log(
+          'SDK',
+          'Init result: $_sdkStatus',
+          level: _sdkReady ? LogLevel.info : LogLevel.error,
+        );
       },
     );
   }
@@ -88,8 +93,9 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
         useMaterial3: true,
         brightness: brightness,
         appBarTheme: AppBarTheme(
-          backgroundColor:
-              darkMode ? const Color(0xFF1A1A2E) : const Color(0xFF0068B5),
+          backgroundColor: darkMode
+              ? const Color(0xFF1A1A2E)
+              : const Color(0xFF0068B5),
           foregroundColor: Colors.white,
           centerTitle: true,
         ),
@@ -102,15 +108,17 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
               bottom: false,
               child: Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 16,
+                ),
                 color: _sdkReady
                     ? (darkMode
-                        ? const Color(0xFF1B3A1B)
-                        : const Color(0xFFE8F5E9))
+                          ? const Color(0xFF1B3A1B)
+                          : const Color(0xFFE8F5E9))
                     : (darkMode
-                        ? const Color(0xFF3A2E1B)
-                        : const Color(0xFFFFF3E0)),
+                          ? const Color(0xFF3A2E1B)
+                          : const Color(0xFFFFF3E0)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -120,23 +128,27 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
                         child: SizedBox(
                           width: 12,
                           height: 12,
-                          child:
-                              CircularProgressIndicator(strokeWidth: 1.5),
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
                         ),
                       ),
                     Flexible(
-                      child: Text(_sdkStatus,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 12)),
+                      child: Text(
+                        _sdkStatus,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Text('v$_pluginVersion',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: darkMode
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      'v$_pluginVersion',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: darkMode
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),

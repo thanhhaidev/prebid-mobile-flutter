@@ -12,16 +12,17 @@ class PrebidDemoLogger extends ChangeNotifier {
 
   final List<LogEntry> _entries = [];
 
-  UnmodifiableListView<LogEntry> get entries =>
-      UnmodifiableListView(_entries);
+  UnmodifiableListView<LogEntry> get entries => UnmodifiableListView(_entries);
 
   void log(String tag, String message, {LogLevel level = LogLevel.info}) {
-    _entries.add(LogEntry(
-      timestamp: DateTime.now(),
-      tag: tag,
-      message: message,
-      level: level,
-    ));
+    _entries.add(
+      LogEntry(
+        timestamp: DateTime.now(),
+        tag: tag,
+        message: message,
+        level: level,
+      ),
+    );
     notifyListeners();
     if (kDebugMode) {
       final prefix = switch (level) {

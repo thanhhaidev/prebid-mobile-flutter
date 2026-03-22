@@ -86,7 +86,11 @@ class NativeAsset {
 
   /// Creates a title asset.
   const NativeAsset.title({int length = 90, bool required = false})
-      : this._(type: NativeAssetType.title, titleLength: length, required: required);
+    : this._(
+        type: NativeAssetType.title,
+        titleLength: length,
+        required: required,
+      );
 
   /// Creates an image asset.
   const NativeAsset.image({
@@ -97,14 +101,14 @@ class NativeAsset {
     int? heightMin,
     bool required = false,
   }) : this._(
-          type: NativeAssetType.image,
-          imageType: imageType,
-          imageWidth: width,
-          imageHeight: height,
-          imageWidthMin: widthMin,
-          imageHeightMin: heightMin,
-          required: required,
-        );
+         type: NativeAssetType.image,
+         imageType: imageType,
+         imageWidth: width,
+         imageHeight: height,
+         imageWidthMin: widthMin,
+         imageHeightMin: heightMin,
+         required: required,
+       );
 
   /// Creates a data asset.
   const NativeAsset.data({
@@ -112,11 +116,11 @@ class NativeAsset {
     int? length,
     bool required = false,
   }) : this._(
-          type: NativeAssetType.data,
-          dataType: dataType,
-          dataLength: length,
-          required: required,
-        );
+         type: NativeAssetType.data,
+         dataType: dataType,
+         dataLength: length,
+         required: required,
+       );
 }
 
 /// Defines a native event tracker for the ad request.
@@ -124,10 +128,7 @@ class NativeEventTracker {
   final NativeEventType eventType;
   final List<NativeEventTrackingMethod> methods;
 
-  const NativeEventTracker({
-    required this.eventType,
-    required this.methods,
-  });
+  const NativeEventTracker({required this.eventType, required this.methods});
 }
 
 /// A native ad that loads structured ad data and renders via Flutter widgets.
@@ -276,15 +277,17 @@ class _NativeAdEventRouter implements AdFlutterApi {
     switch (event.eventName) {
       case 'onAdLoaded':
         if (event.nativeAd != null) {
-          listener.onAdLoaded?.call(PrebidNativeAdResponse(
-            title: event.nativeAd!.title,
-            text: event.nativeAd!.text,
-            iconUrl: event.nativeAd!.iconUrl,
-            imageUrl: event.nativeAd!.imageUrl,
-            sponsoredBy: event.nativeAd!.sponsoredBy,
-            callToAction: event.nativeAd!.callToAction,
-            clickUrl: event.nativeAd!.clickUrl,
-          ));
+          listener.onAdLoaded?.call(
+            PrebidNativeAdResponse(
+              title: event.nativeAd!.title,
+              text: event.nativeAd!.text,
+              iconUrl: event.nativeAd!.iconUrl,
+              imageUrl: event.nativeAd!.imageUrl,
+              sponsoredBy: event.nativeAd!.sponsoredBy,
+              callToAction: event.nativeAd!.callToAction,
+              clickUrl: event.nativeAd!.clickUrl,
+            ),
+          );
         }
       case 'onAdFailed':
         listener.onAdFailed?.call(event.error ?? 'Unknown error');

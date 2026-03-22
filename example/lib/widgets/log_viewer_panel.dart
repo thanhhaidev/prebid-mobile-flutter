@@ -17,8 +17,13 @@ class LogViewerPanel extends StatelessWidget {
             children: [
               const Icon(Icons.terminal, size: 16),
               const SizedBox(width: 6),
-              Text('Event Log (${entries.length})',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(
+                'Event Log (${entries.length})',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           initiallyExpanded: false,
@@ -49,28 +54,40 @@ class LogViewerPanel extends StatelessWidget {
                     LogLevel.debug => Colors.grey.shade600,
                   };
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 1,
+                    ),
                     child: Text.rich(
-                      TextSpan(children: [
-                        TextSpan(
-                          text: '${e.timeString} ',
-                          style: TextStyle(
-                              fontSize: 10, color: Colors.grey.shade500,
-                              fontFamily: 'monospace'),
-                        ),
-                        TextSpan(
-                          text: '[${e.tag}] ',
-                          style: TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.bold,
-                              color: color, fontFamily: 'monospace'),
-                        ),
-                        TextSpan(
-                          text: e.message,
-                          style: TextStyle(
-                              fontSize: 10, color: color,
-                              fontFamily: 'monospace'),
-                        ),
-                      ]),
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${e.timeString} ',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade500,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          TextSpan(
+                            text: '[${e.tag}] ',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: color,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          TextSpan(
+                            text: e.message,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

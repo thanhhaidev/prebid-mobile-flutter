@@ -62,7 +62,9 @@ class PrebidMobile {
 
   /// Add a stored bid response for testing.
   static Future<void> addStoredBidResponse(
-      String bidder, String responseId) async {
+    String bidder,
+    String responseId,
+  ) async {
     _api.addStoredBidResponse(bidder, responseId);
   }
 
@@ -83,7 +85,8 @@ class PrebidMobile {
 
   /// Set the creative factory timeout for pre-render content in milliseconds.
   static Future<void> setCreativeFactoryTimeoutPreRenderContent(
-      int timeout) async {
+    int timeout,
+  ) async {
     _api.setCreativeFactoryTimeoutPreRenderContent(timeout);
   }
 

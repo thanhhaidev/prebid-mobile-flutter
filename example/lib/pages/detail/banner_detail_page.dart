@@ -38,7 +38,10 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
     _log.log('Banner', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     if (widget.tc.storedResponse != null) {
-      _log.log('Banner', 'Setting stored response: ${widget.tc.storedResponse}');
+      _log.log(
+        'Banner',
+        'Setting stored response: ${widget.tc.storedResponse}',
+      );
       await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
     }
     _tracker.reset();
@@ -49,7 +52,10 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
     });
     _stopwatch.reset();
     _stopwatch.start();
-    _log.log('Banner', 'Loading ${_isVideo ? "video" : "display"} banner: ${widget.tc.configId} (${widget.tc.width}x${widget.tc.height})');
+    _log.log(
+      'Banner',
+      'Loading ${_isVideo ? "video" : "display"} banner: ${widget.tc.configId} (${widget.tc.width}x${widget.tc.height})',
+    );
     setState(() {
       _showAd = true;
       _adKey++;
@@ -86,7 +92,9 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: _isVideo ? Colors.purple.shade700 : Colors.blue.shade700,
+                    color: _isVideo
+                        ? Colors.purple.shade700
+                        : Colors.blue.shade700,
                   ),
                 ),
               ),
@@ -112,7 +120,10 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                           onAdLoaded: () {
                             _stopwatch.stop();
                             _tracker.track('onAdLoaded');
-                            _log.log('Banner', 'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms');
+                            _log.log(
+                              'Banner',
+                              'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms',
+                            );
                             setState(() {
                               _isLoading = false;
                               _loadTimeMs = _stopwatch.elapsedMilliseconds;
@@ -121,7 +132,11 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                           onAdFailed: (e) {
                             _stopwatch.stop();
                             _tracker.track('onAdFailed', e);
-                            _log.log('Banner', 'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e', level: LogLevel.error);
+                            _log.log(
+                              'Banner',
+                              'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e',
+                              level: LogLevel.error,
+                            );
                             setState(() {
                               _isLoading = false;
                               _errorMessage = e;
@@ -139,14 +154,19 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                         width: widget.tc.width.toDouble(),
                         height: widget.tc.height.toDouble(),
                         child: const Center(
-                            child: Text('Tap "Load" to load ad',
-                                style: TextStyle(color: Colors.grey, fontSize: 12))),
+                          child: Text(
+                            'Tap "Load" to load ad',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ),
                       ),
                     if (_isLoading)
                       SizedBox(
                         width: widget.tc.width.toDouble(),
                         height: widget.tc.height.toDouble(),
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                   ],
                 ),

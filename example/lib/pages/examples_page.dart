@@ -31,10 +31,12 @@ class _ExamplesPageState extends State<ExamplesPage> {
 
   List<TestCase> get _filtered {
     return TestCaseRegistry.allCases
-        .where((t) =>
-            (_selectedFormat == null || t.format == _selectedFormat) &&
-            (_searchText.isEmpty ||
-                t.title.toLowerCase().contains(_searchText.toLowerCase())))
+        .where(
+          (t) =>
+              (_selectedFormat == null || t.format == _selectedFormat) &&
+              (_searchText.isEmpty ||
+                  t.title.toLowerCase().contains(_searchText.toLowerCase())),
+        )
         .toList();
   }
 
@@ -103,16 +105,21 @@ class _ExamplesPageState extends State<ExamplesPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             child: Row(
               children: [
-                Text('${_filtered.length} test case${_filtered.length == 1 ? '' : 's'}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                Text(
+                  '${_filtered.length} test case${_filtered.length == 1 ? '' : 's'}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                ),
                 const Spacer(),
                 if (_selectedFormat != null)
                   GestureDetector(
                     onTap: () => setState(() => _selectedFormat = null),
-                    child: Text('Clear filter',
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context).colorScheme.primary)),
+                    child: Text(
+                      'Clear filter',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -126,10 +133,16 @@ class _ExamplesPageState extends State<ExamplesPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.search_off, size: 48, color: Colors.grey.shade300),
+                        Icon(
+                          Icons.search_off,
+                          size: 48,
+                          color: Colors.grey.shade300,
+                        ),
                         const SizedBox(height: 8),
-                        Text('No test cases found',
-                            style: TextStyle(color: Colors.grey.shade500)),
+                        Text(
+                          'No test cases found',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
                       ],
                     ),
                   )
@@ -141,28 +154,33 @@ class _ExamplesPageState extends State<ExamplesPage> {
                       final tc = _filtered[i];
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        title: Text(tc.title,
-                            style: const TextStyle(fontSize: 14)),
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        title: Text(
+                          tc.title,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                         subtitle: Row(
                           children: [
                             _formatBadge(tc.format),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(tc.configId,
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade500),
-                                  overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                tc.configId,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
-                        trailing:
-                            const Icon(Icons.chevron_right, size: 20),
+                        trailing: const Icon(Icons.chevron_right, size: 20),
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => _detailPage(tc)),
+                          MaterialPageRoute(builder: (_) => _detailPage(tc)),
                         ),
                       );
                     },
@@ -212,21 +230,23 @@ class _ExamplesPageState extends State<ExamplesPage> {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.shade200, width: 0.5),
       ),
-      child: Text('$icon ${format.label}',
-          style: TextStyle(fontSize: 9, color: color.shade700)),
+      child: Text(
+        '$icon ${format.label}',
+        style: TextStyle(fontSize: 9, color: color.shade700),
+      ),
     );
   }
 
   Widget _detailPage(TestCase tc) {
     return switch (tc.format) {
-      DemoAdFormat.displayBanner || DemoAdFormat.videoBanner =>
-        BannerDetailPage(tc: tc),
-      DemoAdFormat.displayInterstitial || DemoAdFormat.videoInterstitial =>
-        InterstitialDetailPage(tc: tc),
-      DemoAdFormat.displayRewarded || DemoAdFormat.videoRewarded =>
-        RewardedDetailPage(tc: tc),
-      DemoAdFormat.native || DemoAdFormat.nativeBanner =>
-        NativeDetailPage(tc: tc),
+      DemoAdFormat.displayBanner ||
+      DemoAdFormat.videoBanner => BannerDetailPage(tc: tc),
+      DemoAdFormat.displayInterstitial ||
+      DemoAdFormat.videoInterstitial => InterstitialDetailPage(tc: tc),
+      DemoAdFormat.displayRewarded ||
+      DemoAdFormat.videoRewarded => RewardedDetailPage(tc: tc),
+      DemoAdFormat.native ||
+      DemoAdFormat.nativeBanner => NativeDetailPage(tc: tc),
       DemoAdFormat.videoInstream => VideoDetailPage(tc: tc),
       DemoAdFormat.multiformat => MultiformatDetailPage(tc: tc),
     };

@@ -49,10 +49,8 @@ class PrebidInstreamVideoAd {
   final Size size;
 
   /// Creates a [PrebidInstreamVideoAd].
-  PrebidInstreamVideoAd({
-    required this.configId,
-    required this.size,
-  }) : _adId = _nextId++;
+  PrebidInstreamVideoAd({required this.configId, required this.size})
+    : _adId = _nextId++;
 
   /// Fetch demand for this in-stream video ad.
   ///

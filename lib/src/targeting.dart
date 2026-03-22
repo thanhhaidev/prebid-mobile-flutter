@@ -122,14 +122,18 @@ class PrebidTargeting {
   // ---------------------------------------------------------------------------
 
   /// Add app-level ext data for a given key.
-  static Future<void> addAppExtData(
-      {required String key, required String value}) async {
+  static Future<void> addAppExtData({
+    required String key,
+    required String value,
+  }) async {
     _api.addAppExtData(key, value);
   }
 
   /// Update app-level ext data for a given key with a new set of values.
-  static Future<void> updateAppExtData(
-      {required String key, required Set<String> value}) async {
+  static Future<void> updateAppExtData({
+    required String key,
+    required Set<String> value,
+  }) async {
     _api.updateAppExtData(key, value.toList());
   }
 
@@ -154,7 +158,8 @@ class PrebidTargeting {
 
   /// Remove a bidder from the access control list.
   static Future<void> removeBidderFromAccessControlList(
-      String bidderName) async {
+    String bidderName,
+  ) async {
     _api.removeBidderFromAccessControlList(bidderName);
   }
 

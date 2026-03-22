@@ -52,17 +52,20 @@ void main() {
 
   group('PrebidErrorCode', () {
     test('contains all expected values', () {
-      expect(PrebidErrorCode.values, containsAll([
-        PrebidErrorCode.initializationFailed,
-        PrebidErrorCode.invalidArguments,
-        PrebidErrorCode.adLoadFailed,
-        PrebidErrorCode.adNotFound,
-        PrebidErrorCode.adDisplayFailed,
-        PrebidErrorCode.networkError,
-        PrebidErrorCode.serverError,
-        PrebidErrorCode.timeout,
-        PrebidErrorCode.unknown,
-      ]));
+      expect(
+        PrebidErrorCode.values,
+        containsAll([
+          PrebidErrorCode.initializationFailed,
+          PrebidErrorCode.invalidArguments,
+          PrebidErrorCode.adLoadFailed,
+          PrebidErrorCode.adNotFound,
+          PrebidErrorCode.adDisplayFailed,
+          PrebidErrorCode.networkError,
+          PrebidErrorCode.serverError,
+          PrebidErrorCode.timeout,
+          PrebidErrorCode.unknown,
+        ]),
+      );
     });
   });
 
@@ -77,25 +80,31 @@ void main() {
   group('PrebidLogLevel', () {
     test('has all log levels', () {
       expect(PrebidLogLevel.values.length, 6);
-      expect(PrebidLogLevel.values, containsAll([
-        PrebidLogLevel.debug,
-        PrebidLogLevel.verbose,
-        PrebidLogLevel.info,
-        PrebidLogLevel.warn,
-        PrebidLogLevel.error,
-        PrebidLogLevel.severe,
-      ]));
+      expect(
+        PrebidLogLevel.values,
+        containsAll([
+          PrebidLogLevel.debug,
+          PrebidLogLevel.verbose,
+          PrebidLogLevel.info,
+          PrebidLogLevel.warn,
+          PrebidLogLevel.error,
+          PrebidLogLevel.severe,
+        ]),
+      );
     });
   });
 
   group('InitializationStatus', () {
     test('has all statuses', () {
       expect(InitializationStatus.values.length, 3);
-      expect(InitializationStatus.values, containsAll([
-        InitializationStatus.succeeded,
-        InitializationStatus.failed,
-        InitializationStatus.serverStatusWarning,
-      ]));
+      expect(
+        InitializationStatus.values,
+        containsAll([
+          InitializationStatus.succeeded,
+          InitializationStatus.failed,
+          InitializationStatus.serverStatusWarning,
+        ]),
+      );
     });
   });
 

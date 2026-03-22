@@ -50,18 +50,27 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
     _log.log('Rewarded', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     if (widget.tc.storedResponse != null) {
-      _log.log('Rewarded', 'Setting stored response: ${widget.tc.storedResponse}');
+      _log.log(
+        'Rewarded',
+        'Setting stored response: ${widget.tc.storedResponse}',
+      );
       await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
     }
 
-    _log.log('Rewarded', 'Loading ${_isVideo ? "video" : "display"} rewarded: ${widget.tc.configId}');
+    _log.log(
+      'Rewarded',
+      'Loading ${_isVideo ? "video" : "display"} rewarded: ${widget.tc.configId}',
+    );
     _ad = PrebidRewardedAd(
       configId: widget.tc.configId,
       listener: PrebidRewardedAdListener(
         onAdLoaded: () {
           _stopwatch.stop();
           _tracker.track('onAdLoaded');
-          _log.log('Rewarded', 'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms');
+          _log.log(
+            'Rewarded',
+            'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms',
+          );
           setState(() {
             _canShow = true;
             _isLoading = false;
@@ -71,7 +80,11 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
         onAdFailed: (e) {
           _stopwatch.stop();
           _tracker.track('onAdFailed', e);
-          _log.log('Rewarded', 'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e', level: LogLevel.error);
+          _log.log(
+            'Rewarded',
+            'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e',
+            level: LogLevel.error,
+          );
           setState(() {
             _isLoading = false;
             _errorMessage = e;
@@ -122,7 +135,9 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _isVideo ? Colors.orange.shade50 : Colors.amber.shade50,
+                  color: _isVideo
+                      ? Colors.orange.shade50
+                      : Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -130,7 +145,9 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: _isVideo ? Colors.orange.shade700 : Colors.amber.shade800,
+                    color: _isVideo
+                        ? Colors.orange.shade700
+                        : Colors.amber.shade800,
                   ),
                 ),
               ),
@@ -152,11 +169,14 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
                       const Text('🏆', style: TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Reward: $_rewardInfo',
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.amber.shade900)),
+                        child: Text(
+                          'Reward: $_rewardInfo',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -169,10 +189,16 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                       SizedBox(width: 8),
-                      Text('Loading ad...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(
+                        'Loading ad...',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -187,16 +213,21 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
                   ActionButton(label: 'Load', onPressed: _load),
                   const SizedBox(width: 24),
                   ActionButton(
-                      label: 'Show',
-                      onPressed: _canShow ? () => _ad?.show() : null),
+                    label: 'Show',
+                    onPressed: _canShow ? () => _ad?.show() : null,
+                  ),
                 ],
               ),
               const Divider(),
               EventCounterList(
                 tracker: _tracker,
                 events: const [
-                  'onAdLoaded', 'onAdFailed', 'onAdDisplayed',
-                  'onAdClicked', 'onAdDismissed', 'onUserEarnedReward',
+                  'onAdLoaded',
+                  'onAdFailed',
+                  'onAdDisplayed',
+                  'onAdClicked',
+                  'onAdDismissed',
+                  'onUserEarnedReward',
                 ],
               ),
               const SizedBox(height: 12),

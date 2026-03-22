@@ -20,7 +20,8 @@ class PrebidReward {
 }
 
 /// Listener for SDK initialization events.
-typedef OnInitializationComplete = void Function(InitializationStatus status, String? error);
+typedef OnInitializationComplete =
+    void Function(InitializationStatus status, String? error);
 
 /// Listener for banner ad events.
 class PrebidBannerAdListener {

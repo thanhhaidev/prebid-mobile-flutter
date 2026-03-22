@@ -42,7 +42,10 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
     _log.log('Multiformat', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     if (widget.tc.storedResponse != null) {
-      _log.log('Multiformat', 'Setting stored response: ${widget.tc.storedResponse}');
+      _log.log(
+        'Multiformat',
+        'Setting stored response: ${widget.tc.storedResponse}',
+      );
       await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
     }
 
@@ -50,7 +53,7 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
     _ad = PrebidMultiformatAd(
       configId: widget.tc.configId,
       bannerSizes: [
-        ui.Size(widget.tc.width.toDouble(), widget.tc.height.toDouble())
+        ui.Size(widget.tc.width.toDouble(), widget.tc.height.toDouble()),
       ],
       includeVideo: true,
       nativeAssets: const [
@@ -66,7 +69,10 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
     final elapsed = _stopwatch.elapsedMilliseconds;
     if (result.isSuccess) {
       _tracker.track('onRequestSuccess');
-      _log.log('Multiformat', 'Demand fetched in ${elapsed}ms: format=${result.winningFormat}');
+      _log.log(
+        'Multiformat',
+        'Demand fetched in ${elapsed}ms: format=${result.winningFormat}',
+      );
       final buf = StringBuffer();
       buf.writeln('Winning Format: ${result.winningFormat ?? "unknown"}');
       if (result.nativeAdCacheId != null) {
@@ -80,7 +86,11 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
       });
     } else {
       _tracker.track('onRequestFailed', result.resultCode);
-      _log.log('Multiformat', 'Demand failed in ${elapsed}ms: ${result.resultCode}', level: LogLevel.error);
+      _log.log(
+        'Multiformat',
+        'Demand failed in ${elapsed}ms: ${result.resultCode}',
+        level: LogLevel.error,
+      );
       setState(() {
         _resultInfo = 'Result: ${result.resultCode}';
         _loadTimeMs = elapsed;
@@ -104,8 +114,10 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Text('AdUnitId: ${widget.tc.configId}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text(
+                'AdUnitId: ${widget.tc.configId}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
               const SizedBox(height: 12),
               ActionButton(label: 'Fetch Demand', onPressed: _fetchDemand),
               const Divider(),
@@ -122,9 +134,13 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(_resultInfo!,
-                      style:
-                          const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  child: Text(
+                    _resultInfo!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 12),

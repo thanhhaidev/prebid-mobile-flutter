@@ -113,8 +113,9 @@ class _SettingsPageState extends State<SettingsPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Settings reset to defaults'),
-            duration: Duration(seconds: 1)),
+          content: Text('Settings reset to defaults'),
+          duration: Duration(seconds: 1),
+        ),
       );
     }
   }
@@ -187,8 +188,10 @@ class _SettingsPageState extends State<SettingsPage> {
             onChanged: (v) => setState(() => _pbsDebug = v),
           ),
           SwitchListTile(
-            title: const Text('Share Geo Location',
-                style: TextStyle(fontSize: 14)),
+            title: const Text(
+              'Share Geo Location',
+              style: TextStyle(fontSize: 14),
+            ),
             value: _shareGeo,
             dense: true,
             onChanged: (v) => setState(() => _shareGeo = v),
@@ -201,9 +204,12 @@ class _SettingsPageState extends State<SettingsPage> {
               items: List.generate(
                 _logLevels.length,
                 (i) => DropdownMenuItem(
-                    value: i,
-                    child: Text(_logLevels[i],
-                        style: const TextStyle(fontSize: 13))),
+                  value: i,
+                  child: Text(
+                    _logLevels[i],
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
               ),
               onChanged: (v) {
                 if (v != null) setState(() => _logLevelIndex = v);
@@ -216,16 +222,20 @@ class _SettingsPageState extends State<SettingsPage> {
           _sectionHeader('Privacy'),
           SwitchListTile(
             title: const Text('COPPA', style: TextStyle(fontSize: 14)),
-            subtitle: const Text('Children\'s Online Privacy Protection',
-                style: TextStyle(fontSize: 11)),
+            subtitle: const Text(
+              'Children\'s Online Privacy Protection',
+              style: TextStyle(fontSize: 11),
+            ),
             value: _coppa,
             dense: true,
             onChanged: (v) => setState(() => _coppa = v),
           ),
           SwitchListTile(
             title: const Text('GDPR', style: TextStyle(fontSize: 14)),
-            subtitle: const Text('General Data Protection Regulation',
-                style: TextStyle(fontSize: 11)),
+            subtitle: const Text(
+              'General Data Protection Regulation',
+              style: TextStyle(fontSize: 11),
+            ),
             value: _gdpr,
             dense: true,
             onChanged: (v) => setState(() => _gdpr = v),
@@ -233,7 +243,11 @@ class _SettingsPageState extends State<SettingsPage> {
           if (_gdpr)
             Padding(
               padding: const EdgeInsets.only(
-                  left: 16, right: 16, top: 8, bottom: 4),
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: 4,
+              ),
               child: TextField(
                 controller: _gdprConsentCtrl,
                 decoration: const InputDecoration(
@@ -251,10 +265,14 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 4),
           ListTile(
             leading: const Icon(Icons.tune, size: 20),
-            title: const Text('User & App Targeting',
-                style: TextStyle(fontSize: 14)),
-            subtitle: const Text('Keywords, ext data, ORTB config',
-                style: TextStyle(fontSize: 11)),
+            title: const Text(
+              'User & App Targeting',
+              style: TextStyle(fontSize: 14),
+            ),
+            subtitle: const Text(
+              'Keywords, ext data, ORTB config',
+              style: TextStyle(fontSize: 11),
+            ),
             trailing: const Icon(Icons.chevron_right, size: 18),
             dense: true,
             onTap: () => Navigator.push(
@@ -277,13 +295,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _sectionHeader(String title) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 2),
-        child: Text(title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 0.5,
-            )),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 2),
+    child: Text(
+      title,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.primary,
+        letterSpacing: 0.5,
+      ),
+    ),
+  );
 }

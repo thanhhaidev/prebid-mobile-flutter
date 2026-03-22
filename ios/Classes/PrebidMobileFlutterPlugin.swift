@@ -126,18 +126,19 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
-        let ids = userIds.map { data -> PrebidMobile.ExternalUserId in
-            var uid = PrebidMobile.ExternalUserId(source: data.source, identifier: data.identifier)
+        var externalIds: [ExternalUserId] = []
+        for data in userIds {
+            let uid = ExternalUserId(source: data.source, identifier: data.identifier)
             if let atype = data.atype {
                 uid.atype = NSNumber(value: atype)
             }
-            return uid
+            externalIds.append(uid)
         }
-        Targeting.shared.setExternalUserIds(ids)
+        Targeting.shared.externalUserIds = externalIds
     }
     
     func getExternalUserIds() throws -> [ExternalUserIdData] {
-        let ids = Targeting.shared.getExternalUserIds()
+        let ids = Targeting.shared.externalUserIds
         return ids.map { uid in
             ExternalUserIdData(
                 source: uid.source,
@@ -148,7 +149,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     }
     
     func clearExternalUserIds() throws {
-        Targeting.shared.setExternalUserIds([])
+        Targeting.shared.externalUserIds = []
     }
     
     func getSdkVersion() throws -> String {

@@ -100,4 +100,56 @@ void main() {
       ).called(1);
     });
   });
+
+  group('External User IDs', () {
+    test('setExternalUserIds converts and calls api', () async {
+      await PrebidMobile.setExternalUserIds([
+        const ExternalUserId(
+          source: 'uidapi.com',
+          identifier: 'uid2-abc-123',
+          atype: 3,
+        ),
+        const ExternalUserId(
+          source: 'sharedid.org',
+          identifier: 'shared-xyz',
+          atype: 1,
+        ),
+      ]);
+
+      verify(mockApi.setExternalUserIds(any)).called(1);
+    });
+
+    test('getExternalUserIds returns mapped list', () async {
+      when(mockApi.getExternalUserIds()).thenAnswer(
+        (_) async => [
+          ExternalUserIdData(
+            source: 'uidapi.com',
+            identifier: 'uid2-abc-123',
+            atype: 3,
+          ),
+        ],
+      );
+
+      final result = await PrebidMobile.getExternalUserIds();
+      expect(result, hasLength(1));
+      expect(result[0].source, 'uidapi.com');
+      expect(result[0].identifier, 'uid2-abc-123');
+      expect(result[0].atype, 3);
+    });
+
+    test('clearExternalUserIds calls api', () async {
+      await PrebidMobile.clearExternalUserIds();
+      verify(mockApi.clearExternalUserIds()).called(1);
+    });
+  });
+
+  group('SDK Version', () {
+    test('getSdkVersion returns version string', () async {
+      when(mockApi.getSdkVersion()).thenAnswer((_) async => '3.3.0');
+
+      final version = await PrebidMobile.getSdkVersion();
+      expect(version, '3.3.0');
+      verify(mockApi.getSdkVersion()).called(1);
+    });
+  });
 }

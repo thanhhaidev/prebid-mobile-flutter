@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'ad_enums.dart';
 import 'ad_listener.dart';
 import 'generated/prebid_api.g.dart';
@@ -7,7 +9,8 @@ import 'generated/prebid_api.g.dart';
 /// Create an instance, call [loadAd], and then [show] when ready.
 /// Call [destroy] when the ad is no longer needed.
 class PrebidInterstitialAd {
-  static final InterstitialAdHostApi _api = InterstitialAdHostApi();
+  @visibleForTesting
+  static InterstitialAdHostApi api = InterstitialAdHostApi();
   static int _nextId = 0;
 
   final int _adId;
@@ -31,18 +34,18 @@ class PrebidInterstitialAd {
   /// Load the interstitial ad.
   Future<void> loadAd() async {
     final formats = adFormats?.map((f) => f.name).toList();
-    _api.loadAd(_adId, configId, formats);
+    api.loadAd(_adId, configId, formats);
   }
 
   /// Show the interstitial ad.
   Future<void> show() async {
-    _api.show(_adId);
+    api.show(_adId);
   }
 
   /// Destroy the interstitial ad and free resources.
   Future<void> destroy() async {
     _AdEventRouter.instance.unregister(_adId);
-    _api.destroy(_adId);
+    api.destroy(_adId);
   }
 }
 
@@ -51,7 +54,8 @@ class PrebidInterstitialAd {
 /// Create an instance, call [loadAd], and then [show] when ready.
 /// Call [destroy] when the ad is no longer needed.
 class PrebidRewardedAd {
-  static final RewardedAdHostApi _api = RewardedAdHostApi();
+  @visibleForTesting
+  static RewardedAdHostApi api = RewardedAdHostApi();
   static int _nextId = 1000000; // offset to avoid conflicts with interstitials
 
   final int _adId;
@@ -70,18 +74,18 @@ class PrebidRewardedAd {
 
   /// Load the rewarded ad.
   Future<void> loadAd() async {
-    _api.loadAd(_adId, configId);
+    api.loadAd(_adId, configId);
   }
 
   /// Show the rewarded ad.
   Future<void> show() async {
-    _api.show(_adId);
+    api.show(_adId);
   }
 
   /// Destroy the rewarded ad and free resources.
   Future<void> destroy() async {
     _AdEventRouter.instance.unregister(_adId);
-    _api.destroy(_adId);
+    api.destroy(_adId);
   }
 }
 

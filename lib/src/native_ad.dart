@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'generated/prebid_api.g.dart';
 import 'native_ad_enums.dart';
 
@@ -158,7 +160,8 @@ class NativeEventTracker {
 /// nativeAd.loadAd();
 /// ```
 class PrebidNativeAd {
-  static final NativeAdHostApi _api = NativeAdHostApi();
+  @visibleForTesting
+  static NativeAdHostApi api = NativeAdHostApi();
   static int _nextId = 2000000;
 
   final int _adId;
@@ -207,23 +210,23 @@ class PrebidNativeAd {
       placementType: placementType?.value,
       placementCount: placementCount,
     );
-    _api.loadAd(_adId, config);
+    api.loadAd(_adId, config);
   }
 
   /// Manually track an impression.
   Future<void> trackImpression() async {
-    _api.trackImpression(_adId);
+    api.trackImpression(_adId);
   }
 
   /// Manually track a click.
   Future<void> trackClick() async {
-    _api.trackClick(_adId);
+    api.trackClick(_adId);
   }
 
   /// Destroy the native ad and free resources.
   Future<void> destroy() async {
     _NativeAdEventRouter.instance.unregister(_adId);
-    _api.destroy(_adId);
+    api.destroy(_adId);
   }
 
   NativeAssetConfig _convertAsset(NativeAsset asset) {

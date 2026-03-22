@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
+
 import 'generated/prebid_api.g.dart';
 import 'native_ad.dart';
 
@@ -53,7 +55,8 @@ class PrebidMultiformatBidResponse {
 /// }
 /// ```
 class PrebidMultiformatAd {
-  static final MultiformatAdHostApi _api = MultiformatAdHostApi();
+  @visibleForTesting
+  static MultiformatAdHostApi api = MultiformatAdHostApi();
   static int _nextId = 3000000;
 
   final int _adId;
@@ -124,7 +127,7 @@ class PrebidMultiformatAd {
       isRewarded: isRewarded,
     );
 
-    final result = await _api.fetchDemand(_adId, config);
+    final result = await api.fetchDemand(_adId, config);
 
     // Convert targeting keywords
     Map<String, String>? keywords;
@@ -147,7 +150,7 @@ class PrebidMultiformatAd {
 
   /// Destroy the ad unit and free resources.
   Future<void> destroy() async {
-    _api.destroy(_adId);
+    api.destroy(_adId);
   }
 
   NativeAssetConfig _convertAsset(NativeAsset asset) {

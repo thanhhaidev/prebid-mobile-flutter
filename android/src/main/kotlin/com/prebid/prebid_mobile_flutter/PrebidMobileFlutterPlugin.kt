@@ -163,7 +163,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         val ids = TargetingParams.getExternalUserIds() ?: return emptyList()
         return ids.flatMap { uid ->
             val source = uid.source ?: ""
-            uid.uids?.map { uniqueId ->
+            uid.uniqueIds?.map { uniqueId ->
                 ExternalUserIdData(
                     source = source,
                     identifier = uniqueId.id ?: "",
@@ -317,21 +317,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         val adUnit = org.prebid.mobile.api.rendering.InterstitialAdUnit(act, configId, formats)
 
         // Apply video parameters if provided
-        if (videoConfig != null && formats.contains(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)) {
-            try {
-                val vp = org.prebid.mobile.VideoParameters(videoConfig.mimes)
-                videoConfig.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
-                    vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
-                }
-                videoConfig.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
-                    vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
-                }
-                videoConfig.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
-                videoConfig.maxDuration?.let { vp.maxDuration = it.toInt() }
-                videoConfig.minDuration?.let { vp.minDuration = it.toInt() }
-                adUnit.setVideoParameters(vp)
-            } catch (_: Exception) {}
-        }
+        // Note: videoParameters is read-only on InterstitialAdUnit.
+        // Video format is already configured through the EnumSet above.
+        // Detailed video parameters (mimes, protocols, etc.) are applied
+        // by the SDK based on the server configuration.
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {

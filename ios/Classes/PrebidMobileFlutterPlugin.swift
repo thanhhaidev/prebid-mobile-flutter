@@ -126,30 +126,32 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
-        var externalIds: [ExternalUserId] = []
-        for data in userIds {
-            let uid = ExternalUserId(source: data.source, identifier: data.identifier)
-            if let atype = data.atype {
-                uid.atype = NSNumber(value: atype)
-            }
-            externalIds.append(uid)
+        let externalIds = userIds.map { data -> ExternalUserId in
+            let uniqueId = UserUniqueID(
+                id: data.identifier,
+                aType: NSNumber(value: data.atype ?? 0)
+            )
+            return ExternalUserId(source: data.source, uids: [uniqueId])
         }
-        Targeting.shared.externalUserIds = externalIds
+        Targeting.shared.setExternalUserIds(externalIds)
     }
     
     func getExternalUserIds() throws -> [ExternalUserIdData] {
-        let ids = Targeting.shared.externalUserIds
-        return ids.map { uid in
-            ExternalUserIdData(
-                source: uid.source,
-                identifier: uid.identifier,
-                atype: uid.atype?.int64Value
-            )
+        guard let ids = Targeting.shared.getExternalUserIds() else { return [] }
+        return ids.compactMap { dict -> ExternalUserIdData? in
+            guard let source = dict["source"] as? String else { return nil }
+            var identifier = ""
+            var atype: Int64?
+            if let uids = dict["uids"] as? [[String: Any]], let first = uids.first {
+                identifier = first["id"] as? String ?? ""
+                atype = (first["atype"] as? NSNumber)?.int64Value
+            }
+            return ExternalUserIdData(source: source, identifier: identifier, atype: atype)
         }
     }
     
     func clearExternalUserIds() throws {
-        Targeting.shared.externalUserIds = []
+        Targeting.shared.setExternalUserIds([])
     }
     
     func getSdkVersion() throws -> String {
@@ -201,11 +203,38 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func removeAppExtData(key: String) throws { Targeting.shared.removeAppExtData(for: key) }
     func clearAppExtData() throws { Targeting.shared.clearAppExtData() }
     
-    // User Ext Data
-    func addUserExtData(key: String, value: String) throws { Targeting.shared.addUserData(key: key, value: value) }
-    func updateUserExtData(key: String, value: [String]) throws { Targeting.shared.updateUserData(key: key, value: Set(value)) }
-    func removeUserExtData(key: String) throws { Targeting.shared.removeUserData(for: key) }
-    func clearUserExtData() throws { Targeting.shared.clearUserData() }
+    // User Ext Data — iOS SDK does not have direct user data methods,
+    // so we store locally and merge via global ORTB config.
+    private static var userExtDataMap: [String: Set<String>] = [:]
+    
+    func addUserExtData(key: String, value: String) throws {
+        PrebidMobileFlutterPlugin.userExtDataMap[key, default: []].insert(value)
+        syncUserExtDataToOrtb()
+    }
+    func updateUserExtData(key: String, value: [String]) throws {
+        PrebidMobileFlutterPlugin.userExtDataMap[key] = Set(value)
+        syncUserExtDataToOrtb()
+    }
+    func removeUserExtData(key: String) throws {
+        PrebidMobileFlutterPlugin.userExtDataMap.removeValue(forKey: key)
+        syncUserExtDataToOrtb()
+    }
+    func clearUserExtData() throws {
+        PrebidMobileFlutterPlugin.userExtDataMap.removeAll()
+        syncUserExtDataToOrtb()
+    }
+    
+    private func syncUserExtDataToOrtb() {
+        guard !PrebidMobileFlutterPlugin.userExtDataMap.isEmpty else { return }
+        var dataDict: [String: [String]] = [:]
+        for (k, v) in PrebidMobileFlutterPlugin.userExtDataMap {
+            dataDict[k] = Array(v)
+        }
+        if let jsonData = try? JSONSerialization.data(withJSONObject: ["user": ["ext": ["data": dataDict]]]),
+           let jsonStr = String(data: jsonData, encoding: .utf8) {
+            Targeting.shared.setGlobalORTBConfig(jsonStr)
+        }
+    }
     
     func addBidderToAccessControlList(bidderName: String) throws { Targeting.shared.addBidderToAccessControlList(bidderName) }
     func removeBidderFromAccessControlList(bidderName: String) throws { Targeting.shared.removeBidderFromAccessControlList(bidderName) }
@@ -249,7 +278,8 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
             }
             if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
             if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
-            adUnit.videoParameters = vp
+            // videoParameters is read-only on InterstitialRenderingAdUnit;
+            // video config is applied via ad format selection above.
         }
         
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi!)

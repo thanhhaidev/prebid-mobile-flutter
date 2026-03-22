@@ -1,21 +1,25 @@
 # Prebid Mobile Flutter
 
-A Flutter plugin that wraps the [Prebid Mobile SDK](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html) for Android and iOS, providing a unified Dart API for header bidding ads.
+A comprehensive Flutter plugin that wraps the [Prebid Mobile SDK](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html) for Android (`3.3.0`) and iOS (`~> 3.1`), providing a unified Dart API for header bidding ads.
 
-Uses the **Prebid Rendered** approach — the SDK handles both bidding and rendering (no external ad server required).
+This plugin currently focuses on the **Prebid Rendered (In-App)** approach, meaning the Prebid SDK handles both the bidding and the rendering of the ad directly, without requiring an external primary ad server.
 
-## Features
+[![pub package](https://img.shields.io/pub/v/prebid_mobile_flutter.svg)](https://pub.dev/packages/prebid_mobile_flutter)
+[![Flutter CI](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml/badge.svg)](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml)
 
-- ✅ **SDK Initialization** — Configure Prebid Server URL, account ID, timeout, geo, debug mode
-- ✅ **Banner Ads** — Native `PlatformView` widget with auto-load support
-- ✅ **Interstitial Ads** — Fullscreen ads with load/show lifecycle
-- ✅ **Rewarded Ads** — Fullscreen ads with reward callbacks
+## Supported Ad Formats
+
+- ✅ **Banner Ads** (Display & Video) — Native `PlatformView` widget
+- ✅ **Interstitial Ads** (Display & Video) — Fullscreen modal ads
+- ✅ **Rewarded Ads** (Display & Video) — Fullscreen ads with callback rewards
+- ✅ **Native Ads** — Custom asset rendering (Title, Icon, Main Image, CTA, Description, Sponsored By)
+- ✅ **Multiformat** — Support for multiple ad formats on a single ad unit
 
 ## Requirements
 
 | Platform | Minimum Version |
 |----------|----------------|
-| Flutter  | 3.41.5         |
+| Flutter  | 3.41.0         |
 | Dart     | ^3.11.0        |
 | Android  | API 24         |
 | iOS      | 13.0           |
@@ -26,18 +30,11 @@ Add the plugin to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  prebid_mobile_flutter:
-    path: ../prebid-mobile-flutter  # or publish to pub.dev
+  prebid_mobile_flutter: latest_version
 ```
 
-### Android
-
-The Prebid Mobile SDK (`3.3.0`) is automatically included via Maven.
-
-### iOS
-
-The PrebidMobile SDK (`~> 3.1`) is automatically included via CocoaPods. Run:
-
+### iOS Setup
+The PrebidMobile iOS SDK requires iOS 13.0+. Ensure your `ios/Podfile` has `platform :ios, '13.0'` and run:
 ```bash
 cd ios && pod install
 ```
@@ -46,12 +43,14 @@ cd ios && pod install
 
 ### 1. Initialize the SDK
 
+Before loading any ads, initialize the SDK with your Prebid Server URL and Account ID:
+
 ```dart
 import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
 
 await PrebidMobile.initializeSdk(
-  prebidServerUrl: 'https://your-server.com/openrtb2/auction',
-  accountId: 'your-account-id',
+  prebidServerUrl: 'https://prebid-server-test-j.prebid.org/openrtb2/auction',
+  accountId: '0689a263-318d-448b-a3d4-b02e8a709d9d',
   completion: (status, error) {
     if (status == InitializationStatus.succeeded) {
       print('Prebid SDK ready!');
@@ -60,13 +59,16 @@ await PrebidMobile.initializeSdk(
 );
 ```
 
-### 2. Banner Ad
+### 2. Banner Ad (Display or Video)
+
+Use the `PrebidBannerAd` widget to inline banners. Use the `adFormats` property to specify if it's a display or video banner.
 
 ```dart
 PrebidBannerAd(
-  configId: 'your-stored-impression-id',
+  configId: 'prebid-demo-banner-320-50',
   width: 320,
   height: 50,
+  adFormats: {AdFormat.banner}, // Or {AdFormat.video} for Video Banners
   listener: PrebidBannerAdListener(
     onAdLoaded: () => print('Banner loaded'),
     onAdFailed: (error) => print('Banner failed: $error'),
@@ -77,10 +79,12 @@ PrebidBannerAd(
 
 ### 3. Interstitial Ad
 
+Interstitials are full-screen ads. They must be loaded first, then shown.
+
 ```dart
 final interstitial = PrebidInterstitialAd(
-  configId: 'your-stored-impression-id',
-  adFormats: {AdFormat.banner},
+  configId: 'prebid-demo-display-interstitial-320-480',
+  adFormats: {AdFormat.banner}, // Or {AdFormat.video}
   listener: PrebidInterstitialAdListener(
     onAdLoaded: () => print('Interstitial loaded'),
     onAdFailed: (error) => print('Failed: $error'),
@@ -88,23 +92,29 @@ final interstitial = PrebidInterstitialAd(
   ),
 );
 
+// 1. Load the ad
 await interstitial.loadAd();
-// When ready to show:
+
+// 2. Show the ad when ready
 await interstitial.show();
-// Clean up:
+
+// 3. Clean up
 await interstitial.destroy();
 ```
 
 ### 4. Rewarded Ad
 
+Rewarded ads grant users items/currency for watching a video.
+
 ```dart
 final rewarded = PrebidRewardedAd(
-  configId: 'your-stored-impression-id',
+  configId: 'prebid-demo-video-rewarded-320-480',
   listener: PrebidRewardedAdListener(
     onAdLoaded: () => print('Rewarded loaded'),
     onUserEarnedReward: (reward) {
-      print('Earned: ${reward.count}x ${reward.type}');
+      print('User earned: ${reward.count}x ${reward.type}');
     },
+    onAdClosed: () => print('Rewarded ad closed'),
   ),
 );
 
@@ -113,90 +123,61 @@ await rewarded.show();
 await rewarded.destroy();
 ```
 
-## SDK Configuration
+### 5. Native Ad
+
+Native ads give you the raw assets (Title, Icon, Image, CTA, etc.) to render your own custom UI.
 
 ```dart
-// Timeout for bid requests (ms)
-await PrebidMobile.setTimeoutMillis(3000);
+final nativeAd = PrebidNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  listener: PrebidNativeAdListener(
+    onAdLoaded: (assets) {
+      print('Native loaded! Title: ${assets.title}, CTA: ${assets.callToAction}');
+      // setState to render the assets in your Flutter UI
+    },
+    onAdFailed: (error) => print('Failed: $error'),
+  ),
+);
 
-// Share geo location
-await PrebidMobile.setShareGeoLocation(true);
+// Configure the assets you want to request
+nativeAd.addNativeAsset(NativeAssetTitle(length: 90, required: true));
+nativeAd.addNativeAsset(NativeAssetIcon(width: 50, height: 50, required: true));
+nativeAd.addNativeAsset(NativeAssetImage(width: 1200, height: 627, required: true));
+nativeAd.addNativeAsset(NativeAssetData(type: NativeDataAssetType.sponsored, required: true));
+nativeAd.addNativeAsset(NativeAssetData(type: NativeDataAssetType.description, required: true));
 
-// Debug mode (adds "test":1 to requests)
-await PrebidMobile.setPbsDebug(true);
+await nativeAd.loadAd();
 
-// Log level
-await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
-
-// Custom HTTP headers
-await PrebidMobile.setCustomHeaders({'X-Custom': 'value'});
-
-// Stored auction response (for testing)
-await PrebidMobile.setStoredAuctionResponse('response-id');
-
-// Creative factory timeouts
-await PrebidMobile.setCreativeFactoryTimeout(7000);
-await PrebidMobile.setCreativeFactoryTimeoutPreRenderContent(25000);
+// After rendering the native ad UI, register the tap tracking:
+// nativeAd.registerView(context);
 ```
 
-## API Reference
+## Global Configuration & Targeting
 
-### PrebidMobile
-
-| Method | Description |
-|--------|-------------|
-| `initializeSdk(prebidServerUrl, accountId, completion)` | Initialize SDK |
-| `setTimeoutMillis(int)` | Bid request timeout |
-| `setShareGeoLocation(bool)` | Enable/disable geo |
-| `setPbsDebug(bool)` | Debug flag |
-| `setCustomHeaders(Map)` | Custom HTTP headers |
-| `setStoredAuctionResponse(String)` | For testing |
-| `addStoredBidResponse(bidder, responseId)` | Stored bid response |
-| `clearStoredBidResponses()` | Clear stored responses |
-| `setLogLevel(PrebidLogLevel)` | Log verbosity |
-| `setCreativeFactoryTimeout(int)` | Banner creative timeout |
-| `setCreativeFactoryTimeoutPreRenderContent(int)` | Video creative timeout |
-| `setCustomStatusEndpoint(String)` | Custom status endpoint |
-
-### Ad Units
-
-| Class | Type | Rendering |
-|-------|------|-----------|
-| `PrebidBannerAd` | Widget (PlatformView) | Inline |
-| `PrebidInterstitialAd` | Fullscreen | Modal |
-| `PrebidRewardedAd` | Fullscreen + Reward | Modal |
-
-## Testing
-
-Use Prebid's community test server and config IDs:
+You can configure global settings for the Prebid SDK, including privacy laws and demographic targeting.
 
 ```dart
-const prebidServerUrl = 'https://prebid-server-test-j.prebid.org/openrtb2/auction';
-const accountId = '0689a263-318d-448b-a3d4-b02e8a709d9d';
-const bannerConfigId = 'prebid-demo-banner-320-50';
-const interstitialConfigId = 'prebid-demo-display-interstitial-320-480';
-const rewardedConfigId = 'prebid-demo-video-rewarded-320-480';
+// Debug & Logging
+await PrebidMobile.setPbsDebug(true);
+await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
+
+// Privacy
+await PrebidTargeting.setSubjectToGDPR(true);
+await PrebidTargeting.setSubjectToCOPPA(true);
+
+// First-Party Data & Targeting
+await PrebidTargeting.addUserKeyword('sports');
+await PrebidTargeting.addAppKeyword('news');
+await PrebidTargeting.addAppExtData(key: 'userSegment', value: 'premium');
 ```
 
 ## Example App
 
-The `example/` directory contains a comprehensive demo app showcasing all ad formats:
-
-- **36 test cases** covering Banner, Video, Interstitial, Rewarded, Native, Multiformat, and MRAID
-- **Settings persistence** with SharedPreferences (server URL, account ID, privacy toggles)
-- **Dark mode** toggle with real-time theme switching
-- **User targeting** configuration (keywords, ext data, ORTB config)
-- **Event logging** with real-time log viewer and ad load timing
-- **About page** with SDK version, platform info, and documentation links
-
-```bash
-cd example
-flutter pub get
-flutter run
-```
-
-See [example/README.md](example/README.md) for full documentation.
+Check out the `example/` directory for a full-featured showcase replicating the official native iOS PrebidDemo app, including:
+- 30+ Test cases covering all ad formats
+- Detailed event log tracking
+- Settings panel with persistent Configuration & Targeting
 
 ## License
 
-Apache License 2.0
+[Apache License 2.0](LICENSE)

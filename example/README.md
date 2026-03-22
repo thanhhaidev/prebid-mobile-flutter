@@ -1,104 +1,58 @@
-# Prebid Mobile Flutter — Example App
+# Prebid Mobile Flutter Example App
 
-A comprehensive demo app showcasing all ad formats supported by the `prebid_mobile_flutter` plugin using **Prebid In-App Rendering**.
+This is a comprehensive showcase of the `prebid_mobile_flutter` plugin, meticulously structured to mirror the official [Prebid iOS Demo App](https://github.com/prebid/prebid-mobile-ios/tree/master/Example/PrebidDemo).
 
-## Features
+## Overview
 
-| Feature | Description |
-|---|---|
-| **6 Ad Formats** | Banner, Video Outstream, Interstitial, Rewarded, Native, Multiformat |
-| **36 Test Cases** | All In-App config IDs from Prebid Android demo |
-| **MRAID 2.0/3.0** | Expand, Resize, Fullscreen, Viewability Compliance |
-| **Settings Persistence** | Server URL, Account ID, privacy toggles saved via SharedPreferences |
-| **Dark Mode** | Toggle in Settings, persisted across restarts |
-| **Privacy Controls** | GDPR, COPPA, consent string configuration |
-| **User Targeting** | Keywords, app ext data, global ORTB config |
-| **Event Logging** | Real-time log viewer with timestamped, color-coded entries |
-| **Ad Load Timing** | Stopwatch tracks load duration in milliseconds |
-| **Copy to Clipboard** | Tap to copy Config ID or Stored Response |
-| **About Page** | SDK version, platform info, feature list |
+The demo app focuses exclusively on the **In-App (Prebid Rendered)** integration, where the Prebid SDK directly handles both the bidding auction and the ad rendering. 
 
-## Getting Started
+It provides 6 core ad detail pages, each tailored to specific formats, alongside a robust Settings and Targeting Data manager.
 
-### Prerequisites
+## Ad Formats Showcased
 
-- Flutter SDK ≥ 3.11.0
-- Android SDK (for Android builds)
-- Xcode (for iOS builds)
+1. **Banner**
+   - Display Banner (`320x50`, `300x250`)
+   - Video Banner (Outstream `300x250`)
+2. **Interstitial**
+   - Display Interstitial (`320x480`)
+   - Video Interstitial (`320x480` Vertical & Landscape)
+3. **Rewarded**
+   - Display Rewarded
+   - Video Rewarded (`320x480`)
+4. **Native**
+   - Banner Native Styles
+   - Custom Flutter UI rendering using native raw assets (Image, Title, CTA, Sponsored)
+5. **Video**
+   - Standalone In-App Video
+6. **Multiformat**
+   - Requesting multiple demand sources simultaneously on a single Ad Unit ID.
 
-### Run the Example
+## Key Features
+
+- **Test Case Registry:** Built-in list of Prebid-provided test configuration IDs and Stored Response IDs that guarantee fill, ensuring rapid QA and development.
+- **Live Event Logger:** An expandable bottom sheet on every detail page that intercepts all SDK callbacks (e.g. `onAdLoaded`, `onAdFailed`, `onAdClicked`) with timestamps.
+- **Stored Response Management:** Automatically handles setting and clearing `storedAuctionResponse` IDs behind the scenes so test cases don't cross-contaminate.
+- **Settings Page:** Toggle GDPR, COPPA, Geo location sharing, and PBS debug logging. Configurations are persisted locally.
+- **Targeting Data Page:** A comprehensive interface to define First-Party Data:
+  - User and App Keywords
+  - ExtData (key-value pairs)
+  - Global ORTB configuration JSON
+  - Publisher App Info (Content URL, Store URL, Domain)
+
+## Running the App
 
 ```bash
 cd example
+flutter clean
 flutter pub get
-flutter run
+
+# To run on iOS device or simulator
+flutter run -d ios
+
+# To run on Android device or emulator
+flutter run -d android
 ```
 
-### Build APK
-
-```bash
-cd example
-flutter build apk --debug
-```
-
-## App Structure
-
-```
-example/lib/
-├── main.dart                          # App entry + SDK init + dark mode
-├── data/
-│   └── test_case_registry.dart        # 36 In-App test cases
-├── models/
-│   ├── demo_ad_format.dart            # 10-variant enum
-│   └── test_case.dart                 # TestCase model
-├── pages/
-│   ├── examples_page.dart             # Main list + format filter + search
-│   ├── settings_page.dart             # PBS config + privacy + dark mode
-│   ├── targeting_data_page.dart       # User/App keywords + ext data + ORTB
-│   ├── about_page.dart                # SDK info + platform + links
-│   └── detail/
-│       ├── banner_detail_page.dart    # Display + Video banner
-│       ├── interstitial_detail_page.dart
-│       ├── rewarded_detail_page.dart  
-│       ├── native_detail_page.dart    
-│       ├── video_detail_page.dart     # In-stream video
-│       └── multiformat_detail_page.dart
-├── utils/
-│   ├── app_settings.dart              # SharedPreferences persistence
-│   └── logger.dart                    # PrebidDemoLogger singleton
-└── widgets/
-    ├── action_button.dart             # Styled action button
-    ├── config_info_panel.dart         # Config display + copy + load time
-    ├── event_counter.dart             # EventTracker + counter list
-    ├── log_viewer_panel.dart          # Expandable log viewer
-    └── native_ad_card.dart            # Native ad renderer
-```
-
-## Configuration
-
-The app uses Prebid's test server by default:
-
-| Setting | Default Value |
-|---|---|
-| PBS Server URL | `https://prebid-server-test-j.prebid.org/openrtb2/auction` |
-| Account ID | `0689a263-318d-448b-a3d4-b02e8a709d9d` |
-
-These can be changed in **Settings** and are persisted across app restarts.
-
-## Test Cases
-
-All 36 test cases use Prebid's stored auction responses for reliable testing:
-
-- **Banner**: 320x50, 300x250, 728x90, Multisize
-- **Video Outstream**: Standard, With End Card
-- **Display Interstitial**: 320x480
-- **Video Interstitial**: Standard, End Card, Deeplink+, SkipOffset, MRAID End Card, Vertical
-- **Display Rewarded**: Default, Time-based, Event-based
-- **Video Rewarded**: 8 variants (with/without end card, different reward triggers)
-- **MRAID**: Expand (1/2 part), Resize, Fullscreen, Video, Negative Test, Viewability, Load+Events
-- **Native**: Standard, Links
-- **Multiformat**: Banner + Video + Native
-
-## License
-
-Apache License 2.0 — see [LICENSE](../LICENSE) for details.
+### Notes on Dependencies
+- **iOS:** Ensure CocoaPods is updated, and you run `pod install` in the `example/ios` directory before building.
+- **Android:** Requires API Level 24+ and compiles with Kotlin `1.9.0` minimum.

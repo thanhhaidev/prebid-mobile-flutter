@@ -8,7 +8,7 @@ import 'mock_host_api.mocks.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('PrebidInterstitialAd', () {
     late MockInterstitialAdHostApi mockApi;
 
@@ -101,7 +101,10 @@ void main() {
       );
 
       when(mockApi.fetchDemand(any, any)).thenAnswer(
-        (_) async => MultiformatBidResult(resultCode: 'prebidDemandFetchSuccess', winningFormat: 'banner'),
+        (_) async => MultiformatBidResult(
+          resultCode: 'prebidDemandFetchSuccess',
+          winningFormat: 'banner',
+        ),
       );
 
       final result = await ad.fetchDemand();

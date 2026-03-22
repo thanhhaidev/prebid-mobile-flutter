@@ -16,7 +16,8 @@ void main() {
   group('PrebidMobile Configuration API', () {
     test('initializeSdk calls api with correct args', () async {
       when(mockApi.initializeSdk(any, any)).thenAnswer(
-        (_) async => InitializationResult(status: InitializationStatus.succeeded.name),
+        (_) async =>
+            InitializationResult(status: InitializationStatus.succeeded.name),
       );
 
       await PrebidMobile.initializeSdk(
@@ -24,7 +25,9 @@ void main() {
         accountId: 'account-123',
       );
 
-      verify(mockApi.initializeSdk('https://test.com', 'account-123')).called(1);
+      verify(
+        mockApi.initializeSdk('https://test.com', 'account-123'),
+      ).called(1);
     });
 
     test('setTimeoutMillis calls api', () async {
@@ -70,7 +73,9 @@ void main() {
 
     test('setLogLevel calls api with correct values', () async {
       await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
-      verify(mockApi.setLogLevel(0)).called(1); // debug = 0 in Kotlin enum mapping
+      verify(
+        mockApi.setLogLevel(0),
+      ).called(1); // debug = 0 in Kotlin enum mapping
 
       await PrebidMobile.setLogLevel(PrebidLogLevel.error);
       verify(mockApi.setLogLevel(4)).called(1); // error = 4
@@ -83,12 +88,16 @@ void main() {
 
     test('setCreativeFactoryTimeoutPreRenderContent calls api', () async {
       await PrebidMobile.setCreativeFactoryTimeoutPreRenderContent(20000);
-      verify(mockApi.setCreativeFactoryTimeoutPreRenderContent(20000)).called(1);
+      verify(
+        mockApi.setCreativeFactoryTimeoutPreRenderContent(20000),
+      ).called(1);
     });
 
     test('setCustomStatusEndpoint calls api', () async {
       await PrebidMobile.setCustomStatusEndpoint('https://status.omg.com');
-      verify(mockApi.setCustomStatusEndpoint('https://status.omg.com')).called(1);
+      verify(
+        mockApi.setCustomStatusEndpoint('https://status.omg.com'),
+      ).called(1);
     });
   });
 }

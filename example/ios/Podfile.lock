@@ -2,7 +2,7 @@ PODS:
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
-  - prebid_mobile_flutter (0.0.1):
+  - prebid_mobile_sdk (0.0.1):
     - Flutter
     - PrebidMobile (~> 3.1)
   - PrebidMobile (3.3.0):
@@ -17,7 +17,7 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
-  - prebid_mobile_flutter (from `.symlinks/plugins/prebid_mobile_flutter/ios`)
+  - prebid_mobile_sdk (from `.symlinks/plugins/prebid_mobile_sdk/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
@@ -30,8 +30,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
-  prebid_mobile_flutter:
-    :path: ".symlinks/plugins/prebid_mobile_flutter/ios"
+  prebid_mobile_sdk:
+    :path: ".symlinks/plugins/prebid_mobile_sdk/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
@@ -40,7 +40,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  prebid_mobile_flutter: 08dbe4e79f6fce869617483928726be6921a3942
+  prebid_mobile_sdk: 04f91598e0f884f7fec40d8261f20aa4bf548f47
   PrebidMobile: 3712f3c98fd66f918dde268e8a9ac0ee8e09fcca
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b

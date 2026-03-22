@@ -32,7 +32,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.prebid.prebid_mobile_flutter
+        package: com.prebid.prebid_mobile_sdk
         pluginClass: PrebidMobileFlutterPlugin
       ios:
         pluginClass: PrebidMobileFlutterPlugin

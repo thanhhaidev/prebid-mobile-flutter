@@ -1,4 +1,4 @@
-package com.prebid.prebid_mobile_flutter
+package com.prebid.prebid_mobile_sdk
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

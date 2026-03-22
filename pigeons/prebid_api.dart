@@ -5,8 +5,8 @@ import 'package:pigeon/pigeon.dart';
     dartOut: 'lib/src/generated/prebid_api.g.dart',
     dartPackageName: 'prebid_mobile_sdk',
     kotlinOut:
-        'android/src/main/kotlin/com/prebid/prebid_mobile_flutter/PrebidApi.g.kt',
-    kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_flutter'),
+        'android/src/main/kotlin/com/prebid/prebid_mobile_sdk/PrebidApi.g.kt',
+    kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_sdk'),
     swiftOut: 'ios/Classes/PrebidApi.g.swift',
   ),
 )

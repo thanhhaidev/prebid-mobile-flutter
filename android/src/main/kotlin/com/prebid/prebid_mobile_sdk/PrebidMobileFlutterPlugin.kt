@@ -1,4 +1,4 @@
-package com.prebid.prebid_mobile_flutter
+package com.prebid.prebid_mobile_sdk
 
 import android.app.Activity
 import android.content.Context
@@ -70,7 +70,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun initializeSdk(
         prebidServerUrl: String,
         accountId: String,
-        callback: (Result<com.prebid.prebid_mobile_flutter.InitializationResult>) -> Unit
+        callback: (Result<com.prebid.prebid_mobile_sdk.InitializationResult>) -> Unit
     ) {
         PrebidMobile.setPrebidServerAccountId(accountId)
         PrebidMobile.initializeSdk(context, prebidServerUrl) { status ->
@@ -79,7 +79,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
                 InitializationStatus.SERVER_STATUS_WARNING -> "serverStatusWarning"
                 else -> "failed"
             }
-            val result = com.prebid.prebid_mobile_flutter.InitializationResult(
+            val result = com.prebid.prebid_mobile_sdk.InitializationResult(
                 status = statusStr,
                 error = status.description
             )

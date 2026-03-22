@@ -16,29 +16,42 @@ Initial release of the `prebid_mobile_flutter` plugin.
   - Configuration: timeout, geo location, debug mode, log level
   - Custom headers, stored auction/bid responses
   - Creative factory timeout settings
+  - `getSdkVersion()` to query native SDK version
+- **External User IDs** — Third-party identity module support
+  - `ExternalUserId` class with `source`, `identifier`, `atype`, and `ext`
+  - `setExternalUserIds()`, `getExternalUserIds()`, `clearExternalUserIds()`
+  - Supports UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source
 - **Ad Formats**
-  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget supporting both Display and Video.
-  - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads.
-  - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with custom Reward callbacks.
-  - **Native Ads** (`PrebidNativeAd`) — Fetch raw native assets (Title, Image, Icon, Sponsored, Description, CTA) and build custom Flutter UIs.
-  - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across multiple formats on a single ad unit.
+  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support, auto-refresh via `refreshIntervalSeconds`
+  - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads with optional `VideoParameters`
+  - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with typed `PrebidReward` callbacks
+  - **Native Ads** (`PrebidNativeAd`) — Fetch raw native assets (Title, Image, Icon, Sponsored, Description, CTA)
+  - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across banner, video, and native in a single request
+  - **In-Stream Video** (`PrebidInstreamVideoAd`) — Fetch VAST video demand
+- **Video Parameters** — Full OpenRTB video configuration
+  - `VideoParameters` class with `mimes`, `protocols`, `playbackMethods`, `placement`, `maxDuration`, `minDuration`, `api`
+  - Typed enums: `VideoProtocol`, `VideoPlaybackMethod`, `VideoPlacement`, `VideoApi`
 - **Targeting & Privacy** — `PrebidTargeting` class
   - GDPR: subject flag, consent string
   - COPPA: subject flag
   - TCFv2: purpose consents, device access consent
-  - ExtData: User keywords, app keywords, App ext data (first-party data)
+  - CCPA / US Privacy: `setUSPrivacyString()`, `getUSPrivacyString()`
+  - GPP: auto-read from SharedPreferences/UserDefaults (CMP integration)
+  - App First-Party Data: keywords, ext data (`app.ext.data`)
+  - User First-Party Data: keywords, ext data (`user.ext.data`)
+  - Access control list for bidder data access
   - Global OpenRTB configuration
   - App info: content URL, publisher name, store URL, domain
 - **Error Handling**
-  - Robust exception handling via `PrebidException` encapsulating Android/iOS native errors with typed `PrebidErrorCode`.
+  - `PrebidException` with typed `PrebidErrorCode` (`initializationFailed`, `adLoadFailed`, `timeout`, etc.)
 - **Infrastructure**
-  - **Android support** — Wrapped Prebid Mobile SDK `3.3.0` via Maven.
-  - **iOS support** — Wrapped PrebidMobile `~> 3.1` via CocoaPods.
-  - Implemented automatic code generation across Dart, Kotlin, and Swift using pigeon.
+  - **Android** — Prebid Mobile SDK `3.3.0` via Maven
+  - **iOS** — PrebidMobile `~> 3.1` via CocoaPods
+  - Pigeon-based code generation for Dart, Kotlin, and Swift
+- **Testing**
+  - Unit tests via Mockito covering SDK, targeting, and all ad format classes
 - **Example App**
-  - Comprehensive demo mirroring the native Prebid iOS demo app.
-  - Contains test cases for all formats.
-  - Built-in Console Logger and Settings Manager.
-  - Built-in Targeting Data Manager.
+  - Comprehensive demo with 30+ test cases
+  - Console Logger, Settings Manager, and Targeting Data Manager
 - **CI/CD**
-  - Automated GitHub Actions pipeline for linting, testing, and multi-platform compilation.
+  - Automated GitHub Actions pipeline for formatting, analysis, testing, and multi-platform builds

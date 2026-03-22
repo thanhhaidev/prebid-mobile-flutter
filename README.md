@@ -24,6 +24,8 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
   - [PrebidNativeAd — Native Ads](#prebidnativead--native-ads)
   - [PrebidMultiformatAd — Multiformat Ads](#prebidmultiformatad--multiformat-ads)
   - [PrebidInstreamVideoAd — In-Stream Video](#prebidinstreamvideoad--in-stream-video)
+  - [VideoParameters — Video Configuration](#videoparameters--video-configuration)
+  - [ExternalUserId — Identity Modules](#externaluserid--identity-modules)
   - [Enums](#enums)
   - [Listeners & Callbacks](#listeners--callbacks)
   - [Error Handling](#error-handling)
@@ -37,14 +39,16 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 
 | Feature | Description |
 |---|---|
-| **Banner Ads** | Display and video banners via native `PlatformView` widgets. |
-| **Interstitial Ads** | Fullscreen display and video ads with load/show lifecycle. |
+| **Banner Ads** | Display and video banners via native `PlatformView` widgets with auto-refresh support. |
+| **Interstitial Ads** | Fullscreen display and video ads with load/show lifecycle and video parameters. |
 | **Rewarded Ads** | Fullscreen ads that grant users a typed reward on completion. |
 | **Native Ads** | Fetch raw native assets (Title, Image, Icon, CTA, Sponsored, Description) and render custom Flutter UIs. |
 | **Multiformat Ads** | Request banner, video, and native demand on a single ad unit simultaneously. |
 | **In-Stream Video** | Fetch VAST video demand for integration with your own player or ad server. |
-| **Privacy & Compliance** | Built-in GDPR, COPPA, TCFv2 purpose consents, and access control list management. |
-| **First-Party Data** | User keywords, app keywords, app ext data, and global OpenRTB config for enriched bid requests. |
+| **Video Parameters** | Full OpenRTB video configuration — protocols, playback methods, placement, duration limits. |
+| **External User IDs** | Third-party identity modules (UID2, SharedID, LiveRamp, etc.) for improved fill rates. |
+| **Privacy & Compliance** | GDPR, COPPA, TCFv2, CCPA/US Privacy, and GPP consent support. |
+| **First-Party Data** | User/app keywords, user/app ext data, access control list, and global OpenRTB config. |
 | **Stored Responses** | Stored auction and bid responses for deterministic testing without live auctions. |
 
 ---
@@ -123,6 +127,7 @@ PrebidBannerAd(
   configId: 'prebid-demo-banner-320-50',
   width: 320,
   height: 50,
+  refreshIntervalSeconds: 30, // Auto-refresh every 30s
   listener: PrebidBannerAdListener(
     onAdLoaded: () => debugPrint('Banner loaded'),
     onAdFailed: (error) => debugPrint('Banner failed: $error'),
@@ -137,7 +142,12 @@ PrebidBannerAd(
 ```dart
 final interstitial = PrebidInterstitialAd(
   configId: 'prebid-demo-display-interstitial-320-480',
-  adFormats: {AdFormat.banner},
+  adFormats: {AdFormat.banner, AdFormat.video},
+  videoParameters: const VideoParameters(
+    mimes: ['video/mp4'],
+    protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0],
+    playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
+  ),
   listener: PrebidInterstitialAdListener(
     onAdLoaded: () async => await interstitial.show(),
     onAdDismissed: () async => await interstitial.destroy(),
@@ -164,29 +174,56 @@ final rewarded = PrebidRewardedAd(
 await rewarded.loadAd();
 ```
 
+### 5. Set External User IDs
+
+```dart
+await PrebidMobile.setExternalUserIds([
+  ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc-123', atype: 3),
+  ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
+]);
+```
+
+### 6. Configure Privacy
+
+```dart
+// GDPR
+await PrebidTargeting.setSubjectToGDPR(true);
+await PrebidTargeting.setGDPRConsentString('BOEFEAyOEFEAyAHABDENAI4AAAB9...');
+
+// CCPA / US Privacy
+await PrebidTargeting.setUSPrivacyString('1YNN');
+
+// COPPA
+await PrebidTargeting.setSubjectToCOPPA(false);
+```
+
 ---
 
 ## API Reference
 
 ### `PrebidMobile` — SDK Configuration
 
-Static class for SDK initialization and global configuration.
+Static class for SDK initialization, global configuration, and identity management.
 
 | Method | Returns | Description |
 |---|---|---|
-| `initializeSdk({prebidServerUrl, accountId, completion})` | `Future<void>` | Initialize the SDK with your Prebid Server endpoint and account ID. The `completion` callback receives an `InitializationStatus` and an optional error message. |
-| `setTimeoutMillis(int timeout)` | `Future<void>` | Set the bid request timeout in milliseconds. Default varies by platform. |
-| `setShareGeoLocation(bool share)` | `Future<void>` | Enable or disable sharing the device's geo location in bid requests. |
-| `setPbsDebug(bool enabled)` | `Future<void>` | Enable PBS debug mode. Adds `"test": 1` to outgoing bid requests, which tells the server to return test ads. |
-| `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set the SDK log verbosity. Values: `debug`, `verbose`, `info`, `warn`, `error`, `severe`. |
-| `setCustomHeaders(Map<String, String> headers)` | `Future<void>` | Set custom HTTP headers to be included with every bid request. |
-| `setStoredAuctionResponse(String response)` | `Future<void>` | Set a stored auction response ID for deterministic testing (bypasses live auction). |
-| `clearStoredAuctionResponse()` | `Future<void>` | Remove any previously set stored auction response. |
+| `initializeSdk({prebidServerUrl, accountId, completion})` | `Future<void>` | Initialize the SDK with your Prebid Server endpoint and account ID. |
+| `setTimeoutMillis(int timeout)` | `Future<void>` | Set the bid request timeout in milliseconds. |
+| `setShareGeoLocation(bool share)` | `Future<void>` | Enable or disable sharing the device's geo location. |
+| `setPbsDebug(bool enabled)` | `Future<void>` | Enable PBS debug mode (`"test": 1` in bid requests). |
+| `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set SDK log verbosity. |
+| `setCustomHeaders(Map<String, String> headers)` | `Future<void>` | Set custom HTTP headers for bid requests. |
+| `setStoredAuctionResponse(String response)` | `Future<void>` | Set a stored auction response ID for testing. |
+| `clearStoredAuctionResponse()` | `Future<void>` | Clear stored auction response. |
 | `addStoredBidResponse(String bidder, String responseId)` | `Future<void>` | Add a stored bid response for a specific bidder. |
 | `clearStoredBidResponses()` | `Future<void>` | Remove all stored bid responses. |
-| `setCreativeFactoryTimeout(int timeout)` | `Future<void>` | Set the timeout (ms) for the HTML creative factory (banner ads). |
-| `setCreativeFactoryTimeoutPreRenderContent(int timeout)` | `Future<void>` | Set the timeout (ms) for the pre-render content creative factory (video ads). |
-| `setCustomStatusEndpoint(String endpoint)` | `Future<void>` | Override the default Prebid Server status endpoint URL. |
+| `setCreativeFactoryTimeout(int timeout)` | `Future<void>` | Set the HTML creative factory timeout (ms). |
+| `setCreativeFactoryTimeoutPreRenderContent(int timeout)` | `Future<void>` | Set the video pre-render creative factory timeout (ms). |
+| `setCustomStatusEndpoint(String endpoint)` | `Future<void>` | Override the Prebid Server status endpoint URL. |
+| `setExternalUserIds(List<ExternalUserId> userIds)` | `Future<void>` | Set external user IDs for identity modules. |
+| `getExternalUserIds()` | `Future<List<ExternalUserId>>` | Get all currently set external user IDs. |
+| `clearExternalUserIds()` | `Future<void>` | Clear all external user IDs. |
+| `getSdkVersion()` | `Future<String>` | Get the native Prebid SDK version string. |
 
 ---
 
@@ -198,32 +235,36 @@ Static class for managing privacy consent, first-party data, and targeting param
 
 | Method | Returns | Description |
 |---|---|---|
-| `setSubjectToCOPPA(bool? subject)` | `Future<void>` | Flag the request as subject to Children's Online Privacy Protection Act (COPPA). Pass `null` to clear. |
-| `getSubjectToCOPPA()` | `Future<bool?>` | Get the current COPPA subject status. |
-| `setSubjectToGDPR(bool? subject)` | `Future<void>` | Flag the request as subject to General Data Protection Regulation (GDPR). Pass `null` to clear. |
-| `getSubjectToGDPR()` | `Future<bool?>` | Get the current GDPR subject status. |
-| `setGDPRConsentString(String? consent)` | `Future<void>` | Set the IAB TCF consent string. |
-| `getGDPRConsentString()` | `Future<String?>` | Get the current GDPR consent string. |
-| `setPurposeConsents(String? consents)` | `Future<void>` | Set the TCFv2 purpose consents string (binary string of purpose IDs). |
-| `getPurposeConsents()` | `Future<String?>` | Get the current TCFv2 purpose consents. |
-| `getDeviceAccessConsent()` | `Future<bool?>` | Get the device access consent (TCFv2 Purpose 1 — Store and/or access information on a device). |
+| `setSubjectToCOPPA(bool? subject)` | `Future<void>` | COPPA flag. Pass `null` to clear. |
+| `getSubjectToCOPPA()` | `Future<bool?>` | Get COPPA status. |
+| `setSubjectToGDPR(bool? subject)` | `Future<void>` | GDPR flag. Pass `null` to clear. |
+| `getSubjectToGDPR()` | `Future<bool?>` | Get GDPR status. |
+| `setGDPRConsentString(String? consent)` | `Future<void>` | Set IAB TCF consent string. |
+| `getGDPRConsentString()` | `Future<String?>` | Get GDPR consent string. |
+| `setPurposeConsents(String? consents)` | `Future<void>` | Set TCFv2 purpose consents (binary string). |
+| `getPurposeConsents()` | `Future<String?>` | Get TCFv2 purpose consents. |
+| `getDeviceAccessConsent()` | `Future<bool?>` | Get device access consent (TCFv2 Purpose 1). |
+| `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). |
+| `getUSPrivacyString()` | `Future<String?>` | Get current US Privacy String. |
+
+> **Note:** GPP consent signals (`IABGPP_HDR_GppString`, `IABGPP_GppSID`) are automatically read by the native SDKs from SharedPreferences (Android) / UserDefaults (iOS). A CMP SDK will populate these values automatically.
 
 #### User Keywords (`user.keywords`)
 
 | Method | Returns | Description |
 |---|---|---|
-| `addUserKeyword(String keyword)` | `Future<void>` | Add a single user keyword for targeting. |
-| `addUserKeywords(Set<String> keywords)` | `Future<void>` | Add multiple user keywords at once. |
+| `addUserKeyword(String keyword)` | `Future<void>` | Add a single user keyword. |
+| `addUserKeywords(Set<String> keywords)` | `Future<void>` | Add multiple user keywords. |
 | `removeUserKeyword(String keyword)` | `Future<void>` | Remove a single user keyword. |
 | `clearUserKeywords()` | `Future<void>` | Remove all user keywords. |
-| `getUserKeywords()` | `Future<List<String>>` | Retrieve all currently set user keywords. |
+| `getUserKeywords()` | `Future<List<String>>` | Get all user keywords. |
 
 #### App Keywords (`app.keywords`)
 
 | Method | Returns | Description |
 |---|---|---|
 | `addAppKeyword(String keyword)` | `Future<void>` | Add a single app keyword. |
-| `addAppKeywords(Set<String> keywords)` | `Future<void>` | Add multiple app keywords at once. |
+| `addAppKeywords(Set<String> keywords)` | `Future<void>` | Add multiple app keywords. |
 | `removeAppKeyword(String keyword)` | `Future<void>` | Remove a single app keyword. |
 | `clearAppKeywords()` | `Future<void>` | Remove all app keywords. |
 
@@ -231,43 +272,53 @@ Static class for managing privacy consent, first-party data, and targeting param
 
 | Method | Returns | Description |
 |---|---|---|
-| `addAppExtData({key, value})` | `Future<void>` | Append a value to the app ext data for a given key. |
-| `updateAppExtData({key, value})` | `Future<void>` | Replace all ext data values for a given key with a new `Set<String>`. |
-| `removeAppExtData(String key)` | `Future<void>` | Remove app ext data for a given key. |
+| `addAppExtData({key, value})` | `Future<void>` | Append a value to app ext data for a key. |
+| `updateAppExtData({key, value})` | `Future<void>` | Replace all values for a key with a `Set<String>`. |
+| `removeAppExtData(String key)` | `Future<void>` | Remove app ext data for a key. |
 | `clearAppExtData()` | `Future<void>` | Remove all app ext data. |
+
+#### User Ext Data — First-Party Data (`user.ext.data`)
+
+| Method | Returns | Description |
+|---|---|---|
+| `addUserExtData({key, value})` | `Future<void>` | Append a value to user ext data for a key. |
+| `updateUserExtData({key, value})` | `Future<void>` | Replace all values for a key with a `Set<String>`. |
+| `removeUserExtData(String key)` | `Future<void>` | Remove user ext data for a key. |
+| `clearUserExtData()` | `Future<void>` | Remove all user ext data. |
 
 #### Access Control List (`ext.prebid.data`)
 
 | Method | Returns | Description |
 |---|---|---|
-| `addBidderToAccessControlList(String bidderName)` | `Future<void>` | Grant a specific bidder access to first-party data. |
-| `removeBidderFromAccessControlList(String bidderName)` | `Future<void>` | Revoke a bidder's access to first-party data. |
+| `addBidderToAccessControlList(String bidderName)` | `Future<void>` | Grant a bidder access to first-party data. |
+| `removeBidderFromAccessControlList(String bidderName)` | `Future<void>` | Revoke a bidder's access. |
 | `clearAccessControlList()` | `Future<void>` | Clear the entire access control list. |
 
 #### OpenRTB Configuration & App Info
 
 | Method | Returns | Description |
 |---|---|---|
-| `setGlobalOrtbConfig(String? ortbConfig)` | `Future<void>` | Set a global OpenRTB JSON config that will be merged into every bid request (e.g., `bcat`, `badv`). |
-| `getGlobalOrtbConfig()` | `Future<String?>` | Get the current global OpenRTB config JSON string. |
-| `setContentUrl(String? url)` | `Future<void>` | Set the content URL for contextual targeting. |
-| `setPublisherName(String? name)` | `Future<void>` | Set the publisher name (`app.publisher.name`). |
-| `setStoreUrl(String? url)` | `Future<void>` | Set the app store URL (`app.storeurl`). |
-| `setDomain(String? domain)` | `Future<void>` | Set the app domain (`app.domain`). |
+| `setGlobalOrtbConfig(String? ortbConfig)` | `Future<void>` | Set global OpenRTB JSON config merged into every bid request. |
+| `getGlobalOrtbConfig()` | `Future<String?>` | Get current global OpenRTB config. |
+| `setContentUrl(String? url)` | `Future<void>` | Set content URL (`app.content.url`). |
+| `setPublisherName(String? name)` | `Future<void>` | Set publisher name (`app.publisher.name`). |
+| `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
+| `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
 
 ---
 
 ### `PrebidBannerAd` — Banner Ads
 
-A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `PlatformView` (Android: `AndroidView`, iOS: `UiKitView`).
+A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `PlatformView`.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `configId` | `String` | **required** | The Prebid Server stored impression configuration ID. |
-| `width` | `int` | **required** | The desired banner width in density-independent pixels (dp). |
-| `height` | `int` | **required** | The desired banner height in dp. |
-| `isVideo` | `bool` | `false` | Set to `true` to request an outstream video banner. |
-| `autoLoad` | `bool` | `true` | Whether the ad should load automatically on widget creation. |
+| `configId` | `String` | **required** | Prebid Server stored impression configuration ID. |
+| `width` | `int` | **required** | Banner width in dp. |
+| `height` | `int` | **required** | Banner height in dp. |
+| `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
+| `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
+| `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds. Minimum `30`. `null` to disable. |
 | `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events. |
 
 ---
@@ -278,12 +329,13 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `configId` | `String` | **Required.** The Prebid Server stored impression configuration ID. |
-| `adFormats` | `Set<AdFormat>?` | Optional. Specify `{AdFormat.banner}`, `{AdFormat.video}`, or both. |
-| `listener` | `PrebidInterstitialAdListener?` | Callback listener for ad lifecycle events. |
-| `loadAd()` | `Future<void>` | Request an interstitial ad from Prebid Server. |
-| `show()` | `Future<void>` | Present the loaded interstitial ad in fullscreen. |
-| `destroy()` | `Future<void>` | Release all resources. Must be called after use. |
+| `configId` | `String` | **Required.** Prebid Server config ID. |
+| `adFormats` | `Set<AdFormat>?` | Specify `{AdFormat.banner}`, `{AdFormat.video}`, or both. |
+| `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
+| `listener` | `PrebidInterstitialAdListener?` | Callback listener. |
+| `loadAd()` | `Future<void>` | Request an interstitial ad. |
+| `show()` | `Future<void>` | Present the loaded ad fullscreen. |
+| `destroy()` | `Future<void>` | Release all resources. |
 
 ---
 
@@ -293,11 +345,11 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `configId` | `String` | **Required.** The Prebid Server stored impression configuration ID. |
+| `configId` | `String` | **Required.** Prebid Server config ID. |
 | `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`). |
-| `loadAd()` | `Future<void>` | Request a rewarded ad from Prebid Server. |
-| `show()` | `Future<void>` | Present the loaded rewarded ad in fullscreen. |
-| `destroy()` | `Future<void>` | Release all resources. Must be called after use. |
+| `loadAd()` | `Future<void>` | Request a rewarded ad. |
+| `show()` | `Future<void>` | Present the loaded ad fullscreen. |
+| `destroy()` | `Future<void>` | Release all resources. |
 
 **`PrebidReward`:**
 
@@ -305,88 +357,109 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 |---|---|---|
 | `type` | `String?` | The reward type (e.g., `"coins"`, `"lives"`). |
 | `count` | `int?` | The reward amount. |
-| `ext` | `Map<String, dynamic>?` | Optional extra data from the reward payload. |
+| `ext` | `Map<String, dynamic>?` | Optional extra data. |
 
 ---
 
 ### `PrebidNativeAd` — Native Ads
 
-Loads structured native ad data (title, images, CTA, etc.) that you render with your own Flutter widgets.
+Loads structured native ad data that you render with your own Flutter widgets.
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `configId` | `String` | **Required.** The Prebid Server config ID. |
-| `assets` | `List<NativeAsset>?` | The native assets to request (`title`, `image`, `data`). |
-| `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression and viewability. |
+| `configId` | `String` | **Required.** Prebid Server config ID. |
+| `assets` | `List<NativeAsset>?` | Native assets to request. |
+| `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression/viewability. |
 | `context` | `NativeContextType?` | Content context type. |
 | `placementType` | `NativePlacementType?` | Placement type. |
-| `placementCount` | `int?` | Number of placements in the layout. |
-| `listener` | `PrebidNativeAdListener?` | Callback listener. `onAdLoaded` provides a `PrebidNativeAdResponse`. |
-| `loadAd()` | `Future<void>` | Request a native ad from Prebid Server. |
-| `trackImpression()` | `Future<void>` | Manually fire an impression tracker. |
-| `trackClick()` | `Future<void>` | Manually fire a click tracker. |
+| `placementCount` | `int?` | Number of placements. |
+| `listener` | `PrebidNativeAdListener?` | Callback listener. |
+| `loadAd()` | `Future<void>` | Request a native ad. |
+| `trackImpression()` | `Future<void>` | Fire an impression tracker. |
+| `trackClick()` | `Future<void>` | Fire a click tracker. |
 | `destroy()` | `Future<void>` | Release all resources. |
-
-**`NativeAsset` constructors:**
-
-| Constructor | Key Parameters | Description |
-|---|---|---|
-| `NativeAsset.title({length, required})` | `length`: max chars (default `90`) | Request a title text asset. |
-| `NativeAsset.image({imageType, width, height, ...})` | `imageType`: `NativeImageType.icon` or `.main` | Request an icon or main image asset. |
-| `NativeAsset.data({dataType, length, required})` | `dataType`: `NativeDataType.sponsored`, `.desc`, `.ctaText`, etc. | Request a data asset. |
-
-**`PrebidNativeAdResponse`:**
-
-| Field | Type | Description |
-|---|---|---|
-| `title` | `String?` | The title text. |
-| `text` | `String?` | The description / body text. |
-| `iconUrl` | `String?` | URL of the icon image. |
-| `imageUrl` | `String?` | URL of the main image. |
-| `sponsoredBy` | `String?` | The sponsor name. |
-| `callToAction` | `String?` | CTA text (e.g., "Install", "Learn More"). |
-| `clickUrl` | `String?` | The click-through URL. |
 
 ---
 
 ### `PrebidMultiformatAd` — Multiformat Ads
 
-Combines banner, video, and native in a single bid request using `PrebidAdUnit` + `PrebidRequest`.
+Combines banner, video, and native in a single bid request.
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `configId` | `String` | **Required.** The Prebid Server config ID. |
-| `bannerSizes` | `List<Size>?` | Banner sizes to include (e.g., `[Size(300, 250)]`). |
-| `includeVideo` | `bool` | Whether to include video in the bid request. Default: `false`. |
+| `configId` | `String` | **Required.** Prebid Server config ID. |
+| `bannerSizes` | `List<Size>?` | Banner sizes (e.g., `[Size(300, 250)]`). |
+| `videoParameters` | `VideoParameters?` | Video config. If non-null, video is included. |
 | `nativeAssets` | `List<NativeAsset>?` | Native assets to include. |
 | `nativeEventTrackers` | `List<NativeEventTracker>?` | Native event trackers. |
-| `isInterstitial` | `bool` | Whether this is an interstitial multiformat ad. Default: `false`. |
-| `isRewarded` | `bool` | Whether this is a rewarded multiformat ad. Default: `false`. |
-| `fetchDemand()` | `Future<PrebidMultiformatBidResponse>` | Execute the bid request. Returns result code, winning format, keywords, and native cache ID. |
+| `isInterstitial` | `bool` | Interstitial multiformat ad. Default: `false`. |
+| `isRewarded` | `bool` | Rewarded multiformat ad. Default: `false`. |
+| `fetchDemand()` | `Future<PrebidMultiformatBidResponse>` | Execute the bid request. |
 | `destroy()` | `Future<void>` | Release resources. |
-
-**`PrebidMultiformatBidResponse`:**
-
-| Field | Type | Description |
-|---|---|---|
-| `resultCode` | `String` | Result code (e.g., `"prebidDemandFetchSuccess"`, `"prebidDemandNoBids"`). |
-| `winningFormat` | `String?` | The format that won: `"banner"`, `"video"`, or `"native"`. |
-| `targetingKeywords` | `Map<String, String>?` | Targeting keywords to pass to an ad server. |
-| `nativeAdCacheId` | `String?` | Cache ID for native ad data (only when `winningFormat == "native"`). |
-| `isSuccess` | `bool` | Convenience getter — `true` if `resultCode` is `"prebidDemandFetchSuccess"`. |
 
 ---
 
 ### `PrebidInstreamVideoAd` — In-Stream Video
 
-Fetches VAST video demand from Prebid Server. The returned targeting keywords can be passed to your ad server (e.g., GAM) to load the winning creative.
+Fetches VAST video demand from Prebid Server.
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `configId` | `String` | **Required.** The Prebid Server config ID. |
-| `size` | `Size` | **Required.** The video player dimensions. |
-| `fetchDemand()` | `Future<PrebidVideoAdBidResponse>` | Fetch demand. Returns result code and targeting keywords. |
+| `configId` | `String` | **Required.** Prebid Server config ID. |
+| `size` | `Size` | **Required.** Video player dimensions. |
+| `fetchDemand()` | `Future<PrebidVideoAdBidResponse>` | Fetch demand. |
 | `destroy()` | `Future<void>` | Release resources. |
+
+---
+
+### `VideoParameters` — Video Configuration
+
+Detailed video ad configuration per the OpenRTB spec.
+
+```dart
+const videoParams = VideoParameters(
+  mimes: ['video/mp4', 'video/x-ms-wmv'],
+  protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0],
+  playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
+  placement: VideoPlacement.inBanner,
+  maxDuration: 30,
+  minDuration: 5,
+  api: [VideoApi.vpaid2_0, VideoApi.omid1],
+);
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `mimes` | `List<String>` | **Required.** Supported MIME types (`["video/mp4"]`). |
+| `protocols` | `List<VideoProtocol>?` | VAST protocol versions. |
+| `playbackMethods` | `List<VideoPlaybackMethod>?` | How the video should play. |
+| `placement` | `VideoPlacement?` | Placement type (in-stream, in-banner, in-feed, etc.). |
+| `maxDuration` | `int?` | Maximum duration in seconds. |
+| `minDuration` | `int?` | Minimum duration in seconds. |
+| `api` | `List<VideoApi>?` | Supported API frameworks (VPAID, MRAID, OMID). |
+
+---
+
+### `ExternalUserId` — Identity Modules
+
+External user IDs for third-party identity modules.
+
+```dart
+await PrebidMobile.setExternalUserIds([
+  ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc-123', atype: 3),
+  ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
+  ExternalUserId(source: 'liveramp.com', identifier: 'lr-def-456', atype: 3),
+]);
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `source` | `String` | Identity module source (e.g., `"uidapi.com"`). |
+| `identifier` | `String` | The user ID value. |
+| `atype` | `int?` | ID type: `1` = Device, `2` = Person, `3` = User. |
+| `ext` | `Map<String, dynamic>?` | Optional extra data. |
+
+**Supported modules:** UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source.
 
 ---
 
@@ -401,34 +474,42 @@ Fetches VAST video demand from Prebid Server. The returned targeting keywords ca
 
 #### `PrebidLogLevel`
 
-| Value | Index | Description |
-|---|---|---|
-| `debug` | 0 | Most verbose. All SDK internal messages. |
-| `verbose` | 1 | Detailed information for debugging. |
-| `info` | 2 | General informational messages. |
-| `warn` | 3 | Potential issues and warnings. |
-| `error` | 4 | Errors that may impact functionality. |
-| `severe` | 5 | Critical errors only. |
+| Value | Description |
+|---|---|
+| `debug` | Most verbose — all SDK internal messages. |
+| `verbose` | Detailed debugging information. |
+| `info` | General informational messages. |
+| `warn` | Potential issues and warnings. |
+| `error` | Errors that may impact functionality. |
+| `severe` | Critical errors only. |
 
 #### `InitializationStatus`
 
 | Value | Description |
 |---|---|
 | `succeeded` | SDK initialized successfully. |
-| `failed` | Initialization failed (check the error message). |
-| `serverStatusWarning` | Connected but the server returned a warning. |
+| `failed` | Initialization failed. |
+| `serverStatusWarning` | Connected but server returned a warning. |
+
+#### Video Enums
+
+| Enum | Values |
+|---|---|
+| `VideoProtocol` | `vast1_0`, `vast2_0`, `vast3_0`, `vast4_0`, and their Wrapper variants |
+| `VideoPlaybackMethod` | `autoPlaySoundOn`, `autoPlaySoundOff`, `clickToPlay`, `mouseOver`, `enterSoundOn`, `enterSoundOff` |
+| `VideoPlacement` | `inStream`, `inBanner`, `inArticle`, `inFeed`, `interstitial` |
+| `VideoApi` | `vpaid1_0`, `vpaid2_0`, `mraid1`, `ormma`, `mraid2`, `mraid3`, `omid1` |
 
 #### Native Ad Enums
 
 | Enum | Values | Description |
 |---|---|---|
-| `NativeAssetType` | `title`, `image`, `data` | Type of native asset in the request. |
-| `NativeImageType` | `icon(1)`, `main(3)`, `custom(500)` | Image sub-type per OpenRTB spec. |
-| `NativeDataType` | `sponsored(1)`, `desc(2)`, `rating(3)`, `likes(4)`, `downloads(5)`, `price(6)`, `salePrice(7)`, `phone(8)`, `address(9)`, `desc2(10)`, `displayUrl(11)`, `ctaText(12)`, `custom(500)` | Data asset type per OpenRTB spec. |
-| `NativeEventType` | `impression(1)`, `viewable50(2)`, `viewable100(3)`, `viewableVideo50(4)`, `custom(500)` | Event types to track. |
-| `NativeEventTrackingMethod` | `image(1)`, `js(2)`, `custom(500)` | Tracking method for native events. |
-| `NativeContextType` | `contentCentric(1)`, `socialCentric(2)`, `product(3)`, `custom(500)` | Context in which the ad appears. |
-| `NativePlacementType` | `inFeed(1)`, `atomicUnit(2)`, `outsideContent(3)`, `recommendation(4)`, `custom(500)` | Placement within the content layout. |
+| `NativeImageType` | `icon(1)`, `main(3)`, `custom(500)` | Image sub-type per OpenRTB. |
+| `NativeDataType` | `sponsored(1)`, `desc(2)`, `ctaText(12)`, + 10 more | Data asset type per OpenRTB. |
+| `NativeEventType` | `impression(1)`, `viewable50(2)`, `viewable100(3)`, `viewableVideo50(4)` | Event types to track. |
+| `NativeEventTrackingMethod` | `image(1)`, `js(2)`, `custom(500)` | Tracking method. |
+| `NativeContextType` | `contentCentric(1)`, `socialCentric(2)`, `product(3)` | Context in which ad appears. |
+| `NativePlacementType` | `inFeed(1)`, `atomicUnit(2)`, `outsideContent(3)`, `recommendation(4)` | Placement within layout. |
 
 ---
 
@@ -438,40 +519,40 @@ Fetches VAST video demand from Prebid Server. The returned targeting keywords ca
 
 | Callback | Signature | Triggered When |
 |---|---|---|
-| `onAdLoaded` | `void Function()` | The banner ad content has loaded. |
-| `onAdFailed` | `void Function(String error)` | The banner ad failed to load. |
-| `onAdClicked` | `void Function()` | The user tapped the banner ad. |
-| `onAdClosed` | `void Function()` | A fullscreen overlay from the banner was dismissed. |
+| `onAdLoaded` | `void Function()` | Banner content loaded. |
+| `onAdFailed` | `void Function(String error)` | Banner failed to load. |
+| `onAdClicked` | `void Function()` | User tapped the banner. |
+| `onAdClosed` | `void Function()` | Banner overlay was dismissed. |
 
 #### `PrebidInterstitialAdListener`
 
 | Callback | Signature | Triggered When |
 |---|---|---|
-| `onAdLoaded` | `void Function()` | The interstitial ad is ready to show. |
-| `onAdFailed` | `void Function(String error)` | The interstitial failed to load. |
-| `onAdDisplayed` | `void Function()` | The interstitial was presented fullscreen. |
-| `onAdDismissed` | `void Function()` | The user dismissed the interstitial. |
-| `onAdClicked` | `void Function()` | The user tapped the interstitial. |
+| `onAdLoaded` | `void Function()` | Interstitial ready to show. |
+| `onAdFailed` | `void Function(String error)` | Failed to load. |
+| `onAdDisplayed` | `void Function()` | Presented fullscreen. |
+| `onAdDismissed` | `void Function()` | User dismissed the ad. |
+| `onAdClicked` | `void Function()` | User tapped the ad. |
 
 #### `PrebidRewardedAdListener`
 
 | Callback | Signature | Triggered When |
 |---|---|---|
-| `onAdLoaded` | `void Function()` | The rewarded ad is ready to show. |
-| `onAdFailed` | `void Function(String error)` | The rewarded ad failed to load. |
-| `onAdDisplayed` | `void Function()` | The rewarded ad was presented fullscreen. |
-| `onAdDismissed` | `void Function()` | The user dismissed the rewarded ad. |
-| `onAdClicked` | `void Function()` | The user tapped the rewarded ad. |
-| `onUserEarnedReward` | `void Function(PrebidReward reward)` | The user completed the ad and earned a reward. |
+| `onAdLoaded` | `void Function()` | Rewarded ad ready. |
+| `onAdFailed` | `void Function(String error)` | Failed to load. |
+| `onAdDisplayed` | `void Function()` | Presented fullscreen. |
+| `onAdDismissed` | `void Function()` | User dismissed the ad. |
+| `onAdClicked` | `void Function()` | User tapped the ad. |
+| `onUserEarnedReward` | `void Function(PrebidReward)` | User earned a reward. |
 
 #### `PrebidNativeAdListener`
 
 | Callback | Signature | Triggered When |
 |---|---|---|
-| `onAdLoaded` | `void Function(PrebidNativeAdResponse response)` | Native ad data is ready. Use the response fields to build your custom UI. |
-| `onAdFailed` | `void Function(String error)` | The native ad failed to load. |
-| `onAdImpression` | `void Function()` | An impression was tracked for the native ad. |
-| `onAdClicked` | `void Function()` | The user tapped the native ad. |
+| `onAdLoaded` | `void Function(PrebidNativeAdResponse)` | Native data ready. |
+| `onAdFailed` | `void Function(String error)` | Failed to load. |
+| `onAdImpression` | `void Function()` | Impression tracked. |
+| `onAdClicked` | `void Function()` | User tapped the ad. |
 
 ---
 
@@ -492,21 +573,21 @@ try {
 
 | Code | Description |
 |---|---|
-| `initializationFailed` | The SDK failed to initialize. |
-| `invalidArguments` | Invalid or missing arguments were provided. |
-| `adLoadFailed` | The ad request failed. |
-| `adNotFound` | Attempted to show or destroy a non-existent ad. |
-| `adDisplayFailed` | The ad could not be displayed. |
-| `networkError` | A network request failed. |
+| `initializationFailed` | SDK failed to initialize. |
+| `invalidArguments` | Invalid or missing arguments. |
+| `adLoadFailed` | Ad request failed. |
+| `adNotFound` | Attempted to show/destroy a non-existent ad. |
+| `adDisplayFailed` | Ad could not be displayed. |
+| `networkError` | Network request failed. |
 | `serverError` | Prebid Server returned an error. |
-| `timeout` | The operation timed out. |
-| `unknown` | An unclassified error occurred. |
+| `timeout` | Operation timed out. |
+| `unknown` | Unclassified error. |
 
 ---
 
 ## Example App
 
-The `example/` directory contains a full-featured demo app replicating the official native Prebid iOS demo, including:
+The `example/` directory contains a full-featured demo app including:
 
 - **30+ test cases** across Banner, Interstitial, Rewarded, Native, Video, and Multiformat
 - **Live event logger** with timestamps for every SDK callback

@@ -148,26 +148,33 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     // External User IDs
     override fun setExternalUserIds(userIds: List<ExternalUserIdData>) {
         val ids = userIds.map { data ->
-            ExternalUserId(data.source, data.identifier).apply {
-                data.atype?.let { this.atype = it.toInt() }
+            val uniqueId = ExternalUserId.UniqueId(data.identifier, data.atype?.toInt() ?: 0)
+            data.ext?.let { ext ->
+                val extMap = HashMap<String, Any>()
+                ext.forEach { (k, v) -> if (k != null && v != null) extMap[k] = v }
+                uniqueId.setExt(extMap)
             }
+            ExternalUserId(data.source, listOf(uniqueId))
         }
-        PrebidMobile.setExternalUserIds(ArrayList(ids))
+        TargetingParams.setExternalUserIds(ArrayList(ids))
     }
 
     override fun getExternalUserIds(): List<ExternalUserIdData> {
-        val ids = PrebidMobile.getExternalUserIds() ?: return emptyList()
-        return ids.map { uid ->
-            ExternalUserIdData(
-                source = uid.source ?: "",
-                identifier = uid.identifier ?: "",
-                atype = uid.atype?.toLong()
-            )
+        val ids = TargetingParams.getExternalUserIds() ?: return emptyList()
+        return ids.flatMap { uid ->
+            val source = uid.source ?: ""
+            uid.uids?.map { uniqueId ->
+                ExternalUserIdData(
+                    source = source,
+                    identifier = uniqueId.id ?: "",
+                    atype = uniqueId.atype?.toLong()
+                )
+            } ?: emptyList()
         }
     }
 
     override fun clearExternalUserIds() {
-        PrebidMobile.setExternalUserIds(null)
+        TargetingParams.setExternalUserIds(null)
     }
 
     override fun getSdkVersion(): String {
@@ -242,18 +249,36 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         try { TargetingParams.clearExtData() } catch (_: Exception) {}
     }
 
-    // User Ext Data (user.ext.data)
+    // User Ext Data (user.ext.data) — Android SDK does not have direct user data methods,
+    // so we use a stored map and merge into global ORTB config.
+    private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
+
     override fun addUserExtData(key: String, value: String) {
-        try { TargetingParams.addUserData(key, value) } catch (_: Exception) {}
+        userExtDataMap.getOrPut(key) { mutableSetOf() }.add(value)
+        syncUserExtDataToOrtb()
     }
     override fun updateUserExtData(key: String, value: List<String>) {
-        try { TargetingParams.updateUserData(key, HashSet(value)) } catch (_: Exception) {}
+        userExtDataMap[key] = value.toMutableSet()
+        syncUserExtDataToOrtb()
     }
     override fun removeUserExtData(key: String) {
-        try { TargetingParams.removeUserData(key) } catch (_: Exception) {}
+        userExtDataMap.remove(key)
+        syncUserExtDataToOrtb()
     }
     override fun clearUserExtData() {
-        try { TargetingParams.clearUserData() } catch (_: Exception) {}
+        userExtDataMap.clear()
+        syncUserExtDataToOrtb()
+    }
+
+    private fun syncUserExtDataToOrtb() {
+        try {
+            if (userExtDataMap.isEmpty()) return
+            val dataObj = org.json.JSONObject()
+            userExtDataMap.forEach { (k, v) -> dataObj.put(k, org.json.JSONArray(v.toList())) }
+            val userObj = org.json.JSONObject().put("ext", org.json.JSONObject().put("data", dataObj))
+            val ortb = org.json.JSONObject().put("user", userObj)
+            TargetingParams.setGlobalOrtbConfig(ortb.toString())
+        } catch (_: Exception) {}
     }
 
     override fun addBidderToAccessControlList(bidderName: String) { TargetingParams.addBidderToAccessControlList(bidderName) }
@@ -293,17 +318,19 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
         // Apply video parameters if provided
         if (videoConfig != null && formats.contains(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)) {
-            val vp = org.prebid.mobile.VideoParameters(videoConfig.mimes)
-            videoConfig.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
-                vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
-            }
-            videoConfig.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
-                vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
-            }
-            videoConfig.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
-            videoConfig.maxDuration?.let { vp.maxDuration = it.toInt() }
-            videoConfig.minDuration?.let { vp.minDuration = it.toInt() }
-            adUnit.videoParameters = vp
+            try {
+                val vp = org.prebid.mobile.VideoParameters(videoConfig.mimes)
+                videoConfig.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
+                    vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
+                }
+                videoConfig.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
+                    vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
+                }
+                videoConfig.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
+                videoConfig.maxDuration?.let { vp.maxDuration = it.toInt() }
+                videoConfig.minDuration?.let { vp.minDuration = it.toInt() }
+                adUnit.setVideoParameters(vp)
+            } catch (_: Exception) {}
         }
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {

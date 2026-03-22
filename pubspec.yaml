@@ -1,0 +1,36 @@
+name: prebid_mobile_flutter
+description: "Flutter plugin for Prebid Mobile SDK. Provides banner, interstitial, and rewarded ad formats with GDPR/COPPA compliance, targeting, and OpenRTB support."
+version: 0.0.1
+homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
+repository: https://github.com/thanhhaidev/prebid-mobile-flutter
+issue_tracker: https://github.com/thanhhaidev/prebid-mobile-flutter/issues
+
+topics:
+  - ads
+  - prebid
+  - advertising
+  - header-bidding
+  - monetization
+
+environment:
+  sdk: ^3.11.0
+  flutter: '>=3.41.5'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  pigeon: ^26.2.3
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.prebid.prebid_mobile_flutter
+        pluginClass: PrebidMobileFlutterPlugin
+      ios:
+        pluginClass: PrebidMobileFlutterPlugin

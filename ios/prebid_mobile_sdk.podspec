@@ -1,9 +1,9 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint prebid_mobile_flutter.podspec` to validate before publishing.
+# Run `pod lib lint prebid_mobile_sdk.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'prebid_mobile_flutter'
+  s.name             = 'prebid_mobile_sdk'
   s.version          = '0.0.1'
   s.summary          = 'Flutter plugin for Prebid Mobile SDK.'
   s.description      = <<-DESC

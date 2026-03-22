@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.1] - 2026-03-22
 
-Initial release of the `prebid_mobile_flutter` plugin.
+Initial release of the `prebid_mobile_sdk` plugin.
 
 ### Added
 

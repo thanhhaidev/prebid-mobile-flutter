@@ -1,6 +1,6 @@
 # Prebid Mobile Flutter
 
-[![pub package](https://img.shields.io/pub/v/prebid_mobile_flutter.svg)](https://pub.dev/packages/prebid_mobile_flutter)
+[![pub package](https://img.shields.io/pub/v/prebid_mobile_sdk.svg)](https://pub.dev/packages/prebid_mobile_sdk)
 [![Flutter CI](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml/badge.svg)](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml)
 
 A comprehensive Flutter plugin wrapping the [Prebid Mobile SDK](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html) for **Android** and **iOS**.
@@ -75,7 +75,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  prebid_mobile_flutter: ^0.0.1
+  prebid_mobile_sdk: ^0.0.1
 ```
 
 ### iOS
@@ -99,7 +99,7 @@ No additional setup needed. The Prebid Mobile Android SDK is included automatica
 Call `PrebidMobile.initializeSdk` once at app launch, before loading any ads:
 
 ```dart
-import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

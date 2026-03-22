@@ -1,5 +1,5 @@
 import 'package:mockito/annotations.dart';
-import 'package:prebid_mobile_flutter/src/generated/prebid_api.g.dart';
+import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
 
 @GenerateMocks([
   PrebidMobileHostApi,

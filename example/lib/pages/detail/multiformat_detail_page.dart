@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../../models/test_case.dart';
 import '../../utils/logger.dart';

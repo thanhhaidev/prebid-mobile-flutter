@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../../models/demo_ad_format.dart';
 import '../../models/test_case.dart';

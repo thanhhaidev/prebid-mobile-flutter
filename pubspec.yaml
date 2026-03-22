@@ -1,4 +1,4 @@
-name: prebid_mobile_flutter
+name: prebid_mobile_sdk
 description: "Flutter plugin for Prebid Mobile SDK. Provides banner, interstitial, and rewarded ad formats with GDPR/COPPA compliance, targeting, and OpenRTB support."
 version: 0.0.1
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter

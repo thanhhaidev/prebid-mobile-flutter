@@ -898,7 +898,7 @@ class PrebidMobileHostApi {
     String accountId,
   ) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.initializeSdk$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.initializeSdk$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -919,7 +919,7 @@ class PrebidMobileHostApi {
 
   Future<void> setTimeoutMillis(int timeoutMillis) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setTimeoutMillis$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setTimeoutMillis$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -939,7 +939,7 @@ class PrebidMobileHostApi {
 
   Future<void> setShareGeoLocation(bool share) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setShareGeoLocation$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setShareGeoLocation$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -959,7 +959,7 @@ class PrebidMobileHostApi {
 
   Future<void> setPbsDebug(bool enabled) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setPbsDebug$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPbsDebug$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -979,7 +979,7 @@ class PrebidMobileHostApi {
 
   Future<void> setCustomHeaders(Map<String, String> headers) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCustomHeaders$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomHeaders$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -999,7 +999,7 @@ class PrebidMobileHostApi {
 
   Future<void> setStoredAuctionResponse(String response) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setStoredAuctionResponse$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setStoredAuctionResponse$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1019,7 +1019,7 @@ class PrebidMobileHostApi {
 
   Future<void> clearStoredAuctionResponse() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearStoredAuctionResponse$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearStoredAuctionResponse$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1037,7 +1037,7 @@ class PrebidMobileHostApi {
 
   Future<void> addStoredBidResponse(String bidder, String responseId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.addStoredBidResponse$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.addStoredBidResponse$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1057,7 +1057,7 @@ class PrebidMobileHostApi {
 
   Future<void> clearStoredBidResponses() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearStoredBidResponses$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearStoredBidResponses$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1075,7 +1075,7 @@ class PrebidMobileHostApi {
 
   Future<void> setLogLevel(int level) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setLogLevel$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setLogLevel$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1095,7 +1095,7 @@ class PrebidMobileHostApi {
 
   Future<void> setCreativeFactoryTimeout(int timeout) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCreativeFactoryTimeout$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCreativeFactoryTimeout$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1115,7 +1115,7 @@ class PrebidMobileHostApi {
 
   Future<void> setCreativeFactoryTimeoutPreRenderContent(int timeout) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCreativeFactoryTimeoutPreRenderContent$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCreativeFactoryTimeoutPreRenderContent$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1135,7 +1135,7 @@ class PrebidMobileHostApi {
 
   Future<void> setCustomStatusEndpoint(String endpoint) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCustomStatusEndpoint$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomStatusEndpoint$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1155,7 +1155,7 @@ class PrebidMobileHostApi {
 
   Future<void> setExternalUserIds(List<ExternalUserIdData> userIds) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setExternalUserIds$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setExternalUserIds$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1175,7 +1175,7 @@ class PrebidMobileHostApi {
 
   Future<List<ExternalUserIdData>> getExternalUserIds() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getExternalUserIds$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getExternalUserIds$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1194,7 +1194,7 @@ class PrebidMobileHostApi {
 
   Future<void> clearExternalUserIds() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearExternalUserIds$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearExternalUserIds$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1212,7 +1212,7 @@ class PrebidMobileHostApi {
 
   Future<String> getSdkVersion() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getSdkVersion$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getSdkVersion$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1250,7 +1250,7 @@ class TargetingHostApi {
 
   Future<void> setSubjectToCOPPA(bool? value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setSubjectToCOPPA$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSubjectToCOPPA$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1270,7 +1270,7 @@ class TargetingHostApi {
 
   Future<bool?> getSubjectToCOPPA() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getSubjectToCOPPA$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getSubjectToCOPPA$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1289,7 +1289,7 @@ class TargetingHostApi {
 
   Future<void> setSubjectToGDPR(bool? value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setSubjectToGDPR$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSubjectToGDPR$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1309,7 +1309,7 @@ class TargetingHostApi {
 
   Future<bool?> getSubjectToGDPR() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getSubjectToGDPR$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getSubjectToGDPR$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1328,7 +1328,7 @@ class TargetingHostApi {
 
   Future<void> setGDPRConsentString(String? value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setGDPRConsentString$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setGDPRConsentString$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1348,7 +1348,7 @@ class TargetingHostApi {
 
   Future<String?> getGDPRConsentString() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getGDPRConsentString$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getGDPRConsentString$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1367,7 +1367,7 @@ class TargetingHostApi {
 
   Future<void> setPurposeConsents(String? value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setPurposeConsents$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setPurposeConsents$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1387,7 +1387,7 @@ class TargetingHostApi {
 
   Future<String?> getPurposeConsents() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getPurposeConsents$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getPurposeConsents$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1406,7 +1406,7 @@ class TargetingHostApi {
 
   Future<bool?> getDeviceAccessConsent() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getDeviceAccessConsent$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getDeviceAccessConsent$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1425,7 +1425,7 @@ class TargetingHostApi {
 
   Future<void> setUSPrivacyString(String? value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setUSPrivacyString$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUSPrivacyString$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1445,7 +1445,7 @@ class TargetingHostApi {
 
   Future<String?> getUSPrivacyString() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUSPrivacyString$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUSPrivacyString$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1464,7 +1464,7 @@ class TargetingHostApi {
 
   Future<void> addUserKeyword(String keyword) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserKeyword$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserKeyword$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1484,7 +1484,7 @@ class TargetingHostApi {
 
   Future<void> addUserKeywords(List<String> keywords) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserKeywords$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserKeywords$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1504,7 +1504,7 @@ class TargetingHostApi {
 
   Future<void> removeUserKeyword(String keyword) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserKeyword$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeUserKeyword$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1524,7 +1524,7 @@ class TargetingHostApi {
 
   Future<void> clearUserKeywords() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserKeywords$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearUserKeywords$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1542,7 +1542,7 @@ class TargetingHostApi {
 
   Future<List<String>> getUserKeywords() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUserKeywords$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUserKeywords$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1561,7 +1561,7 @@ class TargetingHostApi {
 
   Future<void> addAppKeyword(String keyword) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppKeyword$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppKeyword$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1581,7 +1581,7 @@ class TargetingHostApi {
 
   Future<void> addAppKeywords(List<String> keywords) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppKeywords$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppKeywords$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1601,7 +1601,7 @@ class TargetingHostApi {
 
   Future<void> removeAppKeyword(String keyword) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeAppKeyword$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeAppKeyword$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1621,7 +1621,7 @@ class TargetingHostApi {
 
   Future<void> clearAppKeywords() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAppKeywords$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAppKeywords$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1639,7 +1639,7 @@ class TargetingHostApi {
 
   Future<void> addAppExtData(String key, String value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1659,7 +1659,7 @@ class TargetingHostApi {
 
   Future<void> updateAppExtData(String key, List<String> value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateAppExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.updateAppExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1679,7 +1679,7 @@ class TargetingHostApi {
 
   Future<void> removeAppExtData(String key) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeAppExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeAppExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1699,7 +1699,7 @@ class TargetingHostApi {
 
   Future<void> clearAppExtData() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAppExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAppExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1717,7 +1717,7 @@ class TargetingHostApi {
 
   Future<void> addUserExtData(String key, String value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1737,7 +1737,7 @@ class TargetingHostApi {
 
   Future<void> updateUserExtData(String key, List<String> value) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateUserExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.updateUserExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1757,7 +1757,7 @@ class TargetingHostApi {
 
   Future<void> removeUserExtData(String key) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeUserExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1777,7 +1777,7 @@ class TargetingHostApi {
 
   Future<void> clearUserExtData() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserExtData$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearUserExtData$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1795,7 +1795,7 @@ class TargetingHostApi {
 
   Future<void> addBidderToAccessControlList(String bidderName) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addBidderToAccessControlList$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addBidderToAccessControlList$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1815,7 +1815,7 @@ class TargetingHostApi {
 
   Future<void> removeBidderFromAccessControlList(String bidderName) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeBidderFromAccessControlList$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeBidderFromAccessControlList$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1835,7 +1835,7 @@ class TargetingHostApi {
 
   Future<void> clearAccessControlList() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAccessControlList$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAccessControlList$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1853,7 +1853,7 @@ class TargetingHostApi {
 
   Future<void> setGlobalOrtbConfig(String? ortbConfig) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setGlobalOrtbConfig$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setGlobalOrtbConfig$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1873,7 +1873,7 @@ class TargetingHostApi {
 
   Future<String?> getGlobalOrtbConfig() async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getGlobalOrtbConfig$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getGlobalOrtbConfig$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1892,7 +1892,7 @@ class TargetingHostApi {
 
   Future<void> setContentUrl(String? url) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setContentUrl$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setContentUrl$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1912,7 +1912,7 @@ class TargetingHostApi {
 
   Future<void> setPublisherName(String? name) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setPublisherName$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setPublisherName$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1932,7 +1932,7 @@ class TargetingHostApi {
 
   Future<void> setStoreUrl(String? url) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setStoreUrl$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setStoreUrl$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1952,7 +1952,7 @@ class TargetingHostApi {
 
   Future<void> setDomain(String? domain) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setDomain$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setDomain$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1996,7 +1996,7 @@ class InterstitialAdHostApi {
     VideoParametersConfig? videoConfig,
   ) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2016,7 +2016,7 @@ class InterstitialAdHostApi {
 
   Future<void> show(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.show$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.show$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2036,7 +2036,7 @@ class InterstitialAdHostApi {
 
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.destroy$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.destroy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2075,7 +2075,7 @@ class RewardedAdHostApi {
 
   Future<void> loadAd(int adId, String configId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2095,7 +2095,7 @@ class RewardedAdHostApi {
 
   Future<void> show(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.show$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.show$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2115,7 +2115,7 @@ class RewardedAdHostApi {
 
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.destroy$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.destroy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2154,7 +2154,7 @@ class NativeAdHostApi {
 
   Future<void> loadAd(int adId, NativeAdRequestConfig config) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2174,7 +2174,7 @@ class NativeAdHostApi {
 
   Future<void> trackImpression(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.trackImpression$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackImpression$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2194,7 +2194,7 @@ class NativeAdHostApi {
 
   Future<void> trackClick(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.trackClick$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackClick$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2214,7 +2214,7 @@ class NativeAdHostApi {
 
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.destroy$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.destroy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2256,7 +2256,7 @@ class MultiformatAdHostApi {
     MultiformatAdRequestConfig config,
   ) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.MultiformatAdHostApi.fetchDemand$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.fetchDemand$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2277,7 +2277,7 @@ class MultiformatAdHostApi {
 
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.MultiformatAdHostApi.destroy$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.destroy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2319,7 +2319,7 @@ class InstreamVideoAdHostApi {
     InstreamVideoAdRequestConfig config,
   ) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.InstreamVideoAdHostApi.fetchDemand$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.InstreamVideoAdHostApi.fetchDemand$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2340,7 +2340,7 @@ class InstreamVideoAdHostApi {
 
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_flutter.InstreamVideoAdHostApi.destroy$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.prebid_mobile_sdk.InstreamVideoAdHostApi.destroy$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2375,7 +2375,7 @@ abstract class AdFlutterApi {
         : '';
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.prebid_mobile_flutter.AdFlutterApi.onAdEvent$messageChannelSuffix',
+        'dev.flutter.pigeon.prebid_mobile_sdk.AdFlutterApi.onAdEvent$messageChannelSuffix',
         pigeonChannelCodec,
         binaryMessenger: binaryMessenger,
       );

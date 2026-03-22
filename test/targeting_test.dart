@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import 'mock_host_api.mocks.dart';
 

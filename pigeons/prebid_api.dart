@@ -3,7 +3,7 @@ import 'package:pigeon/pigeon.dart';
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/src/generated/prebid_api.g.dart',
-    dartPackageName: 'prebid_mobile_flutter',
+    dartPackageName: 'prebid_mobile_sdk',
     kotlinOut:
         'android/src/main/kotlin/com/prebid/prebid_mobile_flutter/PrebidApi.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_flutter'),

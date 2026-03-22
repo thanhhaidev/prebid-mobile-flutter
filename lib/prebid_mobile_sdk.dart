@@ -18,7 +18,7 @@
 /// ## Getting Started
 ///
 /// ```dart
-/// import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+/// import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 ///
 /// // 1. Initialize the SDK
 /// await PrebidMobile.initializeSdk(

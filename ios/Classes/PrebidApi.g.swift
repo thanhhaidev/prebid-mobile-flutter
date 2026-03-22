@@ -783,7 +783,7 @@ class PrebidMobileHostApiSetup {
   /// Sets up an instance of `PrebidMobileHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PrebidMobileHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let initializeSdkChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.initializeSdk\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let initializeSdkChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.initializeSdk\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       initializeSdkChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -801,7 +801,7 @@ class PrebidMobileHostApiSetup {
     } else {
       initializeSdkChannel.setMessageHandler(nil)
     }
-    let setTimeoutMillisChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setTimeoutMillis\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setTimeoutMillisChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setTimeoutMillis\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setTimeoutMillisChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -816,7 +816,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setTimeoutMillisChannel.setMessageHandler(nil)
     }
-    let setShareGeoLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setShareGeoLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setShareGeoLocationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setShareGeoLocation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setShareGeoLocationChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -831,7 +831,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setShareGeoLocationChannel.setMessageHandler(nil)
     }
-    let setPbsDebugChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setPbsDebug\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setPbsDebugChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPbsDebug\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setPbsDebugChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -846,7 +846,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setPbsDebugChannel.setMessageHandler(nil)
     }
-    let setCustomHeadersChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCustomHeaders\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setCustomHeadersChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomHeaders\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setCustomHeadersChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -861,7 +861,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setCustomHeadersChannel.setMessageHandler(nil)
     }
-    let setStoredAuctionResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setStoredAuctionResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setStoredAuctionResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setStoredAuctionResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setStoredAuctionResponseChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -876,7 +876,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setStoredAuctionResponseChannel.setMessageHandler(nil)
     }
-    let clearStoredAuctionResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearStoredAuctionResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearStoredAuctionResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearStoredAuctionResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearStoredAuctionResponseChannel.setMessageHandler { _, reply in
         do {
@@ -889,7 +889,7 @@ class PrebidMobileHostApiSetup {
     } else {
       clearStoredAuctionResponseChannel.setMessageHandler(nil)
     }
-    let addStoredBidResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.addStoredBidResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addStoredBidResponseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.addStoredBidResponse\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addStoredBidResponseChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -905,7 +905,7 @@ class PrebidMobileHostApiSetup {
     } else {
       addStoredBidResponseChannel.setMessageHandler(nil)
     }
-    let clearStoredBidResponsesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearStoredBidResponses\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearStoredBidResponsesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearStoredBidResponses\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearStoredBidResponsesChannel.setMessageHandler { _, reply in
         do {
@@ -918,7 +918,7 @@ class PrebidMobileHostApiSetup {
     } else {
       clearStoredBidResponsesChannel.setMessageHandler(nil)
     }
-    let setLogLevelChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setLogLevel\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setLogLevelChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setLogLevel\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setLogLevelChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -933,7 +933,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setLogLevelChannel.setMessageHandler(nil)
     }
-    let setCreativeFactoryTimeoutChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCreativeFactoryTimeout\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setCreativeFactoryTimeoutChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCreativeFactoryTimeout\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setCreativeFactoryTimeoutChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -948,7 +948,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setCreativeFactoryTimeoutChannel.setMessageHandler(nil)
     }
-    let setCreativeFactoryTimeoutPreRenderContentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCreativeFactoryTimeoutPreRenderContent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setCreativeFactoryTimeoutPreRenderContentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCreativeFactoryTimeoutPreRenderContent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setCreativeFactoryTimeoutPreRenderContentChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -963,7 +963,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setCreativeFactoryTimeoutPreRenderContentChannel.setMessageHandler(nil)
     }
-    let setCustomStatusEndpointChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setCustomStatusEndpoint\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setCustomStatusEndpointChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomStatusEndpoint\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setCustomStatusEndpointChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -978,7 +978,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setCustomStatusEndpointChannel.setMessageHandler(nil)
     }
-    let setExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.setExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setExternalUserIdsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -993,7 +993,7 @@ class PrebidMobileHostApiSetup {
     } else {
       setExternalUserIdsChannel.setMessageHandler(nil)
     }
-    let getExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getExternalUserIdsChannel.setMessageHandler { _, reply in
         do {
@@ -1006,7 +1006,7 @@ class PrebidMobileHostApiSetup {
     } else {
       getExternalUserIdsChannel.setMessageHandler(nil)
     }
-    let clearExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.clearExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.clearExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearExternalUserIdsChannel.setMessageHandler { _, reply in
         do {
@@ -1019,7 +1019,7 @@ class PrebidMobileHostApiSetup {
     } else {
       clearExternalUserIdsChannel.setMessageHandler(nil)
     }
-    let getSdkVersionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.PrebidMobileHostApi.getSdkVersion\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getSdkVersionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getSdkVersion\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getSdkVersionChannel.setMessageHandler { _, reply in
         do {
@@ -1083,7 +1083,7 @@ class TargetingHostApiSetup {
   /// Sets up an instance of `TargetingHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: TargetingHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let setSubjectToCOPPAChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setSubjectToCOPPA\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setSubjectToCOPPAChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSubjectToCOPPA\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setSubjectToCOPPAChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1098,7 +1098,7 @@ class TargetingHostApiSetup {
     } else {
       setSubjectToCOPPAChannel.setMessageHandler(nil)
     }
-    let getSubjectToCOPPAChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getSubjectToCOPPA\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getSubjectToCOPPAChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getSubjectToCOPPA\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getSubjectToCOPPAChannel.setMessageHandler { _, reply in
         do {
@@ -1111,7 +1111,7 @@ class TargetingHostApiSetup {
     } else {
       getSubjectToCOPPAChannel.setMessageHandler(nil)
     }
-    let setSubjectToGDPRChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setSubjectToGDPR\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setSubjectToGDPRChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSubjectToGDPR\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setSubjectToGDPRChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1126,7 +1126,7 @@ class TargetingHostApiSetup {
     } else {
       setSubjectToGDPRChannel.setMessageHandler(nil)
     }
-    let getSubjectToGDPRChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getSubjectToGDPR\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getSubjectToGDPRChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getSubjectToGDPR\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getSubjectToGDPRChannel.setMessageHandler { _, reply in
         do {
@@ -1139,7 +1139,7 @@ class TargetingHostApiSetup {
     } else {
       getSubjectToGDPRChannel.setMessageHandler(nil)
     }
-    let setGDPRConsentStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setGDPRConsentString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setGDPRConsentStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setGDPRConsentString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setGDPRConsentStringChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1154,7 +1154,7 @@ class TargetingHostApiSetup {
     } else {
       setGDPRConsentStringChannel.setMessageHandler(nil)
     }
-    let getGDPRConsentStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getGDPRConsentString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getGDPRConsentStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getGDPRConsentString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getGDPRConsentStringChannel.setMessageHandler { _, reply in
         do {
@@ -1167,7 +1167,7 @@ class TargetingHostApiSetup {
     } else {
       getGDPRConsentStringChannel.setMessageHandler(nil)
     }
-    let setPurposeConsentsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setPurposeConsents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setPurposeConsentsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setPurposeConsents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setPurposeConsentsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1182,7 +1182,7 @@ class TargetingHostApiSetup {
     } else {
       setPurposeConsentsChannel.setMessageHandler(nil)
     }
-    let getPurposeConsentsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getPurposeConsents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getPurposeConsentsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getPurposeConsents\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPurposeConsentsChannel.setMessageHandler { _, reply in
         do {
@@ -1195,7 +1195,7 @@ class TargetingHostApiSetup {
     } else {
       getPurposeConsentsChannel.setMessageHandler(nil)
     }
-    let getDeviceAccessConsentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getDeviceAccessConsent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getDeviceAccessConsentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getDeviceAccessConsent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getDeviceAccessConsentChannel.setMessageHandler { _, reply in
         do {
@@ -1208,7 +1208,7 @@ class TargetingHostApiSetup {
     } else {
       getDeviceAccessConsentChannel.setMessageHandler(nil)
     }
-    let setUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setUSPrivacyStringChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1223,7 +1223,7 @@ class TargetingHostApiSetup {
     } else {
       setUSPrivacyStringChannel.setMessageHandler(nil)
     }
-    let getUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getUSPrivacyStringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUSPrivacyString\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getUSPrivacyStringChannel.setMessageHandler { _, reply in
         do {
@@ -1236,7 +1236,7 @@ class TargetingHostApiSetup {
     } else {
       getUSPrivacyStringChannel.setMessageHandler(nil)
     }
-    let addUserKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addUserKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addUserKeywordChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1251,7 +1251,7 @@ class TargetingHostApiSetup {
     } else {
       addUserKeywordChannel.setMessageHandler(nil)
     }
-    let addUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addUserKeywordsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1266,7 +1266,7 @@ class TargetingHostApiSetup {
     } else {
       addUserKeywordsChannel.setMessageHandler(nil)
     }
-    let removeUserKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeUserKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeUserKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeUserKeywordChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1281,7 +1281,7 @@ class TargetingHostApiSetup {
     } else {
       removeUserKeywordChannel.setMessageHandler(nil)
     }
-    let clearUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearUserKeywordsChannel.setMessageHandler { _, reply in
         do {
@@ -1294,7 +1294,7 @@ class TargetingHostApiSetup {
     } else {
       clearUserKeywordsChannel.setMessageHandler(nil)
     }
-    let getUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getUserKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUserKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getUserKeywordsChannel.setMessageHandler { _, reply in
         do {
@@ -1307,7 +1307,7 @@ class TargetingHostApiSetup {
     } else {
       getUserKeywordsChannel.setMessageHandler(nil)
     }
-    let addAppKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addAppKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addAppKeywordChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1322,7 +1322,7 @@ class TargetingHostApiSetup {
     } else {
       addAppKeywordChannel.setMessageHandler(nil)
     }
-    let addAppKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addAppKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addAppKeywordsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1337,7 +1337,7 @@ class TargetingHostApiSetup {
     } else {
       addAppKeywordsChannel.setMessageHandler(nil)
     }
-    let removeAppKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeAppKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeAppKeywordChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeAppKeyword\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeAppKeywordChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1352,7 +1352,7 @@ class TargetingHostApiSetup {
     } else {
       removeAppKeywordChannel.setMessageHandler(nil)
     }
-    let clearAppKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAppKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearAppKeywordsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAppKeywords\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearAppKeywordsChannel.setMessageHandler { _, reply in
         do {
@@ -1365,7 +1365,7 @@ class TargetingHostApiSetup {
     } else {
       clearAppKeywordsChannel.setMessageHandler(nil)
     }
-    let addAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addAppExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1381,7 +1381,7 @@ class TargetingHostApiSetup {
     } else {
       addAppExtDataChannel.setMessageHandler(nil)
     }
-    let updateAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let updateAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.updateAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       updateAppExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1397,7 +1397,7 @@ class TargetingHostApiSetup {
     } else {
       updateAppExtDataChannel.setMessageHandler(nil)
     }
-    let removeAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeAppExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1412,7 +1412,7 @@ class TargetingHostApiSetup {
     } else {
       removeAppExtDataChannel.setMessageHandler(nil)
     }
-    let clearAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearAppExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAppExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearAppExtDataChannel.setMessageHandler { _, reply in
         do {
@@ -1425,7 +1425,7 @@ class TargetingHostApiSetup {
     } else {
       clearAppExtDataChannel.setMessageHandler(nil)
     }
-    let addUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addUserExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1441,7 +1441,7 @@ class TargetingHostApiSetup {
     } else {
       addUserExtDataChannel.setMessageHandler(nil)
     }
-    let updateUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.updateUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let updateUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.updateUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       updateUserExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1457,7 +1457,7 @@ class TargetingHostApiSetup {
     } else {
       updateUserExtDataChannel.setMessageHandler(nil)
     }
-    let removeUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeUserExtDataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1472,7 +1472,7 @@ class TargetingHostApiSetup {
     } else {
       removeUserExtDataChannel.setMessageHandler(nil)
     }
-    let clearUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearUserExtDataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearUserExtData\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearUserExtDataChannel.setMessageHandler { _, reply in
         do {
@@ -1485,7 +1485,7 @@ class TargetingHostApiSetup {
     } else {
       clearUserExtDataChannel.setMessageHandler(nil)
     }
-    let addBidderToAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.addBidderToAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addBidderToAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addBidderToAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addBidderToAccessControlListChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1500,7 +1500,7 @@ class TargetingHostApiSetup {
     } else {
       addBidderToAccessControlListChannel.setMessageHandler(nil)
     }
-    let removeBidderFromAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.removeBidderFromAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeBidderFromAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.removeBidderFromAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeBidderFromAccessControlListChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1515,7 +1515,7 @@ class TargetingHostApiSetup {
     } else {
       removeBidderFromAccessControlListChannel.setMessageHandler(nil)
     }
-    let clearAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.clearAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let clearAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearAccessControlListChannel.setMessageHandler { _, reply in
         do {
@@ -1528,7 +1528,7 @@ class TargetingHostApiSetup {
     } else {
       clearAccessControlListChannel.setMessageHandler(nil)
     }
-    let setGlobalOrtbConfigChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setGlobalOrtbConfig\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setGlobalOrtbConfigChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setGlobalOrtbConfig\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setGlobalOrtbConfigChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1543,7 +1543,7 @@ class TargetingHostApiSetup {
     } else {
       setGlobalOrtbConfigChannel.setMessageHandler(nil)
     }
-    let getGlobalOrtbConfigChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.getGlobalOrtbConfig\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getGlobalOrtbConfigChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getGlobalOrtbConfig\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getGlobalOrtbConfigChannel.setMessageHandler { _, reply in
         do {
@@ -1556,7 +1556,7 @@ class TargetingHostApiSetup {
     } else {
       getGlobalOrtbConfigChannel.setMessageHandler(nil)
     }
-    let setContentUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setContentUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setContentUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setContentUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setContentUrlChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1571,7 +1571,7 @@ class TargetingHostApiSetup {
     } else {
       setContentUrlChannel.setMessageHandler(nil)
     }
-    let setPublisherNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setPublisherName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setPublisherNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setPublisherName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setPublisherNameChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1586,7 +1586,7 @@ class TargetingHostApiSetup {
     } else {
       setPublisherNameChannel.setMessageHandler(nil)
     }
-    let setStoreUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setStoreUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setStoreUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setStoreUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setStoreUrlChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1601,7 +1601,7 @@ class TargetingHostApiSetup {
     } else {
       setStoreUrlChannel.setMessageHandler(nil)
     }
-    let setDomainChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.TargetingHostApi.setDomain\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setDomainChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setDomain\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setDomainChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1633,7 +1633,7 @@ class InterstitialAdHostApiSetup {
   /// Sets up an instance of `InterstitialAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: InterstitialAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       loadAdChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1651,7 +1651,7 @@ class InterstitialAdHostApiSetup {
     } else {
       loadAdChannel.setMessageHandler(nil)
     }
-    let showChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.show\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let showChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.show\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       showChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1666,7 +1666,7 @@ class InterstitialAdHostApiSetup {
     } else {
       showChannel.setMessageHandler(nil)
     }
-    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.InterstitialAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1698,7 +1698,7 @@ class RewardedAdHostApiSetup {
   /// Sets up an instance of `RewardedAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: RewardedAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       loadAdChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1714,7 +1714,7 @@ class RewardedAdHostApiSetup {
     } else {
       loadAdChannel.setMessageHandler(nil)
     }
-    let showChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.show\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let showChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.show\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       showChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1729,7 +1729,7 @@ class RewardedAdHostApiSetup {
     } else {
       showChannel.setMessageHandler(nil)
     }
-    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.RewardedAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1762,7 +1762,7 @@ class NativeAdHostApiSetup {
   /// Sets up an instance of `NativeAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: NativeAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       loadAdChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1778,7 +1778,7 @@ class NativeAdHostApiSetup {
     } else {
       loadAdChannel.setMessageHandler(nil)
     }
-    let trackImpressionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.trackImpression\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let trackImpressionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackImpression\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       trackImpressionChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1793,7 +1793,7 @@ class NativeAdHostApiSetup {
     } else {
       trackImpressionChannel.setMessageHandler(nil)
     }
-    let trackClickChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.trackClick\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let trackClickChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackClick\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       trackClickChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1808,7 +1808,7 @@ class NativeAdHostApiSetup {
     } else {
       trackClickChannel.setMessageHandler(nil)
     }
-    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.NativeAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1839,7 +1839,7 @@ class MultiformatAdHostApiSetup {
   /// Sets up an instance of `MultiformatAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: MultiformatAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let fetchDemandChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.MultiformatAdHostApi.fetchDemand\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let fetchDemandChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.fetchDemand\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       fetchDemandChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1857,7 +1857,7 @@ class MultiformatAdHostApiSetup {
     } else {
       fetchDemandChannel.setMessageHandler(nil)
     }
-    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.MultiformatAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1888,7 +1888,7 @@ class InstreamVideoAdHostApiSetup {
   /// Sets up an instance of `InstreamVideoAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: InstreamVideoAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    let fetchDemandChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.InstreamVideoAdHostApi.fetchDemand\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let fetchDemandChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InstreamVideoAdHostApi.fetchDemand\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       fetchDemandChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1906,7 +1906,7 @@ class InstreamVideoAdHostApiSetup {
     } else {
       fetchDemandChannel.setMessageHandler(nil)
     }
-    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_flutter.InstreamVideoAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InstreamVideoAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1940,7 +1940,7 @@ class AdFlutterApi: AdFlutterApiProtocol {
     return PrebidApiPigeonCodec.shared
   }
   func onAdEvent(event eventArg: AdEvent, completion: @escaping (Result<Void, PigeonError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.prebid_mobile_flutter.AdFlutterApi.onAdEvent\(messageChannelSuffix)"
+    let channelName: String = "dev.flutter.pigeon.prebid_mobile_sdk.AdFlutterApi.onAdEvent\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([eventArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {

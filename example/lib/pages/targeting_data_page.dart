@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:prebid_mobile_flutter/prebid_mobile_flutter.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 /// User Targeting Data page — manage user/app keywords and ext data.
 ///

@@ -15,7 +15,9 @@ Mobile Ads SDK.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'thanhhaidev' => 'hai2571998@gmail.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  # Shared with the Swift Package (ios/prebid_mobile_sdk_gam/) so CocoaPods and
+  # SPM build the same sources.
+  s.source_files = 'prebid_mobile_sdk_gam/Sources/prebid_mobile_sdk_gam/**/*.swift'
   s.dependency 'Flutter'
   # Brings in PrebidMobile + Google-Mobile-Ads-SDK transitively.
   s.dependency 'PrebidMobileGAMEventHandlers', '~> 3.1'

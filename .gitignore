@@ -34,5 +34,10 @@ pubspec.lock
 build/
 coverage/
 
+# Swift Package Manager (resolved by the consuming app, not the plugin)
+.build/
+Package.resolved
+.swiftpm/
+
 # FVM Version Cache
 .fvm/

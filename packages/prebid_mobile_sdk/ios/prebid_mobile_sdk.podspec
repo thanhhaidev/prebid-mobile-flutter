@@ -14,7 +14,12 @@ providing banner, interstitial, and rewarded ad formats.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'thanhhaidev' => 'hai2571998@gmail.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  # Shared with the Swift Package (ios/prebid_mobile_sdk/) so CocoaPods and SPM
+  # build the same sources.
+  s.source_files = 'prebid_mobile_sdk/Sources/prebid_mobile_sdk/**/*.swift'
+  s.resource_bundles = {
+    'prebid_mobile_sdk_privacy' => ['prebid_mobile_sdk/Sources/prebid_mobile_sdk/Resources/PrivacyInfo.xcprivacy']
+  }
   s.dependency 'Flutter'
   s.dependency 'PrebidMobile', '~> 3.1'
   s.platform = :ios, '13.0'

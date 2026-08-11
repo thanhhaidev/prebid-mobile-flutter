@@ -23,6 +23,12 @@ Mobile Ads SDK.
   s.dependency 'PrebidMobileGAMEventHandlers', '~> 3.1'
   s.platform = :ios, '13.0'
 
+  # The Google Mobile Ads SDK (pulled in transitively) ships as a static
+  # framework, so this pod must be a static framework too — otherwise CocoaPods
+  # rejects the transitive static binary under `use_frameworks!`. Same as the
+  # google_mobile_ads plugin.
+  s.static_framework = true
+
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
 end

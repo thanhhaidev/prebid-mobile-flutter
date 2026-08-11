@@ -29,6 +29,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
   - [Enums](#enums)
   - [Listeners & Callbacks](#listeners--callbacks)
   - [Error Handling](#error-handling)
+- [Ad Server Integration (GAM)](#ad-server-integration-gam)
 - [Example App](#example-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -150,7 +151,7 @@ final interstitial = PrebidInterstitialAd(
   ),
   listener: PrebidInterstitialAdListener(
     onAdLoaded: () async => await interstitial.show(),
-    onAdDismissed: () async => await interstitial.destroy(),
+    onAdClosed: () async => await interstitial.destroy(),
   ),
 );
 
@@ -167,7 +168,7 @@ final rewarded = PrebidRewardedAd(
     onUserEarnedReward: (reward) {
       debugPrint('Earned: ${reward.count}x ${reward.type}');
     },
-    onAdDismissed: () async => await rewarded.destroy(),
+    onAdClosed: () async => await rewarded.destroy(),
   ),
 );
 
@@ -520,6 +521,7 @@ await PrebidMobile.setExternalUserIds([
 | Callback | Signature | Triggered When |
 |---|---|---|
 | `onAdLoaded` | `void Function()` | Banner content loaded. |
+| `onAdDisplayed` | `void Function()` | Banner rendered on screen. On iOS this fires together with `onAdLoaded`. |
 | `onAdFailed` | `void Function(String error)` | Banner failed to load. |
 | `onAdClicked` | `void Function()` | User tapped the banner. |
 | `onAdClosed` | `void Function()` | Banner overlay was dismissed. |
@@ -531,7 +533,7 @@ await PrebidMobile.setExternalUserIds([
 | `onAdLoaded` | `void Function()` | Interstitial ready to show. |
 | `onAdFailed` | `void Function(String error)` | Failed to load. |
 | `onAdDisplayed` | `void Function()` | Presented fullscreen. |
-| `onAdDismissed` | `void Function()` | User dismissed the ad. |
+| `onAdClosed` | `void Function()` | User closed the ad. |
 | `onAdClicked` | `void Function()` | User tapped the ad. |
 
 #### `PrebidRewardedAdListener`
@@ -541,7 +543,7 @@ await PrebidMobile.setExternalUserIds([
 | `onAdLoaded` | `void Function()` | Rewarded ad ready. |
 | `onAdFailed` | `void Function(String error)` | Failed to load. |
 | `onAdDisplayed` | `void Function()` | Presented fullscreen. |
-| `onAdDismissed` | `void Function()` | User dismissed the ad. |
+| `onAdClosed` | `void Function()` | User closed the ad. |
 | `onAdClicked` | `void Function()` | User tapped the ad. |
 | `onUserEarnedReward` | `void Function(PrebidReward)` | User earned a reward. |
 
@@ -585,11 +587,86 @@ try {
 
 ---
 
+## Ad Server Integration (GAM)
+
+Prebid Mobile supports two integration models. This plugin ships the first out
+of the box and supports the second via targeting-keyword handoff:
+
+1. **Prebid Rendered (In-App Bidding)** — the Prebid SDK runs the auction **and**
+   renders the winning creative. This is what [`PrebidBannerAd`](#prebidbannerad--banner-ads),
+   [`PrebidInterstitialAd`](#prebidinterstitialad--interstitial-ads),
+   [`PrebidRewardedAd`](#prebidrewardedad--rewarded-ads), and
+   [`PrebidNativeAd`](#prebidnativead--native-ads) do.
+2. **Ad Server (GAM) Coordination** — the Prebid SDK only runs the auction and
+   returns **targeting keywords**; your primary ad server SDK (Google Ad Manager
+   via [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads)) renders
+   the ad. A Prebid line item in GAM that targets the `hb_*` keys serves the
+   Prebid Universal Creative when a bid wins.
+
+Use model 2 when you already monetize through GAM and want Prebid demand to
+compete in the same auction. The plugin does **not** depend on `google_mobile_ads`
+— you add it to *your app* and wire the handoff yourself.
+
+### The handoff
+
+Fetch demand with [`PrebidMultiformatAd`](#prebidmultiformatad--multiformat-ads)
+(or `PrebidInstreamVideoAd` for video), then pass `targetingKeywords` to
+`AdManagerAdRequest.customTargeting`:
+
+```dart
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+
+// 1. Run the Prebid auction.
+final prebidAd = PrebidMultiformatAd(
+  configId: 'your-config-id',
+  bannerSizes: const [Size(300, 250)],
+);
+final response = await prebidAd.fetchDemand();
+
+// 2. Hand the bid-winning keywords to Google Ad Manager.
+final banner = AdManagerBannerAd(
+  adUnitId: '/1234567/your-gam-ad-unit',
+  sizes: [AdSize(width: 300, height: 250)],
+  request: AdManagerAdRequest(
+    customTargeting: response.targetingKeywords ?? const {},
+  ),
+  listener: AdManagerBannerAdListener(
+    onAdLoaded: (ad) => debugPrint('GAM banner loaded'),
+    onAdFailedToLoad: (ad, error) => ad.dispose(),
+  ),
+);
+await banner.load(); // 3. GAM renders the winner (Prebid or direct-sold).
+```
+
+Render the loaded ad with `AdWidget(ad: banner)` inside a `SizedBox` of the
+requested size.
+
+### Requirements
+
+- Add `google_mobile_ads` to your app and initialize it once
+  (`MobileAds.instance.initialize()`).
+- Configure your Ad Manager app ID: `GADApplicationIdentifier` in
+  `ios/Runner/Info.plist` and the `com.google.android.gms.ads.APPLICATION_ID`
+  `<meta-data>` in `AndroidManifest.xml`.
+- In Google Ad Manager, set up Prebid line items/creatives that target the
+  `hb_*` keys so a winning Prebid bid renders.
+
+> **Note:** dynamic creative resizing for a won Prebid banner (the native
+> `AdViewUtils.findPrebidCreativeSize` step) is not bridged to Flutter; request
+> a fixed size that matches your GAM ad unit.
+
+A runnable end-to-end demo lives in the example app under
+**Utilities → GAM Coordination**
+([`example/lib/pages/gam_coordination_page.dart`](example/lib/pages/gam_coordination_page.dart)).
+
+---
+
 ## Example App
 
 The `example/` directory contains a full-featured demo app including:
 
-- **30+ test cases** across Banner, Interstitial, Rewarded, Native, Video, and Multiformat
+- **50 test cases** across Banner, MRAID, Interstitial, Rewarded, Native, In-Stream Video, and Multiformat — mirroring the Prebid Android `PrebidInternalTestApp` in-app cases
 - **Live event logger** with timestamps for every SDK callback
 - **Settings panel** with persistent GDPR/COPPA toggles and server configuration
 - **Targeting data page** for user keywords, app ext data, and OpenRTB config

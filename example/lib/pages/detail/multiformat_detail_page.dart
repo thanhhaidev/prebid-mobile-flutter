@@ -3,16 +3,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
+import '../../models/demo_ad_category.dart';
 import '../../models/test_case.dart';
 import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
-import '../../widgets/config_info_panel.dart';
+import '../../widgets/ad_unit_header.dart';
 import '../../widgets/event_counter.dart';
-import '../../widgets/log_viewer_panel.dart';
+import '../../widgets/result_panel.dart';
 
-/// Multiformat ad detail page.
-///
-/// Fetches demand for banner + video + native simultaneously.
+/// Multiformat ad detail page — fetches banner + video + native demand on a
+/// single ad unit and shows the winning format and targeting keywords.
 class MultiformatDetailPage extends StatefulWidget {
   final TestCase tc;
   const MultiformatDetailPage({super.key, required this.tc});
@@ -26,29 +26,14 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
   final _log = PrebidDemoLogger.instance;
   PrebidMultiformatAd? _ad;
   String? _resultInfo;
-  int? _loadTimeMs;
-  final Stopwatch _stopwatch = Stopwatch();
 
   Future<void> _fetchDemand() async {
     _ad?.destroy();
     _tracker.reset();
-    setState(() {
-      _resultInfo = null;
-      _loadTimeMs = null;
-    });
-    _stopwatch.reset();
-    _stopwatch.start();
+    setState(() => _resultInfo = null);
 
     _log.log('Multiformat', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
-    if (widget.tc.storedResponse != null) {
-      _log.log(
-        'Multiformat',
-        'Setting stored response: ${widget.tc.storedResponse}',
-      );
-      await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
-    }
-
     _log.log('Multiformat', 'Fetching demand: ${widget.tc.configId}');
     _ad = PrebidMultiformatAd(
       configId: widget.tc.configId,
@@ -65,14 +50,9 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
     );
 
     final result = await _ad!.fetchDemand();
-    _stopwatch.stop();
-    final elapsed = _stopwatch.elapsedMilliseconds;
     if (result.isSuccess) {
       _tracker.track('onRequestSuccess');
-      _log.log(
-        'Multiformat',
-        'Demand fetched in ${elapsed}ms: format=${result.winningFormat}',
-      );
+      _log.log('Multiformat', 'Demand fetched: format=${result.winningFormat}');
       final buf = StringBuffer();
       buf.writeln('Winning Format: ${result.winningFormat ?? "unknown"}');
       if (result.nativeAdCacheId != null) {
@@ -80,21 +60,12 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
       }
       buf.writeln('Targeting Keywords:');
       result.targetingKeywords?.forEach((k, v) => buf.writeln('  $k = $v'));
-      setState(() {
-        _resultInfo = buf.toString();
-        _loadTimeMs = elapsed;
-      });
+      setState(() => _resultInfo = buf.toString());
     } else {
       _tracker.track('onRequestFailed', result.resultCode);
-      _log.log(
-        'Multiformat',
-        'Demand failed in ${elapsed}ms: ${result.resultCode}',
-        level: LogLevel.error,
-      );
-      setState(() {
-        _resultInfo = 'Result: ${result.resultCode}';
-        _loadTimeMs = elapsed;
-      });
+      _log.log('Multiformat', 'Demand failed: ${result.resultCode}',
+          level: LogLevel.error);
+      setState(() => _resultInfo = 'Result: ${result.resultCode}');
     }
   }
 
@@ -114,39 +85,28 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Text(
-                'AdUnitId: ${widget.tc.configId}',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              AdUnitHeader(
+                configId: widget.tc.configId,
+                category: categoryOf(widget.tc),
               ),
-              const SizedBox(height: 12),
-              ActionButton(label: 'Fetch Demand', onPressed: _fetchDemand),
-              const Divider(),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ActionButton(
+                  label: 'Fetch Demand',
+                  icon: Icons.cloud_download_rounded,
+                  onPressed: _fetchDemand,
+                ),
+              ),
+              const SizedBox(height: 16),
               EventCounterList(
                 tracker: _tracker,
                 events: const ['onRequestSuccess', 'onRequestFailed'],
               ),
               if (_resultInfo != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _resultInfo!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 16),
+                ResultPanel(text: _resultInfo!),
               ],
-              const SizedBox(height: 12),
-              ConfigInfoPanel(tc: widget.tc, loadTimeMs: _loadTimeMs),
-              const SizedBox(height: 12),
-              const LogViewerPanel(),
             ],
           ),
         ),

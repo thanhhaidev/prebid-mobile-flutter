@@ -30,10 +30,10 @@ class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 }
 
 class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
-    
+
     private let bannerView: BannerView
     private let methodChannel: FlutterMethodChannel
-    
+
     init(
         frame: CGRect,
         viewId: Int64,
@@ -46,53 +46,62 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         let isVideo = args["isVideo"] as? Bool ?? false
         let autoLoad = args["autoLoad"] as? Bool ?? true
         let refreshInterval = args["refreshIntervalSeconds"] as? Int
-        
+
         let adSize = CGSize(width: width, height: height)
-        
+
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_flutter/banner_ad_\(viewId)",
             binaryMessenger: messenger
         )
-        
+
         bannerView = BannerView(
             frame: CGRect(origin: .zero, size: adSize),
             configID: configId,
             adSize: adSize
         )
-        
+
         super.init()
-        
+
         if isVideo {
             bannerView.adFormat = .video
         }
-        
+
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)
         }
-        
+
         bannerView.delegate = self
-        
+
         if autoLoad {
             bannerView.loadAd()
         }
     }
-    
+
     func view() -> UIView {
         return bannerView
     }
-    
+
     // MARK: - BannerViewDelegate
-    
+
     func bannerViewPresentationController() -> UIViewController? {
         return UIApplication.shared.keyWindow?.rootViewController
     }
-    
+
     func bannerView(_ bannerView: BannerView, didReceiveAdWithAdSize adSize: CGSize) {
+        // Report the rendered creative size so the Flutter widget can size the
+        // slot dynamically to whatever the SDK returns (no fixed frame).
+        methodChannel.invokeMethod("onAdSize", arguments: [
+            "width": Double(adSize.width),
+            "height": Double(adSize.height),
+        ])
+        // iOS reports load and render as one event; Android splits them into
+        // onAdLoaded + onAdDisplayed, so emit both here for cross-platform parity.
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+        methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
     }
     
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWith error: Error) {
-        methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
+        methodChannel.invokeMethod("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
     }
     
     func bannerViewWillPresentModal(_ bannerView: BannerView) {

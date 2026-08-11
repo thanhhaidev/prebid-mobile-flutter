@@ -170,27 +170,27 @@ void main() {
       var loadedCalled = false;
       var failedCalled = false;
       var displayedCalled = false;
-      var dismissedCalled = false;
+      var closedCalled = false;
       var clickedCalled = false;
 
       final listener = PrebidInterstitialAdListener(
         onAdLoaded: () => loadedCalled = true,
         onAdFailed: (error) => failedCalled = true,
         onAdDisplayed: () => displayedCalled = true,
-        onAdDismissed: () => dismissedCalled = true,
+        onAdClosed: () => closedCalled = true,
         onAdClicked: () => clickedCalled = true,
       );
 
       listener.onAdLoaded?.call();
       listener.onAdFailed?.call('error');
       listener.onAdDisplayed?.call();
-      listener.onAdDismissed?.call();
+      listener.onAdClosed?.call();
       listener.onAdClicked?.call();
 
       expect(loadedCalled, true);
       expect(failedCalled, true);
       expect(displayedCalled, true);
-      expect(dismissedCalled, true);
+      expect(closedCalled, true);
       expect(clickedCalled, true);
     });
   });

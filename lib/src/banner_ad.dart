@@ -52,6 +52,13 @@ class PrebidBannerAd extends StatefulWidget {
 }
 
 class _PrebidBannerAdState extends State<PrebidBannerAd> {
+  /// Current slot size. Starts at the requested size and is updated to the
+  /// actual rendered creative size once the native SDK reports it, so a won
+  /// creative larger than the request (e.g. a multisize banner) is not clipped
+  /// or overflowed.
+  late double _width = widget.width.toDouble();
+  late double _height = widget.height.toDouble();
+
   @override
   Widget build(BuildContext context) {
     final creationParams = <String, dynamic>{
@@ -64,9 +71,11 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
     };
 
+    // The slot sizes dynamically: it starts at the requested size and adopts
+    // the actual rendered creative size once the native SDK reports it.
     return SizedBox(
-      width: widget.width.toDouble(),
-      height: widget.height.toDouble(),
+      width: _width,
+      height: _height,
       child: _buildPlatformView(creationParams),
     );
   }
@@ -91,13 +100,25 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   }
 
   void _onPlatformViewCreated(int viewId) {
-    if (widget.listener == null) return;
-
+    // The channel is set up even without a listener so the slot can still
+    // resize to the rendered creative via `onAdSize`.
     final channel = MethodChannel('prebid_mobile_flutter/banner_ad_$viewId');
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
+        case 'onAdSize':
+          final args = call.arguments as Map?;
+          final w = (args?['width'] as num?)?.toDouble();
+          final h = (args?['height'] as num?)?.toDouble();
+          if (w != null && h != null && w > 0 && h > 0 && mounted) {
+            setState(() {
+              _width = w;
+              _height = h;
+            });
+          }
         case 'onAdLoaded':
           widget.listener?.onAdLoaded?.call();
+        case 'onAdDisplayed':
+          widget.listener?.onAdDisplayed?.call();
         case 'onAdFailed':
           widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
         case 'onAdClicked':

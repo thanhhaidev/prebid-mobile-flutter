@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'ad_event_router.dart';
 import 'generated/prebid_api.g.dart';
 import 'native_ad_enums.dart';
 
@@ -197,7 +198,34 @@ class PrebidNativeAd {
     this.placementCount,
     this.listener,
   }) : _adId = _nextId++ {
-    _NativeAdEventRouter.instance.register(_adId, this);
+    AdEventRouter.instance.register(_adId, _handleEvent);
+  }
+
+  void _handleEvent(AdEvent event) {
+    final l = listener;
+    if (l == null) return;
+    switch (event.eventName) {
+      case 'onAdLoaded':
+        if (event.nativeAd != null) {
+          l.onAdLoaded?.call(
+            PrebidNativeAdResponse(
+              title: event.nativeAd!.title,
+              text: event.nativeAd!.text,
+              iconUrl: event.nativeAd!.iconUrl,
+              imageUrl: event.nativeAd!.imageUrl,
+              sponsoredBy: event.nativeAd!.sponsoredBy,
+              callToAction: event.nativeAd!.callToAction,
+              clickUrl: event.nativeAd!.clickUrl,
+            ),
+          );
+        }
+      case 'onAdFailed':
+        l.onAdFailed?.call(event.error ?? 'Unknown error');
+      case 'onAdImpression':
+        l.onAdImpression?.call();
+      case 'onAdClicked':
+        l.onAdClicked?.call();
+    }
   }
 
   /// Load the native ad.
@@ -225,7 +253,7 @@ class PrebidNativeAd {
 
   /// Destroy the native ad and free resources.
   Future<void> destroy() async {
-    _NativeAdEventRouter.instance.unregister(_adId);
+    AdEventRouter.instance.unregister(_adId);
     api.destroy(_adId);
   }
 
@@ -249,55 +277,5 @@ class PrebidNativeAd {
       eventType: tracker.eventType.value,
       methods: tracker.methods.map((m) => m.value).toList(),
     );
-  }
-}
-
-/// Routes native ad events from native to Dart.
-class _NativeAdEventRouter implements AdFlutterApi {
-  static final _NativeAdEventRouter instance = _NativeAdEventRouter._();
-  _NativeAdEventRouter._() {
-    AdFlutterApi.setUp(this);
-  }
-
-  final Map<int, PrebidNativeAd> _ads = {};
-
-  void register(int adId, PrebidNativeAd ad) {
-    _ads[adId] = ad;
-  }
-
-  void unregister(int adId) {
-    _ads.remove(adId);
-  }
-
-  @override
-  void onAdEvent(AdEvent event) {
-    final ad = _ads[event.adId];
-    if (ad == null) return;
-
-    final listener = ad.listener;
-    if (listener == null) return;
-
-    switch (event.eventName) {
-      case 'onAdLoaded':
-        if (event.nativeAd != null) {
-          listener.onAdLoaded?.call(
-            PrebidNativeAdResponse(
-              title: event.nativeAd!.title,
-              text: event.nativeAd!.text,
-              iconUrl: event.nativeAd!.iconUrl,
-              imageUrl: event.nativeAd!.imageUrl,
-              sponsoredBy: event.nativeAd!.sponsoredBy,
-              callToAction: event.nativeAd!.callToAction,
-              clickUrl: event.nativeAd!.clickUrl,
-            ),
-          );
-        }
-      case 'onAdFailed':
-        listener.onAdFailed?.call(event.error ?? 'Unknown error');
-      case 'onAdImpression':
-        listener.onAdImpression?.call();
-      case 'onAdClicked':
-        listener.onAdClicked?.call();
-    }
   }
 }

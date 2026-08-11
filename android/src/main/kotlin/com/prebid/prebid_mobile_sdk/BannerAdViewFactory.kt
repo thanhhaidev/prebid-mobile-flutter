@@ -54,11 +54,23 @@ class BannerAdPlatformView(
 
         bannerView.setBannerListener(object : BannerViewListener {
             override fun onAdLoaded(view: BannerView) {
+                // Report the won creative size so the Flutter slot can size
+                // dynamically to whatever the SDK returns (e.g. a multisize
+                // banner) instead of being clipped to the requested size.
+                view.bidResponse?.winningBid?.let { bid ->
+                    methodChannel.invokeMethod(
+                        "onAdSize",
+                        mapOf(
+                            "width" to bid.width.toDouble(),
+                            "height" to bid.height.toDouble(),
+                        ),
+                    )
+                }
                 methodChannel.invokeMethod("onAdLoaded", null)
             }
 
             override fun onAdDisplayed(view: BannerView) {
-                // Banner displayed
+                methodChannel.invokeMethod("onAdDisplayed", null)
             }
 
             override fun onAdFailed(view: BannerView, exception: AdException?) {

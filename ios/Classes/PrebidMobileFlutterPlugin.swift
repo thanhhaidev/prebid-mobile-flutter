@@ -2,6 +2,22 @@ import Flutter
 import UIKit
 import PrebidMobile
 
+/// Formats Prebid errors, appending `localizedFailureReason` (the real server
+/// response) which the SDK hides behind a generic `localizedDescription`.
+enum PrebidErrorFormatter {
+    static func describe(_ error: Error?) -> String {
+        guard let error = error else { return "Unknown error" }
+        let nsError = error as NSError
+        let description = nsError.localizedDescription
+        if let reason = nsError.localizedFailureReason,
+           !reason.isEmpty,
+           reason != description {
+            return "\(description): \(reason)"
+        }
+        return description
+    }
+}
+
 public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     PrebidMobileHostApi, TargetingHostApi, InterstitialAdHostApi, NativeAdHostApi {
     
@@ -89,7 +105,8 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     }
     
     func clearStoredAuctionResponse() throws {
-        Prebid.shared.storedAuctionResponse = ""
+        // Must be nil, not "" — the SDK serializes an empty string into the request.
+        Prebid.shared.storedAuctionResponse = nil
     }
     
     func addStoredBidResponse(bidder: String, responseId: String) throws {
@@ -430,7 +447,7 @@ private class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     }
     
     func interstitial(_ interstitial: InterstitialRenderingAdUnit, didFailToReceiveAdWithError error: Error?) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: error?.localizedDescription)) { _ in }
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))) { _ in }
     }
     
     func interstitialWillPresentAd(_ interstitial: InterstitialRenderingAdUnit) {
@@ -438,7 +455,7 @@ private class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     }
     
     func interstitialDidDismissAd(_ interstitial: InterstitialRenderingAdUnit) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdDismissed")) { _ in }
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdClosed")) { _ in }
     }
     
     func interstitialDidClickAd(_ interstitial: InterstitialRenderingAdUnit) {
@@ -489,7 +506,7 @@ private class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     }
     
     func rewardedAd(_ rewardedAd: RewardedAdUnit, didFailToReceiveAdWithError error: Error?) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: error?.localizedDescription)) { _ in }
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))) { _ in }
     }
     
     func rewardedAdWillPresentAd(_ rewardedAd: RewardedAdUnit) {
@@ -497,7 +514,7 @@ private class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     }
     
     func rewardedAdDidDismissAd(_ rewardedAd: RewardedAdUnit) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdDismissed")) { _ in }
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdClosed")) { _ in }
     }
     
     func rewardedAdDidClickAd(_ rewardedAd: RewardedAdUnit) {

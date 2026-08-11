@@ -50,6 +50,7 @@ typedef OnInitializationComplete =
 /// ```dart
 /// PrebidBannerAdListener(
 ///   onAdLoaded: () => debugPrint('Banner loaded'),
+///   onAdDisplayed: () => debugPrint('Banner displayed'),
 ///   onAdFailed: (error) => debugPrint('Failed: $error'),
 ///   onAdClicked: () => debugPrint('Clicked'),
 ///   onAdClosed: () => debugPrint('Closed'),
@@ -59,6 +60,13 @@ class PrebidBannerAdListener {
   /// Called when the banner ad content has been successfully loaded and is
   /// ready to display.
   final void Function()? onAdLoaded;
+
+  /// Called when the banner ad has been rendered on screen.
+  ///
+  /// On Android this is a distinct event fired after [onAdLoaded]. iOS reports
+  /// load and render as a single event, so on iOS this fires together with
+  /// [onAdLoaded].
+  final void Function()? onAdDisplayed;
 
   /// Called when the banner ad fails to load.
   ///
@@ -75,6 +83,7 @@ class PrebidBannerAdListener {
   /// Creates a [PrebidBannerAdListener].
   const PrebidBannerAdListener({
     this.onAdLoaded,
+    this.onAdDisplayed,
     this.onAdFailed,
     this.onAdClicked,
     this.onAdClosed,
@@ -90,7 +99,7 @@ class PrebidBannerAdListener {
 ///   onAdLoaded: () => interstitial.show(),
 ///   onAdFailed: (error) => debugPrint('Failed: $error'),
 ///   onAdDisplayed: () => debugPrint('Displayed'),
-///   onAdDismissed: () => interstitial.destroy(),
+///   onAdClosed: () => interstitial.destroy(),
 ///   onAdClicked: () => debugPrint('Clicked'),
 /// )
 /// ```
@@ -107,10 +116,10 @@ class PrebidInterstitialAdListener {
   /// Called when the interstitial ad is presented fullscreen to the user.
   final void Function()? onAdDisplayed;
 
-  /// Called when the user dismisses the fullscreen interstitial ad.
+  /// Called when the user closes the fullscreen interstitial ad.
   ///
   /// This is the appropriate place to call [PrebidInterstitialAd.destroy].
-  final void Function()? onAdDismissed;
+  final void Function()? onAdClosed;
 
   /// Called when the user taps on the interstitial ad content.
   final void Function()? onAdClicked;
@@ -120,7 +129,7 @@ class PrebidInterstitialAdListener {
     this.onAdLoaded,
     this.onAdFailed,
     this.onAdDisplayed,
-    this.onAdDismissed,
+    this.onAdClosed,
     this.onAdClicked,
   });
 }
@@ -137,7 +146,7 @@ class PrebidInterstitialAdListener {
 ///   onUserEarnedReward: (reward) {
 ///     debugPrint('Reward: ${reward.count}x ${reward.type}');
 ///   },
-///   onAdDismissed: () => rewarded.destroy(),
+///   onAdClosed: () => rewarded.destroy(),
 /// )
 /// ```
 class PrebidRewardedAdListener {
@@ -150,8 +159,8 @@ class PrebidRewardedAdListener {
   /// Called when the rewarded ad is presented fullscreen.
   final void Function()? onAdDisplayed;
 
-  /// Called when the user dismisses the rewarded ad.
-  final void Function()? onAdDismissed;
+  /// Called when the user closes the rewarded ad.
+  final void Function()? onAdClosed;
 
   /// Called when the user taps on the rewarded ad content.
   final void Function()? onAdClicked;
@@ -167,7 +176,7 @@ class PrebidRewardedAdListener {
     this.onAdLoaded,
     this.onAdFailed,
     this.onAdDisplayed,
-    this.onAdDismissed,
+    this.onAdClosed,
     this.onAdClicked,
     this.onUserEarnedReward,
   });

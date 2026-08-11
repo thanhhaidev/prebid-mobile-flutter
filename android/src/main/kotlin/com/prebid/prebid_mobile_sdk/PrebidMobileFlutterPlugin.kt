@@ -333,7 +333,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDisplayed")) {}
             }
             override fun onAdClosed(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDismissed")) {}
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClosed")) {}
             }
             override fun onAdClicked(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}
@@ -380,7 +380,7 @@ class RewardedAdHostApiImpl(
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDisplayed")) {}
             }
             override fun onAdClosed(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDismissed")) {}
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClosed")) {}
             }
             override fun onAdClicked(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}

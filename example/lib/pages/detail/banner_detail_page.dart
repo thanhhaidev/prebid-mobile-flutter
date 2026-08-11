@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
+import '../../models/demo_ad_category.dart';
 import '../../models/demo_ad_format.dart';
 import '../../models/test_case.dart';
 import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
-import '../../widgets/config_info_panel.dart';
+import '../../widgets/ad_unit_header.dart';
+import '../../widgets/configure_ad_dialog.dart';
 import '../../widgets/event_counter.dart';
-import '../../widgets/expandable_error_panel.dart';
-import '../../widgets/log_viewer_panel.dart';
 
-/// Banner ad detail page.
-///
-/// Mirrors `InAppDisplayBannerViewController` and `InAppVideoBannerViewController`.
-/// Sets `isVideo: true` for video banner test cases.
+/// Banner ad detail page — ad stage, config header, Load / Stop refresh, and
+/// callback counters. The app-bar gear opens the "Configure the Ad" dialog.
 class BannerDetailPage extends StatefulWidget {
   final TestCase tc;
   const BannerDetailPage({super.key, required this.tc});
@@ -25,175 +23,167 @@ class BannerDetailPage extends StatefulWidget {
 class _BannerDetailPageState extends State<BannerDetailPage> {
   final EventTracker _tracker = EventTracker();
   final _log = PrebidDemoLogger.instance;
+
+  late String _configId = widget.tc.configId;
+  late int _width = widget.tc.width;
+  late int _height = widget.tc.height;
+  int _refreshSeconds = 0; // 0 = auto-refresh disabled
+
   bool _showAd = false;
-  bool _isLoading = false;
-  String? _errorMessage;
   int _adKey = 0;
-  int? _loadTimeMs;
-  final Stopwatch _stopwatch = Stopwatch();
 
   bool get _isVideo => widget.tc.format == DemoAdFormat.videoBanner;
 
   Future<void> _load() async {
     _log.log('Banner', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
-    if (widget.tc.storedResponse != null) {
-      _log.log(
-        'Banner',
-        'Setting stored response: ${widget.tc.storedResponse}',
-      );
-      await PrebidMobile.setStoredAuctionResponse(widget.tc.storedResponse!);
-    }
     _tracker.reset();
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _loadTimeMs = null;
-    });
-    _stopwatch.reset();
-    _stopwatch.start();
-    _log.log(
-      'Banner',
-      'Loading ${_isVideo ? "video" : "display"} banner: ${widget.tc.configId} (${widget.tc.width}x${widget.tc.height})',
-    );
+    _log.log('Banner', 'Loading ${_isVideo ? "video" : "display"} banner: '
+        '$_configId (${_width}x$_height, refresh=$_refreshSeconds)');
     setState(() {
       _showAd = true;
       _adKey++;
     });
   }
 
-  void _hide() {
-    _log.log('Banner', 'Hiding banner');
+  void _stopRefresh() {
+    _log.log('Banner', 'Stopping auto-refresh');
     setState(() {
-      _showAd = false;
-      _isLoading = false;
+      _refreshSeconds = 0;
+      _adKey++;
     });
+  }
+
+  Future<void> _configure() async {
+    final cfg = await ConfigureAdDialog.show(
+      context,
+      initial: AdConfig(
+        configId: _configId,
+        width: _width,
+        height: _height,
+        refreshDelay: _refreshSeconds,
+      ),
+    );
+    if (cfg == null) return;
+    setState(() {
+      _configId = cfg.configId;
+      _width = cfg.width;
+      _height = cfg.height;
+      _refreshSeconds = cfg.refreshDelay;
+    });
+    await _load();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.tc.title)),
+      appBar: AppBar(
+        title: Text(widget.tc.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Configure the Ad',
+            onPressed: _configure,
+          ),
+        ],
+      ),
       body: ListenableBuilder(
         listenable: _tracker,
         builder: (context, _) => SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Format badge
+              // Ad stage
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 120),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _isVideo ? Colors.purple.shade50 : Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
-                  _isVideo ? '🎬 Video Banner' : '🖼 Display Banner',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _isVideo
-                        ? Colors.purple.shade700
-                        : Colors.blue.shade700,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Ad area
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (_showAd)
-                      PrebidBannerAd(
+                child: _showAd
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: PrebidBannerAd(
                         key: ValueKey(_adKey),
-                        configId: widget.tc.configId,
-                        width: widget.tc.width,
-                        height: widget.tc.height,
+                        configId: _configId,
+                        width: _width,
+                        height: _height,
                         isVideo: _isVideo,
+                        refreshIntervalSeconds:
+                            _refreshSeconds >= 30 ? _refreshSeconds : null,
                         listener: PrebidBannerAdListener(
                           onAdLoaded: () {
-                            _stopwatch.stop();
                             _tracker.track('onAdLoaded');
-                            _log.log(
-                              'Banner',
-                              'Ad loaded in ${_stopwatch.elapsedMilliseconds}ms',
-                            );
-                            setState(() {
-                              _isLoading = false;
-                              _loadTimeMs = _stopwatch.elapsedMilliseconds;
-                            });
+                            _log.log('Banner', 'Ad loaded');
+                          },
+                          onAdDisplayed: () {
+                            _tracker.track('onAdDisplayed');
+                            _log.log('Banner', 'Ad displayed');
                           },
                           onAdFailed: (e) {
-                            _stopwatch.stop();
                             _tracker.track('onAdFailed', e);
-                            _log.log(
-                              'Banner',
-                              'Ad failed in ${_stopwatch.elapsedMilliseconds}ms: $e',
-                              level: LogLevel.error,
-                            );
-                            setState(() {
-                              _isLoading = false;
-                              _errorMessage = e;
-                              _loadTimeMs = _stopwatch.elapsedMilliseconds;
-                            });
+                            _log.log('Banner', 'Ad failed: $e',
+                                level: LogLevel.error);
                           },
                           onAdClicked: () {
                             _tracker.track('onAdClicked');
                             _log.log('Banner', 'Ad clicked');
                           },
+                          onAdClosed: () {
+                            _tracker.track('onAdClosed');
+                            _log.log('Banner', 'Ad closed');
+                          },
                         ),
-                      )
-                    else
-                      SizedBox(
-                        width: widget.tc.width.toDouble(),
-                        height: widget.tc.height.toDouble(),
-                        child: const Center(
-                          child: Text(
-                            'Tap "Load" to load ad',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ),
+                      )))
+                    : Text(
+                        'Tap Load to request an ad',
+                        style: TextStyle(color: theme.colorScheme.outline),
                       ),
-                    if (_isLoading)
-                      SizedBox(
-                        width: widget.tc.width.toDouble(),
-                        height: widget.tc.height.toDouble(),
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                  ],
-                ),
               ),
-              const SizedBox(height: 12),
-
-              // Error display
-              if (_errorMessage != null)
-                ExpandableErrorPanel(error: _errorMessage!),
-
+              const SizedBox(height: 16),
+              AdUnitHeader(
+                configId: _configId,
+                category: categoryOf(widget.tc),
+              ),
+              const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ActionButton(label: 'Load', onPressed: _load),
-                  const SizedBox(width: 24),
-                  ActionButton(label: 'Hide', onPressed: _hide),
+                  Expanded(
+                    child: ActionButton(
+                      label: 'Load',
+                      icon: Icons.play_arrow_rounded,
+                      onPressed: _load,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ActionButton(
+                      label: 'Stop refresh',
+                      primary: false,
+                      icon: Icons.stop_rounded,
+                      onPressed: _stopRefresh,
+                    ),
+                  ),
                 ],
               ),
-              const Divider(),
+              const SizedBox(height: 16),
               EventCounterList(
                 tracker: _tracker,
-                events: const ['onAdLoaded', 'onAdFailed', 'onAdClicked'],
+                events: const [
+                  'onAdLoaded',
+                  'onAdDisplayed',
+                  'onAdFailed',
+                  'onAdClicked',
+                  'onAdClosed',
+                ],
               ),
-              const SizedBox(height: 12),
-              ConfigInfoPanel(tc: widget.tc, loadTimeMs: _loadTimeMs),
-              const SizedBox(height: 12),
-              const LogViewerPanel(),
             ],
           ),
         ),

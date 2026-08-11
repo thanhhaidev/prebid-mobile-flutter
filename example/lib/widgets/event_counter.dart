@@ -27,7 +27,9 @@ class EventTracker extends ChangeNotifier {
   }
 }
 
-/// Displays event counters for ad callbacks.
+/// A card of callback counters — one row per event with a status dot, the
+/// event name, and a count pill. Triggered rows light up (green, or red for
+/// failures); untriggered rows stay muted.
 class EventCounterList extends StatelessWidget {
   final EventTracker tracker;
   final List<String> events;
@@ -39,65 +41,90 @@ class EventCounterList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ...events.map((e) {
-          final c = tracker.count(e);
-          final d = tracker.delta(e);
-          final isError = e.toLowerCase().contains('fail');
-          final hasCount = c > 0;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '$e called',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: hasCount
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: hasCount
-                          ? (isError
-                                ? Colors.red.shade700
-                                : Colors.green.shade700)
-                          : Colors.grey.shade500,
-                    ),
-                  ),
-                ),
-                Text(
-                  '-  $c (+$d)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: hasCount ? FontWeight.bold : FontWeight.normal,
-                    color: hasCount
-                        ? (isError
-                              ? Colors.red.shade700
-                              : Colors.green.shade700)
-                        : Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-        if (tracker.lastError != null)
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Column(
+        children: [
+          for (int i = 0; i < events.length; i++) ...[
+            if (i > 0) Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.4)),
+            _row(theme, events[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _row(ThemeData theme, String event) {
+    final c = tracker.count(event);
+    final d = tracker.delta(event);
+    final active = c > 0;
+    final isFail = event.toLowerCase().contains('fail');
+    final accent = isFail ? theme.colorScheme.error : const Color(0xFF16A34A);
+    final muted = theme.colorScheme.outlineVariant;
+    final color = active ? accent : muted;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        children: [
           Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(8),
+            width: 9,
+            height: 9,
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.red.shade200),
-            ),
-            child: Text(
-              'Error: ${tracker.lastError}',
-              style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+              color: active ? accent : Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(color: color, width: 1.5),
             ),
           ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              event,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                color: active
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          if (active && d > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                '+$d',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: accent,
+                ),
+              ),
+            ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+              color: active
+                  ? accent.withValues(alpha: 0.12)
+                  : muted.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$c',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

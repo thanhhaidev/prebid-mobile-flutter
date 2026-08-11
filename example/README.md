@@ -1,31 +1,44 @@
 # Prebid Mobile Flutter Example App
 
-This is a comprehensive showcase of the `prebid_mobile_flutter` plugin, meticulously structured to mirror the official [Prebid iOS Demo App](https://github.com/prebid/prebid-mobile-ios/tree/master/Example/PrebidDemo).
+This is a comprehensive showcase of the `prebid_mobile_flutter` plugin, structured to mirror the official [Prebid Android `PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
 
 ## Overview
 
-The demo app focuses exclusively on the **In-App (Prebid Rendered)** integration, where the Prebid SDK directly handles both the bidding auction and the ad rendering. 
+The demo app focuses exclusively on the **In-App (Prebid Rendered)** integration, where the Prebid SDK directly handles both the bidding auction and the ad rendering.
 
-It provides 6 core ad detail pages, each tailored to specific formats, alongside a robust Settings and Targeting Data manager.
+The UI mirrors the reference test app:
+
+- **Bottom navigation** — an **Examples** tab and a **Utilities** tab (each keeps its own navigation stack, so the bottom bar stays visible on detail pages).
+- **Examples** — a search bar, a single row of ad-type filter chips (All · Banner · Interstitial · Rewarded · MRAID · Video · Native), GDPR / PBS-Debug toggles, and a settings gear.
+- **Detail pages** — a clean layout with the ad view, the config id, action buttons (Load / Show / Stop refresh / Fetch Demand), and a live callback counter for every listener event (`onAdX called - N ( +1 )`). The app-bar gear opens a **Configure the Ad** dialog to override the config id, size, and refresh delay.
+- **Utilities** — IAB Consent Settings (GDPR / CCPA), App Settings (server / account / debug), Targeting Data, and Versions.
 
 ## Ad Formats Showcased
 
-1. **Banner**
-   - Display Banner (`320x50`, `300x250`)
-   - Video Banner (Outstream `300x250`)
-2. **Interstitial**
-   - Display Interstitial (`320x480`)
-   - Video Interstitial (`320x480` Vertical & Landscape)
-3. **Rewarded**
-   - Display Rewarded
-   - Video Rewarded (`320x480`)
-4. **Native**
-   - Banner Native Styles
-   - Custom Flutter UI rendering using native raw assets (Image, Title, CTA, Sponsored)
-5. **Video**
-   - Standalone In-App Video
-6. **Multiformat**
-   - Requesting multiple demand sources simultaneously on a single Ad Unit ID.
+**50 test cases** mirroring the in-app (Prebid Rendering) section of the Prebid
+Android [`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
+Mediation/ad-server integrations (GAM, AdMob, AppLovin MAX), custom renderers,
+and Android-only view patterns are out of scope — this plugin wraps the
+rendering API only.
+
+1. **Display Banner** — `320x50`, `300x250`, `728x90`, Multisize, Deeplink, plus
+   No-Bids and Incorrect-VAST error cases.
+2. **MRAID** — Expand (1/2 part), Resize (+ errors / expandable), Fullscreen,
+   Viewability Compliance, Resize Negative, Load & Events, Test Properties/Methods.
+3. **Video Banner (Outstream)** — Outstream, With End Card, No-Bids.
+4. **Display Interstitial** — `320x480`, No-Bids, MRAID Fullscreen.
+5. **Video Interstitial** — `320x480`, With/MRAID End Card, SkipOffset, Deeplink,
+   Vertical, With Ad Configuration, No-Bids.
+6. **Display Rewarded** — Default, Time+autoclose, Event+close.
+7. **Video Rewarded** — Default/Time/Event, With/Without End Card, End Card
+   variants, With Ad Configuration, No-Bids (with `onUserEarnedReward`).
+8. **Native** — Native Styles and Native Links, rendered with custom Flutter UI
+   from raw assets (Image, Title, CTA, Sponsored, Body).
+9. **In-Stream Video** — `fetchDemand`-only, surfacing the returned targeting keywords.
+10. **Multiformat** — Banner + Video + Native demand on a single ad unit.
+
+Every detail page wires **all** listener callbacks for that ad unit and shows a
+live per-callback counter, so each case can be verified end to end.
 
 ## Key Features
 

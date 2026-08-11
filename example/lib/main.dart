@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show MobileAds;
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import 'pages/examples_page.dart';
+import 'pages/utilities_page.dart';
 import 'utils/app_settings.dart';
 import 'utils/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.init();
+  // Initialize the Google Mobile Ads SDK once at startup so the "GAM
+  // Coordination" demo can render Ad Manager ad views. Prebid runs the auction
+  // and hands its targeting keywords to this SDK for rendering.
+  await MobileAds.instance.initialize();
   runApp(const PrebidDemoApp());
 }
 
@@ -24,17 +31,10 @@ class PrebidDemoApp extends StatefulWidget {
 }
 
 class _PrebidDemoAppState extends State<PrebidDemoApp> {
-  String _sdkStatus = 'Initializing...';
-  bool _sdkReady = false;
-  final _log = PrebidDemoLogger.instance;
-
-  static const _pluginVersion = '0.0.1';
-
   @override
   void initState() {
     super.initState();
     PrebidDemoApp.darkModeNotifier.addListener(_onDarkModeChanged);
-    _initSdk();
   }
 
   @override
@@ -44,6 +44,62 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
   }
 
   void _onDarkModeChanged() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
+    final darkMode = PrebidDemoApp.darkModeNotifier.value;
+    final brightness = darkMode ? Brightness.dark : Brightness.light;
+
+    return MaterialApp(
+      title: 'Prebid Rendering Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0068B5),
+          brightness: brightness,
+        ),
+        useMaterial3: true,
+        brightness: brightness,
+        appBarTheme: AppBarTheme(
+          backgroundColor: darkMode
+              ? const Color(0xFF1A1A2E)
+              : const Color(0xFF0068B5),
+          foregroundColor: Colors.white,
+          centerTitle: true,
+        ),
+      ),
+      home: const RootShell(),
+    );
+  }
+}
+
+/// Root shell with a persistent bottom navigation bar (Examples / Utilities).
+///
+/// Each tab hosts its own [Navigator] so pushing a detail page keeps the
+/// bottom bar visible, matching the Prebid reference app.
+class RootShell extends StatefulWidget {
+  const RootShell({super.key});
+
+  @override
+  State<RootShell> createState() => _RootShellState();
+}
+
+class _RootShellState extends State<RootShell> {
+  int _index = 0;
+  final _navKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
+
+  String _sdkStatus = 'Initializing...';
+  bool _sdkReady = false;
+  final _log = PrebidDemoLogger.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSdk();
+  }
 
   Future<void> _initSdk() async {
     _log.log('SDK', 'Configuring Prebid Mobile...');
@@ -58,6 +114,7 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
       prebidServerUrl: serverUrl,
       accountId: accountId,
       completion: (status, error) {
+        if (!mounted) return;
         setState(() {
           _sdkReady =
               status == InitializationStatus.succeeded ||
@@ -77,83 +134,70 @@ class _PrebidDemoAppState extends State<PrebidDemoApp> {
     );
   }
 
+  Widget _tabNavigator(int index, Widget root) {
+    return Navigator(
+      key: _navKeys[index],
+      onGenerateRoute: (settings) =>
+          MaterialPageRoute(builder: (_) => root, settings: settings),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final darkMode = PrebidDemoApp.darkModeNotifier.value;
-    final brightness = darkMode ? Brightness.dark : Brightness.light;
-
-    return MaterialApp(
-      title: 'Prebid Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0068B5),
-          brightness: brightness,
-        ),
-        useMaterial3: true,
-        brightness: brightness,
-        appBarTheme: AppBarTheme(
-          backgroundColor: darkMode
-              ? const Color(0xFF1A1A2E)
-              : const Color(0xFF0068B5),
-          foregroundColor: Colors.white,
-          centerTitle: true,
-        ),
-      ),
-      home: Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final nav = _navKeys[_index].currentState;
+        if (nav != null && nav.canPop()) {
+          nav.pop();
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
         body: Column(
           children: [
-            // SDK status bar
-            SafeArea(
-              bottom: false,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: 16,
-                ),
-                color: _sdkReady
-                    ? (darkMode
-                          ? const Color(0xFF1B3A1B)
-                          : const Color(0xFFE8F5E9))
-                    : (darkMode
-                          ? const Color(0xFF3A2E1B)
-                          : const Color(0xFFFFF3E0)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (!_sdkReady && _sdkStatus == 'Initializing...')
-                      const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 1.5),
-                        ),
-                      ),
-                    Flexible(
-                      child: Text(
-                        _sdkStatus,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'v$_pluginVersion',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: darkMode
-                            ? Colors.grey.shade400
-                            : Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+            // SDK status strip — only while initializing or on failure.
+            if (!_sdkReady)
+              SafeArea(
+                bottom: false,
+                child: Container(
+                  width: double.infinity,
+                  color: _sdkStatus.startsWith('❌')
+                      ? const Color(0xFFFFEBEE)
+                      : const Color(0xFFFFF3E0),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    _sdkStatus,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
+            Expanded(
+              child: IndexedStack(
+                index: _index,
+                children: [
+                  _tabNavigator(0, const ExamplesPage()),
+                  _tabNavigator(1, const UtilitiesPage()),
+                ],
+              ),
             ),
-            const Expanded(child: ExamplesPage()),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.list),
+              label: 'Examples',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.info_outline),
+              label: 'Utilities',
+            ),
           ],
         ),
       ),

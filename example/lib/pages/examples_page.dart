@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../data/test_case_registry.dart';
+import '../models/demo_ad_category.dart';
 import '../models/demo_ad_format.dart';
 import '../models/test_case.dart';
+import '../utils/app_settings.dart';
+import '../utils/category_style.dart';
 import 'detail/banner_detail_page.dart';
 import 'detail/interstitial_detail_page.dart';
-import 'detail/rewarded_detail_page.dart';
-import 'detail/native_detail_page.dart';
-import 'detail/video_detail_page.dart';
 import 'detail/multiformat_detail_page.dart';
-import 'about_page.dart';
+import 'detail/native_detail_page.dart';
+import 'detail/rewarded_detail_page.dart';
+import 'detail/video_detail_page.dart';
 import 'settings_page.dart';
 
-/// Main examples list page — mirrors Prebid's ExamplesViewController.
-///
-/// Features:
-/// - AdFormat filter chips
-/// - Search bar for filtering by title
-/// - Test case list with format badges and tap-to-navigate
+/// Main examples list — search, ad-type filter chips, quick privacy/debug
+/// toggles, and a card list of test cases.
 class ExamplesPage extends StatefulWidget {
   const ExamplesPage({super.key});
 
@@ -26,164 +25,137 @@ class ExamplesPage extends StatefulWidget {
 }
 
 class _ExamplesPageState extends State<ExamplesPage> {
-  DemoAdFormat? _selectedFormat;
+  DemoAdCategory _category = DemoAdCategory.all;
   String _searchText = '';
+  bool _gdpr = AppSettings.gdpr;
+  bool _pbsDebug = AppSettings.pbsDebug;
 
   List<TestCase> get _filtered {
-    return TestCaseRegistry.allCases
-        .where(
-          (t) =>
-              (_selectedFormat == null || t.format == _selectedFormat) &&
-              (_searchText.isEmpty ||
-                  t.title.toLowerCase().contains(_searchText.toLowerCase())),
-        )
-        .toList();
+    final q = _searchText.toLowerCase();
+    return TestCaseRegistry.allCases.where((t) {
+      final matchesCategory =
+          _category == DemoAdCategory.all || categoryOf(t) == _category;
+      final matchesSearch =
+          q.isEmpty ||
+          t.title.toLowerCase().contains(q) ||
+          t.configId.toLowerCase().contains(q);
+      return matchesCategory && matchesSearch;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filtered = _filtered;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Prebid Flutter Demo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'About',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AboutPage()),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-          ),
-        ],
+        titleTextStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
       body: Column(
         children: [
-          // Ad format picker
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  _formatChip('All', null),
-                  ...DemoAdFormat.values.map((f) => _formatChip(f.label, f)),
-                ],
-              ),
-            ),
-          ),
-
-          // Search bar
+          // Search
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search test cases...',
-                prefixIcon: const Icon(Icons.search, size: 20),
+                hintText: 'Search examples',
+                prefixIcon: const Icon(Icons.search_rounded),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                filled: true,
+                fillColor:
+                    theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              style: const TextStyle(fontSize: 14),
               onChanged: (v) => setState(() => _searchText = v),
             ),
           ),
-          const SizedBox(height: 4),
 
-          // Result count
+          // Category filter chips
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: DemoAdCategory.values.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => _categoryChip(DemoAdCategory.values[i]),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Quick toggles
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Text(
-                  '${_filtered.length} test case${_filtered.length == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                FilterChip(
+                  label: const Text('GDPR'),
+                  selected: _gdpr,
+                  onSelected: (v) async {
+                    setState(() => _gdpr = v);
+                    await AppSettings.setGdpr(v);
+                    await PrebidTargeting.setSubjectToGDPR(v);
+                  },
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: const Text('PBS Debug'),
+                  selected: _pbsDebug,
+                  onSelected: (v) async {
+                    setState(() => _pbsDebug = v);
+                    await AppSettings.setPbsDebug(v);
+                    await PrebidMobile.setPbsDebug(v);
+                  },
                 ),
                 const Spacer(),
-                if (_selectedFormat != null)
-                  GestureDetector(
-                    onTap: () => setState(() => _selectedFormat = null),
-                    child: Text(
-                      'Clear filter',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.tune_rounded),
+                  tooltip: 'App Settings',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
                   ),
+                ),
               ],
             ),
           ),
-          const Divider(height: 1),
 
-          // Test case list
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${filtered.length} example${filtered.length == 1 ? '' : 's'}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+
           Expanded(
-            child: _filtered.isEmpty
+            child: filtered.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No test cases found',
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
-                      ],
+                    child: Text(
+                      'No examples found',
+                      style: TextStyle(color: theme.colorScheme.outline),
                     ),
                   )
-                : ListView.separated(
-                    itemCount: _filtered.length,
-                    separatorBuilder: (_, _) =>
-                        const Divider(height: 1, indent: 16),
-                    itemBuilder: (context, i) {
-                      final tc = _filtered[i];
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        title: Text(
-                          tc.title,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            _formatBadge(tc.format),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                tc.configId,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey.shade500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: const Icon(Icons.chevron_right, size: 20),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => _detailPage(tc)),
-                        ),
-                      );
-                    },
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, i) => _caseCard(filtered[i]),
                   ),
           ),
         ],
@@ -191,48 +163,57 @@ class _ExamplesPageState extends State<ExamplesPage> {
     );
   }
 
-  Widget _formatChip(String label, DemoAdFormat? format) {
-    final selected = _selectedFormat == format;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: ChoiceChip(
-        label: Text(label, style: const TextStyle(fontSize: 11)),
-        selected: selected,
-        selectedColor: const Color(0xFF0068B5),
-        labelStyle: TextStyle(
-          color: selected ? Colors.white : Colors.black87,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        ),
-        onSelected: (_) => setState(() => _selectedFormat = format),
-        visualDensity: VisualDensity.compact,
+  Widget _categoryChip(DemoAdCategory c) {
+    final selected = _category == c;
+    return FilterChip(
+      label: Text(c.label),
+      selected: selected,
+      showCheckmark: false,
+      avatar: Icon(
+        styleFor(c).icon,
+        size: 18,
+        color: selected
+            ? styleFor(c).color
+            : Theme.of(context).colorScheme.outline,
       ),
+      onSelected: (_) => setState(() => _category = c),
     );
   }
 
-  /// Format badge with icon and color for the ad type.
-  Widget _formatBadge(DemoAdFormat format) {
-    final (icon, color) = switch (format) {
-      DemoAdFormat.displayBanner => ('🖼', Colors.blue),
-      DemoAdFormat.videoBanner => ('🎬', Colors.purple),
-      DemoAdFormat.nativeBanner => ('📄', Colors.teal),
-      DemoAdFormat.displayInterstitial => ('📱', Colors.indigo),
-      DemoAdFormat.videoInterstitial => ('🎥', Colors.deepPurple),
-      DemoAdFormat.displayRewarded => ('🏆', Colors.amber),
-      DemoAdFormat.videoRewarded => ('🎯', Colors.orange),
-      DemoAdFormat.videoInstream => ('📺', Colors.red),
-      DemoAdFormat.native => ('🧩', Colors.green),
-      DemoAdFormat.multiformat => ('✨', Colors.pink),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: color.shade50,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.shade200, width: 0.5),
-      ),
-      child: Text(
-        '$icon ${format.label}',
-        style: TextStyle(fontSize: 9, color: color.shade700),
+  Widget _caseCard(TestCase tc) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        leading: CategoryAvatar(category: categoryOf(tc)),
+        title: Text(
+          tc.title,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
+            tc.configId,
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: theme.colorScheme.outline,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: theme.colorScheme.outline,
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _detailPage(tc)),
+        ),
       ),
     );
   }
@@ -245,8 +226,7 @@ class _ExamplesPageState extends State<ExamplesPage> {
       DemoAdFormat.videoInterstitial => InterstitialDetailPage(tc: tc),
       DemoAdFormat.displayRewarded ||
       DemoAdFormat.videoRewarded => RewardedDetailPage(tc: tc),
-      DemoAdFormat.native ||
-      DemoAdFormat.nativeBanner => NativeDetailPage(tc: tc),
+      DemoAdFormat.native => NativeDetailPage(tc: tc),
       DemoAdFormat.videoInstream => VideoDetailPage(tc: tc),
       DemoAdFormat.multiformat => MultiformatDetailPage(tc: tc),
     };

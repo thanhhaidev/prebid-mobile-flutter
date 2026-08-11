@@ -5,7 +5,6 @@
 enum DemoAdFormat {
   displayBanner('Display Banner'),
   videoBanner('Video Banner'),
-  nativeBanner('Native Banner'),
   displayInterstitial('Display Interstitial'),
   videoInterstitial('Video Interstitial'),
   displayRewarded('Display Rewarded'),

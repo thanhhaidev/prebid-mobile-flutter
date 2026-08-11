@@ -660,8 +660,32 @@ GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
 > a fixed size that matches your GAM ad unit.
 
 A runnable end-to-end demo lives in the example app under
-**Utilities → GAM Coordination**
-([`example/lib/pages/gam_coordination_page.dart`](example/lib/pages/gam_coordination_page.dart)).
+**Utilities → Original API (GAM)**
+([`example/lib/pages/original_api_page.dart`](example/lib/pages/original_api_page.dart)).
+
+### GAM rendering (companion package)
+
+If you want **Google Ad Manager to render** the ad (rather than handing keywords
+off yourself), use the optional companion package
+[`prebid_mobile_sdk_gam`](prebid_mobile_sdk_gam/). It wraps Prebid's GAM event
+handlers so a winning Prebid bid renders through a GAM line item + the Prebid
+Universal Creative:
+
+```dart
+import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
+
+PrebidGamBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  gamAdUnitId: '/1234567/your-ad-unit',
+  width: 320,
+  height: 50,
+);
+```
+
+It is a separate package because it bundles the Google Mobile Ads SDK natively —
+In-App-only apps stay lean. See its
+[README](prebid_mobile_sdk_gam/README.md) and the example app's
+**Utilities → GAM Rendering** page.
 
 ---
 

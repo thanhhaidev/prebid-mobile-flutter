@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'about_page.dart';
 import 'consent_settings_page.dart';
+import 'gam_rendering_page.dart';
 import 'original_api_page.dart';
 import 'settings_page.dart';
 import 'targeting_data_page.dart';
@@ -48,6 +49,14 @@ class UtilitiesPage extends StatelessWidget {
             title: 'Original API (GAM)',
             subtitle: 'Hand Prebid keywords to google_mobile_ads',
             page: const OriginalApiPage(),
+          ),
+          _tile(
+            context,
+            icon: Icons.view_carousel_rounded,
+            color: const Color(0xFF0EA5E9),
+            title: 'GAM Rendering',
+            subtitle: 'GAM renders via prebid_mobile_sdk_gam',
+            page: const GamRenderingPage(),
           ),
           _tile(
             context,

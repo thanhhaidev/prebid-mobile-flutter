@@ -116,4 +116,66 @@ void main() {
       verify(mockApi.destroy(any)).called(1);
     });
   });
+
+  group('PrebidBannerAdUnit (Original API)', () {
+    late MockMultiformatAdHostApi mockApi;
+
+    setUp(() {
+      mockApi = MockMultiformatAdHostApi();
+      PrebidMultiformatAd.api = mockApi;
+    });
+
+    test('fetchDemand returns keywords and destroy calls api', () async {
+      final adUnit = PrebidBannerAdUnit(
+        configId: 'config-banner',
+        sizes: const [Size(300, 250)],
+      );
+
+      when(mockApi.fetchDemand(any, any)).thenAnswer(
+        (_) async => MultiformatBidResult(
+          resultCode: 'prebidDemandFetchSuccess',
+          winningFormat: 'banner',
+          targetingKeywords: {'hb_pb': '1.50'},
+        ),
+      );
+
+      final response = await adUnit.fetchDemand();
+      expect(response.isSuccess, isTrue);
+      expect(response.targetingKeywords?['hb_pb'], '1.50');
+
+      verify(mockApi.fetchDemand(any, any)).called(1);
+
+      await adUnit.destroy();
+      verify(mockApi.destroy(any)).called(1);
+    });
+  });
+
+  group('PrebidInterstitialAdUnit (Original API)', () {
+    late MockMultiformatAdHostApi mockApi;
+
+    setUp(() {
+      mockApi = MockMultiformatAdHostApi();
+      PrebidMultiformatAd.api = mockApi;
+    });
+
+    test('fetchDemand runs and destroy calls api', () async {
+      final adUnit = PrebidInterstitialAdUnit(
+        configId: 'config-interstitial',
+        sizes: const [Size(320, 480)],
+      );
+
+      when(mockApi.fetchDemand(any, any)).thenAnswer(
+        (_) async =>
+            MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+      );
+
+      final response = await adUnit.fetchDemand();
+      expect(response.isSuccess, isFalse);
+
+      verify(mockApi.fetchDemand(any, any)).called(1);
+
+      await adUnit.destroy();
+      verify(mockApi.destroy(any)).called(1);
+    });
+  });
 }

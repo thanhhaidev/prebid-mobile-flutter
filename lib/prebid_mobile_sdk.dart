@@ -51,5 +51,6 @@ export 'src/targeting.dart';
 export 'src/banner_ad.dart';
 export 'src/interstitial_ad.dart';
 export 'src/multiformat_ad.dart';
+export 'src/original_api.dart';
 export 'src/video_ad.dart';
 export 'src/video_parameters.dart';

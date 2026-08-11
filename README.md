@@ -29,7 +29,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
   - [Enums](#enums)
   - [Listeners & Callbacks](#listeners--callbacks)
   - [Error Handling](#error-handling)
-- [Ad Server Integration (GAM)](#ad-server-integration-gam)
+- [Ad Server Integration (Original API / GAM)](#ad-server-integration-original-api--gam)
 - [Example App](#example-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -587,7 +587,7 @@ try {
 
 ---
 
-## Ad Server Integration (GAM)
+## Ad Server Integration (Original API / GAM)
 
 Prebid Mobile supports two integration models. This plugin ships the first out
 of the box and supports the second via targeting-keyword handoff:
@@ -597,11 +597,11 @@ of the box and supports the second via targeting-keyword handoff:
    [`PrebidInterstitialAd`](#prebidinterstitialad--interstitial-ads),
    [`PrebidRewardedAd`](#prebidrewardedad--rewarded-ads), and
    [`PrebidNativeAd`](#prebidnativead--native-ads) do.
-2. **Ad Server (GAM) Coordination** — the Prebid SDK only runs the auction and
-   returns **targeting keywords**; your primary ad server SDK (Google Ad Manager
-   via [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads)) renders
-   the ad. A Prebid line item in GAM that targets the `hb_*` keys serves the
-   Prebid Universal Creative when a bid wins.
+2. **Original API** — the Prebid SDK only runs the auction and returns
+   **targeting keywords**; your primary ad server SDK (Google Ad Manager via
+   [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads)) renders the
+   ad. A Prebid line item in GAM that targets the `hb_*` keys serves the Prebid
+   Universal Creative when a bid wins.
 
 Use model 2 when you already monetize through GAM and want Prebid demand to
 compete in the same auction. The plugin does **not** depend on `google_mobile_ads`
@@ -609,20 +609,21 @@ compete in the same auction. The plugin does **not** depend on `google_mobile_ad
 
 ### The handoff
 
-Fetch demand with [`PrebidMultiformatAd`](#prebidmultiformatad--multiformat-ads)
-(or `PrebidInstreamVideoAd` for video), then pass `targetingKeywords` to
+Fetch demand with `PrebidBannerAdUnit` / `PrebidInterstitialAdUnit` (or
+[`PrebidMultiformatAd`](#prebidmultiformatad--multiformat-ads) for banner + video
++ native in one request), then pass `targetingKeywords` to
 `AdManagerAdRequest.customTargeting`:
 
 ```dart
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
-// 1. Run the Prebid auction.
-final prebidAd = PrebidMultiformatAd(
+// 1. Run the Prebid auction (Original API — keywords only, no rendering).
+final adUnit = PrebidBannerAdUnit(
   configId: 'your-config-id',
-  bannerSizes: const [Size(300, 250)],
+  sizes: const [Size(300, 250)],
 );
-final response = await prebidAd.fetchDemand();
+final response = await adUnit.fetchDemand();
 
 // 2. Hand the bid-winning keywords to Google Ad Manager.
 final banner = AdManagerBannerAd(
@@ -640,7 +641,9 @@ await banner.load(); // 3. GAM renders the winner (Prebid or direct-sold).
 ```
 
 Render the loaded ad with `AdWidget(ad: banner)` inside a `SizedBox` of the
-requested size.
+requested size. For a video winner use `PrebidInstreamVideoAd`; for a
+GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
+`AdManagerInterstitialAd`.
 
 ### Requirements
 

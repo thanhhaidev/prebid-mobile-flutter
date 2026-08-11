@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'about_page.dart';
 import 'consent_settings_page.dart';
-import 'gam_coordination_page.dart';
+import 'original_api_page.dart';
 import 'settings_page.dart';
 import 'targeting_data_page.dart';
 
@@ -45,9 +45,9 @@ class UtilitiesPage extends StatelessWidget {
             context,
             icon: Icons.ads_click_rounded,
             color: const Color(0xFFEA580C),
-            title: 'GAM Coordination',
+            title: 'Original API (GAM)',
             subtitle: 'Hand Prebid keywords to google_mobile_ads',
-            page: const GamCoordinationPage(),
+            page: const OriginalApiPage(),
           ),
           _tile(
             context,

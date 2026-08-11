@@ -5,15 +5,14 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import '../widgets/action_button.dart';
 import '../widgets/result_panel.dart';
 
-/// Demonstrates the **GAM coordination** integration described in Prebid issue
-/// #1270: Prebid runs the auction, then hands its bid-winning targeting
-/// keywords to the `google_mobile_ads` (Google Ad Manager) SDK for rendering —
-/// rather than the Prebid SDK owning rendering end-to-end.
+/// Demonstrates the **Original API** integration (Prebid issue #1270's "hand
+/// keywords to the ad server" model): Prebid runs the auction and returns
+/// targeting keywords, then the `google_mobile_ads` (Google Ad Manager) SDK
+/// renders the ad — the Prebid SDK does not render it.
 ///
 /// Flow:
-///   1. `PrebidMultiformatAd.fetchDemand()` runs the auction and returns
-///      `targetingKeywords`.
-///   2. Those keywords are passed to `AdManagerAdRequest(customTargeting: ...)`.
+///   1. [PrebidBannerAdUnit.fetchDemand] runs the auction → `targetingKeywords`.
+///   2. Those keywords become `AdManagerAdRequest(customTargeting: ...)`.
 ///   3. `AdManagerBannerAd` loads and renders through GAM.
 ///
 /// Note: this demo uses Google's public sample Ad Manager unit
@@ -21,14 +20,14 @@ import '../widgets/result_panel.dart';
 /// serves a Google sample creative and ignores the keywords. In production you
 /// point `adUnitId` at your own GAM unit whose line items target the `hb_*`
 /// keys, so a winning Prebid bid renders via the Prebid Universal Creative.
-class GamCoordinationPage extends StatefulWidget {
-  const GamCoordinationPage({super.key});
+class OriginalApiPage extends StatefulWidget {
+  const OriginalApiPage({super.key});
 
   @override
-  State<GamCoordinationPage> createState() => _GamCoordinationPageState();
+  State<OriginalApiPage> createState() => _OriginalApiPageState();
 }
 
-class _GamCoordinationPageState extends State<GamCoordinationPage> {
+class _OriginalApiPageState extends State<OriginalApiPage> {
   /// Prebid Server stored impression config. Its requested size (300x250) must
   /// match one of the GAM [gma.AdSize]s requested below.
   static const _configId = 'prebid-demo-banner-300-250';
@@ -37,7 +36,7 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
   /// Google's public sample Ad Manager banner unit. Replace with your own.
   static const _gamAdUnitId = '/6499/example/banner';
 
-  PrebidMultiformatAd? _prebidAd;
+  PrebidBannerAdUnit? _adUnit;
   gma.AdManagerBannerAd? _bannerAd;
 
   bool _loading = false;
@@ -48,7 +47,7 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
   @override
   void dispose() {
     _bannerAd?.dispose();
-    _prebidAd?.destroy();
+    _adUnit?.destroy();
     super.dispose();
   }
 
@@ -62,18 +61,18 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
     // Tear down any previous ad objects before starting a new cycle.
     _bannerAd?.dispose();
     _bannerAd = null;
-    await _prebidAd?.destroy();
+    await _adUnit?.destroy();
 
-    // 1. Run the Prebid auction for a 300x250 banner.
-    final prebidAd = PrebidMultiformatAd(
+    // 1. Run the Prebid auction for a 300x250 banner (Original API).
+    final adUnit = PrebidBannerAdUnit(
       configId: _configId,
-      bannerSizes: const [_adSize],
+      sizes: const [_adSize],
     );
-    _prebidAd = prebidAd;
+    _adUnit = adUnit;
 
-    final PrebidMultiformatBidResponse response;
+    final PrebidBidResponse response;
     try {
-      response = await prebidAd.fetchDemand();
+      response = await adUnit.fetchDemand();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -92,7 +91,6 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
     setState(() {
       _result =
           'resultCode: ${response.resultCode}\n'
-          'winningFormat: ${response.winningFormat ?? "-"}\n'
           'targetingKeywords:\n$kwText\n\n'
           'Loading Ad Manager banner ($_gamAdUnitId)…';
     });
@@ -100,7 +98,9 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
     // 2 & 3. Hand the keywords to Google Ad Manager and render.
     final bannerAd = gma.AdManagerBannerAd(
       adUnitId: _gamAdUnitId,
-      sizes: [gma.AdSize(width: _adSize.width.toInt(), height: _adSize.height.toInt())],
+      sizes: [
+        gma.AdSize(width: _adSize.width.toInt(), height: _adSize.height.toInt()),
+      ],
       request: gma.AdManagerAdRequest(
         // The Prebid bid-winning keywords become GAM custom targeting.
         customTargeting: keywords,
@@ -133,13 +133,14 @@ class _GamCoordinationPageState extends State<GamCoordinationPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('GAM Coordination')),
+      appBar: AppBar(title: const Text('Original API (GAM)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Prebid runs the auction, then hands its targeting keywords to the '
-            'google_mobile_ads (Ad Manager) SDK for rendering.',
+            'Prebid runs the auction (PrebidBannerAdUnit.fetchDemand), then hands '
+            'its targeting keywords to the google_mobile_ads (Ad Manager) SDK '
+            'for rendering.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),

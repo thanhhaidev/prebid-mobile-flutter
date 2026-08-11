@@ -12,9 +12,15 @@ PODS:
   - prebid_mobile_sdk (0.0.1):
     - Flutter
     - PrebidMobile (~> 3.1)
+  - prebid_mobile_sdk_gam (0.0.1):
+    - Flutter
+    - PrebidMobileGAMEventHandlers (~> 3.1)
   - PrebidMobile (3.3.0):
     - PrebidMobile/core (= 3.3.0)
   - PrebidMobile/core (3.3.0)
+  - PrebidMobileGAMEventHandlers (3.3.0):
+    - Google-Mobile-Ads-SDK (>= 13.0.0)
+    - PrebidMobile (= 3.3.0)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -29,6 +35,7 @@ DEPENDENCIES:
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - prebid_mobile_sdk (from `.symlinks/plugins/prebid_mobile_sdk/ios`)
+  - prebid_mobile_sdk_gam (from `.symlinks/plugins/prebid_mobile_sdk_gam/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
@@ -38,6 +45,7 @@ SPEC REPOS:
     - Google-Mobile-Ads-SDK
     - GoogleUserMessagingPlatform
     - PrebidMobile
+    - PrebidMobileGAMEventHandlers
 
 EXTERNAL SOURCES:
   Flutter:
@@ -48,6 +56,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   prebid_mobile_sdk:
     :path: ".symlinks/plugins/prebid_mobile_sdk/ios"
+  prebid_mobile_sdk_gam:
+    :path: ".symlinks/plugins/prebid_mobile_sdk_gam/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
@@ -61,8 +71,10 @@ SPEC CHECKSUMS:
   google_mobile_ads: bab325fd4e31c9705cab0cb298e4f5a9bdb7370f
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  prebid_mobile_sdk: 2889cb5435ffe0244f328b0cdcab6b308a7f3bf6
+  prebid_mobile_sdk: e879d34c385fd7bd334ea2a18a1fe41b369583e3
+  prebid_mobile_sdk_gam: 9d25b26460c7f2758c2fc9c6e652b348855514ee
   PrebidMobile: 3712f3c98fd66f918dde268e8a9ac0ee8e09fcca
+  PrebidMobileGAMEventHandlers: bcac5da28f521db8b0b90a5c88efd8b467fa03ba
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d

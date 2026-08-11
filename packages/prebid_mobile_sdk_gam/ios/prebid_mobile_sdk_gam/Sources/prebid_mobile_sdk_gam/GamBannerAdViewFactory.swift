@@ -34,9 +34,9 @@ class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class GamBannerPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
+class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate {
 
-    private let bannerView: BannerView
+    private let bannerView: PrebidMobile.BannerView
     private let methodChannel: FlutterMethodChannel
 
     init(
@@ -64,7 +64,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
             adUnitID: gamAdUnitId,
             validGADAdSizes: [nsValue(for: adSizeFor(cgSize: adSize))]
         )
-        bannerView = BannerView(
+        bannerView = PrebidMobile.BannerView(
             frame: CGRect(origin: .zero, size: adSize),
             configID: configId,
             adSize: adSize,
@@ -98,7 +98,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         return UIApplication.shared.keyWindow?.rootViewController
     }
 
-    func bannerView(_ bannerView: BannerView, didReceiveAdWithAdSize adSize: CGSize) {
+    func bannerView(_ bannerView: PrebidMobile.BannerView, didReceiveAdWithAdSize adSize: CGSize) {
         methodChannel.invokeMethod("onAdSize", arguments: [
             "width": Double(adSize.width),
             "height": Double(adSize.height),
@@ -109,15 +109,15 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
     }
 
-    func bannerView(_ bannerView: BannerView, didFailToReceiveAdWith error: Error) {
+    func bannerView(_ bannerView: PrebidMobile.BannerView, didFailToReceiveAdWith error: Error) {
         methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
     }
 
-    func bannerViewWillPresentModal(_ bannerView: BannerView) {
+    func bannerViewWillPresentModal(_ bannerView: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
 
-    func bannerViewDidDismissModal(_ bannerView: BannerView) {
+    func bannerViewDidDismissModal(_ bannerView: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
     }
 }

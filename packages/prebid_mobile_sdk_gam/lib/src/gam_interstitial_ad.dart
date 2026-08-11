@@ -2,7 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show PrebidInterstitialAdListener;
 
-const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_gam/interstitial');
+const MethodChannel _channel = MethodChannel(
+  'prebid_mobile_sdk_gam/interstitial',
+);
 
 /// Routes native interstitial events (delivered over the shared method channel)
 /// to the [PrebidGamInterstitialAd] that owns each `adId`.

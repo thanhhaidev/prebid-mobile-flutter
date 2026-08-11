@@ -20,8 +20,10 @@ class _GamRenderingPageState extends State<GamRenderingPage> {
   // Prebid public demo GAM ad units (line items target the hb_* keys).
   static const _bannerConfigId = 'prebid-demo-banner-320-50';
   static const _bannerGamUnit = '/21808260008/prebid_oxb_320x50_banner';
-  static const _interstitialConfigId = 'prebid-demo-display-interstitial-320-480';
-  static const _interstitialGamUnit = '/21808260008/prebid_oxb_html_interstitial';
+  static const _interstitialConfigId =
+      'prebid-demo-display-interstitial-320-480';
+  static const _interstitialGamUnit =
+      '/21808260008/prebid_oxb_html_interstitial';
 
   String _bannerStatus = 'Loading banner…';
 
@@ -112,7 +114,9 @@ class _GamRenderingPageState extends State<GamRenderingPage> {
               height: 50,
               listener: PrebidBannerAdListener(
                 onAdLoaded: () {
-                  if (mounted) setState(() => _bannerStatus = '✅ Banner loaded.');
+                  if (mounted) {
+                    setState(() => _bannerStatus = '✅ Banner loaded.');
+                  }
                 },
                 onAdFailed: (error) {
                   if (mounted) {
@@ -138,7 +142,9 @@ class _GamRenderingPageState extends State<GamRenderingPage> {
             children: [
               Expanded(
                 child: ActionButton(
-                  label: _interstitialLoading ? 'Loading…' : 'Load Interstitial',
+                  label: _interstitialLoading
+                      ? 'Loading…'
+                      : 'Load Interstitial',
                   icon: Icons.download_rounded,
                   onPressed: _interstitialLoading ? null : _loadInterstitial,
                 ),

@@ -86,10 +86,7 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   int _index = 0;
-  final _navKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
+  final _navKeys = [GlobalKey<NavigatorState>(), GlobalKey<NavigatorState>()];
 
   String _sdkStatus = 'Initializing...';
   bool _sdkReady = false;
@@ -190,10 +187,7 @@ class _RootShellState extends State<RootShell> {
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.list),
-              label: 'Examples',
-            ),
+            NavigationDestination(icon: Icon(Icons.list), label: 'Examples'),
             NavigationDestination(
               icon: Icon(Icons.info_outline),
               label: 'Utilities',

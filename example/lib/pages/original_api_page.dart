@@ -41,7 +41,8 @@ class _OriginalApiPageState extends State<OriginalApiPage> {
 
   bool _loading = false;
   bool _bannerLoaded = false;
-  String _result = 'Idle. Tap "Fetch & Load" to run the auction and hand the\n'
+  String _result =
+      'Idle. Tap "Fetch & Load" to run the auction and hand the\n'
       'targeting keywords to Google Ad Manager.';
 
   @override
@@ -99,7 +100,10 @@ class _OriginalApiPageState extends State<OriginalApiPage> {
     final bannerAd = gma.AdManagerBannerAd(
       adUnitId: _gamAdUnitId,
       sizes: [
-        gma.AdSize(width: _adSize.width.toInt(), height: _adSize.height.toInt()),
+        gma.AdSize(
+          width: _adSize.width.toInt(),
+          height: _adSize.height.toInt(),
+        ),
       ],
       request: gma.AdManagerAdRequest(
         // The Prebid bid-winning keywords become GAM custom targeting.

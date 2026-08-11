@@ -63,8 +63,11 @@ class _MultiformatDetailPageState extends State<MultiformatDetailPage> {
       setState(() => _resultInfo = buf.toString());
     } else {
       _tracker.track('onRequestFailed', result.resultCode);
-      _log.log('Multiformat', 'Demand failed: ${result.resultCode}',
-          level: LogLevel.error);
+      _log.log(
+        'Multiformat',
+        'Demand failed: ${result.resultCode}',
+        level: LogLevel.error,
+      );
       setState(() => _resultInfo = 'Result: ${result.resultCode}');
     }
   }

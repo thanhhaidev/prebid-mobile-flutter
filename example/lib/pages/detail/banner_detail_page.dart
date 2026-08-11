@@ -38,8 +38,11 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
     _log.log('Banner', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     _tracker.reset();
-    _log.log('Banner', 'Loading ${_isVideo ? "video" : "display"} banner: '
-        '$_configId (${_width}x$_height, refresh=$_refreshSeconds)');
+    _log.log(
+      'Banner',
+      'Loading ${_isVideo ? "video" : "display"} banner: '
+          '$_configId (${_width}x$_height, refresh=$_refreshSeconds)',
+    );
     setState(() {
       _showAd = true;
       _adKey++;
@@ -101,8 +104,9 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.35),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.35,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: _showAd
@@ -111,37 +115,43 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: PrebidBannerAd(
-                        key: ValueKey(_adKey),
-                        configId: _configId,
-                        width: _width,
-                        height: _height,
-                        isVideo: _isVideo,
-                        refreshIntervalSeconds:
-                            _refreshSeconds >= 30 ? _refreshSeconds : null,
-                        listener: PrebidBannerAdListener(
-                          onAdLoaded: () {
-                            _tracker.track('onAdLoaded');
-                            _log.log('Banner', 'Ad loaded');
-                          },
-                          onAdDisplayed: () {
-                            _tracker.track('onAdDisplayed');
-                            _log.log('Banner', 'Ad displayed');
-                          },
-                          onAdFailed: (e) {
-                            _tracker.track('onAdFailed', e);
-                            _log.log('Banner', 'Ad failed: $e',
-                                level: LogLevel.error);
-                          },
-                          onAdClicked: () {
-                            _tracker.track('onAdClicked');
-                            _log.log('Banner', 'Ad clicked');
-                          },
-                          onAdClosed: () {
-                            _tracker.track('onAdClosed');
-                            _log.log('Banner', 'Ad closed');
-                          },
+                            key: ValueKey(_adKey),
+                            configId: _configId,
+                            width: _width,
+                            height: _height,
+                            isVideo: _isVideo,
+                            refreshIntervalSeconds: _refreshSeconds >= 30
+                                ? _refreshSeconds
+                                : null,
+                            listener: PrebidBannerAdListener(
+                              onAdLoaded: () {
+                                _tracker.track('onAdLoaded');
+                                _log.log('Banner', 'Ad loaded');
+                              },
+                              onAdDisplayed: () {
+                                _tracker.track('onAdDisplayed');
+                                _log.log('Banner', 'Ad displayed');
+                              },
+                              onAdFailed: (e) {
+                                _tracker.track('onAdFailed', e);
+                                _log.log(
+                                  'Banner',
+                                  'Ad failed: $e',
+                                  level: LogLevel.error,
+                                );
+                              },
+                              onAdClicked: () {
+                                _tracker.track('onAdClicked');
+                                _log.log('Banner', 'Ad clicked');
+                              },
+                              onAdClosed: () {
+                                _tracker.track('onAdClosed');
+                                _log.log('Banner', 'Ad closed');
+                              },
+                            ),
+                          ),
                         ),
-                      )))
+                      )
                     : Text(
                         'Tap Load to request an ad',
                         style: TextStyle(color: theme.colorScheme.outline),

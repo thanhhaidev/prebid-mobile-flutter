@@ -15,7 +15,9 @@ class ConsentSettingsPage extends StatefulWidget {
 
 class _ConsentSettingsPageState extends State<ConsentSettingsPage> {
   bool _gdpr = AppSettings.gdpr;
-  final _consentController = TextEditingController(text: AppSettings.gdprConsent);
+  final _consentController = TextEditingController(
+    text: AppSettings.gdprConsent,
+  );
   final _uspController = TextEditingController();
 
   @override

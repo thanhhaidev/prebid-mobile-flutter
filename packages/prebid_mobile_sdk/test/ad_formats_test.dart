@@ -165,8 +165,7 @@ void main() {
       );
 
       when(mockApi.fetchDemand(any, any)).thenAnswer(
-        (_) async =>
-            MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+        (_) async => MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
       );
 
       final response = await adUnit.fetchDemand();

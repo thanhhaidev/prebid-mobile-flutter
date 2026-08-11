@@ -67,8 +67,7 @@ class _ExamplesPageState extends State<ExamplesPage> {
                 prefixIcon: const Icon(Icons.search_rounded),
                 isDense: true,
                 filled: true,
-                fillColor:
-                    theme.colorScheme.surfaceContainerHighest.withValues(
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.5,
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),

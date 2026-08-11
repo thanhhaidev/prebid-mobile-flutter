@@ -105,10 +105,8 @@ class UtilitiesPage extends StatelessWidget {
           Icons.chevron_right_rounded,
           color: theme.colorScheme.outline,
         ),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => page),
-        ),
+        onTap: () =>
+            Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
       ),
     );
   }

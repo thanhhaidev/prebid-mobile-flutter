@@ -87,7 +87,8 @@ class _ConfigureAdDialogState extends State<ConfigureAdDialog> {
         configId: _configId.text.trim(),
         width: int.tryParse(_width.text) ?? widget.initial.width,
         height: int.tryParse(_height.text) ?? widget.initial.height,
-        refreshDelay: int.tryParse(_refresh.text) ?? widget.initial.refreshDelay,
+        refreshDelay:
+            int.tryParse(_refresh.text) ?? widget.initial.refreshDelay,
       ),
     );
   }
@@ -111,10 +112,7 @@ class _ConfigureAdDialogState extends State<ConfigureAdDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _submit,
-          child: const Text('Load the ad'),
-        ),
+        TextButton(onPressed: _submit, child: const Text('Load the ad')),
       ],
     );
   }

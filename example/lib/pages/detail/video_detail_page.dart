@@ -49,8 +49,11 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       setState(() => _resultInfo = buf.toString());
     } else {
       _tracker.track('onRequestFailed', result.resultCode);
-      _log.log('Video', 'Demand failed: ${result.resultCode}',
-          level: LogLevel.error);
+      _log.log(
+        'Video',
+        'Demand failed: ${result.resultCode}',
+        level: LogLevel.error,
+      );
       setState(() => _resultInfo = 'Result: ${result.resultCode}');
     }
   }

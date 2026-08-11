@@ -12,6 +12,8 @@ topics:
   - google-ad-manager
   - header-bidding
 
+resolution: workspace
+
 environment:
   sdk: ^3.11.0
   flutter: '>=3.41.5'
@@ -19,10 +21,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Core Prebid plugin. Path dependency for monorepo development; switch to a
-  # hosted version constraint (prebid_mobile_sdk: ^x.y.z) before publishing.
+  # Core Prebid plugin (sibling workspace package). Switch to a hosted version
+  # constraint (prebid_mobile_sdk: ^x.y.z) before publishing.
   prebid_mobile_sdk:
-    path: ../
+    path: ../prebid_mobile_sdk
 
 dev_dependencies:
   flutter_test:

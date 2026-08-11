@@ -4,6 +4,9 @@ description: "Demonstrates how to use the prebid_mobile_sdk plugin."
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
+# Part of the pub workspace at the repo root (see /pubspec.yaml).
+resolution: workspace
+
 environment:
   sdk: ^3.11.0
 
@@ -17,17 +20,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Path dependencies on the sibling workspace packages.
   prebid_mobile_sdk:
-    # When depending on this package from a real application you should use:
-    #   prebid_mobile_sdk: ^x.y.z
-    # See https://dart.dev/tools/pub/dependencies#version-constraints
-    # The example app is bundled with the plugin so we use a path dependency on
-    # the parent directory to use the current plugin's version.
-    path: ../
+    path: ../packages/prebid_mobile_sdk
 
   # Optional companion: Google Ad Manager rendering (GAM event handlers).
   prebid_mobile_sdk_gam:
-    path: ../prebid_mobile_sdk_gam
+    path: ../packages/prebid_mobile_sdk_gam
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

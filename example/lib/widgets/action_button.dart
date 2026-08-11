@@ -20,9 +20,7 @@ class ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = ButtonStyle(
-      padding: const WidgetStatePropertyAll(
-        EdgeInsets.symmetric(vertical: 14),
-      ),
+      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 14)),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),

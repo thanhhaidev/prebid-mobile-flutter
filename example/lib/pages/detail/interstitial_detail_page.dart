@@ -72,7 +72,12 @@ class _InterstitialDetailPageState extends State<InterstitialDetailPage> {
   Future<void> _configure() async {
     final cfg = await ConfigureAdDialog.show(
       context,
-      initial: AdConfig(configId: _configId, width: 0, height: 0, refreshDelay: 0),
+      initial: AdConfig(
+        configId: _configId,
+        width: 0,
+        height: 0,
+        refreshDelay: 0,
+      ),
       showSize: false,
       showRefresh: false,
     );

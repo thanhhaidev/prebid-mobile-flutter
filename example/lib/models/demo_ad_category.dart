@@ -24,14 +24,14 @@ enum DemoAdCategory {
 DemoAdCategory categoryOf(TestCase tc) {
   if (tc.configId.contains('mraid')) return DemoAdCategory.mraid;
   return switch (tc.format) {
-    DemoAdFormat.displayBanner || DemoAdFormat.videoBanner =>
-      DemoAdCategory.banner,
-    DemoAdFormat.displayInterstitial || DemoAdFormat.videoInterstitial =>
-      DemoAdCategory.interstitial,
-    DemoAdFormat.displayRewarded || DemoAdFormat.videoRewarded =>
-      DemoAdCategory.rewarded,
+    DemoAdFormat.displayBanner ||
+    DemoAdFormat.videoBanner => DemoAdCategory.banner,
+    DemoAdFormat.displayInterstitial ||
+    DemoAdFormat.videoInterstitial => DemoAdCategory.interstitial,
+    DemoAdFormat.displayRewarded ||
+    DemoAdFormat.videoRewarded => DemoAdCategory.rewarded,
     DemoAdFormat.native => DemoAdCategory.native,
-    DemoAdFormat.videoInstream || DemoAdFormat.multiformat =>
-      DemoAdCategory.video,
+    DemoAdFormat.videoInstream ||
+    DemoAdFormat.multiformat => DemoAdCategory.video,
   };
 }

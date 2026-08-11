@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show PrebidBannerAdListener;
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
+    show PrebidBannerAdListener;
 
 /// A banner ad rendered by **Google Ad Manager** with Prebid demand.
 ///

@@ -51,7 +51,11 @@ class EventCounterList extends StatelessWidget {
       child: Column(
         children: [
           for (int i = 0; i < events.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.4)),
+            if (i > 0)
+              Divider(
+                height: 1,
+                color: theme.dividerColor.withValues(alpha: 0.4),
+              ),
             _row(theme, events[i]),
           ],
         ],

@@ -5,7 +5,10 @@ import '../models/demo_ad_category.dart';
 /// Icon + accent colour for each ad category, used for list avatars and
 /// detail-page headers so the app reads as one consistent system.
 ({IconData icon, Color color}) styleFor(DemoAdCategory c) => switch (c) {
-  DemoAdCategory.all => (icon: Icons.apps_rounded, color: const Color(0xFF64748B)),
+  DemoAdCategory.all => (
+    icon: Icons.apps_rounded,
+    color: const Color(0xFF64748B),
+  ),
   DemoAdCategory.banner => (
     icon: Icons.crop_16_9_rounded,
     color: const Color(0xFF2563EB),

@@ -29,6 +29,14 @@ dependencies:
   prebid_mobile_sdk_gam:
     path: ../packages/prebid_mobile_sdk_gam
 
+  # Optional companion: Google AdMob mediation (AdMob adapters).
+  prebid_mobile_sdk_admob:
+    path: ../packages/prebid_mobile_sdk_admob
+
+  # Optional companion: AppLovin MAX mediation (MAX adapters).
+  prebid_mobile_sdk_max:
+    path: ../packages/prebid_mobile_sdk_max
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -39,7 +39,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         // Register the BannerAd PlatformView factory
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_flutter/banner_ad",
-            BannerAdViewFactory(binding.binaryMessenger)
+            BannerAdViewFactory(binding.binaryMessenger) { activity }
         )
     }
 

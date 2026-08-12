@@ -9,8 +9,10 @@ and iOS.
 | Package | Description |
 |---|---|
 | [`packages/prebid_mobile_sdk`](packages/prebid_mobile_sdk) | **Core plugin.** Prebid In-App (rendered) banner, interstitial, rewarded, native, multiformat, in-stream video, plus the Original API keyword handoff (`PrebidBannerAdUnit` / `PrebidInterstitialAdUnit`). Depends only on the Prebid SDK. |
-| [`packages/prebid_mobile_sdk_gam`](packages/prebid_mobile_sdk_gam) | **Optional companion.** Google Ad Manager *rendering* via Prebid's GAM event handlers (`PrebidGamBannerAd` / `PrebidGamInterstitialAd`). Bundles the Google Mobile Ads SDK — kept separate so core stays lean. |
-| [`example`](example) | Demo app exercising both packages. |
+| [`packages/prebid_mobile_sdk_gam`](packages/prebid_mobile_sdk_gam) | **Optional companion.** Google Ad Manager *rendering* via Prebid's GAM (next-gen) event handlers (`PrebidGamBannerAd` / `PrebidGamInterstitialAd`). Bundles the Google Mobile Ads SDK — kept separate so core stays lean. |
+| [`packages/prebid_mobile_sdk_admob`](packages/prebid_mobile_sdk_admob) | **Optional companion.** Google AdMob *mediation* via Prebid's AdMob adapters (`PrebidAdMobBannerAd` / `PrebidAdMobInterstitialAd`). Bundles the Google Mobile Ads SDK. |
+| [`packages/prebid_mobile_sdk_max`](packages/prebid_mobile_sdk_max) | **Optional companion.** AppLovin MAX *mediation* via Prebid's MAX adapters (`PrebidMaxBannerAd` / `PrebidMaxInterstitialAd`). Bundles the AppLovin MAX SDK. |
+| [`example`](example) | Demo app exercising the packages. |
 
 See each package's README for its API. Start with
 [`packages/prebid_mobile_sdk`](packages/prebid_mobile_sdk/README.md).
@@ -22,9 +24,11 @@ See each package's README for its API. Start with
 ├── melos.yaml                 # Melos task runner config
 ├── pubspec.yaml               # pub workspace root
 ├── packages/
-│   ├── prebid_mobile_sdk/     # core plugin
-│   └── prebid_mobile_sdk_gam/ # GAM rendering companion
-└── example/                   # demo app (uses both packages)
+│   ├── prebid_mobile_sdk/       # core plugin
+│   ├── prebid_mobile_sdk_gam/   # GAM rendering companion
+│   ├── prebid_mobile_sdk_admob/ # AdMob mediation companion
+│   └── prebid_mobile_sdk_max/   # AppLovin MAX mediation companion
+└── example/                     # demo app
 ```
 
 ## Getting started

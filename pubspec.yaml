@@ -11,6 +11,8 @@ environment:
 workspace:
   - packages/prebid_mobile_sdk
   - packages/prebid_mobile_sdk_gam
+  - packages/prebid_mobile_sdk_admob
+  - packages/prebid_mobile_sdk_max
   - example
 
 dev_dependencies:

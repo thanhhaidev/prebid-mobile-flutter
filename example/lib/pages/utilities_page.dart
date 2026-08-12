@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'about_page.dart';
 import 'consent_settings_page.dart';
-import 'gam_rendering_page.dart';
-import 'original_api_page.dart';
 import 'settings_page.dart';
 import 'targeting_data_page.dart';
 
@@ -41,22 +39,6 @@ class UtilitiesPage extends StatelessWidget {
             title: 'Targeting Data',
             subtitle: 'Keywords, ext data, ORTB config',
             page: const TargetingDataPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.ads_click_rounded,
-            color: const Color(0xFFEA580C),
-            title: 'Original API (GAM)',
-            subtitle: 'Hand Prebid keywords to google_mobile_ads',
-            page: const OriginalApiPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.view_carousel_rounded,
-            color: const Color(0xFF0EA5E9),
-            title: 'GAM Rendering',
-            subtitle: 'GAM renders via prebid_mobile_sdk_gam',
-            page: const GamRenderingPage(),
           ),
           _tile(
             context,

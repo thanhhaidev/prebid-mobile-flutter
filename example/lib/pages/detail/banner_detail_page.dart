@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
+import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import '../../models/demo_ad_category.dart';
 import '../../models/demo_ad_format.dart';
+import '../../models/demo_integration.dart';
 import '../../models/test_case.dart';
 import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
@@ -11,7 +15,9 @@ import '../../widgets/configure_ad_dialog.dart';
 import '../../widgets/event_counter.dart';
 
 /// Banner ad detail page — ad stage, config header, Load / Stop refresh, and
-/// callback counters. The app-bar gear opens the "Configure the Ad" dialog.
+/// callback counters. Works across integrations (In-App / GAM / AdMob / MAX):
+/// the platform-view widget is chosen from [TestCase.integration], all sharing
+/// a [PrebidBannerAdListener]. The app-bar gear opens the "Configure" dialog.
 class BannerDetailPage extends StatefulWidget {
   final TestCase tc;
   const BannerDetailPage({super.key, required this.tc});
@@ -40,7 +46,8 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
     _tracker.reset();
     _log.log(
       'Banner',
-      'Loading ${_isVideo ? "video" : "display"} banner: '
+      'Loading ${widget.tc.integration.label} '
+          '${_isVideo ? "video" : "display"} banner: '
           '$_configId (${_width}x$_height, refresh=$_refreshSeconds)',
     );
     setState(() {
@@ -75,6 +82,81 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
       _refreshSeconds = cfg.refreshDelay;
     });
     await _load();
+  }
+
+  PrebidBannerAdListener _listener() => PrebidBannerAdListener(
+    onAdLoaded: () {
+      _tracker.track('onAdLoaded');
+      _log.log('Banner', 'Ad loaded');
+    },
+    onAdDisplayed: () {
+      _tracker.track('onAdDisplayed');
+      _log.log('Banner', 'Ad displayed');
+    },
+    onAdFailed: (e) {
+      _tracker.track('onAdFailed', e);
+      _log.log('Banner', 'Ad failed: $e', level: LogLevel.error);
+    },
+    onAdClicked: () {
+      _tracker.track('onAdClicked');
+      _log.log('Banner', 'Ad clicked');
+    },
+    onAdClosed: () {
+      _tracker.track('onAdClosed');
+      _log.log('Banner', 'Ad closed');
+    },
+  );
+
+  /// Builds the integration-specific banner platform-view widget.
+  Widget _bannerWidget() {
+    final key = ValueKey(_adKey);
+    final refresh = _refreshSeconds >= 30 ? _refreshSeconds : null;
+    final adUnitId = widget.tc.adUnitId ?? '';
+    switch (widget.tc.integration) {
+      case DemoIntegration.inApp:
+        return PrebidBannerAd(
+          key: key,
+          configId: _configId,
+          width: _width,
+          height: _height,
+          isVideo: _isVideo,
+          refreshIntervalSeconds: refresh,
+          listener: _listener(),
+        );
+      case DemoIntegration.gam:
+        return PrebidGamBannerAd(
+          key: key,
+          configId: _configId,
+          gamAdUnitId: adUnitId,
+          width: _width,
+          height: _height,
+          isVideo: _isVideo,
+          refreshIntervalSeconds: refresh,
+          listener: _listener(),
+        );
+      case DemoIntegration.admob:
+        return PrebidAdMobBannerAd(
+          key: key,
+          configId: _configId,
+          adMobAdUnitId: adUnitId,
+          width: _width,
+          height: _height,
+          listener: _listener(),
+        );
+      case DemoIntegration.max:
+        return PrebidMaxBannerAd(
+          key: key,
+          configId: _configId,
+          maxAdUnitId: adUnitId,
+          width: _width,
+          height: _height,
+          listener: _listener(),
+        );
+      case DemoIntegration.original:
+        // Original API banners render through google_mobile_ads — handled by a
+        // dedicated page; this widget is not used for that integration.
+        return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -114,42 +196,7 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
                         borderRadius: BorderRadius.circular(12),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          child: PrebidBannerAd(
-                            key: ValueKey(_adKey),
-                            configId: _configId,
-                            width: _width,
-                            height: _height,
-                            isVideo: _isVideo,
-                            refreshIntervalSeconds: _refreshSeconds >= 30
-                                ? _refreshSeconds
-                                : null,
-                            listener: PrebidBannerAdListener(
-                              onAdLoaded: () {
-                                _tracker.track('onAdLoaded');
-                                _log.log('Banner', 'Ad loaded');
-                              },
-                              onAdDisplayed: () {
-                                _tracker.track('onAdDisplayed');
-                                _log.log('Banner', 'Ad displayed');
-                              },
-                              onAdFailed: (e) {
-                                _tracker.track('onAdFailed', e);
-                                _log.log(
-                                  'Banner',
-                                  'Ad failed: $e',
-                                  level: LogLevel.error,
-                                );
-                              },
-                              onAdClicked: () {
-                                _tracker.track('onAdClicked');
-                                _log.log('Banner', 'Ad clicked');
-                              },
-                              onAdClosed: () {
-                                _tracker.track('onAdClosed');
-                                _log.log('Banner', 'Ad closed');
-                              },
-                            ),
-                          ),
+                          child: _bannerWidget(),
                         ),
                       )
                     : Text(
@@ -161,6 +208,8 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
               AdUnitHeader(
                 configId: _configId,
                 category: categoryOf(widget.tc),
+                integration: widget.tc.integration,
+                adUnitId: widget.tc.adUnitId,
               ),
               const SizedBox(height: 16),
               Row(

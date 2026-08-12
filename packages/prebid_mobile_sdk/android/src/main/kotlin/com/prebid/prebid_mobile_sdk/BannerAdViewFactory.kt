@@ -1,5 +1,6 @@
 package com.prebid.prebid_mobile_sdk
 
+import android.app.Activity
 import android.content.Context
 import android.view.View
 import io.flutter.plugin.common.BinaryMessenger
@@ -13,12 +14,13 @@ import org.prebid.mobile.api.rendering.listeners.BannerViewListener
 import org.prebid.mobile.api.exceptions.AdException
 
 class BannerAdViewFactory(
-    private val messenger: BinaryMessenger
+    private val messenger: BinaryMessenger,
+    private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
-        return BannerAdPlatformView(context, viewId, messenger, params)
+        return BannerAdPlatformView(activityProvider() ?: context, viewId, messenger, params)
     }
 }
 

@@ -17,10 +17,6 @@ import '../models/demo_ad_category.dart';
     icon: Icons.fullscreen_rounded,
     color: const Color(0xFF7C3AED),
   ),
-  DemoAdCategory.rewarded => (
-    icon: Icons.workspace_premium_rounded,
-    color: const Color(0xFFD97706),
-  ),
   DemoAdCategory.mraid => (
     icon: Icons.touch_app_rounded,
     color: const Color(0xFF0D9488),

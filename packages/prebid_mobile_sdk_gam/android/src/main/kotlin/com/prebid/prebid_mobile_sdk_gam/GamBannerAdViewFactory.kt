@@ -1,5 +1,6 @@
 package com.prebid.prebid_mobile_sdk_gam
 
+import android.app.Activity
 import android.content.Context
 import android.view.View
 import io.flutter.plugin.common.BinaryMessenger
@@ -18,11 +19,12 @@ import org.prebid.mobile.eventhandlers.GamBannerEventHandler
 /// so Google Ad Manager renders the ad.
 class GamBannerAdViewFactory(
     private val messenger: BinaryMessenger,
+    private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
-        return GamBannerPlatformView(context, viewId, messenger, params)
+        return GamBannerPlatformView(activityProvider() ?: context, viewId, messenger, params)
     }
 }
 

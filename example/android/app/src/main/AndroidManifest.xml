@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
         android:label="prebid_mobile_sdk_example"
         android:name="${applicationName}"
@@ -31,12 +33,19 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Google Mobile Ads (GAM) app ID — required by google_mobile_ads for
-             the "GAM Coordination" demo. This is Google's public sample AdMob
-             app ID; replace it with your own Ad Manager app ID in production. -->
+        <!-- Google Mobile Ads (GAM/AdMob) app ID — required by google_mobile_ads.
+             This is Google's public sample app ID; replace it with your own Ad
+             Manager / AdMob app ID in production. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <!-- AppLovin MAX SDK key (Prebid public demo key). Required for the MAX
+             mediation examples; replace with your own key in production. The app
+             must also initialize the AppLovin SDK at startup. -->
+        <meta-data
+            android:name="applovin.sdk.key"
+            android:value="1tLUnP4cVQqpHuHH2yMtfdESvvUhTB05NdbCoDTceDDNVnhd_T8kwIzXDN9iwbdULTboByF-TtNaiTmsoVbxZw" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

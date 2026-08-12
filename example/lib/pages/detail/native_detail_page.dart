@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import '../../models/demo_ad_category.dart';
+import '../../models/demo_integration.dart';
 import '../../models/test_case.dart';
 import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
@@ -9,8 +12,9 @@ import '../../widgets/ad_unit_header.dart';
 import '../../widgets/event_counter.dart';
 import '../../widgets/native_ad_card.dart';
 
-/// Native ad detail page — loads structured native assets and renders them
-/// with a custom Flutter card, plus callback counters.
+/// Native ad detail page. In-App renders structured native assets with a custom
+/// Flutter card; AdMob / MAX render through the mediation SDK's native ad view
+/// (a PlatformView) so impressions/clicks track correctly.
 class NativeDetailPage extends StatefulWidget {
   final TestCase tc;
   const NativeDetailPage({super.key, required this.tc});
@@ -22,17 +26,49 @@ class NativeDetailPage extends StatefulWidget {
 class _NativeDetailPageState extends State<NativeDetailPage> {
   final EventTracker _tracker = EventTracker();
   final _log = PrebidDemoLogger.instance;
+
+  // In-App asset rendering.
   PrebidNativeAd? _ad;
   PrebidNativeAdResponse? _response;
 
-  Future<void> _load() async {
-    _ad?.destroy();
-    _tracker.reset();
-    setState(() => _response = null);
+  // AdMob / MAX platform-view rendering.
+  bool _showAd = false;
+  int _adKey = 0;
 
-    _log.log('Native', 'Clearing stored response');
+  bool get _isInApp => widget.tc.integration == DemoIntegration.inApp;
+
+  PrebidBannerAdListener _mediatedListener() => PrebidBannerAdListener(
+    onAdLoaded: () {
+      _tracker.track('onAdLoaded');
+      _log.log('Native', 'Ad loaded');
+    },
+    onAdFailed: (e) {
+      _tracker.track('onAdFailed', e);
+      _log.log('Native', 'Ad failed: $e', level: LogLevel.error);
+    },
+    onAdClicked: () {
+      _tracker.track('onAdClicked');
+      _log.log('Native', 'Ad clicked');
+    },
+  );
+
+  Future<void> _load() async {
+    _tracker.reset();
     await PrebidMobile.clearStoredAuctionResponse();
-    _log.log('Native', 'Loading native ad: ${widget.tc.configId}');
+    _log.log('Native', 'Loading ${widget.tc.integration.label}: '
+        '${widget.tc.configId}');
+
+    if (!_isInApp) {
+      // AdMob / MAX: the platform view loads itself on (re)creation.
+      setState(() {
+        _showAd = true;
+        _adKey++;
+      });
+      return;
+    }
+
+    _ad?.destroy();
+    setState(() => _response = null);
     _ad = PrebidNativeAd(
       configId: widget.tc.configId,
       assets: const [
@@ -85,6 +121,25 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
     _ad!.loadAd();
   }
 
+  Widget _mediatedNativeWidget() {
+    final key = ValueKey(_adKey);
+    final adUnitId = widget.tc.adUnitId ?? '';
+    if (widget.tc.integration == DemoIntegration.admob) {
+      return PrebidAdMobNativeAd(
+        key: key,
+        configId: widget.tc.configId,
+        adMobAdUnitId: adUnitId,
+        listener: _mediatedListener(),
+      );
+    }
+    return PrebidMaxNativeAd(
+      key: key,
+      configId: widget.tc.configId,
+      maxAdUnitId: adUnitId,
+      listener: _mediatedListener(),
+    );
+  }
+
   @override
   void dispose() {
     _ad?.destroy();
@@ -93,6 +148,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(widget.tc.title)),
       body: ListenableBuilder(
@@ -101,10 +157,26 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              if (_response != null) NativeAdCard(response: _response!),
+              if (_isInApp && _response != null)
+                NativeAdCard(response: _response!)
+              else if (!_isInApp && _showAd)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.35,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: _mediatedNativeWidget(),
+                ),
+              const SizedBox(height: 16),
               AdUnitHeader(
                 configId: widget.tc.configId,
                 category: categoryOf(widget.tc),
+                integration: widget.tc.integration,
+                adUnitId: widget.tc.adUnitId,
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -118,12 +190,14 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
               const SizedBox(height: 16),
               EventCounterList(
                 tracker: _tracker,
-                events: const [
-                  'onAdLoaded',
-                  'onAdFailed',
-                  'onAdImpression',
-                  'onAdClicked',
-                ],
+                events: _isInApp
+                    ? const [
+                        'onAdLoaded',
+                        'onAdFailed',
+                        'onAdImpression',
+                        'onAdClicked',
+                      ]
+                    : const ['onAdLoaded', 'onAdFailed', 'onAdClicked'],
               ),
             ],
           ),

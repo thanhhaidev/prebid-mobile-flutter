@@ -16,7 +16,7 @@ class PrebidMobileSdkGamPlugin : FlutterPlugin, ActivityAware {
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_gam/banner",
-            GamBannerAdViewFactory(binding.binaryMessenger),
+            GamBannerAdViewFactory(binding.binaryMessenger) { activity },
         )
         interstitialManager = GamInterstitialManager(binding.binaryMessenger) { activity }
     }

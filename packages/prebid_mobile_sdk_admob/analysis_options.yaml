@@ -1,0 +1,7 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # The core package is a path dependency during monorepo development; this is
+    # intentional and replaced with a hosted constraint before publishing.
+    invalid_dependency: ignore

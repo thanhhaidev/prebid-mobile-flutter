@@ -14,6 +14,8 @@ import '../models/test_case.dart';
 class TestCaseRegistry {
   // GAM ad unit path prefix (Prebid's public demo network).
   static const _gam = '/21808260008/';
+  static const _gamRewarded = '${_gam}prebid_oxb_rewarded_video';
+  static const _gamNative = '${_gam}prebid_oxb_native';
 
   // AdMob demo ad units (Prebid's public account).
   static const _admobBanner = 'ca-app-pub-1875909575462531/3793078260';
@@ -469,6 +471,15 @@ class TestCaseRegistry {
       width: 320,
       height: 480,
     ),
+    TestCase(
+      title: 'Video Interstitial 320x480 (GAM)',
+      configId: 'prebid-demo-video-interstitial-320-480',
+      format: DemoAdFormat.videoInterstitial,
+      integration: DemoIntegration.gam,
+      adUnitId: '${_gam}prebid_oxb_html_interstitial',
+      width: 320,
+      height: 480,
+    ),
 
     // =========================================================================
     // GAM RENDERING — Video Outstream
@@ -481,6 +492,73 @@ class TestCaseRegistry {
       adUnitId: '${_gam}prebid_oxb_300x250_banner',
       width: 300,
       height: 250,
+    ),
+    TestCase(
+      title: 'Video Outstream [noBids] (GAM)',
+      configId: 'prebid-demo-no-bids',
+      format: DemoAdFormat.videoBanner,
+      integration: DemoIntegration.gam,
+      adUnitId: '${_gam}prebid_oxb_300x250_banner',
+      width: 300,
+      height: 250,
+    ),
+    TestCase(
+      title: 'Video Outstream with End Card (GAM)',
+      configId: 'prebid-demo-video-outstream-with-end-card',
+      format: DemoAdFormat.videoBanner,
+      integration: DemoIntegration.gam,
+      adUnitId: '${_gam}prebid_oxb_300x250_banner',
+      width: 300,
+      height: 250,
+    ),
+
+    // =========================================================================
+    // GAM RENDERING — Rewarded
+    // =========================================================================
+    TestCase(
+      title: 'Display Rewarded 320x480 (Default) (GAM)',
+      configId: 'prebid-demo-banner-rewarded-default',
+      format: DemoAdFormat.displayRewarded,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamRewarded,
+      width: 320,
+      height: 480,
+    ),
+    TestCase(
+      title: 'Video Rewarded 320x480 (GAM)',
+      configId: 'prebid-demo-video-rewarded-320-480',
+      format: DemoAdFormat.videoRewarded,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamRewarded,
+      width: 320,
+      height: 480,
+    ),
+    TestCase(
+      title: 'Video Rewarded 320x480 without End Card (GAM)',
+      configId: 'prebid-demo-video-rewarded-320-480-without-end-card',
+      format: DemoAdFormat.videoRewarded,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamRewarded,
+      width: 320,
+      height: 480,
+    ),
+
+    // =========================================================================
+    // GAM RENDERING — Native
+    // =========================================================================
+    TestCase(
+      title: 'Native Ad (GAM)',
+      configId: 'prebid-demo-banner-native-styles',
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNative,
+    ),
+    TestCase(
+      title: 'Native Ad Links (GAM)',
+      configId: 'prebid-demo-native-links',
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNative,
     ),
 
     // =========================================================================

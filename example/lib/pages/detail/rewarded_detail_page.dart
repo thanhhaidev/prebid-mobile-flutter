@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
 import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import '../../models/demo_ad_category.dart';
@@ -89,6 +90,15 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
         _show = ad.show;
         _destroy = ad.destroy;
         ad.loadAd();
+      case DemoIntegration.gam:
+        final ad = PrebidGamRewardedAd(
+          configId: _configId,
+          gamAdUnitId: adUnitId,
+          listener: listener,
+        );
+        _show = ad.show;
+        _destroy = ad.destroy;
+        ad.loadAd();
       case DemoIntegration.max:
         final ad = PrebidMaxRewardedAd(
           configId: _configId,
@@ -98,9 +108,8 @@ class _RewardedDetailPageState extends State<RewardedDetailPage> {
         _show = ad.show;
         _destroy = ad.destroy;
         ad.loadAd();
-      case DemoIntegration.gam:
       case DemoIntegration.original:
-        // Rewarded is not wired for GAM / Original in the demo yet.
+        // Original API rewarded is not wired in the demo yet.
         break;
     }
   }

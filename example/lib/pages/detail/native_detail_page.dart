@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
 import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import '../../models/demo_ad_category.dart';
@@ -13,8 +14,8 @@ import '../../widgets/event_counter.dart';
 import '../../widgets/native_ad_card.dart';
 
 /// Native ad detail page. In-App renders structured native assets with a custom
-/// Flutter card; AdMob / MAX render through the mediation SDK's native ad view
-/// (a PlatformView) so impressions/clicks track correctly.
+/// Flutter card; GAM / AdMob / MAX render through the ad-server SDK's native
+/// ad view (a PlatformView) so impressions/clicks track correctly.
 class NativeDetailPage extends StatefulWidget {
   final TestCase tc;
   const NativeDetailPage({super.key, required this.tc});
@@ -31,7 +32,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
   PrebidNativeAd? _ad;
   PrebidNativeAdResponse? _response;
 
-  // AdMob / MAX platform-view rendering.
+  // GAM / AdMob / MAX platform-view rendering.
   bool _showAd = false;
   int _adKey = 0;
 
@@ -52,14 +53,32 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
     },
   );
 
+  PrebidNativeAdListener _gamNativeListener() => PrebidNativeAdListener(
+    onAdLoaded: (_) {
+      _tracker.track('onAdLoaded');
+      _log.log('Native', 'Ad loaded');
+    },
+    onAdFailed: (e) {
+      _tracker.track('onAdFailed', e);
+      _log.log('Native', 'Ad failed: $e', level: LogLevel.error);
+    },
+    onAdClicked: () {
+      _tracker.track('onAdClicked');
+      _log.log('Native', 'Ad clicked');
+    },
+  );
+
   Future<void> _load() async {
     _tracker.reset();
     await PrebidMobile.clearStoredAuctionResponse();
-    _log.log('Native', 'Loading ${widget.tc.integration.label}: '
-        '${widget.tc.configId}');
+    _log.log(
+      'Native',
+      'Loading ${widget.tc.integration.label}: '
+          '${widget.tc.configId}',
+    );
 
     if (!_isInApp) {
-      // AdMob / MAX: the platform view loads itself on (re)creation.
+      // GAM / AdMob / MAX: the platform view loads itself on (re)creation.
       setState(() {
         _showAd = true;
         _adKey++;
@@ -124,20 +143,55 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
   Widget _mediatedNativeWidget() {
     final key = ValueKey(_adKey);
     final adUnitId = widget.tc.adUnitId ?? '';
-    if (widget.tc.integration == DemoIntegration.admob) {
-      return PrebidAdMobNativeAd(
+    return switch (widget.tc.integration) {
+      DemoIntegration.gam => PrebidGamNativeAd(
+        key: key,
+        configId: widget.tc.configId,
+        gamAdUnitId: adUnitId,
+        assets: const [
+          NativeAsset.title(length: 90, required: true),
+          NativeAsset.image(
+            imageType: NativeImageType.icon,
+            widthMin: 20,
+            heightMin: 20,
+            required: true,
+          ),
+          NativeAsset.image(
+            imageType: NativeImageType.main,
+            widthMin: 200,
+            heightMin: 200,
+            required: true,
+          ),
+          NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+          NativeAsset.data(dataType: NativeDataType.desc, required: true),
+          NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
+        ],
+        eventTrackers: const [
+          NativeEventTracker(
+            eventType: NativeEventType.impression,
+            methods: [
+              NativeEventTrackingMethod.image,
+              NativeEventTrackingMethod.js,
+            ],
+          ),
+        ],
+        listener: _gamNativeListener(),
+      ),
+      DemoIntegration.admob => PrebidAdMobNativeAd(
         key: key,
         configId: widget.tc.configId,
         adMobAdUnitId: adUnitId,
         listener: _mediatedListener(),
-      );
-    }
-    return PrebidMaxNativeAd(
-      key: key,
-      configId: widget.tc.configId,
-      maxAdUnitId: adUnitId,
-      listener: _mediatedListener(),
-    );
+      ),
+      DemoIntegration.max => PrebidMaxNativeAd(
+        key: key,
+        configId: widget.tc.configId,
+        maxAdUnitId: adUnitId,
+        listener: _mediatedListener(),
+      ),
+      DemoIntegration.inApp ||
+      DemoIntegration.original => const SizedBox.shrink(),
+    };
   }
 
   @override

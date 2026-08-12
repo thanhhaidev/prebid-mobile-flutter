@@ -5,6 +5,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.prebid.mobile.api.exceptions.AdException
+import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.rendering.InterstitialAdUnit
 import org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener
 import org.prebid.mobile.eventhandlers.GamInterstitialEventHandler
@@ -47,9 +48,17 @@ class GamInterstitialManager(
                 }
                 val configId = args?.get("configId") as? String ?: ""
                 val gamAdUnitId = args?.get("gamAdUnitId") as? String ?: ""
+                val formats = java.util.EnumSet.noneOf(AdUnitFormat::class.java)
+                (args?.get("adFormats") as? List<*>)?.forEach { format ->
+                    when (format as? String) {
+                        "banner" -> formats.add(AdUnitFormat.BANNER)
+                        "video" -> formats.add(AdUnitFormat.VIDEO)
+                    }
+                }
+                if (formats.isEmpty()) formats.add(AdUnitFormat.BANNER)
 
                 val eventHandler = GamInterstitialEventHandler(activity, gamAdUnitId)
-                val adUnit = InterstitialAdUnit(activity, configId, eventHandler)
+                val adUnit = InterstitialAdUnit(activity, configId, formats, eventHandler)
 
                 adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
                     override fun onAdLoaded(unit: InterstitialAdUnit) = send(adId, "onAdLoaded")

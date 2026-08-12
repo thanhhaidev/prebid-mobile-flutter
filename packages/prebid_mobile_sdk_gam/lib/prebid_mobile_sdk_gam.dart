@@ -46,3 +46,5 @@ library;
 
 export 'src/gam_banner_ad.dart';
 export 'src/gam_interstitial_ad.dart';
+export 'src/gam_native_ad.dart';
+export 'src/gam_rewarded_ad.dart';

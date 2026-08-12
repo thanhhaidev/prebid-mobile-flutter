@@ -35,10 +35,14 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
             }
             let configId = args?["configId"] as? String ?? ""
             let gamAdUnitId = args?["gamAdUnitId"] as? String ?? ""
+            let requestedFormats = args?["adFormats"] as? [String] ?? ["banner"]
 
             let eventHandler = GAMInterstitialEventHandler(adUnitID: gamAdUnitId)
             let adUnit = InterstitialRenderingAdUnit(configID: configId, eventHandler: eventHandler)
-            adUnit.adFormats = [.banner]
+            var formats: Set<AdFormat> = []
+            if requestedFormats.contains("banner") { formats.insert(.banner) }
+            if requestedFormats.contains("video") { formats.insert(.video) }
+            adUnit.adFormats = formats.isEmpty ? [.banner] : formats
             adUnit.delegate = self
 
             ads[adId] = adUnit

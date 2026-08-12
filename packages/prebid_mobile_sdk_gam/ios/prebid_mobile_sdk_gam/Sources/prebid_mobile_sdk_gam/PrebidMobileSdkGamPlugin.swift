@@ -8,11 +8,16 @@ public class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
     /// Retains the interstitial manager for the lifetime of the plugin.
     private static var interstitialManager: GamInterstitialManager?
+    private static var rewardedManager: GamRewardedManager?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let factory = GamBannerAdViewFactory(messenger: registrar.messenger())
         registrar.register(factory, withId: "prebid_mobile_sdk_gam/banner")
 
+        let nativeFactory = GamNativeAdViewFactory(messenger: registrar.messenger())
+        registrar.register(nativeFactory, withId: "prebid_mobile_sdk_gam/native")
+
         interstitialManager = GamInterstitialManager(messenger: registrar.messenger())
+        rewardedManager = GamRewardedManager(messenger: registrar.messenger())
     }
 }

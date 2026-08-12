@@ -1,6 +1,7 @@
 import 'dart:ui' show Size;
 
 import 'multiformat_ad.dart';
+import 'native_ad.dart';
 import 'video_parameters.dart';
 
 /// Result of an **Original API** bid request.
@@ -114,4 +115,56 @@ class PrebidInterstitialAdUnit {
 
   /// Releases native resources held by this ad unit.
   Future<void> destroy() => _delegate.destroy();
+}
+
+/// A native ad unit for the **Original API** integration: Prebid runs the
+/// auction and returns targeting keywords plus the native cache ID, while your
+/// ad server SDK owns rendering.
+class PrebidNativeAdUnit {
+  /// The Prebid Server stored impression config ID.
+  final String configId;
+
+  /// Native assets to request.
+  final List<NativeAsset> assets;
+
+  /// Native event trackers.
+  final List<NativeEventTracker>? eventTrackers;
+
+  final PrebidMultiformatAd _delegate;
+
+  /// Creates a [PrebidNativeAdUnit].
+  PrebidNativeAdUnit({
+    required this.configId,
+    required this.assets,
+    this.eventTrackers,
+  }) : _delegate = PrebidMultiformatAd(
+         configId: configId,
+         nativeAssets: assets,
+         nativeEventTrackers: eventTrackers,
+       );
+
+  /// Runs the Prebid auction and returns targeting keywords for your ad server.
+  Future<PrebidNativeBidResponse> fetchDemand() async {
+    final result = await _delegate.fetchDemand();
+    return PrebidNativeBidResponse(
+      resultCode: result.resultCode,
+      targetingKeywords: result.targetingKeywords,
+      nativeAdCacheId: result.nativeAdCacheId,
+    );
+  }
+
+  /// Releases native resources held by this ad unit.
+  Future<void> destroy() => _delegate.destroy();
+}
+
+/// Result of an Original API native bid request.
+class PrebidNativeBidResponse extends PrebidBidResponse {
+  /// Native cache ID returned by Prebid, when native demand wins.
+  final String? nativeAdCacheId;
+
+  const PrebidNativeBidResponse({
+    required super.resultCode,
+    super.targetingKeywords,
+    this.nativeAdCacheId,
+  });
 }

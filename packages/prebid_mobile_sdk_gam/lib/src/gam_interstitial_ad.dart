@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidInterstitialAdListener;
+    show AdFormat, PrebidInterstitialAdListener, VideoParameters;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_gam/interstitial',
@@ -60,6 +60,12 @@ class PrebidGamInterstitialAd {
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
+  /// Ad formats to request. Defaults to display interstitial.
+  final Set<AdFormat>? adFormats;
+
+  /// Video configuration. Used when [adFormats] contains [AdFormat.video].
+  final VideoParameters? videoParameters;
+
   bool _loaded = false;
 
   /// Whether the interstitial has loaded and is ready to [show].
@@ -69,6 +75,8 @@ class PrebidGamInterstitialAd {
   PrebidGamInterstitialAd({
     required this.configId,
     required this.gamAdUnitId,
+    this.adFormats,
+    this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -80,6 +88,7 @@ class PrebidGamInterstitialAd {
       'adId': _adId,
       'configId': configId,
       'gamAdUnitId': gamAdUnitId,
+      'adFormats': adFormats?.map((f) => f.name).toList(),
     });
   }
 

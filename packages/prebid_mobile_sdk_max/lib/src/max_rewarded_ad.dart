@@ -2,9 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show PrebidRewardedAdListener, PrebidReward;
 
-const MethodChannel _channel = MethodChannel(
-  'prebid_mobile_sdk_max/rewarded',
-);
+const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_max/rewarded');
 
 /// Routes native rewarded events (delivered over the shared method channel) to
 /// the [PrebidMaxRewardedAd] that owns each `adId`.

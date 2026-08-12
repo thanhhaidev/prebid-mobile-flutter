@@ -144,11 +144,11 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
         let externalIds = userIds.map { data -> ExternalUserId in
-            let uniqueId = UserUniqueID(
-                id: data.identifier,
+            let uid = UserUniqueID(
+                uniqueId: data.identifier,
                 aType: NSNumber(value: data.atype ?? 0)
             )
-            return ExternalUserId(source: data.source, uids: [uniqueId])
+            return ExternalUserId(source: data.source, uids: [uid])
         }
         Targeting.shared.setExternalUserIds(externalIds)
     }

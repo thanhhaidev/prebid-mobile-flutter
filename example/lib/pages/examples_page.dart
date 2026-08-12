@@ -102,9 +102,7 @@ class _ExamplesPageState extends State<ExamplesPage> {
 
           // Ad-format filter row
           _chipRow(
-            children: [
-              for (final c in DemoAdCategory.values) _categoryChip(c),
-            ],
+            children: [for (final c in DemoAdCategory.values) _categoryChip(c)],
           ),
           const SizedBox(height: 8),
 

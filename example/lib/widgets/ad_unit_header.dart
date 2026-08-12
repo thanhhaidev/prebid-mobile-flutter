@@ -105,7 +105,11 @@ class AdUnitHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return IconButton(
       visualDensity: VisualDensity.compact,
-      icon: Icon(Icons.copy_rounded, size: 18, color: theme.colorScheme.outline),
+      icon: Icon(
+        Icons.copy_rounded,
+        size: 18,
+        color: theme.colorScheme.outline,
+      ),
       tooltip: 'Copy',
       onPressed: () {
         Clipboard.setData(ClipboardData(text: value));

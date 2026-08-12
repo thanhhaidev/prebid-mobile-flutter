@@ -9,6 +9,14 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  # Exclude build artifacts. The iOS SPM build checks out a full copy of
+  # google_mobile_ads under build/ios/SourcePackages/, which would otherwise be
+  # analyzed and clash with the pub-cache copy (duplicate types / ambiguous
+  # imports). build/ is gitignored but present on disk after a build.
+  exclude:
+    - build/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

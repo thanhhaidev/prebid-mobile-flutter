@@ -79,3 +79,35 @@ enum PrebidEidsPlacement {
   /// Both `user.eids` and `user.ext.eids`. Prebid's default.
   compatible,
 }
+
+/// Ad position on screen (OpenRTB `imp.banner.pos` / `imp.video.pos`).
+enum PrebidAdPosition {
+  /// Not set (the SDK sends nothing).
+  undefined(-1),
+
+  /// Unknown.
+  unknown(0),
+
+  /// Above the fold.
+  aboveTheFold(1),
+
+  /// Below the fold.
+  belowTheFold(3),
+
+  /// Header.
+  header(4),
+
+  /// Footer.
+  footer(5),
+
+  /// Sidebar.
+  sidebar(6),
+
+  /// Full screen.
+  fullScreen(7);
+
+  const PrebidAdPosition(this.value);
+
+  /// The OpenRTB `pos` value.
+  final int value;
+}

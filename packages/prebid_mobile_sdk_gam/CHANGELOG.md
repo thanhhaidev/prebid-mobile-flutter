@@ -16,4 +16,5 @@
   (`customFormatId`) + unified flow, Prebid creative extracted via `findNative`.
   Events via `PrebidGamNativeAdListener` (incl. `onAdExpired`). Request `assets` /
   `eventTrackers` are configurable.
+* Interstitial / rewarded take `impOrtbConfig`; the banner takes `adPosition`; native takes `context` / `contextSubType` / `placementType`. Set the GPID or Prebid ad slot of fullscreen units through `impOrtbConfig` (`ext.gpid`, `ext.data.pbadslot`).
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

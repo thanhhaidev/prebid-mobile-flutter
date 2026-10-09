@@ -64,6 +64,7 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
             if requestedFormats.contains("video") { formats.insert(.video) }
             adUnit.adFormats = formats.isEmpty ? [.banner] : formats
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
+            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
             adUnit.delegate = self
 
             ads[adId] = adUnit

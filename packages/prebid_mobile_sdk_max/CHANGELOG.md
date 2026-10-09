@@ -12,4 +12,5 @@
   interstitial / rewarded accept `PrebidFullscreenControls` (`supportSKOverlay` has no mediation
   equivalent and is ignored).
 * Interstitial / rewarded: `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video).
+* Banner takes `adPosition` and `impOrtbConfig`; interstitial / rewarded take `impOrtbConfig` (also how to set the GPID: `ext.gpid`); native takes `context` / `contextSubType` / `placementType`.
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

@@ -70,6 +70,7 @@ class GamInterstitialManager(
                 }
                 val adUnit = InterstitialAdUnit(activity, configId, formats, eventHandler)
                 videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
                 FullscreenControls.from(args?.get("controls"))?.let { controls ->
                     controls.applyTo(adUnit)
                     if (controls.minWidthPercentage != null && controls.minHeightPercentage != null) {

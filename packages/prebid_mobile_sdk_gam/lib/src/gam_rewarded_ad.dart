@@ -49,6 +49,12 @@ class PrebidGamRewardedAd {
   /// Android only).
   final PrebidFullscreenControls? controls;
 
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. Also
+  /// how to set the GPID (`{"ext":{"gpid":"/1111/home"}}`) and the Prebid ad
+  /// slot (`{"ext":{"data":{"pbadslot":"..."}}}`), which these units have no
+  /// separate setters for on iOS.
+  final String? impOrtbConfig;
+
   /// OpenRTB video parameters for the rewarded video. iOS applies every
   /// field; Prebid Android's rewarded ad unit only exposes
   /// `setMaxVideoDuration`, so [VideoParameters.maxDuration] only caps the
@@ -68,6 +74,7 @@ class PrebidGamRewardedAd {
     required this.gamAdUnitId,
     this.customTargeting,
     this.controls,
+    this.impOrtbConfig,
     this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
@@ -81,6 +88,7 @@ class PrebidGamRewardedAd {
       'gamAdUnitId': gamAdUnitId,
       'customTargeting': ?customTargeting,
       'controls': ?controls?.toMap(),
+      'impOrtbConfig': ?impOrtbConfig,
       'videoParameters': ?videoParameters?.toMap(),
     });
   }

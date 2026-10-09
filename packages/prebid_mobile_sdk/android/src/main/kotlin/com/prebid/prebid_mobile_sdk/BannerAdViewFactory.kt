@@ -68,6 +68,12 @@ class BannerAdPlatformView(
             bannerView.videoPlacementType = videoPlacement ?: org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
         }
         pbAdSlot?.let { bannerView.setPbAdSlot(it) }
+        (params["adPosition"] as? Number)?.toInt()?.let { pos ->
+            org.prebid.mobile.rendering.models.AdPosition.values().firstOrNull { it.value == pos }
+                ?.let { bannerView.setAdPosition(it) }
+        }
+        // params["videoParameters"]: iOS only; Prebid Android's BannerView has
+        // no video-parameters setter.
         impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
 
         if (refreshInterval != null && refreshInterval > 0) {

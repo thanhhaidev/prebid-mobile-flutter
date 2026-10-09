@@ -101,3 +101,22 @@ internal fun FullscreenControls.applyTo(adUnit: org.prebid.mobile.api.rendering.
     isMuted?.let { adUnit.setIsMuted(it) }
     isSoundButtonVisible?.let { adUnit.setIsSoundButtonVisible(it) }
 }
+
+/// Native context / context subtype / placement type from the Dart payload,
+/// overriding the view's defaults when set.
+internal class NativeContext(
+    val context: org.prebid.mobile.NativeAdUnit.CONTEXT_TYPE?,
+    val subType: org.prebid.mobile.NativeAdUnit.CONTEXTSUBTYPE?,
+    val placement: org.prebid.mobile.NativeAdUnit.PLACEMENTTYPE?,
+) {
+    companion object {
+        fun from(params: Map<*, *>): NativeContext {
+            fun id(key: String) = (params[key] as? Number)?.toInt()
+            return NativeContext(
+                id("context")?.let { v -> org.prebid.mobile.NativeAdUnit.CONTEXT_TYPE.values().firstOrNull { it.id == v } },
+                id("contextSubType")?.let { v -> org.prebid.mobile.NativeAdUnit.CONTEXTSUBTYPE.values().firstOrNull { it.id == v } },
+                id("placementType")?.let { v -> org.prebid.mobile.NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { it.id == v } },
+            )
+        }
+    }
+}

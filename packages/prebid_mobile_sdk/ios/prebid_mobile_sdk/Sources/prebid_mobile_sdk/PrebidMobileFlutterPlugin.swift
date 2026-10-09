@@ -87,7 +87,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         NativeAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
         
         // Register multiformat handler
-        let multiformatHandler = MultiformatAdHostApiHandler()
+        let multiformatHandler = MultiformatAdHostApiHandler(
+            flutterApi: MultiformatFlutterApi(binaryMessenger: registrar.messenger())
+        )
         MultiformatAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: multiformatHandler)
         
         // Register in-stream video handler
@@ -113,7 +115,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         let callback: PrebidInitializationCallback = { status, error in
             let statusStr: String
             switch status {
-            case .succeeded: statusStr = "succeeded"
+            // Skipped = setDisableStatusCheck(true); Android reports that as
+            // SUCCEEDED, so match it.
+            case .succeeded, .serverStatusSkipped: statusStr = "succeeded"
             case .serverStatusWarning: statusStr = "serverStatusWarning"
             default: statusStr = "failed"
             }
@@ -226,6 +230,10 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         Prebid.shared.auctionSettingsId = settingsId
     }
 
+    func setDisableStatusCheck(disable: Bool) throws {
+        Prebid.shared.shouldDisableStatusCheck = disable
+    }
+
     func setEventDelegateEnabled(enabled: Bool) throws {
         if enabled, let api = eventFlutterApi {
             let forwarder = BidEventForwarder(api: api)
@@ -317,6 +325,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     func setPurposeConsents(value: String?) throws { Targeting.shared.purposeConsents = value }
     func getPurposeConsents() throws -> String? { Targeting.shared.purposeConsents }
+    func getPurposeConsent(index: Int64) throws -> Bool? { Targeting.shared.getPurposeConsent(index: Int(index)) }
     func getDeviceAccessConsent() throws -> Bool? { Targeting.shared.getDeviceAccessConsent() }
     
     // US Privacy / CCPA
@@ -478,6 +487,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         if let pt = config.placementType {
             nativeRequest.placementType = PlacementType(integerLiteral: Int(pt))
         }
+        if let subtype = config.contextSubType {
+            nativeRequest.contextSubType = ContextSubType(integerLiteral: Int(subtype))
+        }
         if let pbAdSlot = config.pbAdSlot { nativeRequest.pbAdSlot = pbAdSlot }
         if let gpid = config.gpid { nativeRequest.setGPID(gpid) }
         if let impOrtbConfig = config.impOrtbConfig { nativeRequest.setImpORTBConfig(impOrtbConfig) }
@@ -615,6 +627,26 @@ extension FullscreenControlsConfig {
 }
 
 // MARK: - Video parameters
+
+/// Applies a `VideoParameters.toMap()` payload (banner creation params).
+func applyVideoParameters(_ raw: [String: Any], to vp: VideoParameters) {
+    func ints(_ key: String) -> [Int]? { (raw[key] as? [Any])?.compactMap { ($0 as? NSNumber)?.intValue } }
+    func int(_ key: String) -> Int? { (raw[key] as? NSNumber)?.intValue }
+    if let v = raw["mimes"] as? [String] { vp.mimes = v }
+    if let v = ints("protocols") { vp.protocols = v.map { Signals.Protocols(integerLiteral: $0) } }
+    if let v = ints("playbackMethods") { vp.playbackMethod = v.map { Signals.PlaybackMethod(integerLiteral: $0) } }
+    if let v = int("placement") { vp.placement = Signals.Placement(integerLiteral: v) }
+    if let v = int("plcmt") { vp.plcmnt = Signals.Plcmnt(integerLiteral: v) }
+    if let v = ints("api") { vp.api = v.map { Signals.Api(integerLiteral: $0) } }
+    if let v = int("maxDuration") { vp.maxDuration = SingleContainerInt(integerLiteral: v) }
+    if let v = int("minDuration") { vp.minDuration = SingleContainerInt(integerLiteral: v) }
+    if let v = int("startDelay") { vp.startDelay = Signals.StartDelay(integerLiteral: v) }
+    if let v = int("linearity") { vp.linearity = SingleContainerInt(integerLiteral: v) }
+    if let v = raw["skippable"] as? Bool { vp.isSkippable = v }
+    if let v = ints("battr") { vp.battr = v.map { Signals.CreativeAttribute(integerLiteral: $0) } }
+    if let v = int("minBitrate") { vp.minBitrate = SingleContainerInt(integerLiteral: v) }
+    if let v = int("maxBitrate") { vp.maxBitrate = SingleContainerInt(integerLiteral: v) }
+}
 
 extension VideoParametersConfig {
     func makeVideoParameters() -> VideoParameters {
@@ -792,13 +824,20 @@ private class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
 // MARK: - Multiformat Ad Handler
 private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
     
+    private let flutterApi: MultiformatFlutterApi
     private var adUnits: [Int64: PrebidAdUnit] = [:]
+    private var refreshSeconds: [Int64: Int64] = [:]
+
+    init(flutterApi: MultiformatFlutterApi) {
+        self.flutterApi = flutterApi
+    }
     
     func fetchDemand(
         adId: Int64,
         config: MultiformatAdRequestConfig,
         completion: @escaping (Result<MultiformatBidResult, Error>) -> Void
     ) {
+        adUnits[adId]?.stopAutoRefresh()
         let adUnit = PrebidAdUnit(configId: config.configId)
         adUnits[adId] = adUnit
         
@@ -853,6 +892,9 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
                 }
             }
             np.assets = assets
+            if let v = nc.context { np.context = ContextType(integerLiteral: Int(v)) }
+            if let v = nc.contextSubType { np.contextSubType = ContextSubType(integerLiteral: Int(v)) }
+            if let v = nc.placementType { np.placementType = PlacementType(integerLiteral: Int(v)) }
             
             if let trackers = nc.eventTrackers {
                 var nativeTrackers: [NativeEventTracker] = []
@@ -875,29 +917,76 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
             isRewarded: config.isRewarded
         )
         if let gpid = config.gpid { request.setGPID(gpid) }
+        if let pos = config.adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) {
+            request.adPosition = pos
+        }
+        if let seconds = refreshSeconds[adId] {
+            adUnit.setAutoRefreshMillis(time: Double(seconds) * 1000)
+        }
         
         let unitId = ObjectIdentifier(adUnit)
+        let trackInterstitial = config.trackInterstitialImpression
+        // Auto-refresh calls this again for every refreshed auction; the
+        // Pigeon reply can be sent once, later results go to Dart as events.
+        var replied = false
         InFlightAdUnits.retain(adUnit)
-        adUnit.fetchDemand(request: request) { bidInfo in
+        adUnit.fetchDemand(request: request) { [weak self, weak adUnit] bidInfo in
             InFlightAdUnits.release(unitId)
-            let resultStr = bidInfo.resultCode.dartCode
-            
-            let format = bidInfo.targetingKeywords?["hb_format"]
             let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
-            
-            completion(.success(MultiformatBidResult(
-                resultCode: resultStr,
+            let result = MultiformatBidResult(
+                resultCode: bidInfo.resultCode.dartCode,
                 exp: bidInfo.exp,
                 topBidFiltered: bidInfo.topBidFiltered,
-                winningFormat: format,
+                winningFormat: bidInfo.targetingKeywords?["hb_format"],
                 targetingKeywords: keywords,
                 nativeAdCacheId: bidInfo.nativeAdCacheId
-            )))
+            )
+            if !replied {
+                replied = true
+                // Prebid's interstitial tracker watches the key window for the
+                // ad server's interstitial showing this bid's creative.
+                if trackInterstitial, bidInfo.resultCode == .prebidDemandFetchSuccess {
+                    adUnit?.activatePrebidInterstitialImpressionTracker()
+                }
+                completion(.success(result))
+            } else if let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit {
+                self.flutterApi.onDemandRefreshed(adId: adId, result: result) { _ in }
+            }
         }
+    }
+
+    func setAutoRefreshInterval(adId: Int64, seconds: Int64) throws {
+        refreshSeconds[adId] = seconds
+        adUnits[adId]?.setAutoRefreshMillis(time: Double(seconds) * 1000)
+    }
+
+    func stopAutoRefresh(adId: Int64) throws {
+        adUnits[adId]?.stopAutoRefresh()
+    }
+
+    func resumeAutoRefresh(adId: Int64) throws {
+        adUnits[adId]?.resumeAutoRefresh()
+    }
+
+    func activateBannerImpressionTracker(adId: Int64) throws -> Bool {
+        guard let adUnit = adUnits[adId],
+              let root = PrebidPresenter.topViewController()?.view.window else { return false }
+        let banners = Self.gmaBannerViews(in: root)
+        guard banners.count == 1 else { return false }
+        adUnit.activatePrebidAdViewImpressionTracker(adView: banners[0])
+        return true
+    }
+
+    /// Google Mobile Ads banner views in [view]'s tree, found by class so the
+    /// core plugin needn't depend on GMA.
+    private static func gmaBannerViews(in view: UIView) -> [UIView] {
+        if let type = NSClassFromString("GADBannerView"), view.isKind(of: type) { return [view] }
+        return view.subviews.flatMap { gmaBannerViews(in: $0) }
     }
     
     func destroy(adId: Int64) throws {
-        adUnits.removeValue(forKey: adId)
+        refreshSeconds.removeValue(forKey: adId)
+        adUnits.removeValue(forKey: adId)?.stopAutoRefresh()
     }
 }
 

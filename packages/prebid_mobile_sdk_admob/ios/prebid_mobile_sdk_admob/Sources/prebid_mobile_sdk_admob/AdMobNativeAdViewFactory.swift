@@ -76,6 +76,9 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
         adUnit.setContextType(.Social)
         adUnit.setPlacementType(.FeedContent)
         adUnit.setContextSubType(.Social)
+        if let v = args["context"] as? Int { adUnit.setContextType(ContextType(integerLiteral: v)) }
+        if let v = args["contextSubType"] as? Int { adUnit.setContextSubType(ContextSubType(integerLiteral: v)) }
+        if let v = args["placementType"] as? Int { adUnit.setPlacementType(PlacementType(integerLiteral: v)) }
         adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: .Impression, methods: [.Image, .js])
         ])

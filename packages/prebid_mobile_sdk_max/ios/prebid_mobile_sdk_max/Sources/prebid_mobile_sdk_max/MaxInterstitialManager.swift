@@ -104,6 +104,7 @@ class MaxInterstitialManager: NSObject {
             adUnit.adFormats = isVideo ? [.video] : [.banner]
             controls?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
+            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
 
             let proxy = MaxAdEventProxy { [weak self] event, payload in
                 self?.send(adId, event, payload)

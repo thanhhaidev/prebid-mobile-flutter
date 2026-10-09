@@ -224,6 +224,12 @@ class PrebidMobile {
     api.setAuctionSettingsId(settingsId);
   }
 
+  /// Skips the Prebid Server status request during [initializeSdk] (e.g. a
+  /// server without a status endpoint). Call it before [initializeSdk].
+  static Future<void> setDisableStatusCheck(bool disable) async {
+    await api.setDisableStatusCheck(disable);
+  }
+
   /// Registers [listener] to receive every Prebid Server bid request and
   /// response as JSON (Prebid's `PrebidEventDelegate`). Pass `null` to stop.
   ///

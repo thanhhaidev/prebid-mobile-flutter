@@ -51,6 +51,7 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
             )
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
+            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
 

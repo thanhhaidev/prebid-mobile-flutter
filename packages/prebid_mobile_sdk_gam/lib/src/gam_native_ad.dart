@@ -2,7 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show NativeAsset, NativeEventTracker;
+    show
+        NativeAsset,
+        NativeContextSubType,
+        NativeContextType,
+        NativeEventTracker,
+        NativePlacementType;
 
 /// Listener for the GAM native ad flow, surfacing the full set of callbacks
 /// from Prebid's Original-API GAM native integration (mirrors the reference
@@ -107,6 +112,12 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Native event trackers. `null` requests impression trackers (image + JS).
   final List<NativeEventTracker>? eventTrackers;
 
+  /// Native context, context subtype and placement type. Default: social
+  /// context, general-social subtype, in-feed placement.
+  final NativeContextType? context;
+  final NativeContextSubType? contextSubType;
+  final NativePlacementType? placementType;
+
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
 
@@ -119,6 +130,9 @@ class PrebidGamNativeAd extends StatefulWidget {
     this.height = 320,
     this.assets,
     this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
     this.listener,
   });
 
@@ -182,6 +196,11 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
         'assets': widget.assets!.map((a) => a.toMap()).toList(),
       if (widget.eventTrackers != null)
         'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
+      if (widget.context != null) 'context': widget.context!.value,
+      if (widget.contextSubType != null)
+        'contextSubType': widget.contextSubType!.value,
+      if (widget.placementType != null)
+        'placementType': widget.placementType!.value,
     };
 
     return SizedBox(

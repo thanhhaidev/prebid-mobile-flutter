@@ -124,6 +124,51 @@ enum NativeContextType {
   final int value;
 }
 
+/// Context subtype for native ads (OpenRTB native `contextsubtype`).
+enum NativeContextSubType {
+  /// General or mixed content.
+  general(10),
+
+  /// Primarily article content.
+  article(11),
+
+  /// Primarily video content.
+  video(12),
+
+  /// Primarily audio content.
+  audio(13),
+
+  /// Primarily image content.
+  image(14),
+
+  /// User-generated content (forums, comments, etc.).
+  userGenerated(15),
+
+  /// General social content.
+  social(20),
+
+  /// Primarily email content.
+  email(21),
+
+  /// Primarily chat / IM content.
+  chat(22),
+
+  /// Content focused on selling products.
+  sellingProducts(30),
+
+  /// Application store / marketplace.
+  appStore(31),
+
+  /// Product review site.
+  productReview(32),
+
+  /// Custom.
+  custom(500);
+
+  const NativeContextSubType(this.value);
+  final int value;
+}
+
 /// Placement type for native ads.
 enum NativePlacementType {
   /// In the feed of content.

@@ -23,6 +23,7 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - `setEidsPlacement()` — send EIDs in `user.eids` (OpenRTB 2.6), `user.ext.eids` (2.5) or both
   - `setIncludeWinners()` / `setIncludeBidderKeys()` — Prebid Server targeting flags
   - `setAuctionSettingsId()` — request-level stored auction settings
+  - `setDisableStatusCheck()` — skip the Prebid Server status request during init
   - `setEventListener()` — receive every Prebid Server bid request / response as JSON (`PrebidEventDelegate`)
   - `setSendSharedId()`, `getSharedId()`, `resetSharedId()` — Prebid's first-party SharedID
   - `isSdkInitialized`
@@ -31,11 +32,12 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - `setExternalUserIds()`, `getExternalUserIds()`, `clearExternalUserIds()`
   - Supports UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source
 - **Ad Formats**
-  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support, multisize via `additionalSizes` (multiformat via `adFormats`), auto-refresh via `refreshIntervalSeconds` (off by default on both platforms), `PrebidBannerAdController` (`loadAd` / `stopRefresh`), `pbAdSlot`, `impOrtbConfig`, `videoPlacementType`, and outstream video events via `PrebidBannerVideoListener` (completed / paused / resumed / muted / unmuted)
+  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support, multisize via `additionalSizes`, `adPosition`, (iOS) `videoParameters` (multiformat via `adFormats`), auto-refresh via `refreshIntervalSeconds` (off by default on both platforms), `PrebidBannerAdController` (`loadAd` / `stopRefresh`), `pbAdSlot`, `impOrtbConfig`, `videoPlacementType`, and outstream video events via `PrebidBannerVideoListener` (completed / paused / resumed / muted / unmuted)
   - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads with optional `VideoParameters`, `impOrtbConfig` and `PrebidFullscreenControls` (close / skip button area and position, skip delay, mute, sound button, auto-close, minimum size, iOS `supportSKOverlay`)
   - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with typed `PrebidReward` callbacks (incl. `ext`), `impOrtbConfig` and `PrebidFullscreenControls`
-  - **Native Ads** (`PrebidNativeAd`) — Load native ads (Title, Image, Icon, Sponsored, Description, CTA, plus every title / image / data asset and the AdChoices `privacyUrl` in `PrebidNativeAdResponse`); show them with `PrebidNativeAdView`, which renders natively and registers the view so Prebid tracks impressions and clicks (`onAdClicked`, `onAdExpired`); `onAdImpression` fires once per ad when the view has been at least half on screen for 1 s (IAB), on both platforms, whether or not Prebid's tracker requests succeed; `pbAdSlot`, `gpid`, `impOrtbConfig`
-  - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across banner, video, and native in a single request; `gpid`; result exposes `exp` and `topBidFiltered`
+  - **Native Ads** (`PrebidNativeAd`) — Load native ads (Title, Image, Icon, Sponsored, Description, CTA, plus every title / image / data asset and the AdChoices `privacyUrl` in `PrebidNativeAdResponse`); show them with `PrebidNativeAdView`, which renders natively and registers the view so Prebid tracks impressions and clicks (`onAdClicked`, `onAdExpired`); `onAdImpression` fires once per ad when the view has been at least half on screen for 1 s (IAB), on both platforms, whether or not Prebid's tracker requests succeed; `pbAdSlot`, `gpid`, `impOrtbConfig`, `contextSubType`
+  - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across banner, video, and native in a single request; `gpid`, `adPosition`, native context / subtype / placement; result exposes `exp` and `topBidFiltered`
+  - **Original API units** (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`) — auto-refresh (`setAutoRefreshInterval` / `stopAutoRefresh` / `resumeAutoRefresh`, results via `onDemandRefreshed`) and Prebid impression tracking (`activateImpressionTracker()` for banners, `trackImpression` for interstitials)
   - **In-Stream Video** (`PrebidInstreamVideoAd`) — Fetch VAST video demand with `VideoParameters`; result exposes `exp`
 - **Video Parameters** — Full OpenRTB video configuration
   - `VideoParameters` class with `mimes`, `protocols`, `playbackMethods`, `placement`, OpenRTB 2.6 `plcmt`, `maxDuration`, `minDuration`, `startDelay`, `linearity`, `skippable`, `battr`, `minBitrate` / `maxBitrate`, `api`
@@ -43,7 +45,7 @@ Initial release of the `prebid_mobile_sdk` plugin.
 - **Targeting & Privacy** — `PrebidTargeting` class
   - GDPR: subject flag, consent string
   - COPPA: subject flag
-  - TCFv2: purpose consents, device access consent
+  - TCFv2: purpose consents (`getPurposeConsent(index)` for one purpose), device access consent
   - CCPA / US Privacy: `setUSPrivacyString()`, `getUSPrivacyString()`
   - GPP: auto-read from SharedPreferences/UserDefaults (CMP integration)
   - App First-Party Data: keywords, ext data (`app.ext.data`)

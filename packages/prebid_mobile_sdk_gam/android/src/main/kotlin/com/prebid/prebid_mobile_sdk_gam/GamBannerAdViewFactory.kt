@@ -75,6 +75,10 @@ class GamBannerPlatformView(
             }
         }
         bannerView = BannerView(context, configId, eventHandler)
+        (params["adPosition"] as? Number)?.toInt()?.let { pos ->
+            org.prebid.mobile.rendering.models.AdPosition.values().firstOrNull { it.value == pos }
+                ?.let { bannerView.setAdPosition(it) }
+        }
 
         if (adFormats != null) {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.

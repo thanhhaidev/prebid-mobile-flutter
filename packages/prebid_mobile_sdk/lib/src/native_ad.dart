@@ -254,6 +254,9 @@ class PrebidNativeAd {
   /// Context type.
   final NativeContextType? context;
 
+  /// The native context subtype (`contextsubtype`).
+  final NativeContextSubType? contextSubType;
+
   /// Placement type.
   final NativePlacementType? placementType;
 
@@ -278,6 +281,7 @@ class PrebidNativeAd {
     this.assets,
     this.eventTrackers,
     this.context,
+    this.contextSubType,
     this.placementType,
     this.placementCount,
     this.pbAdSlot,
@@ -338,6 +342,7 @@ class PrebidNativeAd {
       assets: assets?.map(_convertAsset).toList(),
       eventTrackers: eventTrackers?.map(_convertTracker).toList(),
       context: context?.value,
+      contextSubType: contextSubType?.value,
       placementType: placementType?.value,
       placementCount: placementCount,
       pbAdSlot: pbAdSlot,

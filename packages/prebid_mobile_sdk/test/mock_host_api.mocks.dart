@@ -248,6 +248,15 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setDisableStatusCheck(bool? disable) =>
+      (super.noSuchMethod(
+            Invocation.method(#setDisableStatusCheck, [disable]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> setEventDelegateEnabled(bool? enabled) =>
       (super.noSuchMethod(
             Invocation.method(#setEventDelegateEnabled, [enabled]),
@@ -410,6 +419,14 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValue: _i4.Future<String?>.value(),
           )
           as _i4.Future<String?>);
+
+  @override
+  _i4.Future<bool?> getPurposeConsent(int? index) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPurposeConsent, [index]),
+            returnValue: _i4.Future<bool?>.value(),
+          )
+          as _i4.Future<bool?>);
 
   @override
   _i4.Future<bool?> getDeviceAccessConsent() =>
@@ -915,6 +932,41 @@ class MockMultiformatAdHostApi extends _i1.Mock
             ),
           )
           as _i4.Future<_i2.MultiformatBidResult>);
+
+  @override
+  _i4.Future<void> setAutoRefreshInterval(int? adId, int? seconds) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAutoRefreshInterval, [adId, seconds]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> stopAutoRefresh(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#stopAutoRefresh, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> resumeAutoRefresh(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#resumeAutoRefresh, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool> activateBannerImpressionTracker(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#activateBannerImpressionTracker, [adId]),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
 
   @override
   _i4.Future<void> destroy(int? adId) =>

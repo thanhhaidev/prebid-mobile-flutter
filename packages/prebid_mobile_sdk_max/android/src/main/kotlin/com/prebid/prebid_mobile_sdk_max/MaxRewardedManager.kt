@@ -100,6 +100,7 @@ class MaxRewardedManager(
 
                 val mediationUtils = MaxMediationRewardedUtils(rewarded)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
+                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit, rewarded)

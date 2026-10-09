@@ -143,4 +143,120 @@ void main() {
     verify(mockApi.setSourceApp('123456789')).called(1);
     verify(mockApi.setItunesId('123456789')).called(1);
   });
+
+  test('status check and purpose consent', () async {
+    final mobile = MockPrebidMobileHostApi();
+    PrebidMobile.api = mobile;
+    await PrebidMobile.setDisableStatusCheck(true);
+    verify(mobile.setDisableStatusCheck(true)).called(1);
+
+    final targeting = MockTargetingHostApi();
+    PrebidTargeting.api = targeting;
+    when(targeting.getPurposeConsent(0)).thenAnswer((_) async => true);
+    expect(await PrebidTargeting.getPurposeConsent(0), isTrue);
+  });
+
+  group('Original API', () {
+    late MockMultiformatAdHostApi mockApi;
+
+    setUp(() {
+      mockApi = MockMultiformatAdHostApi();
+      PrebidMultiformatAd.api = mockApi;
+      when(mockApi.fetchDemand(any, any)).thenAnswer(
+        (_) async => MultiformatBidResult(
+          resultCode: 'prebidDemandFetchSuccess',
+          targetingKeywords: {'hb_pb': '0.10'},
+        ),
+      );
+      when(
+        mockApi.activateBannerImpressionTracker(any),
+      ).thenAnswer((_) async => true);
+    });
+
+    test('banner unit sends position, refreshes and tracks', () async {
+      final refreshed = <PrebidBidResponse>[];
+      final unit = PrebidBannerAdUnit(
+        configId: 'banner',
+        sizes: const [Size(320, 50)],
+        adPosition: PrebidAdPosition.header,
+        onDemandRefreshed: refreshed.add,
+      );
+      await unit.fetchDemand();
+      final captured = verify(
+        mockApi.fetchDemand(captureAny, captureAny),
+      ).captured;
+      final adId = captured[0] as int;
+      expect((captured[1] as MultiformatAdRequestConfig).adPosition, 4);
+
+      await unit.setAutoRefreshInterval(30);
+      verify(mockApi.setAutoRefreshInterval(adId, 30)).called(1);
+      await unit.stopAutoRefresh();
+      verify(mockApi.stopAutoRefresh(adId)).called(1);
+      await unit.resumeAutoRefresh();
+      verify(mockApi.resumeAutoRefresh(adId)).called(1);
+      expect(await unit.activateImpressionTracker(), isTrue);
+
+      await MultiformatEventRouter.instance.onDemandRefreshed(
+        adId,
+        MultiformatBidResult(
+          resultCode: 'prebidDemandFetchSuccess',
+          targetingKeywords: {'hb_pb': '0.20'},
+        ),
+      );
+      expect(refreshed.single.targetingKeywords, {'hb_pb': '0.20'});
+
+      await unit.destroy();
+      await MultiformatEventRouter.instance.onDemandRefreshed(
+        adId,
+        MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+      );
+      expect(refreshed, hasLength(1));
+    });
+
+    test('interstitial unit asks for impression tracking', () async {
+      final unit = PrebidInterstitialAdUnit(
+        configId: 'inter',
+        sizes: const [Size(320, 480)],
+        trackImpression: true,
+      );
+      await unit.fetchDemand();
+      final config =
+          verify(mockApi.fetchDemand(any, captureAny)).captured.single
+              as MultiformatAdRequestConfig;
+      expect(config.trackInterstitialImpression, isTrue);
+      expect(config.isInterstitial, isTrue);
+    });
+
+    test('native unit sends context, subtype and placement', () async {
+      final unit = PrebidNativeAdUnit(
+        configId: 'native',
+        assets: const [NativeAsset.title(length: 90)],
+        context: NativeContextType.contentCentric,
+        contextSubType: NativeContextSubType.article,
+        placementType: NativePlacementType.inFeed,
+      );
+      await unit.fetchDemand();
+      final native =
+          (verify(mockApi.fetchDemand(any, captureAny)).captured.single
+                  as MultiformatAdRequestConfig)
+              .nativeConfig!;
+      expect(native.context, 1);
+      expect(native.contextSubType, 11);
+      expect(native.placementType, 1);
+    });
+  });
+
+  test('native ad sends its context subtype', () async {
+    final mockApi = MockNativeAdHostApi();
+    PrebidNativeAd.api = mockApi;
+    final ad = PrebidNativeAd(
+      configId: 'native',
+      contextSubType: NativeContextSubType.social,
+    );
+    await ad.loadAd();
+    final config =
+        verify(mockApi.loadAd(any, captureAny)).captured.single
+            as NativeAdRequestConfig;
+    expect(config.contextSubType, 20);
+  });
 }

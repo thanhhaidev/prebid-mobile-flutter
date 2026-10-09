@@ -88,6 +88,7 @@ class MaxInterstitialManager(
                     EnumSet.of(format),
                     mediationUtils,
                 )
+                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit, interstitial)

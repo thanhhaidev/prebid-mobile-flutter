@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'ad_enums.dart';
 import 'generated/prebid_api.g.dart';
 import 'native_ad.dart';
+import 'native_ad_enums.dart';
 import 'prebid_mobile.dart';
 import 'video_parameters.dart';
 
@@ -99,6 +101,23 @@ class PrebidMultiformatAd {
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
 
+  /// Ad position (`imp.banner.pos` / `imp.video.pos`).
+  final PrebidAdPosition? adPosition;
+
+  /// Native context, context subtype and placement type, when native is
+  /// requested.
+  final NativeContextType? nativeContext;
+  final NativeContextSubType? nativeContextSubType;
+  final NativePlacementType? nativePlacementType;
+
+  /// Lets Prebid track the impression when your ad server's interstitial
+  /// shows the Prebid creative (Prebid's interstitial impression tracker).
+  final bool trackInterstitialImpression;
+
+  /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).
+  /// The first auction's result is returned by [fetchDemand].
+  final void Function(PrebidMultiformatBidResponse response)? onDemandRefreshed;
+
   /// Creates a [PrebidMultiformatAd].
   PrebidMultiformatAd({
     required this.configId,
@@ -109,7 +128,20 @@ class PrebidMultiformatAd {
     this.isInterstitial = false,
     this.isRewarded = false,
     this.gpid,
-  }) : _adId = _nextId++;
+    this.adPosition,
+    this.nativeContext,
+    this.nativeContextSubType,
+    this.nativePlacementType,
+    this.trackInterstitialImpression = false,
+    this.onDemandRefreshed,
+  }) : _adId = _nextId++ {
+    if (onDemandRefreshed != null) {
+      MultiformatEventRouter.instance.register(
+        _adId,
+        (result) => onDemandRefreshed!(_toResponse(result)),
+      );
+    }
+  }
 
   /// Fetch demand from Prebid Server for all configured formats.
   ///
@@ -123,6 +155,9 @@ class PrebidMultiformatAd {
         configId: configId,
         assets: nativeAssets!.map(_convertAsset).toList(),
         eventTrackers: nativeEventTrackers?.map(_convertTracker).toList(),
+        context: nativeContext?.value,
+        contextSubType: nativeContextSubType?.value,
+        placementType: nativePlacementType?.value,
       );
     }
 
@@ -147,25 +182,47 @@ class PrebidMultiformatAd {
       isInterstitial: isInterstitial,
       isRewarded: isRewarded,
       gpid: gpid,
+      adPosition: adPosition?.value,
+      trackInterstitialImpression: trackInterstitialImpression,
     );
 
-    final result = await api.fetchDemand(_adId, config);
+    return _toResponse(await api.fetchDemand(_adId, config));
+  }
 
-    // Convert targeting keywords
-    Map<String, String>? keywords;
-    if (result.targetingKeywords != null) {
-      keywords = {};
-      result.targetingKeywords!.forEach((key, value) {
-        if (key != null && value != null) {
-          keywords![key] = value;
-        }
-      });
-    }
+  /// Re-runs the auction every [seconds] (Prebid enforces at least 30 s)
+  /// after [fetchDemand]; each result goes to [onDemandRefreshed]. Refresh
+  /// the ad server's ad with the new targeting keywords yourself.
+  Future<void> setAutoRefreshInterval(int seconds) =>
+      api.setAutoRefreshInterval(_adId, seconds);
 
+  /// Stops auto-refresh.
+  Future<void> stopAutoRefresh() => api.stopAutoRefresh(_adId);
+
+  /// Resumes auto-refresh after [stopAutoRefresh].
+  Future<void> resumeAutoRefresh() => api.resumeAutoRefresh(_adId);
+
+  /// Starts Prebid's impression tracker on your ad server's banner view once
+  /// it has rendered (e.g. in `google_mobile_ads`' `onAdLoaded`). Prebid
+  /// fires the impression (`burl`) only if the view shows this bid's
+  /// creative. Returns `false` when there isn't exactly one Google Mobile Ads
+  /// banner on screen, since the view can't be identified then.
+  ///
+  /// iOS tracks the current bid. Prebid Android attaches the view when an
+  /// auction starts, so on Android tracking applies from the next auction
+  /// (auto-refresh or the next [fetchDemand]).
+  Future<bool> activateBannerImpressionTracker() =>
+      api.activateBannerImpressionTracker(_adId);
+
+  static PrebidMultiformatBidResponse _toResponse(MultiformatBidResult result) {
     return PrebidMultiformatBidResponse(
       resultCode: result.resultCode,
       winningFormat: result.winningFormat,
-      targetingKeywords: keywords,
+      targetingKeywords: result.targetingKeywords == null
+          ? null
+          : {
+              for (final e in result.targetingKeywords!.entries)
+                if (e.key != null && e.value != null) e.key!: e.value!,
+            },
       nativeAdCacheId: result.nativeAdCacheId,
       exp: result.exp,
       topBidFiltered: result.topBidFiltered ?? false,
@@ -174,6 +231,7 @@ class PrebidMultiformatAd {
 
   /// Destroy the ad unit and free resources.
   Future<void> destroy() async {
+    MultiformatEventRouter.instance.unregister(_adId);
     await api.destroy(_adId);
   }
 
@@ -197,5 +255,33 @@ class PrebidMultiformatAd {
       eventType: tracker.eventType.value,
       methods: tracker.methods.map((m) => m.value).toList(),
     );
+  }
+}
+
+/// Routes [MultiformatFlutterApi] events (auto-refreshed results) to the
+/// [PrebidMultiformatAd] with the event's ad id.
+class MultiformatEventRouter implements MultiformatFlutterApi {
+  MultiformatEventRouter._() {
+    MultiformatFlutterApi.setUp(this);
+  }
+
+  /// The process-wide router, bound to the channel on first use.
+  static final MultiformatEventRouter instance = MultiformatEventRouter._();
+
+  final Map<int, void Function(MultiformatBidResult result)> _handlers = {};
+
+  /// Routes results for [adId] to [handler].
+  void register(int adId, void Function(MultiformatBidResult) handler) {
+    _handlers[adId] = handler;
+  }
+
+  /// Stops routing results for [adId].
+  void unregister(int adId) {
+    _handlers.remove(adId);
+  }
+
+  @override
+  Future<void> onDemandRefreshed(int adId, MultiformatBidResult result) async {
+    _handlers[adId]?.call(result);
   }
 }

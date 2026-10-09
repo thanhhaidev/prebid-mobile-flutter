@@ -64,6 +64,7 @@ class GamNativePlatformView(
     private val gamAdUnitId = params["gamAdUnitId"] as? String ?: ""
     private val customFormatId = params["customFormatId"] as? String ?: ""
     private val customAssets = nativeAssetsFrom(params["assets"])
+    private val nativeContext = NativeContext.from(params)
     private val customTrackers = nativeTrackersFrom(params["eventTrackers"])
 
     private val methodChannel =
@@ -108,6 +109,9 @@ class GamNativePlatformView(
         nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
         nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
         nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
+        nativeContext.context?.let { nativeAdUnit.setContextType(it) }
+        nativeContext.subType?.let { nativeAdUnit.setContextSubType(it) }
+        nativeContext.placement?.let { nativeAdUnit.setPlacementType(it) }
         addNativeAssets(nativeAdUnit)
         adUnit = nativeAdUnit
 

@@ -97,6 +97,12 @@ class PrebidTargeting {
     return api.getPurposeConsents();
   }
 
+  /// Consent for one TCF purpose, from the CMP's purpose consents. [index] is
+  /// 0-based (purpose 1 is index 0). `null` when unknown.
+  static Future<bool?> getPurposeConsent(int index) async {
+    return api.getPurposeConsent(index);
+  }
+
   /// Get the device access consent status (TCFv2 Purpose 1).
   ///
   /// Purpose 1 covers "Store and/or access information on a device."

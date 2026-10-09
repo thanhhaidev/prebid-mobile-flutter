@@ -82,6 +82,10 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
             mediationDelegate: mediationDelegate
         )
         mediationAdUnit = adUnit
+        if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
+            adUnit.adPosition = pos
+        }
+        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { [weak self] call, result in

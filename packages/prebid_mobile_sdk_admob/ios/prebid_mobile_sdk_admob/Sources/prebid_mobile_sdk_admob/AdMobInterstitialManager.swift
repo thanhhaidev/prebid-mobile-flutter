@@ -55,6 +55,7 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             )
             controls?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
+            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
             adUnit.adFormats = isVideo ? [.video] : [.banner]
 
             adUnits[adId] = adUnit

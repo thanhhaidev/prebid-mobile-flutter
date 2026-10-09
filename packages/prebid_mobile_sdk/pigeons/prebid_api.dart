@@ -323,6 +323,9 @@ abstract class PrebidMobileHostApi {
   void setIncludeBidderKeys(bool include);
   void setAuctionSettingsId(String? settingsId);
 
+  /// Skip the Prebid Server status request during initialization.
+  void setDisableStatusCheck(bool disable);
+
   /// Enables / disables forwarding bid request + response pairs to
   /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
   void setEventDelegateEnabled(bool enabled);
@@ -357,6 +360,10 @@ abstract class TargetingHostApi {
   // TCFv2
   void setPurposeConsents(String? value);
   String? getPurposeConsents();
+
+  /// Consent for one TCF purpose (0-based index), from the CMP's purpose
+  /// consents.
+  bool? getPurposeConsent(int index);
   bool? getDeviceAccessConsent();
 
   // US Privacy / CCPA
@@ -462,9 +469,18 @@ class MultiformatAdRequestConfig {
     this.isInterstitial = false,
     this.isRewarded = false,
     this.gpid,
+    this.adPosition,
+    this.trackInterstitialImpression = false,
   });
   final String configId;
   final String? gpid;
+
+  /// OpenRTB `pos` (PrebidAdPosition value).
+  final int? adPosition;
+
+  /// Track the Prebid impression when the ad server's interstitial shows
+  /// the Prebid creative.
+  final bool trackInterstitialImpression;
 
   /// Banner sizes as [width, height, width, height, ...]
   final List<int?>? bannerSizes;
@@ -504,7 +520,25 @@ class MultiformatBidResult {
 abstract class MultiformatAdHostApi {
   @asyncCallback
   MultiformatBidResult fetchDemand(int adId, MultiformatAdRequestConfig config);
+
+  /// Auto-refresh of the demand; refreshed results arrive through
+  /// [MultiformatFlutterApi.onDemandRefreshed].
+  void setAutoRefreshInterval(int adId, int seconds);
+  void stopAutoRefresh(int adId);
+  void resumeAutoRefresh(int adId);
+
+  /// Starts Prebid's impression tracker on the ad server's banner view (the
+  /// only Google Mobile Ads banner on screen). Returns false if there is not
+  /// exactly one.
+  bool activateBannerImpressionTracker(int adId);
   void destroy(int adId);
+}
+
+/// Original API events (Native → Dart).
+@FlutterApi()
+abstract class MultiformatFlutterApi {
+  @asyncCallback
+  void onDemandRefreshed(int adId, MultiformatBidResult result);
 }
 
 /// Configuration for an in-stream video ad request.

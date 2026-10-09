@@ -1072,6 +1072,8 @@ class MultiformatAdRequestConfig {
   MultiformatAdRequestConfig({
     required this.configId,
     this.gpid,
+    this.adPosition,
+    this.trackInterstitialImpression = false,
     this.bannerSizes,
     this.videoConfig,
     this.nativeConfig,
@@ -1082,6 +1084,13 @@ class MultiformatAdRequestConfig {
   String configId;
 
   String? gpid;
+
+  /// OpenRTB `pos` (PrebidAdPosition value).
+  int? adPosition;
+
+  /// Track the Prebid impression when the ad server's interstitial shows
+  /// the Prebid creative.
+  bool trackInterstitialImpression;
 
   /// Banner sizes as [width, height, width, height, ...]
   List<int?>? bannerSizes;
@@ -1098,6 +1107,8 @@ class MultiformatAdRequestConfig {
     return <Object?>[
       configId,
       gpid,
+      adPosition,
+      trackInterstitialImpression,
       bannerSizes,
       videoConfig,
       nativeConfig,
@@ -1115,11 +1126,13 @@ class MultiformatAdRequestConfig {
     return MultiformatAdRequestConfig(
       configId: result[0]! as String,
       gpid: result[1] as String?,
-      bannerSizes: (result[2] as List<Object?>?)?.cast<int?>(),
-      videoConfig: result[3] as VideoParametersConfig?,
-      nativeConfig: result[4] as NativeAdRequestConfig?,
-      isInterstitial: result[5]! as bool,
-      isRewarded: result[6]! as bool,
+      adPosition: result[2] as int?,
+      trackInterstitialImpression: result[3]! as bool,
+      bannerSizes: (result[4] as List<Object?>?)?.cast<int?>(),
+      videoConfig: result[5] as VideoParametersConfig?,
+      nativeConfig: result[6] as NativeAdRequestConfig?,
+      isInterstitial: result[7]! as bool,
+      isRewarded: result[8]! as bool,
     );
   }
 
@@ -1135,6 +1148,11 @@ class MultiformatAdRequestConfig {
     }
     return _deepEquals(configId, other.configId) &&
         _deepEquals(gpid, other.gpid) &&
+        _deepEquals(adPosition, other.adPosition) &&
+        _deepEquals(
+          trackInterstitialImpression,
+          other.trackInterstitialImpression,
+        ) &&
         _deepEquals(bannerSizes, other.bannerSizes) &&
         _deepEquals(videoConfig, other.videoConfig) &&
         _deepEquals(nativeConfig, other.nativeConfig) &&
@@ -1148,7 +1166,7 @@ class MultiformatAdRequestConfig {
 
   @override
   String toString() {
-    return 'MultiformatAdRequestConfig(configId: $configId, gpid: $gpid, bannerSizes: $bannerSizes, videoConfig: $videoConfig, nativeConfig: $nativeConfig, isInterstitial: $isInterstitial, isRewarded: $isRewarded)';
+    return 'MultiformatAdRequestConfig(configId: $configId, gpid: $gpid, adPosition: $adPosition, trackInterstitialImpression: $trackInterstitialImpression, bannerSizes: $bannerSizes, videoConfig: $videoConfig, nativeConfig: $nativeConfig, isInterstitial: $isInterstitial, isRewarded: $isRewarded)';
   }
 }
 
@@ -1790,6 +1808,27 @@ class PrebidMobileHostApi {
     );
   }
 
+  /// Skip the Prebid Server status request during initialization.
+  Future<void> setDisableStatusCheck(bool disable) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setDisableStatusCheck$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[disable],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
   /// Enables / disables forwarding bid request + response pairs to
   /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
   Future<void> setEventDelegateEnabled(bool enabled) async {
@@ -2118,6 +2157,29 @@ class TargetingHostApi {
       isNullValid: true,
     );
     return pigeonVar_replyValue as String?;
+  }
+
+  /// Consent for one TCF purpose (0-based index), from the CMP's purpose
+  /// consents.
+  Future<bool?> getPurposeConsent(int index) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getPurposeConsent$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[index],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as bool?;
   }
 
   Future<bool?> getDeviceAccessConsent() async {
@@ -3087,6 +3149,92 @@ class MultiformatAdHostApi {
     return pigeonVar_replyValue! as MultiformatBidResult;
   }
 
+  /// Auto-refresh of the demand; refreshed results arrive through
+  /// [MultiformatFlutterApi.onDemandRefreshed].
+  Future<void> setAutoRefreshInterval(int adId, int seconds) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.setAutoRefreshInterval$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[adId, seconds],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> stopAutoRefresh(int adId) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.stopAutoRefresh$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[adId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> resumeAutoRefresh(int adId) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.resumeAutoRefresh$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[adId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Starts Prebid's impression tracker on the ad server's banner view (the
+  /// only Google Mobile Ads banner on screen). Returns false if there is not
+  /// exactly one.
+  Future<bool> activateBannerImpressionTracker(int adId) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.activateBannerImpressionTracker$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[adId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
   Future<void> destroy(int adId) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.destroy$pigeonVar_messageChannelSuffix';
@@ -3105,6 +3253,50 @@ class MultiformatAdHostApi {
       pigeonVar_channelName,
       isNullValid: true,
     );
+  }
+}
+
+/// Original API events (Native → Dart).
+abstract class MultiformatFlutterApi {
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  Future<void> onDemandRefreshed(int adId, MultiformatBidResult result);
+
+  static void setUp(
+    MultiformatFlutterApi? api, {
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty
+        ? '.$messageChannelSuffix'
+        : '';
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.prebid_mobile_sdk.MultiformatFlutterApi.onDemandRefreshed$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final int arg_adId = args[0]! as int;
+          final MultiformatBidResult arg_result =
+              args[1]! as MultiformatBidResult;
+          try {
+            await api.onDemandRefreshed(arg_adId, arg_result);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
   }
 }
 

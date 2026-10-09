@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidBannerAdController, PrebidBannerAdListener;
+    show PrebidAdPosition, PrebidBannerAdController, PrebidBannerAdListener;
 
 /// A banner ad mediated by **AppLovin MAX** with Prebid demand.
 ///
@@ -32,6 +32,13 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// Prebid's (and the ad server's) auto-refresh.
   final PrebidBannerAdController? controller;
 
+  /// Ad position on screen (`imp.banner.pos`).
+  final PrebidAdPosition? adPosition;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (also
+  /// how to set the GPID: `{"ext":{"gpid":"/1111/home"}}`).
+  final String? impOrtbConfig;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
 
@@ -44,6 +51,8 @@ class PrebidMaxBannerAd extends StatefulWidget {
     required this.height,
     this.autoLoad = true,
     this.controller,
+    this.adPosition,
+    this.impOrtbConfig,
     this.listener,
   });
 
@@ -65,6 +74,8 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
       'width': widget.width,
       'height': widget.height,
       'autoLoad': widget.autoLoad,
+      if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
+      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
     };
 
     return SizedBox(

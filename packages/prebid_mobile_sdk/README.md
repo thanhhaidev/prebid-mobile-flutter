@@ -232,6 +232,7 @@ Static class for SDK initialization, global configuration, and identity manageme
 | `setEidsPlacement(PrebidEidsPlacement placement)` | `Future<void>` | Send EIDs in `user.eids`, `user.ext.eids` or both. |
 | `setIncludeWinners(bool include)` / `setIncludeBidderKeys(bool include)` | `Future<void>` | Prebid Server targeting flags. |
 | `setAuctionSettingsId(String? id)` | `Future<void>` | Request-level stored auction settings id. |
+| `setDisableStatusCheck(bool)` | `Future<void>` | Skip the Prebid Server status request during `initializeSdk` (call it first). |
 | `setEventListener(PrebidBidResponseListener? listener)` | `Future<void>` | Receive every bid request / response as JSON (`PrebidEventDelegate`); `null` stops. |
 | `setSendSharedId(bool send)` | `Future<void>` | Send Prebid's first-party SharedID in `user.eids`. |
 | `getSharedId()` / `resetSharedId()` | `Future<ExternalUserId?>` / `Future<void>` | Read or regenerate the SharedID. |
@@ -254,6 +255,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `getGDPRConsentString()` | `Future<String?>` | Get GDPR consent string. |
 | `setPurposeConsents(String? consents)` | `Future<void>` | Set TCFv2 purpose consents (binary string). |
 | `getPurposeConsents()` | `Future<String?>` | Get TCFv2 purpose consents. |
+| `getPurposeConsent(int index)` | `Future<bool?>` | Consent for one TCF purpose (0-based index). |
 | `getDeviceAccessConsent()` | `Future<bool?>` | Get device access consent (TCFv2 Purpose 1). |
 | `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). |
 | `getUSPrivacyString()` | `Future<String?>` | Get current US Privacy String. |
@@ -402,6 +404,7 @@ delivered to `onAdLoaded` as a `PrebidNativeAdResponse`: the common fields
 | `assets` | `List<NativeAsset>?` | Native assets to request. |
 | `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression/viewability. |
 | `context` | `NativeContextType?` | Content context type. |
+| `contextSubType` | `NativeContextSubType?` | Context subtype (`contextsubtype`). |
 | `placementType` | `NativePlacementType?` | Placement type. |
 | `placementCount` | `int?` | Number of placements. |
 | `listener` | `PrebidNativeAdListener?` | Callback listener. |
@@ -449,7 +452,13 @@ Combines banner, video, and native in a single bid request.
 | `nativeEventTrackers` | `List<NativeEventTracker>?` | Native event trackers. |
 | `isInterstitial` | `bool` | Interstitial multiformat ad. Default: `false`. |
 | `isRewarded` | `bool` | Rewarded multiformat ad. Default: `false`. |
+| `adPosition` | `PrebidAdPosition?` | Ad position (`pos`). |
+| `nativeContext` / `nativeContextSubType` / `nativePlacementType` | enums | Native request context. |
+| `trackInterstitialImpression` | `bool` | Let Prebid track the impression when your ad server's interstitial shows the Prebid creative. |
+| `onDemandRefreshed` | callback | Each auto-refreshed result. |
 | `fetchDemand()` | `Future<PrebidMultiformatBidResponse>` | Execute the bid request. |
+| `setAutoRefreshInterval(int seconds)` / `stopAutoRefresh()` / `resumeAutoRefresh()` | `Future<void>` | Re-run the auction periodically (at least 30 s) after `fetchDemand`. |
+| `activateBannerImpressionTracker()` | `Future<bool>` | Start Prebid's impression tracker on the ad server's banner view (see below). |
 | `destroy()` | `Future<void>` | Release resources. |
 
 ---
@@ -709,7 +718,24 @@ await banner.load(); // 3. GAM renders the winner (Prebid or direct-sold).
 ```
 
 Render the loaded ad with `AdWidget(ad: banner)` inside a `SizedBox` of the
-requested size. For a video winner use `PrebidInstreamVideoAd`; for a
+requested size.
+
+**Refresh and impressions.** The Original API units take `onDemandRefreshed`
+and `setAutoRefreshInterval(seconds)` / `stopAutoRefresh()` /
+`resumeAutoRefresh()`: Prebid re-runs the auction and you reload the GAM ad
+with the new keywords. To let Prebid fire its impression (`burl`):
+
+- banner: call `adUnit.activateImpressionTracker()` in GAM's `onAdLoaded`. It
+  needs exactly one Google Mobile Ads banner on screen (the view can't be
+  passed from Flutter, so it's located in the window) and returns `false`
+  otherwise. Prebid counts the impression only if that banner shows this
+  bid's creative. iOS tracks the current bid; Prebid Android attaches the view
+  when an auction starts, so there tracking applies from the next auction
+  (auto-refresh or the next `fetchDemand`).
+- interstitial: create `PrebidInterstitialAdUnit(trackImpression: true)`.
+
+Banner units also take `adPosition`; native units `context`,
+`contextSubType` and `placementType`. For a video winner use `PrebidInstreamVideoAd`; for a
 GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
 `AdManagerInterstitialAd`.
 

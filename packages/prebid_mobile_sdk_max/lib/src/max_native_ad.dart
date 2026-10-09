@@ -2,7 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show NativeAsset, NativeEventTracker;
+    show
+        NativeAsset,
+        NativeContextSubType,
+        NativeContextType,
+        NativeEventTracker,
+        NativePlacementType;
 
 /// Listener for [PrebidMaxNativeAd] events.
 class PrebidMaxNativeAdListener {
@@ -52,6 +57,12 @@ class PrebidMaxNativeAd extends StatefulWidget {
   /// Native event trackers. `null` requests impression trackers (image + JS).
   final List<NativeEventTracker>? eventTrackers;
 
+  /// Native context, context subtype and placement type. Default: social
+  /// context, general-social subtype, in-feed placement.
+  final NativeContextType? context;
+  final NativeContextSubType? contextSubType;
+  final NativePlacementType? placementType;
+
   /// Listener for native ad events.
   final PrebidMaxNativeAdListener? listener;
 
@@ -63,6 +74,9 @@ class PrebidMaxNativeAd extends StatefulWidget {
     this.height = 320,
     this.assets,
     this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
     this.listener,
   });
 
@@ -82,6 +96,11 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
         'assets': widget.assets!.map((a) => a.toMap()).toList(),
       if (widget.eventTrackers != null)
         'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
+      if (widget.context != null) 'context': widget.context!.value,
+      if (widget.contextSubType != null)
+        'contextSubType': widget.contextSubType!.value,
+      if (widget.placementType != null)
+        'placementType': widget.placementType!.value,
     };
 
     return SizedBox(

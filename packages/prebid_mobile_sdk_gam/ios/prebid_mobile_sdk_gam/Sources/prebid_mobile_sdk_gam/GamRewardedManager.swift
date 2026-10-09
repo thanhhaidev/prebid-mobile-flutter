@@ -48,6 +48,7 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
             let adUnit = RewardedAdUnit(configID: configId, eventHandler: eventHandler)
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
+            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
             adUnit.delegate = self
 
             ads[adId] = adUnit

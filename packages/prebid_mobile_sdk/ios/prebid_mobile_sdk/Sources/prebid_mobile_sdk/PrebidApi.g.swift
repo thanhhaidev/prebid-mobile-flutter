@@ -1005,6 +1005,11 @@ struct FullscreenControlsConfig: Hashable, CustomStringConvertible {
 struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
   var configId: String
   var gpid: String? = nil
+  /// OpenRTB `pos` (PrebidAdPosition value).
+  var adPosition: Int64? = nil
+  /// Track the Prebid impression when the ad server's interstitial shows
+  /// the Prebid creative.
+  var trackInterstitialImpression: Bool
   /// Banner sizes as [width, height, width, height, ...]
   var bannerSizes: [Int64?]? = nil
   var videoConfig: VideoParametersConfig? = nil
@@ -1017,15 +1022,19 @@ struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
   static func fromList(_ pigeonVar_list: [Any?]) -> MultiformatAdRequestConfig? {
     let configId = pigeonVar_list[0] as! String
     let gpid: String? = nilOrValue(pigeonVar_list[1])
-    let bannerSizes: [Int64?]? = nilOrValue(pigeonVar_list[2])
-    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[3])
-    let nativeConfig: NativeAdRequestConfig? = nilOrValue(pigeonVar_list[4])
-    let isInterstitial = pigeonVar_list[5] as! Bool
-    let isRewarded = pigeonVar_list[6] as! Bool
+    let adPosition: Int64? = nilOrValue(pigeonVar_list[2])
+    let trackInterstitialImpression = pigeonVar_list[3] as! Bool
+    let bannerSizes: [Int64?]? = nilOrValue(pigeonVar_list[4])
+    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[5])
+    let nativeConfig: NativeAdRequestConfig? = nilOrValue(pigeonVar_list[6])
+    let isInterstitial = pigeonVar_list[7] as! Bool
+    let isRewarded = pigeonVar_list[8] as! Bool
 
     return MultiformatAdRequestConfig(
       configId: configId,
       gpid: gpid,
+      adPosition: adPosition,
+      trackInterstitialImpression: trackInterstitialImpression,
       bannerSizes: bannerSizes,
       videoConfig: videoConfig,
       nativeConfig: nativeConfig,
@@ -1037,6 +1046,8 @@ struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
     return [
       configId,
       gpid,
+      adPosition,
+      trackInterstitialImpression,
       bannerSizes,
       videoConfig,
       nativeConfig,
@@ -1048,13 +1059,15 @@ struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrebidApiPigeonInternal.deepEquals(lhs.configId, rhs.configId) && PrebidApiPigeonInternal.deepEquals(lhs.gpid, rhs.gpid) && PrebidApiPigeonInternal.deepEquals(lhs.bannerSizes, rhs.bannerSizes) && PrebidApiPigeonInternal.deepEquals(lhs.videoConfig, rhs.videoConfig) && PrebidApiPigeonInternal.deepEquals(lhs.nativeConfig, rhs.nativeConfig) && PrebidApiPigeonInternal.deepEquals(lhs.isInterstitial, rhs.isInterstitial) && PrebidApiPigeonInternal.deepEquals(lhs.isRewarded, rhs.isRewarded)
+    return PrebidApiPigeonInternal.deepEquals(lhs.configId, rhs.configId) && PrebidApiPigeonInternal.deepEquals(lhs.gpid, rhs.gpid) && PrebidApiPigeonInternal.deepEquals(lhs.adPosition, rhs.adPosition) && PrebidApiPigeonInternal.deepEquals(lhs.trackInterstitialImpression, rhs.trackInterstitialImpression) && PrebidApiPigeonInternal.deepEquals(lhs.bannerSizes, rhs.bannerSizes) && PrebidApiPigeonInternal.deepEquals(lhs.videoConfig, rhs.videoConfig) && PrebidApiPigeonInternal.deepEquals(lhs.nativeConfig, rhs.nativeConfig) && PrebidApiPigeonInternal.deepEquals(lhs.isInterstitial, rhs.isInterstitial) && PrebidApiPigeonInternal.deepEquals(lhs.isRewarded, rhs.isRewarded)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("MultiformatAdRequestConfig")
     PrebidApiPigeonInternal.deepHash(value: configId, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: gpid, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: adPosition, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: trackInterstitialImpression, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: bannerSizes, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: videoConfig, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: nativeConfig, hasher: &hasher)
@@ -1063,7 +1076,7 @@ struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
   }
 
   public var description: String {
-    return "MultiformatAdRequestConfig(configId: \(String(describing: configId)), gpid: \(String(describing: gpid)), bannerSizes: \(String(describing: bannerSizes)), videoConfig: \(String(describing: videoConfig)), nativeConfig: \(String(describing: nativeConfig)), isInterstitial: \(String(describing: isInterstitial)), isRewarded: \(String(describing: isRewarded)))"
+    return "MultiformatAdRequestConfig(configId: \(String(describing: configId)), gpid: \(String(describing: gpid)), adPosition: \(String(describing: adPosition)), trackInterstitialImpression: \(String(describing: trackInterstitialImpression)), bannerSizes: \(String(describing: bannerSizes)), videoConfig: \(String(describing: videoConfig)), nativeConfig: \(String(describing: nativeConfig)), isInterstitial: \(String(describing: isInterstitial)), isRewarded: \(String(describing: isRewarded)))"
   }
 }
 
@@ -1315,6 +1328,8 @@ protocol PrebidMobileHostApi {
   func setIncludeWinners(include: Bool) throws
   func setIncludeBidderKeys(include: Bool) throws
   func setAuctionSettingsId(settingsId: String?) throws
+  /// Skip the Prebid Server status request during initialization.
+  func setDisableStatusCheck(disable: Bool) throws
   /// Enables / disables forwarding bid request + response pairs to
   /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
   func setEventDelegateEnabled(enabled: Bool) throws
@@ -1619,6 +1634,22 @@ class PrebidMobileHostApiSetup {
     } else {
       setAuctionSettingsIdChannel.setMessageHandler(nil)
     }
+    /// Skip the Prebid Server status request during initialization.
+    let setDisableStatusCheckChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setDisableStatusCheck\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setDisableStatusCheckChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let disableArg = args[0] as! Bool
+        do {
+          try api.setDisableStatusCheck(disable: disableArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setDisableStatusCheckChannel.setMessageHandler(nil)
+    }
     /// Enables / disables forwarding bid request + response pairs to
     /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
     let setEventDelegateEnabledChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setEventDelegateEnabled\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
@@ -1745,6 +1776,9 @@ protocol TargetingHostApi {
   func getGDPRConsentString() throws -> String?
   func setPurposeConsents(value: String?) throws
   func getPurposeConsents() throws -> String?
+  /// Consent for one TCF purpose (0-based index), from the CMP's purpose
+  /// consents.
+  func getPurposeConsent(index: Int64) throws -> Bool?
   func getDeviceAccessConsent() throws -> Bool?
   func setUSPrivacyString(value: String?) throws
   func getUSPrivacyString() throws -> String?
@@ -1901,6 +1935,23 @@ class TargetingHostApiSetup {
       }
     } else {
       getPurposeConsentsChannel.setMessageHandler(nil)
+    }
+    /// Consent for one TCF purpose (0-based index), from the CMP's purpose
+    /// consents.
+    let getPurposeConsentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getPurposeConsent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getPurposeConsentChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] as! Int64
+        do {
+          let result = try api.getPurposeConsent(index: indexArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getPurposeConsentChannel.setMessageHandler(nil)
     }
     let getDeviceAccessConsentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getDeviceAccessConsent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
@@ -2602,6 +2653,15 @@ class NativeAdHostApiSetup {
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol MultiformatAdHostApi {
   func fetchDemand(adId: Int64, config: MultiformatAdRequestConfig, completion: @escaping (Result<MultiformatBidResult, Error>) -> Void)
+  /// Auto-refresh of the demand; refreshed results arrive through
+  /// [MultiformatFlutterApi.onDemandRefreshed].
+  func setAutoRefreshInterval(adId: Int64, seconds: Int64) throws
+  func stopAutoRefresh(adId: Int64) throws
+  func resumeAutoRefresh(adId: Int64) throws
+  /// Starts Prebid's impression tracker on the ad server's banner view (the
+  /// only Google Mobile Ads banner on screen). Returns false if there is not
+  /// exactly one.
+  func activateBannerImpressionTracker(adId: Int64) throws -> Bool
   func destroy(adId: Int64) throws
 }
 
@@ -2629,6 +2689,72 @@ class MultiformatAdHostApiSetup {
     } else {
       fetchDemandChannel.setMessageHandler(nil)
     }
+    /// Auto-refresh of the demand; refreshed results arrive through
+    /// [MultiformatFlutterApi.onDemandRefreshed].
+    let setAutoRefreshIntervalChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.setAutoRefreshInterval\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setAutoRefreshIntervalChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let adIdArg = args[0] as! Int64
+        let secondsArg = args[1] as! Int64
+        do {
+          try api.setAutoRefreshInterval(adId: adIdArg, seconds: secondsArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setAutoRefreshIntervalChannel.setMessageHandler(nil)
+    }
+    let stopAutoRefreshChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.stopAutoRefresh\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      stopAutoRefreshChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let adIdArg = args[0] as! Int64
+        do {
+          try api.stopAutoRefresh(adId: adIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      stopAutoRefreshChannel.setMessageHandler(nil)
+    }
+    let resumeAutoRefreshChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.resumeAutoRefresh\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      resumeAutoRefreshChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let adIdArg = args[0] as! Int64
+        do {
+          try api.resumeAutoRefresh(adId: adIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      resumeAutoRefreshChannel.setMessageHandler(nil)
+    }
+    /// Starts Prebid's impression tracker on the ad server's banner view (the
+    /// only Google Mobile Ads banner on screen). Returns false if there is not
+    /// exactly one.
+    let activateBannerImpressionTrackerChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.activateBannerImpressionTracker\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      activateBannerImpressionTrackerChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let adIdArg = args[0] as! Int64
+        do {
+          let result = try api.activateBannerImpressionTracker(adId: adIdArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      activateBannerImpressionTrackerChannel.setMessageHandler(nil)
+    }
     let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       destroyChannel.setMessageHandler { message, reply in
@@ -2643,6 +2769,42 @@ class MultiformatAdHostApiSetup {
       }
     } else {
       destroyChannel.setMessageHandler(nil)
+    }
+  }
+}
+
+/// Original API events (Native → Dart).
+///
+/// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
+protocol MultiformatFlutterApiProtocol {
+  func onDemandRefreshed(adId adIdArg: Int64, result resultArg: MultiformatBidResult, completion: @escaping (Result<Void, PigeonError>) -> Void)
+}
+class MultiformatFlutterApi: MultiformatFlutterApiProtocol {
+  private let binaryMessenger: FlutterBinaryMessenger
+  private let messageChannelSuffix: String
+  init(binaryMessenger: FlutterBinaryMessenger, messageChannelSuffix: String = "") {
+    self.binaryMessenger = binaryMessenger
+    self.messageChannelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+  }
+  var codec: PrebidApiPigeonCodec {
+    return PrebidApiPigeonCodec.shared
+  }
+  func onDemandRefreshed(adId adIdArg: Int64, result resultArg: MultiformatBidResult, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.prebid_mobile_sdk.MultiformatFlutterApi.onDemandRefreshed\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([adIdArg, resultArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(()))
+      }
     }
   }
 }

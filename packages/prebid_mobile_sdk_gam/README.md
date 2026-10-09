@@ -187,10 +187,10 @@ but isn't sent in the request.
 
 | Class | Description |
 |---|---|
-| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. `additionalSizes`, `adFormats`, `pbAdSlot`, `impOrtbConfig`, `videoParameters` (iOS), controller, video events, `onAdExpired`. |
-| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`, `videoParameters`. |
-| `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`, `videoParameters`. |
-| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; events via `PrebidGamNativeAdListener`. |
+| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. `additionalSizes`, `adFormats`, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `videoParameters` (iOS), controller, video events, `onAdExpired`. |
+| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
+| `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`, `videoParameters`, `impOrtbConfig`. |
+| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; `context` / `contextSubType` / `placementType`; events via `PrebidGamNativeAdListener`. |
 
 ## License
 

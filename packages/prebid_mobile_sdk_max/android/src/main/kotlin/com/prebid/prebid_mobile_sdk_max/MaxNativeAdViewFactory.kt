@@ -140,6 +140,11 @@ class MaxNativePlatformView(
         nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
         nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
         nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
+        NativeContext.from(params).let { c ->
+            c.context?.let { nativeAdUnit.setContextType(it) }
+            c.subType?.let { nativeAdUnit.setContextSubType(it) }
+            c.placement?.let { nativeAdUnit.setPlacementType(it) }
+        }
 
         val customAssets = nativeAssetsFrom(params["assets"])
         if (customAssets != null) {

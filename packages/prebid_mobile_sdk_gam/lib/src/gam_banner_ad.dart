@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         AdFormat,
+        PrebidAdPosition,
         PrebidBannerAdController,
         PrebidBannerAdListener,
         PrebidBannerVideoListener,
@@ -76,6 +77,9 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// auto-refresh.
   final PrebidBannerAdController? controller;
 
+  /// Ad position on screen (`imp.banner.pos`).
+  final PrebidAdPosition? adPosition;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
 
@@ -100,6 +104,7 @@ class PrebidGamBannerAd extends StatefulWidget {
     this.customTargeting,
     this.videoPlacementType,
     this.controller,
+    this.adPosition,
     this.listener,
     this.videoListener,
   });
@@ -123,6 +128,7 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
       'height': widget.height,
       'isVideo': widget.isVideo,
       'autoLoad': widget.autoLoad,
+      if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
       if (widget.additionalSizes != null)
         'additionalSizes': [
           for (final size in widget.additionalSizes!) ...[

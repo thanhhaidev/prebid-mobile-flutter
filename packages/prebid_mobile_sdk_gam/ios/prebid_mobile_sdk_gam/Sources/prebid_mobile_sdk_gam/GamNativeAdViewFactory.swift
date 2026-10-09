@@ -70,6 +70,9 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
         unit.context = ContextType.Social
         unit.placementType = PlacementType.FeedContent
         unit.contextSubType = ContextSubType.Social
+        if let v = args["context"] as? Int { unit.context = ContextType(integerLiteral: v) }
+        if let v = args["contextSubType"] as? Int { unit.contextSubType = ContextSubType(integerLiteral: v) }
+        if let v = args["placementType"] as? Int { unit.placementType = PlacementType(integerLiteral: v) }
         unit.eventtrackers = nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: EventType.Impression, methods: [EventTracking.Image, EventTracking.js])
         ]

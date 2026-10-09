@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'ad_enums.dart';
 import 'ad_listener.dart';
+import 'video_parameters.dart';
 
 /// Controls a [PrebidBannerAd]: load on demand (with `autoLoad: false`) or
 /// stop auto-refresh.
@@ -83,6 +84,13 @@ class PrebidBannerAd extends StatefulWidget {
   /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
 
+  /// Ad position on screen (`imp.banner.pos`).
+  final PrebidAdPosition? adPosition;
+
+  /// Video signals for video banners. iOS only: Prebid Android's banner has
+  /// no video-parameters setter, so Android sends the SDK's defaults.
+  final VideoParameters? videoParameters;
+
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
   /// `{"ext":{"gpid":"/1111/home"}}`).
   final String? impOrtbConfig;
@@ -120,6 +128,8 @@ class PrebidBannerAd extends StatefulWidget {
     this.isVideo = false,
     this.adFormats,
     this.pbAdSlot,
+    this.adPosition,
+    this.videoParameters,
     this.impOrtbConfig,
     this.controller,
     this.autoLoad = true,
@@ -161,6 +171,9 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       if (widget.adFormats != null)
         'adFormats': widget.adFormats!.map((f) => f.name).toList(),
       if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
+      if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
+      if (widget.videoParameters != null)
+        'videoParameters': widget.videoParameters!.toMap(),
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
       if (widget.videoPlacementType != null)
         'videoPlacementType': widget.videoPlacementType!.name,

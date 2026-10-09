@@ -39,7 +39,16 @@ class PlatformViewHarness {
       _messenger.setMockMethodCallHandler(channel, (call) async {
         switch (call.method) {
           case 'create':
-            final id = (call.arguments as Map)['id'] as int;
+            final args = call.arguments as Map;
+            final id = args['id'] as int;
+            final params = args['params'];
+            if (params is Uint8List) {
+              creationParams =
+                  const StandardMessageCodec().decodeMessage(
+                        ByteData.sublistView(params),
+                      )
+                      as Map?;
+            }
             final name = '${channelPrefix}_$id';
             viewChannel = name;
             _messenger.setMockMethodCallHandler(MethodChannel(name), (c) async {
@@ -68,6 +77,9 @@ class PlatformViewHarness {
 
   /// The created view's channel name, once the platform view exists.
   String? viewChannel;
+
+  /// The decoded `creationParams` the widget passed to the platform view.
+  Map<Object?, Object?>? creationParams;
 
   /// Calls the widget sent to the created view's channel.
   final List<MethodCall> calls = [];

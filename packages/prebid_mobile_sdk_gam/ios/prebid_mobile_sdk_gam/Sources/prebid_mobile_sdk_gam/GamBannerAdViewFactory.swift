@@ -89,6 +89,10 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
         super.init()
 
+        if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
+            bannerView.adPosition = pos
+        }
+
         if let adFormats = adFormats {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.
             var formats: Set<PrebidMobile.AdFormat> = []

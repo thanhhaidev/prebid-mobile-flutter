@@ -59,6 +59,7 @@ class GamRewardedManager(
                 }
                 val adUnit = RewardedAdUnit(activity, configId, eventHandler)
                 videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
 
                 adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {

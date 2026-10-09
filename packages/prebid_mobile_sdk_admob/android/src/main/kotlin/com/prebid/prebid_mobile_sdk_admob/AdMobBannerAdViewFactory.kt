@@ -105,6 +105,11 @@ class AdMobBannerPlatformView(
             AdSize(width, height),
             mediationUtils,
         )
+        (params["adPosition"] as? Number)?.toInt()?.let { pos ->
+            org.prebid.mobile.rendering.models.AdPosition.values().firstOrNull { it.value == pos }
+                ?.let { adUnit?.setAdPosition(it) }
+        }
+        (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->

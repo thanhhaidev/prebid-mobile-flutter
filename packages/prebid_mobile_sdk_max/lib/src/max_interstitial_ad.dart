@@ -67,6 +67,12 @@ class PrebidMaxInterstitialAd {
   /// Close / skip button, sound and (interstitial) minimum-size controls.
   final PrebidFullscreenControls? controls;
 
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. Also
+  /// how to set the GPID (`{"ext":{"gpid":"/1111/home"}}`) and the Prebid ad
+  /// slot (`{"ext":{"data":{"pbadslot":"..."}}}`), which these units have no
+  /// separate setters for on iOS.
+  final String? impOrtbConfig;
+
   /// OpenRTB video parameters for a video interstitial. iOS applies every field;
   /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
   /// [VideoParameters.maxDuration] only caps the rendered video there (nothing
@@ -87,6 +93,7 @@ class PrebidMaxInterstitialAd {
     required this.maxAdUnitId,
     this.isVideo = false,
     this.controls,
+    this.impOrtbConfig,
     this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
@@ -101,6 +108,7 @@ class PrebidMaxInterstitialAd {
       'configId': configId,
       'maxAdUnitId': maxAdUnitId,
       'controls': ?controls?.toMap(),
+      'impOrtbConfig': ?impOrtbConfig,
       'videoParameters': ?videoParameters?.toMap(),
       'isVideo': isVideo,
     });

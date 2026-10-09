@@ -87,6 +87,12 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
                 videoPlacement.flatMap(signalsPlacement) ?? .InBanner
         }
         if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
+        if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
+            bannerView.adPosition = pos
+        }
+        if let raw = args["videoParameters"] as? [String: Any] {
+            applyVideoParameters(raw, to: bannerView.videoParameters)
+        }
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
 
         // iOS defaults to a 60s refresh (Android: none) and clamps 0 up to 15s;

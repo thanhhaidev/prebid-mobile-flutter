@@ -448,6 +448,22 @@ a code { color: inherit; }
 .markdown table tr:last-child td { border-bottom: 0; }
 .markdown table tr:nth-child(2n) { background: transparent; }
 
+/* Narrow screens: a wide table scrolls inside itself instead of the page. */
+@media (max-width: 996px) {
+  .markdown table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* The table scrolls, so its identifiers stay whole. */
+  .markdown table :not(pre) > code {
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+}
+
 .theme-code-block {
   border: 1px solid var(--asx-border);
   border-radius: 12px !important;

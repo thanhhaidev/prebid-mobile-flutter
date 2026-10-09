@@ -1,0 +1,61 @@
+name: Feature request
+description: Suggest a feature, or a Prebid Mobile SDK API the plugin doesn't expose yet.
+title: '[Feature]: '
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you're trying to do and why the plugin doesn't allow it today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: The API or behavior you'd like, with a Dart sketch if you have one.
+    validations:
+      required: true
+
+  - type: input
+    id: prebid-api
+    attributes:
+      label: Prebid Mobile SDK reference
+      description: If it wraps a native Prebid API, a link to it in the Prebid docs or SDK source.
+      placeholder: https://docs.prebid.org/prebid-mobile/…
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      multiple: true
+      options:
+        - prebid_mobile_sdk
+        - prebid_mobile_sdk_gam
+        - prebid_mobile_sdk_admob
+        - prebid_mobile_sdk_max
+        - Documentation / example app
+
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Where the native SDK supports it.
+      options:
+        - label: Android
+        - label: iOS
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you use today, if any.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to open a pull request for this (see [CONTRIBUTING.md](https://github.com/thanhhaidev/prebid-mobile-flutter/blob/main/CONTRIBUTING.md)).

@@ -1,0 +1,28 @@
+# Labels pull requests by the files they change (.github/workflows/pr.yml).
+'package: core':
+  - changed-files:
+      - any-glob-to-any-file: packages/prebid_mobile_sdk/**
+'package: gam':
+  - changed-files:
+      - any-glob-to-any-file: packages/prebid_mobile_sdk_gam/**
+'package: admob':
+  - changed-files:
+      - any-glob-to-any-file: packages/prebid_mobile_sdk_admob/**
+'package: max':
+  - changed-files:
+      - any-glob-to-any-file: packages/prebid_mobile_sdk_max/**
+android:
+  - changed-files:
+      - any-glob-to-any-file: ['packages/*/android/**', 'example/android/**']
+ios:
+  - changed-files:
+      - any-glob-to-any-file: ['packages/*/ios/**', 'example/ios/**']
+example:
+  - changed-files:
+      - any-glob-to-any-file: example/**
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['website/**', '**/*.md']
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', 'pubspec.yaml']

@@ -1,0 +1,24 @@
+name: Native SDK check
+
+# Opens (or updates) an issue when Prebid publishes a newer Android or iOS SDK
+# than the packages use. Dependabot covers the Android artifacts and new SPM
+# majors, but not CocoaPods or minor iOS releases.
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Mondays 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare with the newest Prebid releases
+        run: .github/scripts/native-sdk-check.sh
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -35,18 +35,25 @@ Then, for each package on pub.dev, open **Admin → Automated publishing**:
 
 ## Releasing a version
 
-1. Bump `version:` in the package's `pubspec.yaml` and add a `## <version>`
-   section to its `CHANGELOG.md`. If a companion needs a new core API, bump
+1. Bump `version:` in the package's `pubspec.yaml` and rename the
+   `## [Unreleased]` section of its `CHANGELOG.md` to `## [<version>] - <date>`
+   (contributors add their entries under `[Unreleased]`). If a companion needs a new core API, bump
    its `prebid_mobile_sdk: ^x.y.z` constraint too.
-2. Open a PR; CI runs `pub publish --dry-run` for every package.
-3. After merging, tag the commit on `main` and push the tag:
+2. Add an entry for the new version at the top of the package's `releases`
+   in [`website/src/data/compatibility.json`](website/src/data/compatibility.json)
+   (native Prebid and ad SDK versions, minimum OS versions), then run
+   `dart run melos run compatibility` to regenerate the README tables. CI
+   fails while the newest entry disagrees with the package's
+   `pubspec.yaml`, `build.gradle.kts`, podspec or `Package.swift`.
+3. Open a PR; CI runs `pub publish --dry-run` for every package.
+4. After merging, tag the commit on `main` and push the tag:
 
    ```bash
    git tag prebid_mobile_sdk-v1.0.1
    git push origin prebid_mobile_sdk-v1.0.1
    ```
 
-4. The Release workflow checks that the tag matches `pubspec.yaml` and the
+5. The Release workflow checks that the tag matches `pubspec.yaml` and the
    CHANGELOG, analyzes and tests the package, publishes it, and creates a
    GitHub release from the CHANGELOG section.
 
@@ -57,3 +64,28 @@ version in the repo is not on pub.dev yet.
 To check a package without publishing, run the Release workflow manually
 (**Actions → Release → Run workflow**) and pick the package. That run only
 does the dry run.
+
+## Native SDK updates
+
+- **Dependabot** opens one PR for the `org.prebid:*` Android artifacts of all
+  packages, and one for a new major of the Swift packages.
+- **[Native SDK check](.github/workflows/native-sdk-check.yml)** runs every
+  Monday: it compares the newest Prebid releases (Maven Central, CocoaPods
+  trunk) with `website/src/data/compatibility.json` and opens or updates an
+  issue labeled `native-sdk-update` with a checklist. It covers what
+  Dependabot can't: CocoaPods and minor iOS releases. Run it locally with
+  `.github/scripts/native-sdk-check.sh --dry-run`.
+
+A Prebid update touches Android and iOS together: bump the Gradle artifacts,
+the podspec and `Package.swift` minimums, and `compatibility.json` in one PR,
+then release as above. CI's compatibility check fails until they agree.
+
+## Documentation
+
+The site in [`website/`](website) deploys to GitHub Pages on every push to
+`main` that touches it, a CHANGELOG or a native dependency, and after each
+Release run (the changelog page shows tag dates). The site has one docs
+version, so update the pages in `website/docs/` in the same PR as the
+release.
+
+One-time setup: in the repo settings, **Pages → Source: GitHub Actions**.

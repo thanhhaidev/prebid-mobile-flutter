@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://thanhhaidev.github.io/prebid-mobile-flutter/
+    about: Guides, every ad format, platform differences and the native SDK versions.
+  - name: Prebid Server, bidders and the native Prebid SDKs
+    url: https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html
+    about: This plugin is unofficial; questions about Prebid itself belong to Prebid.org.
+  - name: Report a security vulnerability
+    url: https://github.com/thanhhaidev/prebid-mobile-flutter/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue.

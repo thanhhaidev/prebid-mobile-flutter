@@ -8,3 +8,56 @@ updates:
     groups:
       actions:
         patterns: ['*']
+
+  # Documentation site (website/).
+  - package-ecosystem: npm
+    directory: /website
+    schedule:
+      interval: weekly
+    groups:
+      docusaurus:
+        patterns: ['@docusaurus/*']
+      other:
+        patterns: ['*']
+        exclude-patterns: ['@docusaurus/*']
+
+  # Native Prebid SDK, Android: the Prebid artifact of every package, in one
+  # PR. Only org.prebid: the plugins pin AGP 8 on purpose (apps on AGP 8 must
+  # still build), and the bundled ad SDKs come with Prebid's adapters.
+  # A bump also needs the iOS pod, website/src/data/compatibility.json and a
+  # CHANGELOG entry; CI's compatibility check fails until they match.
+  - package-ecosystem: gradle
+    directories:
+      - /packages/prebid_mobile_sdk/android
+      - /packages/prebid_mobile_sdk_gam/android
+      - /packages/prebid_mobile_sdk_admob/android
+      - /packages/prebid_mobile_sdk_max/android
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-name: 'org.prebid:*'
+    groups:
+      prebid-android:
+        patterns: ['org.prebid:*']
+    commit-message:
+      prefix: build
+    labels: [dependencies, native-sdk-update]
+
+  # Native SDKs, iOS (Swift Package Manager). `from:` accepts every release up
+  # to the next major, so Dependabot only opens a PR for a new major version;
+  # new minor / patch releases (and CocoaPods, which Dependabot doesn't
+  # support) are reported by .github/workflows/native-sdk-check.yml.
+  - package-ecosystem: swift
+    directories:
+      - /packages/prebid_mobile_sdk/ios/prebid_mobile_sdk
+      - /packages/prebid_mobile_sdk_gam/ios/prebid_mobile_sdk_gam
+      - /packages/prebid_mobile_sdk_admob/ios/prebid_mobile_sdk_admob
+      - /packages/prebid_mobile_sdk_max/ios/prebid_mobile_sdk_max
+    schedule:
+      interval: weekly
+    groups:
+      native-ios:
+        patterns: ['*']
+    commit-message:
+      prefix: build
+    labels: [dependencies, native-sdk-update]

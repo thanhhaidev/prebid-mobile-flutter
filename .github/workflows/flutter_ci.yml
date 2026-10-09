@@ -35,6 +35,10 @@ jobs:
       - name: Verify Pigeon output is up to date
         run: dart run melos run generate:check
 
+      # Node ships with the runner; the script has no dependencies.
+      - name: Verify native SDK version tables
+        run: dart run melos run compatibility:check
+
       - name: Analyze all packages
         run: dart run melos run analyze
 
@@ -91,3 +95,18 @@ jobs:
       - name: Build iOS (no codesign)
         working-directory: example
         run: flutter build ios --no-codesign --debug
+
+  # One check to require in branch protection: green only when every job
+  # above passed.
+  ci:
+    name: CI passed
+    if: always()
+    needs: [check, publish-check, android, ios]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success")' > /dev/null

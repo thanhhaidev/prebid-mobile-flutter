@@ -1,0 +1,97 @@
+name: Bug report
+description: Something in the plugin doesn't work as documented.
+title: '[Bug]: '
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. This repository covers the **Flutter plugin** only: no bids, bidder setup and Prebid Server configuration belong to [Prebid](https://docs.prebid.org) or your Prebid Server host.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      multiple: true
+      options:
+        - prebid_mobile_sdk
+        - prebid_mobile_sdk_gam
+        - prebid_mobile_sdk_admob
+        - prebid_mobile_sdk_max
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: '1.0.0'
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Where you can reproduce it.
+      options:
+        - label: Android
+        - label: iOS
+
+  - type: dropdown
+    id: integration
+    attributes:
+      label: Integration
+      options:
+        - Prebid rendering (PrebidBannerAd, PrebidInterstitialAd, …)
+        - Original API (keywords to Google Ad Manager)
+        - Google Ad Manager rendering
+        - AdMob mediation
+        - AppLovin MAX mediation
+        - Not specific to an ad
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: The smallest Dart code that shows the problem, with the config ID (a `prebid-demo-…` ID from the example app if possible).
+      render: dart
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Listener callbacks and native logs (`PrebidMobile.setLogLevel(PrebidLogLevel.debug)`; `adb logcat` on Android, the Xcode console on iOS).
+      render: text
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Output of `flutter doctor -v`, plus device / OS versions.
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: I read the relevant page of the [documentation](https://thanhhaidev.github.io/prebid-mobile-flutter/), including [Platform differences](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/platform-differences).
+          required: true
+        - label: The problem is in the plugin, not in Prebid Server, a bidder or my ad server setup.

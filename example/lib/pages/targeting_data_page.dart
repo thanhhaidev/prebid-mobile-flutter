@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
@@ -137,7 +139,20 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
     final domain = _domainController.text.trim();
 
     if (contentUrl.isNotEmpty) {
-      await PrebidTargeting.setContentUrl(contentUrl);
+      // Prebid 3.4 no longer sends a dedicated content URL; merge it into the
+      // global ORTB config as app.content.url instead.
+      final raw = await PrebidTargeting.getGlobalOrtbConfig();
+      final ortb = (raw == null || raw.isEmpty)
+          ? <String, dynamic>{}
+          : jsonDecode(raw) as Map<String, dynamic>;
+      final app = (ortb['app'] as Map<String, dynamic>?) ?? {};
+      final content = (app['content'] as Map<String, dynamic>?) ?? {};
+      content['url'] = contentUrl;
+      app['content'] = content;
+      ortb['app'] = app;
+      final merged = jsonEncode(ortb);
+      await PrebidTargeting.setGlobalOrtbConfig(merged);
+      _ortbConfigController.text = merged;
     }
     if (publisherName.isNotEmpty) {
       await PrebidTargeting.setPublisherName(publisherName);

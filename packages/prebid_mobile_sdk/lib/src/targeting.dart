@@ -143,6 +143,10 @@ class PrebidTargeting {
   /// Add a single app keyword for targeting.
   ///
   /// Keywords are included in the `app.keywords` field of the OpenRTB request.
+  ///
+  /// **iOS only.** Prebid Android has no app-keyword API, so the app-keyword
+  /// methods are no-ops there (a warning is logged). For both platforms, set
+  /// `app.keywords` via [setGlobalOrtbConfig] instead.
   static Future<void> addAppKeyword(String keyword) async {
     api.addAppKeyword(keyword);
   }
@@ -258,7 +262,11 @@ class PrebidTargeting {
 
   /// Set the content URL for contextual targeting.
   ///
-  /// Maps to `app.content.url` in the OpenRTB request.
+  /// Prebid 3.4 no longer sends this value (deprecated on iOS, absent on
+  /// Android). Set `app.content.url` via [setGlobalOrtbConfig] instead.
+  @Deprecated(
+    'Not sent by Prebid 3.4. Use setGlobalOrtbConfig with app.content.url.',
+  )
   static Future<void> setContentUrl(String? url) async {
     api.setContentUrl(url);
   }

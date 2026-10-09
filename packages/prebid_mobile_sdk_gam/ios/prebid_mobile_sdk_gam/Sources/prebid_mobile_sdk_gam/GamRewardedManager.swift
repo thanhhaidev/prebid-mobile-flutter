@@ -88,7 +88,10 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
         send(rewardedAd, "onAdClicked")
     }
 
-    func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onUserEarnedReward", payload: ["rewardType": "reward", "rewardCount": 1])
+    func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {
+        send(rewardedAd, "onUserEarnedReward", payload: [
+            "rewardType": reward.type ?? "reward",
+            "rewardCount": reward.count?.intValue ?? 1,
+        ])
     }
 }

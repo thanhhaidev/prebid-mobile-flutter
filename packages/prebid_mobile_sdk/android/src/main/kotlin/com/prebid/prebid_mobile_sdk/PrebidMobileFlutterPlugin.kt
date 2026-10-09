@@ -110,7 +110,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     }
 
     override fun clearStoredAuctionResponse() {
-        PrebidMobile.setStoredAuctionResponse("")
+        PrebidMobile.setStoredAuctionResponse(null)
     }
 
     override fun addStoredBidResponse(bidder: String, responseId: String) {
@@ -122,12 +122,14 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     }
 
     override fun setLogLevel(level: Long) {
+        // Dart PrebidLogLevel order: debug, verbose, info, warn, error, severe.
+        // Android has no VERBOSE/SEVERE: verbose -> DEBUG, severe -> ERROR
+        // (closest levels; NONE would silence errors too).
         val logLevel = when (level.toInt()) {
-            0 -> PrebidMobile.LogLevel.DEBUG
+            0, 1 -> PrebidMobile.LogLevel.DEBUG
             2 -> PrebidMobile.LogLevel.INFO
             3 -> PrebidMobile.LogLevel.WARN
-            4 -> PrebidMobile.LogLevel.ERROR
-            5 -> PrebidMobile.LogLevel.NONE
+            4, 5 -> PrebidMobile.LogLevel.ERROR
             else -> PrebidMobile.LogLevel.DEBUG
         }
         PrebidMobile.setLogLevel(logLevel)
@@ -230,11 +232,20 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         return if (kw.isNullOrEmpty()) emptyList() else kw.split(",").map { it.trim() }
     }
 
-    // Android SDK doesn't have separate App keyword APIs; use user keywords as fallback
-    override fun addAppKeyword(keyword: String) { TargetingParams.addUserKeyword(keyword) }
-    override fun addAppKeywords(keywords: List<String>) { keywords.forEach { TargetingParams.addUserKeyword(it) } }
-    override fun removeAppKeyword(keyword: String) { TargetingParams.removeUserKeyword(keyword) }
-    override fun clearAppKeywords() { /* no separate app keywords on Android */ }
+    // Prebid Android has no app-keyword API (iOS only). Don't silently rewrite
+    // them as user keywords; set `app.keywords` via the global ORTB config.
+    override fun addAppKeyword(keyword: String) = warnAppKeywordsUnsupported()
+    override fun addAppKeywords(keywords: List<String>) = warnAppKeywordsUnsupported()
+    override fun removeAppKeyword(keyword: String) = warnAppKeywordsUnsupported()
+    override fun clearAppKeywords() = warnAppKeywordsUnsupported()
+
+    private fun warnAppKeywordsUnsupported() {
+        android.util.Log.w(
+            "PrebidFlutter",
+            "App keywords are not supported by Prebid Android; " +
+                "use setGlobalOrtbConfig with app.keywords instead.",
+        )
+    }
 
     override fun addAppExtData(key: String, value: String) {
         try { TargetingParams.addExtData(key, value) } catch (_: Exception) {}
@@ -249,36 +260,37 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         try { TargetingParams.clearExtData() } catch (_: Exception) {}
     }
 
-    // User Ext Data (user.ext.data) — Android SDK does not have direct user data methods,
-    // so we use a stored map and merge into global ORTB config.
+    // User Ext Data (user.ext.data). Tracked locally and written to
+    // TargetingParams.userExt["data"], which Prebid merges into user.ext —
+    // leaving the global ORTB config and any other user.ext keys untouched.
     private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
 
     override fun addUserExtData(key: String, value: String) {
         userExtDataMap.getOrPut(key) { mutableSetOf() }.add(value)
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     override fun updateUserExtData(key: String, value: List<String>) {
         userExtDataMap[key] = value.toMutableSet()
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     override fun removeUserExtData(key: String) {
         userExtDataMap.remove(key)
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     override fun clearUserExtData() {
         userExtDataMap.clear()
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
 
-    private fun syncUserExtDataToOrtb() {
-        try {
-            if (userExtDataMap.isEmpty()) return
-            val dataObj = org.json.JSONObject()
-            userExtDataMap.forEach { (k, v) -> dataObj.put(k, org.json.JSONArray(v.toList())) }
-            val userObj = org.json.JSONObject().put("ext", org.json.JSONObject().put("data", dataObj))
-            val ortb = org.json.JSONObject().put("user", userObj)
-            TargetingParams.setGlobalOrtbConfig(ortb.toString())
-        } catch (_: Exception) {}
+    private fun syncUserExtData() {
+        val ext = TargetingParams.getUserExt() ?: org.prebid.mobile.rendering.models.openrtb.bidRequests.Ext()
+        ext.remove("data")
+        if (userExtDataMap.isNotEmpty()) {
+            val data = org.json.JSONObject()
+            userExtDataMap.forEach { (k, v) -> data.put(k, org.json.JSONArray(v.sorted())) }
+            ext.put("data", data)
+        }
+        TargetingParams.setUserExt(if (ext.getJsonObject().length() == 0) null else ext)
     }
 
     override fun addBidderToAccessControlList(bidderName: String) { TargetingParams.addBidderToAccessControlList(bidderName) }
@@ -289,7 +301,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun getGlobalOrtbConfig(): String? = TargetingParams.getGlobalOrtbConfig()
 
     override fun setContentUrl(url: String?) {
-        // contentUrl not directly available on Android; use global ORTB config
+        // Not available on Android (and deprecated / not sent on iOS 3.4).
+        // Use the global ORTB config to set app.content.url.
     }
     override fun setPublisherName(name: String?) { TargetingParams.setPublisherName(name) }
     override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
@@ -316,11 +329,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
         val adUnit = org.prebid.mobile.api.rendering.InterstitialAdUnit(act, configId, formats)
 
-        // Apply video parameters if provided
-        // Note: videoParameters is read-only on InterstitialAdUnit.
-        // Video format is already configured through the EnumSet above.
-        // Detailed video parameters (mimes, protocols, etc.) are applied
-        // by the SDK based on the server configuration.
+        // The Android rendering InterstitialAdUnit has no public video-parameters
+        // setter (mimes/protocols/etc. come from the SDK defaults); only the max
+        // duration is configurable.
+        videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
@@ -504,7 +516,7 @@ class NativeAdHostApiImpl(
             } else {
                 flutterApi.onAdEvent(AdEvent(
                     adId = adId, eventName = "onAdFailed",
-                    error = bidInfo.resultCode.name
+                    error = bidInfo.resultCode.toDartCode()
                 )) {}
             }
         }
@@ -565,6 +577,9 @@ class MultiformatAdHostApiImpl(
                 vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
             }
             vc.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
+            vc.api?.filterNotNull()?.let { api ->
+                vp.api = api.map { org.prebid.mobile.Signals.Api(it.toInt()) }
+            }
             vc.maxDuration?.let { vp.maxDuration = it.toInt() }
             vc.minDuration?.let { vp.minDuration = it.toInt() }
             request.setVideoParameters(vp)
@@ -623,7 +638,7 @@ class MultiformatAdHostApiImpl(
         request.setRewarded(config.isRewarded)
 
         adUnit.fetchDemand(request) { bidInfo ->
-            val resultStr = bidInfo.resultCode.name
+            val resultStr = bidInfo.resultCode.toDartCode()
             val format = bidInfo.targetingKeywords?.get("hb_format")
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
@@ -657,7 +672,7 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         adUnits[adId] = adUnit
 
         adUnit.fetchDemand { bidInfo ->
-            val resultStr = bidInfo.resultCode.name
+            val resultStr = bidInfo.resultCode.toDartCode()
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
                 winningFormat = "video",
@@ -669,4 +684,21 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
     override fun destroy(adId: Long) {
         adUnits.remove(adId)
     }
+}
+
+/// Maps an Android [org.prebid.mobile.ResultCode] to the result-code names the
+/// Dart API uses (the iOS `ResultCode` case names), so both platforms report
+/// the same strings and `isSuccess` works everywhere.
+internal fun org.prebid.mobile.ResultCode.toDartCode(): String = when (this) {
+    org.prebid.mobile.ResultCode.SUCCESS -> "prebidDemandFetchSuccess"
+    org.prebid.mobile.ResultCode.INVALID_ACCOUNT_ID -> "prebidInvalidAccountId"
+    org.prebid.mobile.ResultCode.INVALID_CONFIG_ID -> "prebidInvalidConfigId"
+    org.prebid.mobile.ResultCode.INVALID_SIZE -> "prebidInvalidSize"
+    org.prebid.mobile.ResultCode.INVALID_HOST_URL -> "prebidServerURLInvalid"
+    org.prebid.mobile.ResultCode.NETWORK_ERROR -> "prebidNetworkError"
+    org.prebid.mobile.ResultCode.PREBID_SERVER_ERROR -> "prebidServerError"
+    org.prebid.mobile.ResultCode.NO_BIDS -> "prebidDemandNoBids"
+    org.prebid.mobile.ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
+    org.prebid.mobile.ResultCode.TIMEOUT -> "prebidDemandTimedOut"
+    else -> "prebidInvalidRequest"
 }

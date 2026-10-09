@@ -204,6 +204,7 @@ class PrebidMobile {
             source: d.source,
             identifier: d.identifier,
             atype: d.atype,
+            ext: d.ext?.map((k, v) => MapEntry(k ?? '', v)),
           ),
         )
         .toList();

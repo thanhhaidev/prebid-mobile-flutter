@@ -144,9 +144,14 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
         let externalIds = userIds.map { data -> ExternalUserId in
+            // ext goes on the uid, matching the Android mapping.
+            let ext = data.ext?.reduce(into: [String: Any]()) { result, entry in
+                if let key = entry.key, let value = entry.value { result[key] = value }
+            }
             let uid = UserUniqueID(
                 uniqueId: data.identifier,
-                aType: NSNumber(value: data.atype ?? 0)
+                aType: NSNumber(value: data.atype ?? 0),
+                ext: ext
             )
             return ExternalUserId(source: data.source, uids: [uid])
         }
@@ -155,15 +160,18 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     func getExternalUserIds() throws -> [ExternalUserIdData] {
         guard let ids = Targeting.shared.getExternalUserIds() else { return [] }
-        return ids.compactMap { dict -> ExternalUserIdData? in
-            guard let source = dict["source"] as? String else { return nil }
-            var identifier = ""
-            var atype: Int64?
-            if let uids = dict["uids"] as? [[String: Any]], let first = uids.first {
-                identifier = first["id"] as? String ?? ""
-                atype = (first["atype"] as? NSNumber)?.int64Value
+        // One entry per uid (like Android), carrying the uid's ext.
+        return ids.flatMap { dict -> [ExternalUserIdData] in
+            guard let source = dict["source"] as? String,
+                  let uids = dict["uids"] as? [[String: Any]] else { return [] }
+            return uids.map { uid in
+                ExternalUserIdData(
+                    source: source,
+                    identifier: uid["id"] as? String ?? "",
+                    atype: (uid["atype"] as? NSNumber)?.int64Value,
+                    ext: (uid["ext"] as? [String: Any])?.reduce(into: [String?: Any?]()) { $0[$1.key] = $1.value }
+                )
             }
-            return ExternalUserIdData(source: source, identifier: identifier, atype: atype)
         }
     }
     
@@ -220,37 +228,37 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func removeAppExtData(key: String) throws { Targeting.shared.removeAppExtData(for: key) }
     func clearAppExtData() throws { Targeting.shared.clearAppExtData() }
     
-    // User Ext Data — iOS SDK does not have direct user data methods,
-    // so we store locally and merge via global ORTB config.
+    // User Ext Data (user.ext.data). Tracked locally and written to
+    // Targeting.userExt["data"], which Prebid merges into user.ext — leaving
+    // the global ORTB config and any other user.ext keys untouched.
     private static var userExtDataMap: [String: Set<String>] = [:]
     
     func addUserExtData(key: String, value: String) throws {
         PrebidMobileFlutterPlugin.userExtDataMap[key, default: []].insert(value)
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     func updateUserExtData(key: String, value: [String]) throws {
         PrebidMobileFlutterPlugin.userExtDataMap[key] = Set(value)
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     func removeUserExtData(key: String) throws {
         PrebidMobileFlutterPlugin.userExtDataMap.removeValue(forKey: key)
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     func clearUserExtData() throws {
         PrebidMobileFlutterPlugin.userExtDataMap.removeAll()
-        syncUserExtDataToOrtb()
+        syncUserExtData()
     }
     
-    private func syncUserExtDataToOrtb() {
-        guard !PrebidMobileFlutterPlugin.userExtDataMap.isEmpty else { return }
-        var dataDict: [String: [String]] = [:]
-        for (k, v) in PrebidMobileFlutterPlugin.userExtDataMap {
-            dataDict[k] = Array(v)
+    private func syncUserExtData() {
+        var ext = Targeting.shared.userExt ?? [:]
+        let map = PrebidMobileFlutterPlugin.userExtDataMap
+        if map.isEmpty {
+            ext.removeValue(forKey: "data")
+        } else {
+            ext["data"] = map.mapValues { Array($0).sorted() } as [String: [String]]
         }
-        if let jsonData = try? JSONSerialization.data(withJSONObject: ["user": ["ext": ["data": dataDict]]]),
-           let jsonStr = String(data: jsonData, encoding: .utf8) {
-            Targeting.shared.setGlobalORTBConfig(jsonStr)
-        }
+        Targeting.shared.userExt = ext.isEmpty ? nil : ext
     }
     
     func addBidderToAccessControlList(bidderName: String) throws { Targeting.shared.addBidderToAccessControlList(bidderName) }
@@ -281,9 +289,11 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
             if !adUnitFormats.isEmpty { adUnit.adFormats = adUnitFormats }
         }
         
-        // Apply video parameters if provided
+        // videoParameters is get-only but returns the ad unit's live
+        // (reference-type) parameters, so configure it in place.
         if let vc = videoConfig {
-            let vp = VideoParameters(mimes: vc.mimes)
+            let vp = adUnit.videoParameters
+            vp.mimes = vc.mimes
             if let protocols = vc.protocols {
                 vp.protocols = protocols.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) }
             }
@@ -293,10 +303,11 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
             if let placement = vc.placement {
                 vp.placement = Signals.Placement(integerLiteral: Int(placement))
             }
+            if let api = vc.api {
+                vp.api = api.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
+            }
             if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
             if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
-            // videoParameters is read-only on InterstitialRenderingAdUnit;
-            // video config is applied via ad format selection above.
         }
         
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi!)
@@ -417,7 +428,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
             } else {
                 self.flutterApi?.onAdEvent(event: AdEvent(
                     adId: adId, eventName: "onAdFailed",
-                    error: "Demand fetch failed: \(bidInfo.resultCode)"
+                    error: bidInfo.resultCode.dartCode
                 )) { _ in }
             }
         })
@@ -521,11 +532,15 @@ private class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
         flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdClicked")) { _ in }
     }
     
-    func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit) {
+    func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {
         flutterApi.onAdEvent(event: AdEvent(
             adId: adId,
             eventName: "onUserEarnedReward",
-            reward: RewardData(type: "reward", count: 1)
+            reward: RewardData(
+                type: reward.type ?? "reward",
+                count: reward.count?.int64Value ?? 1,
+                ext: reward.ext?.reduce(into: [String?: Any?]()) { $0[$1.key] = $1.value }
+            )
         )) { _ in }
     }
 }
@@ -570,6 +585,9 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
             }
             if let placement = vc.placement {
                 vp.placement = Signals.Placement(integerLiteral: Int(placement))
+            }
+            if let api = vc.api {
+                vp.api = api.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
             }
             if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
             if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
@@ -632,13 +650,7 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
         )
         
         adUnit.fetchDemand(request: request) { [weak self] bidInfo in
-            let resultStr: String
-            switch bidInfo.resultCode {
-            case .prebidDemandFetchSuccess: resultStr = "prebidDemandFetchSuccess"
-            case .prebidDemandNoBids: resultStr = "prebidDemandNoBids"
-            case .prebidDemandTimedOut: resultStr = "prebidDemandTimedOut"
-            default: resultStr = "\(bidInfo.resultCode)"
-            }
+            let resultStr = bidInfo.resultCode.dartCode
             
             let format = bidInfo.targetingKeywords?["hb_format"]
             let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
@@ -672,13 +684,7 @@ private class InstreamVideoAdHostApiHandler: InstreamVideoAdHostApi {
         adUnits[adId] = adUnit
         
         adUnit.fetchDemand(completionBidInfo: { [weak self] bidInfo in
-            let resultStr: String
-            switch bidInfo.resultCode {
-            case .prebidDemandFetchSuccess: resultStr = "prebidDemandFetchSuccess"
-            case .prebidDemandNoBids: resultStr = "prebidDemandNoBids"
-            case .prebidDemandTimedOut: resultStr = "prebidDemandTimedOut"
-            default: resultStr = "\(bidInfo.resultCode)"
-            }
+            let resultStr = bidInfo.resultCode.dartCode
             
             let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
             
@@ -692,5 +698,26 @@ private class InstreamVideoAdHostApiHandler: InstreamVideoAdHostApi {
     
     func destroy(adId: Int64) throws {
         adUnits.removeValue(forKey: adId)
+    }
+}
+
+/// The result-code names the Dart API uses (matching the Android mapping), so
+/// both platforms report the same strings.
+extension ResultCode {
+    var dartCode: String {
+        switch self {
+        case .prebidDemandFetchSuccess: return "prebidDemandFetchSuccess"
+        case .prebidServerNotSpecified: return "prebidServerNotSpecified"
+        case .prebidInvalidAccountId: return "prebidInvalidAccountId"
+        case .prebidInvalidConfigId: return "prebidInvalidConfigId"
+        case .prebidInvalidSize: return "prebidInvalidSize"
+        case .prebidNetworkError: return "prebidNetworkError"
+        case .prebidServerError: return "prebidServerError"
+        case .prebidDemandNoBids: return "prebidDemandNoBids"
+        case .prebidDemandTimedOut: return "prebidDemandTimedOut"
+        case .prebidServerURLInvalid: return "prebidServerURLInvalid"
+        case .prebidDemandNoCachedBids: return "prebidDemandNoCachedBids"
+        default: return "prebidInvalidRequest"
+        }
     }
 }

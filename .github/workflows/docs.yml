@@ -15,8 +15,9 @@ on:
     paths:
       - 'website/**'
   workflow_dispatch:
-  # After a release, so the changelog shows the new tag's date and pub.dev
-  # link. Runs on main, which the github-pages environment accepts.
+  # After a successful release, so the changelog and compatibility tables show
+  # the new version's pub.dev date (the Release workflow finishes only once
+  # pub.dev serves it). Runs on main, which the github-pages environment accepts.
   workflow_run:
     workflows: [Release]
     types: [completed]
@@ -44,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # tags give the changelog its release dates
+          fetch-depth: 0 # tags: docs snapshots of earlier releases, changelog diff links
       - uses: actions/setup-node@v6
         with:
           node-version: 22

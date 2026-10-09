@@ -1,8 +1,10 @@
 // Generates src/pages/changelog.md from every package's CHANGELOG.md, adding
-// release dates (from the `<package>-v<version>` git tags) and links to
-// pub.dev and GitHub diffs.
+// release dates and links to pub.dev and GitHub diffs. A version counts as
+// released once pub.dev serves it: dates come from src/data/releases.json,
+// which scripts/sync-releases.mjs writes first. Core releases link to their
+// docs version (scripts/sync-versions.mjs).
 import {execFileSync} from 'node:child_process';
-import {readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -10,21 +12,24 @@ const site = join(dirname(fileURLToPath(import.meta.url)), '..');
 const root = join(site, '..');
 const repo = 'https://github.com/thanhhaidev/prebid-mobile-flutter';
 const packages = ['prebid_mobile_sdk', 'prebid_mobile_sdk_gam', 'prebid_mobile_sdk_admob', 'prebid_mobile_sdk_max'];
+const releases = JSON.parse(readFileSync(join(site, 'src/data/releases.json'), 'utf8'));
+const current = JSON.parse(readFileSync(join(site, 'src/data/compatibility.json'), 'utf8')).packages.prebid_mobile_sdk
+  .releases[0].version;
+const snapshots = existsSync(join(site, 'versions.json')) ? JSON.parse(readFileSync(join(site, 'versions.json'), 'utf8')) : [];
 
-/** The tag date as YYYY-MM-DD, or null when the tag is unknown (shallow clone). */
-function tagDate(tag) {
+/** The docs of a core release: the current docs or its snapshot. */
+function docsFor(version) {
+  if (version === current) return '/docs/';
+  return snapshots.includes(version) ? `/docs/${version}/` : null;
+}
+
+/** Whether the git tag exists, so diff links don't point at missing tags. */
+function hasTag(tag) {
   try {
-    // The tagger date for annotated tags, the commit date for lightweight ones.
-    return (
-      execFileSync('git', ['for-each-ref', '--format=%(creatordate:short)', `refs/tags/${tag}`], {
-        cwd: root,
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-        .toString()
-        .trim() || null
-    );
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`], {cwd: root, stdio: 'ignore'});
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
@@ -94,27 +99,27 @@ for (const name of packages) {
   const pub = `https://pub.dev/packages/${name}`;
   const entries = sections(readFileSync(join(root, 'packages', name, 'CHANGELOG.md'), 'utf8'));
   const versions = entries.filter((e) => e.version).map((e) => e.version);
-  const latestReleased = versions.find((v) => tagDate(`${name}-v${v}`));
+  const published = releases[name]?.versions ?? {};
+  const latest = releases[name]?.latest;
+  const tag = (v) => `${name}-v${v}`;
+  // Compare from the newest older version that has a tag.
+  const base = (from) => versions.slice(from).find((v) => hasTag(tag(v)));
 
   entries.forEach(({version, name: heading, body}) => {
     const meta = [];
-    const tag = (v) => `${name}-v${v}`;
-    const previous = version ? versions[versions.indexOf(version) + 1] : versions[0];
+    const previous = base(version ? versions.indexOf(version) + 1 : 0);
 
-    if (version) {
-      const date = tagDate(tag(version));
-      if (date) {
-        meta.push(`Released ${longDate(date)}`);
-        if (version === latestReleased) meta.push('<span className="release-latest">Latest</span>');
-        meta.push(link('pub.dev', `${pub}/versions/${version}`));
-        if (previous) meta.push(link('Diff', `${repo}/compare/${tag(previous)}...${tag(version)}`));
-      } else {
-        // Version bumped but not tagged yet.
-        meta.push('Release pending');
-        if (previous) meta.push(link(`Changes since v${previous}`, `${repo}/compare/${tag(previous)}...main`));
-      }
+    if (version && published[version]) {
+      meta.push(`Released ${longDate(published[version])}`);
+      if (version === latest) meta.push('<span className="release-latest">Latest</span>');
+      meta.push(link('pub.dev', `${pub}/versions/${version}`));
+      const docs = name === 'prebid_mobile_sdk' && docsFor(version);
+      // A markdown link, so Docusaurus adds the baseUrl.
+      if (docs) meta.push(`[Docs](${docs})`);
+      if (previous && hasTag(tag(version))) meta.push(link('Diff', `${repo}/compare/${tag(previous)}...${tag(version)}`));
     } else {
-      meta.push('Not published yet');
+      // Unreleased section, or a version bumped but not on pub.dev yet.
+      meta.push(version ? 'Release pending' : 'Not published yet');
       if (previous) meta.push(link(`Changes since v${previous}`, `${repo}/compare/${tag(previous)}...main`));
     }
 

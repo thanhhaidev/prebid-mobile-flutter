@@ -136,6 +136,24 @@
   text-transform: uppercase;
 }
 
+.unreleased {
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px dashed var(--ifm-color-emphasis-400);
+  color: var(--ifm-color-emphasis-700);
+  font: 700 0.68rem/1.4 var(--ifm-font-family-base);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.releaseDate {
+  display: block;
+  margin-top: 0.3rem;
+  font: 400 0.75rem/1.2 var(--ifm-font-family-base);
+  color: var(--ifm-color-emphasis-700);
+}
+
 .nowrap { white-space: nowrap; }
 
 /* Platform pill */

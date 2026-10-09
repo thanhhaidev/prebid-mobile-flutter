@@ -24,7 +24,16 @@ cd ../prebid_mobile_sdk_admob && flutter pub publish
 cd ../prebid_mobile_sdk_max && flutter pub publish
 ```
 
-Then, for each package on pub.dev, open **Admin → Automated publishing**:
+Then tag each published version and push the tags. The Release workflow sees
+the version is already on pub.dev, skips publishing, creates the GitHub
+release and refreshes the docs with the release dates:
+
+```bash
+git tag prebid_mobile_sdk-v1.0.0 && git push origin prebid_mobile_sdk-v1.0.0
+# same for prebid_mobile_sdk_gam, prebid_mobile_sdk_admob, prebid_mobile_sdk_max
+```
+
+For each package on pub.dev, open **Admin → Automated publishing**:
 
 1. Enable **Publishing from GitHub Actions**.
 2. Repository: `thanhhaidev/prebid-mobile-flutter`.
@@ -54,8 +63,10 @@ Then, for each package on pub.dev, open **Admin → Automated publishing**:
    ```
 
 5. The Release workflow checks that the tag matches `pubspec.yaml` and the
-   CHANGELOG, analyzes and tests the package, publishes it, and creates a
-   GitHub release from the CHANGELOG section.
+   CHANGELOG, analyzes and tests the package, publishes it, waits until
+   pub.dev serves the new version and creates a GitHub release from the
+   CHANGELOG section. When it succeeds, the docs are redeployed with the new
+   release date.
 
 **Order:** release `prebid_mobile_sdk` before any companion that depends on
 its new version. The workflow refuses to publish a companion while the core
@@ -84,8 +95,32 @@ then release as above. CI's compatibility check fails until they agree.
 
 The site in [`website/`](website) deploys to GitHub Pages on every push to
 `main` that touches it, a CHANGELOG or a native dependency, and after each
-Release run (the changelog page shows tag dates). The site has one docs
-version, so update the pages in `website/docs/` in the same PR as the
-release.
+successful Release run.
+
+### Release dates
+
+Release dates come from pub.dev, not from the CHANGELOG headings or the tags:
+each build reads every package's published versions from the pub.dev API
+(`npm run releases`, which writes the untracked `src/data/releases.json`). A
+version shows on the changelog page and the compatibility tables as
+**Release pending** / **unreleased** until pub.dev serves it, then with its
+publish date and the **latest** badge. Offline, the build falls back to the
+tag dates. After publishing by hand, run the Release workflow by pushing the
+tag (see above) or run **Actions → Deploy docs** to refresh the dates.
+
+### Docs versions
+
+`website/docs/` always describes the newest core release (the first
+`prebid_mobile_sdk` entry in `compatibility.json`). Earlier core releases are
+snapshotted automatically at build time (`npm run versions`): every
+`prebid_mobile_sdk` version that is on pub.dev and has a
+`prebid_mobile_sdk-v<version>` tag gets the docs and sidebar from that tag,
+served at `/docs/<version>/` with an "unmaintained" banner and listed in the
+navbar's version dropdown. Nothing is committed: `versions.json`,
+`versioned_docs/` and `versioned_sidebars/` are generated and ignored.
+
+So update `website/docs/` in the release PR, before tagging: the tag freezes
+those pages as that version's docs once the next core version ships.
+Companion releases don't get their own docs version. 
 
 One-time setup: in the repo settings, **Pages → Source: GitHub Actions**.

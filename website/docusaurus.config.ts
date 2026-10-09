@@ -1,19 +1,20 @@
-import {readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const repo = 'https://github.com/thanhhaidev/prebid-mobile-flutter';
-// One docs version: the pages always describe the latest release.
-const coreVersion = (
-  JSON.parse(readFileSync(new URL('./src/data/compatibility.json', import.meta.url), 'utf8')) as {
-    packages: Record<string, {releases: {version: string}[]}>;
-  }
-).packages.prebid_mobile_sdk.releases[0].version;
+const readJson = <T,>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 
-/** Matches the given docs pages ('' is the intro page). */
+// `docs/` describes the newest release. Earlier releases are snapshots that
+// scripts/sync-versions.mjs builds from their git tags (versions.json).
+const coreVersion = readJson<{packages: Record<string, {releases: {version: string}[]}>}>('./src/data/compatibility.json')
+  .packages.prebid_mobile_sdk.releases[0].version;
+const snapshots = existsSync(new URL('./versions.json', import.meta.url)) ? readJson<string[]>('./versions.json') : [];
+
+/** Matches the given docs pages ('' is the intro page), in any docs version. */
 const docsPage = (pages: string[]) =>
-  `/docs/(?:${pages.map((p) => p.replace(/-/g, '\\-')).join('|')})/?$`;
+  `/docs/(?:[0-9][^/]*/)?(?:${pages.map((p) => p.replace(/-/g, '\\-')).join('|')})/?$`;
 const guidePages = ['', 'configuration', 'privacy', 'targeting', 'events', 'debugging', 'platform-differences'];
 
 const config: Config = {
@@ -53,7 +54,11 @@ const config: Config = {
           routeBasePath: 'docs',
           sidebarPath: './sidebars.ts',
           editUrl: `${repo}/tree/main/website/`,
-          versions: {current: {label: `v${coreVersion}`}},
+          lastVersion: 'current',
+          versions: {
+            current: {label: `v${coreVersion}`},
+            ...Object.fromEntries(snapshots.map((v) => [v, {label: `v${v}`, banner: 'unmaintained' as const}])),
+          },
         },
         blog: false,
         theme: {customCss: './src/css/custom.css'},
@@ -93,8 +98,16 @@ const config: Config = {
         {to: '/docs/integrations', label: 'Ad servers', position: 'left', activeBaseRegex: docsPage(['integrations', 'original-api', 'gam', 'admob', 'max'])},
         {to: '/docs/compatibility', label: 'Compatibility', position: 'left', activeBaseRegex: docsPage(['compatibility'])},
         {to: '/changelog', label: 'Changelog', position: 'left'},
-        // The released version, linking to its release notes.
-        {to: '/changelog', label: `v${coreVersion}`, position: 'right', className: 'navbar-version-dropdown'},
+        // The docs version: a link to the release notes until there are
+        // snapshots of earlier releases, then a version switcher.
+        snapshots.length
+          ? {
+              type: 'docsVersionDropdown',
+              position: 'right',
+              className: 'navbar-version-dropdown',
+              dropdownItemsAfter: [{to: '/changelog', label: 'Changelog'}],
+            }
+          : {to: '/changelog', label: `v${coreVersion}`, position: 'right', className: 'navbar-version-dropdown'},
         {href: repo, position: 'right', className: 'navbar-github', 'aria-label': 'GitHub repository'},
       ],
     },

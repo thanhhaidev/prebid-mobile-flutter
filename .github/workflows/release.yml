@@ -104,10 +104,46 @@ jobs:
         working-directory: ${{ steps.meta.outputs.dir }}
         run: flutter pub publish --dry-run
 
-      - name: Publish to pub.dev
+      # The first version of each package is published by hand (RELEASING.md);
+      # its tag then only creates the GitHub release and refreshes the docs.
+      - name: Check pub.dev
+        id: pubdev
         if: github.event_name == 'push'
+        env:
+          PACKAGE: ${{ steps.meta.outputs.package }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          if curl -fsS "https://pub.dev/api/packages/$PACKAGE" \
+              | jq -e --arg v "$VERSION" '.versions[] | select(.version == $v)' > /dev/null; then
+            echo "::notice::$PACKAGE $VERSION is already on pub.dev; skipping publish."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to pub.dev
+        if: github.event_name == 'push' && steps.pubdev.outputs.published != 'true'
         working-directory: ${{ steps.meta.outputs.dir }}
         run: flutter pub publish --force
+
+      # The docs workflow runs when this one succeeds and reads the release date
+      # from pub.dev, so finish only once pub.dev serves the new version.
+      - name: Wait for pub.dev
+        if: github.event_name == 'push'
+        env:
+          PACKAGE: ${{ steps.meta.outputs.package }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS "https://pub.dev/api/packages/$PACKAGE" \
+                | jq -e --arg v "$VERSION" '.versions[] | select(.version == $v)' > /dev/null; then
+              echo "$PACKAGE $VERSION is live on pub.dev"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::$PACKAGE $VERSION is not on pub.dev after 10 minutes"
+          exit 1
 
       - name: Create GitHub release
         if: github.event_name == 'push'
@@ -123,6 +159,10 @@ jobs:
             on && /^## / { exit }
             on { print }
           ' "$DIR/CHANGELOG.md" > notes.md
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists"
+            exit 0
+          fi
           gh release create "$GITHUB_REF_NAME" \
             --title "$PACKAGE $VERSION" \
             --notes-file notes.md

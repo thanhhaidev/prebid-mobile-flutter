@@ -16,3 +16,4 @@ scripts:
   format:
     description: Format all Dart code.
     run: dart format .
+sdkPath: .fvm/flutter_sdk

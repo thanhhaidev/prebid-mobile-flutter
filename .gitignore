@@ -41,3 +41,8 @@ Package.resolved
 
 # FVM Version Cache
 .fvm/
+
+# Android / Gradle build caches (all packages)
+.gradle/
+.cxx/
+local.properties

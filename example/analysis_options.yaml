@@ -16,6 +16,8 @@ analyzer:
   # imports). build/ is gitignored but present on disk after a build.
   exclude:
     - build/**
+    - android/**
+    - ios/**
 
 linter:
   # The lint rules applied to this project can be customized in the

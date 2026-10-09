@@ -4,6 +4,9 @@ analyzer:
   exclude:
     - pigeons/**
     - lib/src/generated/**
+    - build/**
+    - android/**
+    - ios/**
 
 linter:
   rules:

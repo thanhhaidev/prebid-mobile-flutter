@@ -26,9 +26,11 @@ permissions:
   pages: write
   id-token: write
 
+# PR builds get their own group per PR; deploys share one and are never
+# cancelled halfway (a PR build used to cancel a running deploy).
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: docs-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:

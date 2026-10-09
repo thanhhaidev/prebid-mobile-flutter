@@ -47,7 +47,7 @@ jobs:
       contents: write # GitHub release
       id-token: write # pub.dev OIDC
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Resolve package and version
         id: meta

@@ -135,7 +135,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: 'An independent, community-maintained project: not affiliated with, endorsed by, or maintained by Prebid.org. Apache 2.0 licensed · Built with Docusaurus.',
+      copyright: 'An independent, community-maintained project: not affiliated with, endorsed by, or maintained by Prebid.org. MIT licensed · Built with Docusaurus.',
     },
     prism: {
       theme: prismThemes.github,

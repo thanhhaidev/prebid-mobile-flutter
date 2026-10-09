@@ -91,5 +91,5 @@ Releases are cut by the maintainer; see [RELEASING.md](RELEASING.md).
 
 ## License
 
-Contributions are licensed under the [Apache License 2.0](LICENSE), the
+Contributions are licensed under the [MIT License](LICENSE), the
 license of this repository.

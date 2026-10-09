@@ -18,6 +18,7 @@ class PrebidVideoAdBidResponse {
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 
+  /// Creates a [PrebidVideoAdBidResponse].
   const PrebidVideoAdBidResponse({
     required this.resultCode,
     this.targetingKeywords,
@@ -43,6 +44,7 @@ class PrebidVideoAdBidResponse {
 /// }
 /// ```
 class PrebidInstreamVideoAd {
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static InstreamVideoAdHostApi api = InstreamVideoAdHostApi();
   static int _nextId = 4000000;

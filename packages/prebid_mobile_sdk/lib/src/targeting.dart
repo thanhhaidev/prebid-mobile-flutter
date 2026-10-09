@@ -28,6 +28,10 @@ import 'generated/prebid_api.g.dart';
 /// await PrebidTargeting.setGlobalOrtbConfig('{"bcat": ["IAB25"]}');
 /// ```
 class PrebidTargeting {
+  // Static members only.
+  PrebidTargeting._();
+
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static TargetingHostApi api = TargetingHostApi();
 

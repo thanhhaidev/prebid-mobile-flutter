@@ -109,4 +109,4 @@ privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[MIT License](LICENSE)

@@ -12,6 +12,7 @@ import 'video_parameters.dart';
 /// Create an instance, call [loadAd], and then [show] when ready.
 /// Call [destroy] when the ad is no longer needed.
 class PrebidInterstitialAd {
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static InterstitialAdHostApi api = InterstitialAdHostApi();
   static int _nextId = 0;
@@ -103,6 +104,7 @@ class PrebidInterstitialAd {
 /// Create an instance, call [loadAd], and then [show] when ready.
 /// Call [destroy] when the ad is no longer needed.
 class PrebidRewardedAd {
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static RewardedAdHostApi api = RewardedAdHostApi();
   static int _nextId = 1000000; // offset to avoid conflicts with interstitials

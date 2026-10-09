@@ -65,7 +65,11 @@ class PrebidAdMobNativeAd extends StatefulWidget {
   /// Native context, context subtype and placement type. Default: social
   /// context, general-social subtype, in-feed placement.
   final NativeContextType? context;
+
+  /// Native context subtype (`contextsubtype`).
   final NativeContextSubType? contextSubType;
+
+  /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
   /// Listener for native ad events.

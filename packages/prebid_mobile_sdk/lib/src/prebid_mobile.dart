@@ -37,7 +37,24 @@ import 'generated/prebid_api.g.dart';
 typedef PrebidBidResponseListener =
     void Function(String? request, String? response);
 
+/// Initializes the Prebid Mobile SDK and holds its global settings.
+///
+/// Call [initializeSdk] once at startup, and await it before loading ads.
+/// The other methods configure every request made afterwards: timeouts,
+/// Prebid Server flags, stored responses, external user IDs and logging.
+///
+/// ```dart
+/// await PrebidMobile.initializeSdk(
+///   prebidServerUrl: 'https://prebid-server.example.com/openrtb2/auction',
+///   accountId: 'your-account-id',
+/// );
+/// await PrebidMobile.setTimeoutMillis(3000);
+/// ```
 class PrebidMobile {
+  // Static members only.
+  PrebidMobile._();
+
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static PrebidMobileHostApi api = PrebidMobileHostApi();
 

@@ -820,4 +820,4 @@ Contributions are welcome: see [CONTRIBUTING.md](https://github.com/thanhhaidev/
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[MIT License](LICENSE)

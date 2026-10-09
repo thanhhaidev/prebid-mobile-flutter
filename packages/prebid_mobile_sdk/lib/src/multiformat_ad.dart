@@ -33,6 +33,7 @@ class PrebidMultiformatBidResponse {
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 
+  /// Creates a [PrebidMultiformatBidResponse].
   const PrebidMultiformatBidResponse({
     required this.resultCode,
     this.winningFormat,
@@ -68,6 +69,7 @@ class PrebidMultiformatBidResponse {
 /// }
 /// ```
 class PrebidMultiformatAd {
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static MultiformatAdHostApi api = MultiformatAdHostApi();
   static int _nextId = 3000000;
@@ -107,7 +109,11 @@ class PrebidMultiformatAd {
   /// Native context, context subtype and placement type, when native is
   /// requested.
   final NativeContextType? nativeContext;
+
+  /// Native context subtype (`contextsubtype`) for the native demand.
   final NativeContextSubType? nativeContextSubType;
+
+  /// Native placement type (`plcmttype`) for the native demand.
   final NativePlacementType? nativePlacementType;
 
   /// Lets Prebid track the impression when your ad server's interstitial
@@ -288,6 +294,7 @@ class MultiformatEventRouter implements MultiformatFlutterApi {
     _handlers.remove(adId);
   }
 
+  /// Delivers an auto-refreshed auction result to the ad it belongs to.
   @override
   Future<void> onDemandRefreshed(int adId, MultiformatBidResult result) async {
     _handlers[adId]?.call(result);

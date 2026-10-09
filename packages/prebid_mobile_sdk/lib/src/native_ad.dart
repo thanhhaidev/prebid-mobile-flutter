@@ -72,6 +72,7 @@ class PrebidNativeAdResponse {
   /// Every data asset of the response (rating, price, likes, address, ...).
   final List<PrebidNativeData> dataAssets;
 
+  /// Creates a [PrebidNativeAdResponse].
   const PrebidNativeAdResponse({
     this.title,
     this.text,
@@ -101,6 +102,7 @@ class PrebidNativeImage {
   /// The image URL.
   final String? url;
 
+  /// Creates a [PrebidNativeImage].
   const PrebidNativeImage({required this.type, this.url});
 }
 
@@ -112,20 +114,40 @@ class PrebidNativeData {
   /// The asset value.
   final String? value;
 
+  /// Creates a [PrebidNativeData].
   const PrebidNativeData({required this.type, this.value});
 }
 
 /// Defines a native asset for the ad request.
 class NativeAsset {
+  /// The kind of asset: title, image or data.
   final NativeAssetType type;
+
+  /// Whether the bid must include this asset.
   final bool required;
+
+  /// Maximum title length in characters (title assets).
   final int? titleLength;
+
+  /// Image subtype: icon, main or custom (image assets).
   final NativeImageType? imageType;
+
+  /// Exact image width in pixels (image assets).
   final int? imageWidth;
+
+  /// Exact image height in pixels (image assets).
   final int? imageHeight;
+
+  /// Minimum image width in pixels (image assets).
   final int? imageWidthMin;
+
+  /// Minimum image height in pixels (image assets).
   final int? imageHeightMin;
+
+  /// Data subtype, e.g. sponsored, description or rating (data assets).
   final NativeDataType? dataType;
+
+  /// Maximum data length in characters (data assets).
   final int? dataLength;
 
   const NativeAsset._({
@@ -197,9 +219,13 @@ class NativeAsset {
 
 /// Defines a native event tracker for the ad request.
 class NativeEventTracker {
+  /// The event to track, e.g. an impression.
   final NativeEventType eventType;
+
+  /// How the event is tracked: image pixel, JavaScript or custom.
   final List<NativeEventTrackingMethod> methods;
 
+  /// Creates a [NativeEventTracker].
   const NativeEventTracker({required this.eventType, required this.methods});
 
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
@@ -236,6 +262,7 @@ class NativeEventTracker {
 /// nativeAd.loadAd();
 /// ```
 class PrebidNativeAd {
+  /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static NativeAdHostApi api = NativeAdHostApi();
   static int _nextId = 2000000;

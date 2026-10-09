@@ -115,12 +115,17 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Native context, context subtype and placement type. Default: social
   /// context, general-social subtype, in-feed placement.
   final NativeContextType? context;
+
+  /// Native context subtype (`contextsubtype`).
   final NativeContextSubType? contextSubType;
+
+  /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
 
+  /// Creates a [PrebidGamNativeAd].
   const PrebidGamNativeAd({
     super.key,
     required this.configId,

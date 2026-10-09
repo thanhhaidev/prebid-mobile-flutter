@@ -22,6 +22,8 @@ enum NativeImageType {
   custom(500);
 
   const NativeImageType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -67,6 +69,8 @@ enum NativeDataType {
   custom(500);
 
   const NativeDataType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -88,6 +92,8 @@ enum NativeEventType {
   custom(500);
 
   const NativeEventType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -103,6 +109,8 @@ enum NativeEventTrackingMethod {
   custom(500);
 
   const NativeEventTrackingMethod(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -121,6 +129,8 @@ enum NativeContextType {
   custom(500);
 
   const NativeContextType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -166,6 +176,8 @@ enum NativeContextSubType {
   custom(500);
 
   const NativeContextSubType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }
 
@@ -187,5 +199,7 @@ enum NativePlacementType {
   custom(500);
 
   const NativePlacementType(this.value);
+
+  /// The OpenRTB Native 1.2 value.
   final int value;
 }

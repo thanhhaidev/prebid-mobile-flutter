@@ -69,6 +69,7 @@ class PrebidGamRewardedAd {
   /// Whether the rewarded ad has loaded and is ready to [show].
   bool get isLoaded => _loaded;
 
+  /// Creates a [PrebidGamRewardedAd]. Call [loadAd] to request it.
   PrebidGamRewardedAd({
     required this.configId,
     required this.gamAdUnitId,
@@ -79,6 +80,7 @@ class PrebidGamRewardedAd {
     this.listener,
   }) : _adId = _nextId++;
 
+  /// Requests a rewarded ad; the result arrives on the listener.
   Future<void> loadAd() async {
     _loaded = false;
     _GamRewardedRouter.instance.register(_adId, this);
@@ -101,6 +103,7 @@ class PrebidGamRewardedAd {
     return _channel.invokeMethod('show', {'adId': _adId});
   }
 
+  /// Destroys the ad and releases its native resources.
   Future<void> destroy() async {
     _loaded = false;
     _GamRewardedRouter.instance.unregister(_adId);

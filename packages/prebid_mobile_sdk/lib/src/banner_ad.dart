@@ -20,6 +20,9 @@ import 'video_parameters.dart';
 /// await controller.loadAd();
 /// ```
 class PrebidBannerAdController {
+  /// Creates a controller; pass it to one banner widget's `controller`.
+  PrebidBannerAdController();
+
   MethodChannel? _channel;
   bool _pendingLoad = false;
 

@@ -218,4 +218,4 @@ but isn't sent in the request.
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[MIT License](LICENSE)

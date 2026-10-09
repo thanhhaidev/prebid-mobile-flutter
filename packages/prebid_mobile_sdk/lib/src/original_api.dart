@@ -23,6 +23,7 @@ class PrebidBidResponse {
   /// Whether the auction returned a winning bid.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 
+  /// Creates a [PrebidBidResponse].
   const PrebidBidResponse({required this.resultCode, this.targetingKeywords});
 }
 
@@ -182,7 +183,11 @@ class PrebidNativeAdUnit with _AutoRefresh {
 
   /// Native context, context subtype and placement type.
   final NativeContextType? context;
+
+  /// Native context subtype (`contextsubtype`).
   final NativeContextSubType? contextSubType;
+
+  /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
   @override
@@ -227,6 +232,7 @@ class PrebidNativeBidResponse extends PrebidBidResponse {
   /// Native cache ID returned by Prebid, when native demand wins.
   final String? nativeAdCacheId;
 
+  /// Creates a [PrebidNativeBidResponse].
   const PrebidNativeBidResponse({
     required super.resultCode,
     super.targetingKeywords,

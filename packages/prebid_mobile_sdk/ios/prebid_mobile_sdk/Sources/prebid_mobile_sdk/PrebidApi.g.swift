@@ -440,6 +440,9 @@ struct NativeAdRequestConfig: Hashable {
   var contextSubType: Int64? = nil
   var placementType: Int64? = nil
   var placementCount: Int64? = nil
+  var pbAdSlot: String? = nil
+  var gpid: String? = nil
+  var impOrtbConfig: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -451,6 +454,9 @@ struct NativeAdRequestConfig: Hashable {
     let contextSubType: Int64? = nilOrValue(pigeonVar_list[4])
     let placementType: Int64? = nilOrValue(pigeonVar_list[5])
     let placementCount: Int64? = nilOrValue(pigeonVar_list[6])
+    let pbAdSlot: String? = nilOrValue(pigeonVar_list[7])
+    let gpid: String? = nilOrValue(pigeonVar_list[8])
+    let impOrtbConfig: String? = nilOrValue(pigeonVar_list[9])
 
     return NativeAdRequestConfig(
       configId: configId,
@@ -459,7 +465,10 @@ struct NativeAdRequestConfig: Hashable {
       context: context,
       contextSubType: contextSubType,
       placementType: placementType,
-      placementCount: placementCount
+      placementCount: placementCount,
+      pbAdSlot: pbAdSlot,
+      gpid: gpid,
+      impOrtbConfig: impOrtbConfig
     )
   }
   func toList() -> [Any?] {
@@ -471,13 +480,16 @@ struct NativeAdRequestConfig: Hashable {
       contextSubType,
       placementType,
       placementCount,
+      pbAdSlot,
+      gpid,
+      impOrtbConfig,
     ]
   }
   static func == (lhs: NativeAdRequestConfig, rhs: NativeAdRequestConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.assets, rhs.assets) && deepEqualsPrebidApi(lhs.eventTrackers, rhs.eventTrackers) && deepEqualsPrebidApi(lhs.context, rhs.context) && deepEqualsPrebidApi(lhs.contextSubType, rhs.contextSubType) && deepEqualsPrebidApi(lhs.placementType, rhs.placementType) && deepEqualsPrebidApi(lhs.placementCount, rhs.placementCount)
+    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.assets, rhs.assets) && deepEqualsPrebidApi(lhs.eventTrackers, rhs.eventTrackers) && deepEqualsPrebidApi(lhs.context, rhs.context) && deepEqualsPrebidApi(lhs.contextSubType, rhs.contextSubType) && deepEqualsPrebidApi(lhs.placementType, rhs.placementType) && deepEqualsPrebidApi(lhs.placementCount, rhs.placementCount) && deepEqualsPrebidApi(lhs.pbAdSlot, rhs.pbAdSlot) && deepEqualsPrebidApi(lhs.gpid, rhs.gpid) && deepEqualsPrebidApi(lhs.impOrtbConfig, rhs.impOrtbConfig)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -489,6 +501,9 @@ struct NativeAdRequestConfig: Hashable {
     deepHashPrebidApi(value: contextSubType, hasher: &hasher)
     deepHashPrebidApi(value: placementType, hasher: &hasher)
     deepHashPrebidApi(value: placementCount, hasher: &hasher)
+    deepHashPrebidApi(value: pbAdSlot, hasher: &hasher)
+    deepHashPrebidApi(value: gpid, hasher: &hasher)
+    deepHashPrebidApi(value: impOrtbConfig, hasher: &hasher)
   }
 }
 
@@ -559,6 +574,12 @@ struct NativeAdData: Hashable {
 ///
 /// Generated class from Pigeon that represents data sent in messages.
 struct ExternalUserIdData: Hashable {
+  /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
+  var inserter: String? = nil
+  /// OpenRTB 2.6 EID `matcher` (who matched the ID).
+  var matcher: String? = nil
+  /// OpenRTB 2.6 EID `mm` (match method).
+  var mm: Int64? = nil
   /// ID source (e.g., "uidapi.com", "sharedid.org").
   var source: String
   /// The user ID value.
@@ -571,12 +592,18 @@ struct ExternalUserIdData: Hashable {
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> ExternalUserIdData? {
-    let source = pigeonVar_list[0] as! String
-    let identifier = pigeonVar_list[1] as! String
-    let atype: Int64? = nilOrValue(pigeonVar_list[2])
-    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[3])
+    let inserter: String? = nilOrValue(pigeonVar_list[0])
+    let matcher: String? = nilOrValue(pigeonVar_list[1])
+    let mm: Int64? = nilOrValue(pigeonVar_list[2])
+    let source = pigeonVar_list[3] as! String
+    let identifier = pigeonVar_list[4] as! String
+    let atype: Int64? = nilOrValue(pigeonVar_list[5])
+    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[6])
 
     return ExternalUserIdData(
+      inserter: inserter,
+      matcher: matcher,
+      mm: mm,
       source: source,
       identifier: identifier,
       atype: atype,
@@ -585,6 +612,9 @@ struct ExternalUserIdData: Hashable {
   }
   func toList() -> [Any?] {
     return [
+      inserter,
+      matcher,
+      mm,
       source,
       identifier,
       atype,
@@ -595,11 +625,14 @@ struct ExternalUserIdData: Hashable {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.source, rhs.source) && deepEqualsPrebidApi(lhs.identifier, rhs.identifier) && deepEqualsPrebidApi(lhs.atype, rhs.atype) && deepEqualsPrebidApi(lhs.ext, rhs.ext)
+    return deepEqualsPrebidApi(lhs.inserter, rhs.inserter) && deepEqualsPrebidApi(lhs.matcher, rhs.matcher) && deepEqualsPrebidApi(lhs.mm, rhs.mm) && deepEqualsPrebidApi(lhs.source, rhs.source) && deepEqualsPrebidApi(lhs.identifier, rhs.identifier) && deepEqualsPrebidApi(lhs.atype, rhs.atype) && deepEqualsPrebidApi(lhs.ext, rhs.ext)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("ExternalUserIdData")
+    deepHashPrebidApi(value: inserter, hasher: &hasher)
+    deepHashPrebidApi(value: matcher, hasher: &hasher)
+    deepHashPrebidApi(value: mm, hasher: &hasher)
     deepHashPrebidApi(value: source, hasher: &hasher)
     deepHashPrebidApi(value: identifier, hasher: &hasher)
     deepHashPrebidApi(value: atype, hasher: &hasher)
@@ -682,6 +715,7 @@ struct VideoParametersConfig: Hashable {
 /// Generated class from Pigeon that represents data sent in messages.
 struct MultiformatAdRequestConfig: Hashable {
   var configId: String
+  var gpid: String? = nil
   /// Banner sizes as [width, height, width, height, ...]
   var bannerSizes: [Int64?]? = nil
   var videoConfig: VideoParametersConfig? = nil
@@ -693,14 +727,16 @@ struct MultiformatAdRequestConfig: Hashable {
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> MultiformatAdRequestConfig? {
     let configId = pigeonVar_list[0] as! String
-    let bannerSizes: [Int64?]? = nilOrValue(pigeonVar_list[1])
-    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[2])
-    let nativeConfig: NativeAdRequestConfig? = nilOrValue(pigeonVar_list[3])
-    let isInterstitial = pigeonVar_list[4] as! Bool
-    let isRewarded = pigeonVar_list[5] as! Bool
+    let gpid: String? = nilOrValue(pigeonVar_list[1])
+    let bannerSizes: [Int64?]? = nilOrValue(pigeonVar_list[2])
+    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[3])
+    let nativeConfig: NativeAdRequestConfig? = nilOrValue(pigeonVar_list[4])
+    let isInterstitial = pigeonVar_list[5] as! Bool
+    let isRewarded = pigeonVar_list[6] as! Bool
 
     return MultiformatAdRequestConfig(
       configId: configId,
+      gpid: gpid,
       bannerSizes: bannerSizes,
       videoConfig: videoConfig,
       nativeConfig: nativeConfig,
@@ -711,6 +747,7 @@ struct MultiformatAdRequestConfig: Hashable {
   func toList() -> [Any?] {
     return [
       configId,
+      gpid,
       bannerSizes,
       videoConfig,
       nativeConfig,
@@ -722,12 +759,13 @@ struct MultiformatAdRequestConfig: Hashable {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.bannerSizes, rhs.bannerSizes) && deepEqualsPrebidApi(lhs.videoConfig, rhs.videoConfig) && deepEqualsPrebidApi(lhs.nativeConfig, rhs.nativeConfig) && deepEqualsPrebidApi(lhs.isInterstitial, rhs.isInterstitial) && deepEqualsPrebidApi(lhs.isRewarded, rhs.isRewarded)
+    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.gpid, rhs.gpid) && deepEqualsPrebidApi(lhs.bannerSizes, rhs.bannerSizes) && deepEqualsPrebidApi(lhs.videoConfig, rhs.videoConfig) && deepEqualsPrebidApi(lhs.nativeConfig, rhs.nativeConfig) && deepEqualsPrebidApi(lhs.isInterstitial, rhs.isInterstitial) && deepEqualsPrebidApi(lhs.isRewarded, rhs.isRewarded)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("MultiformatAdRequestConfig")
     deepHashPrebidApi(value: configId, hasher: &hasher)
+    deepHashPrebidApi(value: gpid, hasher: &hasher)
     deepHashPrebidApi(value: bannerSizes, hasher: &hasher)
     deepHashPrebidApi(value: videoConfig, hasher: &hasher)
     deepHashPrebidApi(value: nativeConfig, hasher: &hasher)
@@ -741,6 +779,11 @@ struct MultiformatAdRequestConfig: Hashable {
 /// Generated class from Pigeon that represents data sent in messages.
 struct MultiformatBidResult: Hashable {
   var resultCode: String
+  /// Winning bid expiration in seconds (`bid.exp`), if provided.
+  var exp: Double? = nil
+  /// True when the top bid was dropped for a failed Prebid Cache entry and the
+  /// next cached bid was promoted (`filterOutUncachedBids`).
+  var topBidFiltered: Bool? = nil
   /// "banner", "video", or "native"
   var winningFormat: String? = nil
   var targetingKeywords: [String?: String?]? = nil
@@ -750,12 +793,16 @@ struct MultiformatBidResult: Hashable {
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> MultiformatBidResult? {
     let resultCode = pigeonVar_list[0] as! String
-    let winningFormat: String? = nilOrValue(pigeonVar_list[1])
-    let targetingKeywords: [String?: String?]? = nilOrValue(pigeonVar_list[2])
-    let nativeAdCacheId: String? = nilOrValue(pigeonVar_list[3])
+    let exp: Double? = nilOrValue(pigeonVar_list[1])
+    let topBidFiltered: Bool? = nilOrValue(pigeonVar_list[2])
+    let winningFormat: String? = nilOrValue(pigeonVar_list[3])
+    let targetingKeywords: [String?: String?]? = nilOrValue(pigeonVar_list[4])
+    let nativeAdCacheId: String? = nilOrValue(pigeonVar_list[5])
 
     return MultiformatBidResult(
       resultCode: resultCode,
+      exp: exp,
+      topBidFiltered: topBidFiltered,
       winningFormat: winningFormat,
       targetingKeywords: targetingKeywords,
       nativeAdCacheId: nativeAdCacheId
@@ -764,6 +811,8 @@ struct MultiformatBidResult: Hashable {
   func toList() -> [Any?] {
     return [
       resultCode,
+      exp,
+      topBidFiltered,
       winningFormat,
       targetingKeywords,
       nativeAdCacheId,
@@ -773,12 +822,14 @@ struct MultiformatBidResult: Hashable {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.resultCode, rhs.resultCode) && deepEqualsPrebidApi(lhs.winningFormat, rhs.winningFormat) && deepEqualsPrebidApi(lhs.targetingKeywords, rhs.targetingKeywords) && deepEqualsPrebidApi(lhs.nativeAdCacheId, rhs.nativeAdCacheId)
+    return deepEqualsPrebidApi(lhs.resultCode, rhs.resultCode) && deepEqualsPrebidApi(lhs.exp, rhs.exp) && deepEqualsPrebidApi(lhs.topBidFiltered, rhs.topBidFiltered) && deepEqualsPrebidApi(lhs.winningFormat, rhs.winningFormat) && deepEqualsPrebidApi(lhs.targetingKeywords, rhs.targetingKeywords) && deepEqualsPrebidApi(lhs.nativeAdCacheId, rhs.nativeAdCacheId)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("MultiformatBidResult")
     deepHashPrebidApi(value: resultCode, hasher: &hasher)
+    deepHashPrebidApi(value: exp, hasher: &hasher)
+    deepHashPrebidApi(value: topBidFiltered, hasher: &hasher)
     deepHashPrebidApi(value: winningFormat, hasher: &hasher)
     deepHashPrebidApi(value: targetingKeywords, hasher: &hasher)
     deepHashPrebidApi(value: nativeAdCacheId, hasher: &hasher)
@@ -938,6 +989,10 @@ protocol PrebidMobileHostApi {
   func setCreativeFactoryTimeoutPreRenderContent(timeout: Int64) throws
   func setCustomStatusEndpoint(endpoint: String) throws
   func setShouldAssignNativeAssetId(assign: Bool) throws
+  func setFilterOutUncachedBids(filter: Bool) throws
+  func setEidsPlacement(placement: String) throws
+  func setIncludeWinners(include: Bool) throws
+  func setIncludeBidderKeys(include: Bool) throws
   func setExternalUserIds(userIds: [ExternalUserIdData]) throws
   func getExternalUserIds() throws -> [ExternalUserIdData]
   func clearExternalUserIds() throws
@@ -1159,6 +1214,66 @@ class PrebidMobileHostApiSetup {
       }
     } else {
       setShouldAssignNativeAssetIdChannel.setMessageHandler(nil)
+    }
+    let setFilterOutUncachedBidsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setFilterOutUncachedBids\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setFilterOutUncachedBidsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let filterArg = args[0] as! Bool
+        do {
+          try api.setFilterOutUncachedBids(filter: filterArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setFilterOutUncachedBidsChannel.setMessageHandler(nil)
+    }
+    let setEidsPlacementChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setEidsPlacement\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setEidsPlacementChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let placementArg = args[0] as! String
+        do {
+          try api.setEidsPlacement(placement: placementArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setEidsPlacementChannel.setMessageHandler(nil)
+    }
+    let setIncludeWinnersChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setIncludeWinners\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setIncludeWinnersChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let includeArg = args[0] as! Bool
+        do {
+          try api.setIncludeWinners(include: includeArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setIncludeWinnersChannel.setMessageHandler(nil)
+    }
+    let setIncludeBidderKeysChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setIncludeBidderKeys\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setIncludeBidderKeysChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let includeArg = args[0] as! Bool
+        do {
+          try api.setIncludeBidderKeys(include: includeArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setIncludeBidderKeysChannel.setMessageHandler(nil)
     }
     let setExternalUserIdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setExternalUserIds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
@@ -1804,7 +1919,7 @@ class TargetingHostApiSetup {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol InterstitialAdHostApi {
-  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?) throws
+  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?) throws
   func show(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
@@ -1823,8 +1938,9 @@ class InterstitialAdHostApiSetup {
         let configIdArg = args[1] as! String
         let adFormatsArg: [String]? = nilOrValue(args[2])
         let videoConfigArg: VideoParametersConfig? = nilOrValue(args[3])
+        let impOrtbConfigArg: String? = nilOrValue(args[4])
         do {
-          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg)
+          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg, impOrtbConfig: impOrtbConfigArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))
@@ -1869,7 +1985,7 @@ class InterstitialAdHostApiSetup {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol RewardedAdHostApi {
-  func loadAd(adId: Int64, configId: String) throws
+  func loadAd(adId: Int64, configId: String, impOrtbConfig: String?) throws
   func show(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
@@ -1886,8 +2002,9 @@ class RewardedAdHostApiSetup {
         let args = message as! [Any?]
         let adIdArg = args[0] as! Int64
         let configIdArg = args[1] as! String
+        let impOrtbConfigArg: String? = nilOrValue(args[2])
         do {
-          try api.loadAd(adId: adIdArg, configId: configIdArg)
+          try api.loadAd(adId: adIdArg, configId: configIdArg, impOrtbConfig: impOrtbConfigArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))
@@ -1933,8 +2050,6 @@ class RewardedAdHostApiSetup {
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol NativeAdHostApi {
   func loadAd(adId: Int64, config: NativeAdRequestConfig) throws
-  func trackImpression(adId: Int64) throws
-  func trackClick(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
 
@@ -1959,36 +2074,6 @@ class NativeAdHostApiSetup {
       }
     } else {
       loadAdChannel.setMessageHandler(nil)
-    }
-    let trackImpressionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackImpression\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      trackImpressionChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let adIdArg = args[0] as! Int64
-        do {
-          try api.trackImpression(adId: adIdArg)
-          reply(wrapResult(nil))
-        } catch {
-          reply(wrapError(error))
-        }
-      }
-    } else {
-      trackImpressionChannel.setMessageHandler(nil)
-    }
-    let trackClickChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackClick\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      trackClickChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let adIdArg = args[0] as! Int64
-        do {
-          try api.trackClick(adId: adIdArg)
-          reply(wrapResult(nil))
-        } catch {
-          reply(wrapError(error))
-        }
-      }
-    } else {
-      trackClickChannel.setMessageHandler(nil)
     }
     let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

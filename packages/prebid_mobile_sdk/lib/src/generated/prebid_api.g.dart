@@ -408,6 +408,9 @@ class NativeAdRequestConfig {
     this.contextSubType,
     this.placementType,
     this.placementCount,
+    this.pbAdSlot,
+    this.gpid,
+    this.impOrtbConfig,
   });
 
   String configId;
@@ -424,6 +427,12 @@ class NativeAdRequestConfig {
 
   int? placementCount;
 
+  String? pbAdSlot;
+
+  String? gpid;
+
+  String? impOrtbConfig;
+
   List<Object?> _toList() {
     return <Object?>[
       configId,
@@ -433,6 +442,9 @@ class NativeAdRequestConfig {
       contextSubType,
       placementType,
       placementCount,
+      pbAdSlot,
+      gpid,
+      impOrtbConfig,
     ];
   }
 
@@ -451,6 +463,9 @@ class NativeAdRequestConfig {
       contextSubType: result[4] as int?,
       placementType: result[5] as int?,
       placementCount: result[6] as int?,
+      pbAdSlot: result[7] as String?,
+      gpid: result[8] as String?,
+      impOrtbConfig: result[9] as String?,
     );
   }
 
@@ -469,7 +484,10 @@ class NativeAdRequestConfig {
         _deepEquals(context, other.context) &&
         _deepEquals(contextSubType, other.contextSubType) &&
         _deepEquals(placementType, other.placementType) &&
-        _deepEquals(placementCount, other.placementCount);
+        _deepEquals(placementCount, other.placementCount) &&
+        _deepEquals(pbAdSlot, other.pbAdSlot) &&
+        _deepEquals(gpid, other.gpid) &&
+        _deepEquals(impOrtbConfig, other.impOrtbConfig);
   }
 
   @override
@@ -558,11 +576,23 @@ class NativeAdData {
 /// External user ID for third-party identity modules (UID2, SharedID, etc.).
 class ExternalUserIdData {
   ExternalUserIdData({
+    this.inserter,
+    this.matcher,
+    this.mm,
     required this.source,
     required this.identifier,
     this.atype,
     this.ext,
   });
+
+  /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
+  String? inserter;
+
+  /// OpenRTB 2.6 EID `matcher` (who matched the ID).
+  String? matcher;
+
+  /// OpenRTB 2.6 EID `mm` (match method).
+  int? mm;
 
   /// ID source (e.g., "uidapi.com", "sharedid.org").
   String source;
@@ -577,7 +607,7 @@ class ExternalUserIdData {
   Map<String?, Object?>? ext;
 
   List<Object?> _toList() {
-    return <Object?>[source, identifier, atype, ext];
+    return <Object?>[inserter, matcher, mm, source, identifier, atype, ext];
   }
 
   Object encode() {
@@ -587,10 +617,13 @@ class ExternalUserIdData {
   static ExternalUserIdData decode(Object result) {
     result as List<Object?>;
     return ExternalUserIdData(
-      source: result[0]! as String,
-      identifier: result[1]! as String,
-      atype: result[2] as int?,
-      ext: (result[3] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      inserter: result[0] as String?,
+      matcher: result[1] as String?,
+      mm: result[2] as int?,
+      source: result[3]! as String,
+      identifier: result[4]! as String,
+      atype: result[5] as int?,
+      ext: (result[6] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
 
@@ -603,7 +636,10 @@ class ExternalUserIdData {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(source, other.source) &&
+    return _deepEquals(inserter, other.inserter) &&
+        _deepEquals(matcher, other.matcher) &&
+        _deepEquals(mm, other.mm) &&
+        _deepEquals(source, other.source) &&
         _deepEquals(identifier, other.identifier) &&
         _deepEquals(atype, other.atype) &&
         _deepEquals(ext, other.ext);
@@ -703,6 +739,7 @@ class VideoParametersConfig {
 class MultiformatAdRequestConfig {
   MultiformatAdRequestConfig({
     required this.configId,
+    this.gpid,
     this.bannerSizes,
     this.videoConfig,
     this.nativeConfig,
@@ -711,6 +748,8 @@ class MultiformatAdRequestConfig {
   });
 
   String configId;
+
+  String? gpid;
 
   /// Banner sizes as [width, height, width, height, ...]
   List<int?>? bannerSizes;
@@ -726,6 +765,7 @@ class MultiformatAdRequestConfig {
   List<Object?> _toList() {
     return <Object?>[
       configId,
+      gpid,
       bannerSizes,
       videoConfig,
       nativeConfig,
@@ -742,11 +782,12 @@ class MultiformatAdRequestConfig {
     result as List<Object?>;
     return MultiformatAdRequestConfig(
       configId: result[0]! as String,
-      bannerSizes: (result[1] as List<Object?>?)?.cast<int?>(),
-      videoConfig: result[2] as VideoParametersConfig?,
-      nativeConfig: result[3] as NativeAdRequestConfig?,
-      isInterstitial: result[4]! as bool,
-      isRewarded: result[5]! as bool,
+      gpid: result[1] as String?,
+      bannerSizes: (result[2] as List<Object?>?)?.cast<int?>(),
+      videoConfig: result[3] as VideoParametersConfig?,
+      nativeConfig: result[4] as NativeAdRequestConfig?,
+      isInterstitial: result[5]! as bool,
+      isRewarded: result[6]! as bool,
     );
   }
 
@@ -761,6 +802,7 @@ class MultiformatAdRequestConfig {
       return true;
     }
     return _deepEquals(configId, other.configId) &&
+        _deepEquals(gpid, other.gpid) &&
         _deepEquals(bannerSizes, other.bannerSizes) &&
         _deepEquals(videoConfig, other.videoConfig) &&
         _deepEquals(nativeConfig, other.nativeConfig) &&
@@ -777,12 +819,21 @@ class MultiformatAdRequestConfig {
 class MultiformatBidResult {
   MultiformatBidResult({
     required this.resultCode,
+    this.exp,
+    this.topBidFiltered,
     this.winningFormat,
     this.targetingKeywords,
     this.nativeAdCacheId,
   });
 
   String resultCode;
+
+  /// Winning bid expiration in seconds (`bid.exp`), if provided.
+  double? exp;
+
+  /// True when the top bid was dropped for a failed Prebid Cache entry and the
+  /// next cached bid was promoted (`filterOutUncachedBids`).
+  bool? topBidFiltered;
 
   /// "banner", "video", or "native"
   String? winningFormat;
@@ -794,6 +845,8 @@ class MultiformatBidResult {
   List<Object?> _toList() {
     return <Object?>[
       resultCode,
+      exp,
+      topBidFiltered,
       winningFormat,
       targetingKeywords,
       nativeAdCacheId,
@@ -808,10 +861,12 @@ class MultiformatBidResult {
     result as List<Object?>;
     return MultiformatBidResult(
       resultCode: result[0]! as String,
-      winningFormat: result[1] as String?,
-      targetingKeywords: (result[2] as Map<Object?, Object?>?)
+      exp: result[1] as double?,
+      topBidFiltered: result[2] as bool?,
+      winningFormat: result[3] as String?,
+      targetingKeywords: (result[4] as Map<Object?, Object?>?)
           ?.cast<String?, String?>(),
-      nativeAdCacheId: result[3] as String?,
+      nativeAdCacheId: result[5] as String?,
     );
   }
 
@@ -825,6 +880,8 @@ class MultiformatBidResult {
       return true;
     }
     return _deepEquals(resultCode, other.resultCode) &&
+        _deepEquals(exp, other.exp) &&
+        _deepEquals(topBidFiltered, other.topBidFiltered) &&
         _deepEquals(winningFormat, other.winningFormat) &&
         _deepEquals(targetingKeywords, other.targetingKeywords) &&
         _deepEquals(nativeAdCacheId, other.nativeAdCacheId);
@@ -1255,6 +1312,86 @@ class PrebidMobileHostApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[assign],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> setFilterOutUncachedBids(bool filter) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setFilterOutUncachedBids$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[filter],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> setEidsPlacement(String placement) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setEidsPlacement$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[placement],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> setIncludeWinners(bool include) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setIncludeWinners$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[include],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> setIncludeBidderKeys(bool include) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setIncludeBidderKeys$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[include],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -2106,6 +2243,7 @@ class InterstitialAdHostApi {
     String configId,
     List<String>? adFormats,
     VideoParametersConfig? videoConfig,
+    String? impOrtbConfig,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -2115,7 +2253,7 @@ class InterstitialAdHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[adId, configId, adFormats, videoConfig],
+      <Object?>[adId, configId, adFormats, videoConfig, impOrtbConfig],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -2185,7 +2323,7 @@ class RewardedAdHostApi {
 
   final String pigeonVar_messageChannelSuffix;
 
-  Future<void> loadAd(int adId, String configId) async {
+  Future<void> loadAd(int adId, String configId, String? impOrtbConfig) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
@@ -2194,7 +2332,7 @@ class RewardedAdHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[adId, configId],
+      <Object?>[adId, configId, impOrtbConfig],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -2274,46 +2412,6 @@ class NativeAdHostApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[adId, config],
-    );
-    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
-
-    _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
-  }
-
-  Future<void> trackImpression(int adId) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackImpression$pigeonVar_messageChannelSuffix';
-    final pigeonVar_channel = BasicMessageChannel<Object?>(
-      pigeonVar_channelName,
-      pigeonChannelCodec,
-      binaryMessenger: pigeonVar_binaryMessenger,
-    );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[adId],
-    );
-    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
-
-    _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
-  }
-
-  Future<void> trackClick(int adId) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_sdk.NativeAdHostApi.trackClick$pigeonVar_messageChannelSuffix';
-    final pigeonVar_channel = BasicMessageChannel<Object?>(
-      pigeonVar_channelName,
-      pigeonChannelCodec,
-      binaryMessenger: pigeonVar_binaryMessenger,
-    );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[adId],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

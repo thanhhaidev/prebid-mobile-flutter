@@ -152,4 +152,55 @@ void main() {
       verify(mockApi.getSdkVersion()).called(1);
     });
   });
+
+  group('PrebidMobile 3.4 settings', () {
+    test('filter / eids placement / targeting flags call api', () async {
+      await PrebidMobile.setFilterOutUncachedBids(true);
+      await PrebidMobile.setEidsPlacement(PrebidEidsPlacement.openRtb26);
+      await PrebidMobile.setIncludeWinners(true);
+      await PrebidMobile.setIncludeBidderKeys(false);
+      await PrebidMobile.setShouldAssignNativeAssetId(true);
+
+      verify(mockApi.setFilterOutUncachedBids(true)).called(1);
+      verify(mockApi.setEidsPlacement('openRtb26')).called(1);
+      verify(mockApi.setIncludeWinners(true)).called(1);
+      verify(mockApi.setIncludeBidderKeys(false)).called(1);
+      verify(mockApi.setShouldAssignNativeAssetId(true)).called(1);
+    });
+
+    test('external user ids carry OpenRTB 2.6 fields both ways', () async {
+      await PrebidMobile.setExternalUserIds([
+        const ExternalUserId(
+          source: 'uidapi.com',
+          identifier: 'uid2',
+          atype: 3,
+          inserter: 'inserter.com',
+          matcher: 'matcher.com',
+          mm: 3,
+        ),
+      ]);
+      final sent =
+          verify(mockApi.setExternalUserIds(captureAny)).captured.single
+              as List<ExternalUserIdData>;
+      expect(sent.single.inserter, 'inserter.com');
+      expect(sent.single.matcher, 'matcher.com');
+      expect(sent.single.mm, 3);
+
+      when(mockApi.getExternalUserIds()).thenAnswer(
+        (_) async => [
+          ExternalUserIdData(
+            source: 'uidapi.com',
+            identifier: 'uid2',
+            inserter: 'inserter.com',
+            matcher: 'matcher.com',
+            mm: 3,
+          ),
+        ],
+      );
+      final ids = await PrebidMobile.getExternalUserIds();
+      expect(ids.single.inserter, 'inserter.com');
+      expect(ids.single.matcher, 'matcher.com');
+      expect(ids.single.mm, 3);
+    });
+  });
 }

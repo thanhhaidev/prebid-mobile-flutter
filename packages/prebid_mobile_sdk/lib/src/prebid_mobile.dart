@@ -175,6 +175,31 @@ class PrebidMobile {
     api.setShouldAssignNativeAssetId(assign);
   }
 
+  /// Drop bids whose Prebid Cache entry failed and promote the next cached
+  /// bid (Prebid 3.4). When no cached bid remains the result code is
+  /// `prebidDemandNoCachedBids`. Applies to the Original API. Default `false`.
+  static Future<void> setFilterOutUncachedBids(bool filter) async {
+    api.setFilterOutUncachedBids(filter);
+  }
+
+  /// Where external user IDs are sent: `user.eids` (OpenRTB 2.6),
+  /// `user.ext.eids` (2.5) or both (default). Prebid 3.4.
+  static Future<void> setEidsPlacement(PrebidEidsPlacement placement) async {
+    api.setEidsPlacement(placement.name);
+  }
+
+  /// Ask Prebid Server to include `hb_*` winner keywords
+  /// (`ext.prebid.targeting.includewinners`).
+  static Future<void> setIncludeWinners(bool include) async {
+    api.setIncludeWinners(include);
+  }
+
+  /// Ask Prebid Server to include per-bidder `hb_*_<bidder>` keywords
+  /// (`ext.prebid.targeting.includebidderkeys`).
+  static Future<void> setIncludeBidderKeys(bool include) async {
+    api.setIncludeBidderKeys(include);
+  }
+
   // ---------------------------------------------------------------------------
   // External User IDs
   // ---------------------------------------------------------------------------
@@ -198,6 +223,9 @@ class PrebidMobile {
             identifier: u.identifier,
             atype: u.atype,
             ext: u.ext?.map((k, v) => MapEntry(k, v)),
+            inserter: u.inserter,
+            matcher: u.matcher,
+            mm: u.mm,
           ),
         )
         .toList();
@@ -214,6 +242,9 @@ class PrebidMobile {
             identifier: d.identifier,
             atype: d.atype,
             ext: d.ext?.map((k, v) => MapEntry(k ?? '', v)),
+            inserter: d.inserter,
+            matcher: d.matcher,
+            mm: d.mm,
           ),
         )
         .toList();

@@ -192,6 +192,42 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setFilterOutUncachedBids(bool? filter) =>
+      (super.noSuchMethod(
+            Invocation.method(#setFilterOutUncachedBids, [filter]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setEidsPlacement(String? placement) =>
+      (super.noSuchMethod(
+            Invocation.method(#setEidsPlacement, [placement]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setIncludeWinners(bool? include) =>
+      (super.noSuchMethod(
+            Invocation.method(#setIncludeWinners, [include]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setIncludeBidderKeys(bool? include) =>
+      (super.noSuchMethod(
+            Invocation.method(#setIncludeBidderKeys, [include]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> setExternalUserIds(List<_i2.ExternalUserIdData>? userIds) =>
       (super.noSuchMethod(
             Invocation.method(#setExternalUserIds, [userIds]),
@@ -604,6 +640,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
     String? configId,
     List<String>? adFormats,
     _i2.VideoParametersConfig? videoConfig,
+    String? impOrtbConfig,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -611,6 +648,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
               configId,
               adFormats,
               videoConfig,
+              impOrtbConfig,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
@@ -656,9 +694,9 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
           as String);
 
   @override
-  _i4.Future<void> loadAd(int? adId, String? configId) =>
+  _i4.Future<void> loadAd(int? adId, String? configId, String? impOrtbConfig) =>
       (super.noSuchMethod(
-            Invocation.method(#loadAd, [adId, configId]),
+            Invocation.method(#loadAd, [adId, configId, impOrtbConfig]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -706,24 +744,6 @@ class MockNativeAdHostApi extends _i1.Mock implements _i2.NativeAdHostApi {
   _i4.Future<void> loadAd(int? adId, _i2.NativeAdRequestConfig? config) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [adId, config]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> trackImpression(int? adId) =>
-      (super.noSuchMethod(
-            Invocation.method(#trackImpression, [adId]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
-
-  @override
-  _i4.Future<void> trackClick(int? adId) =>
-      (super.noSuchMethod(
-            Invocation.method(#trackClick, [adId]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

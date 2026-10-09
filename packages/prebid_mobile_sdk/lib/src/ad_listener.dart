@@ -80,6 +80,12 @@ class PrebidBannerAdListener {
   /// by the user (e.g., an in-app browser).
   final void Function()? onAdClosed;
 
+  /// Called when the loaded bid expired (per `bid.exp`) before it was shown.
+  ///
+  /// Fired by the Prebid rendering banners (`PrebidBannerAd`,
+  /// `PrebidGamBannerAd`); mediated banners don't report it.
+  final void Function()? onAdExpired;
+
   /// Creates a [PrebidBannerAdListener].
   const PrebidBannerAdListener({
     this.onAdLoaded,
@@ -87,6 +93,7 @@ class PrebidBannerAdListener {
     this.onAdFailed,
     this.onAdClicked,
     this.onAdClosed,
+    this.onAdExpired,
   });
 }
 
@@ -124,6 +131,9 @@ class PrebidInterstitialAdListener {
   /// Called when the user taps on the interstitial ad content.
   final void Function()? onAdClicked;
 
+  /// Called when the loaded bid expired (per `bid.exp`) before [show].
+  final void Function()? onAdExpired;
+
   /// Creates a [PrebidInterstitialAdListener].
   const PrebidInterstitialAdListener({
     this.onAdLoaded,
@@ -131,6 +141,7 @@ class PrebidInterstitialAdListener {
     this.onAdDisplayed,
     this.onAdClosed,
     this.onAdClicked,
+    this.onAdExpired,
   });
 }
 
@@ -171,6 +182,9 @@ class PrebidRewardedAdListener {
   /// [PrebidReward.count] (e.g., `100`), and optional [PrebidReward.ext] data.
   final void Function(PrebidReward reward)? onUserEarnedReward;
 
+  /// Called when the loaded bid expired (per `bid.exp`) before it was shown.
+  final void Function()? onAdExpired;
+
   /// Creates a [PrebidRewardedAdListener].
   const PrebidRewardedAdListener({
     this.onAdLoaded,
@@ -179,5 +193,6 @@ class PrebidRewardedAdListener {
     this.onAdClosed,
     this.onAdClicked,
     this.onUserEarnedReward,
+    this.onAdExpired,
   });
 }

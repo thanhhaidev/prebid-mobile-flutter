@@ -64,6 +64,15 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
             adUnitID: gamAdUnitId,
             validGADAdSizes: [nsValue(for: adSizeFor(cgSize: adSize))]
         )
+        if let targeting = gamCustomTargeting(args["customTargeting"]) {
+            // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+            // hb_* keys still take precedence.
+            eventHandler.adManagerRequestConfiguration = { request in
+                var merged = request.customTargeting ?? [:]
+                targeting.forEach { merged[$0.key] = $0.value }
+                request.customTargeting = merged
+            }
+        }
         bannerView = PrebidMobile.BannerView(
             frame: CGRect(origin: .zero, size: adSize),
             configID: configId,
@@ -119,5 +128,9 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
     func bannerViewDidDismissModal(_ bannerView: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
+    }
+
+    func bannerViewDidExpire(_ bannerView: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onAdExpired", arguments: nil)
     }
 }

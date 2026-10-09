@@ -38,6 +38,15 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
             let requestedFormats = args?["adFormats"] as? [String] ?? ["banner"]
 
             let eventHandler = GAMInterstitialEventHandler(adUnitID: gamAdUnitId)
+            if let targeting = gamCustomTargeting(args?["customTargeting"]) {
+                // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+                // hb_* keys still take precedence.
+                eventHandler.adManagerRequestConfiguration = { request in
+                    var merged = request.customTargeting ?? [:]
+                    targeting.forEach { merged[$0.key] = $0.value }
+                    request.customTargeting = merged
+                }
+            }
             let adUnit = InterstitialRenderingAdUnit(configID: configId, eventHandler: eventHandler)
             var formats: Set<AdFormat> = []
             if requestedFormats.contains("banner") { formats.insert(.banner) }
@@ -98,5 +107,9 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
 
     func interstitialDidClickAd(_ interstitial: InterstitialRenderingAdUnit) {
         send(interstitial, "onAdClicked")
+    }
+
+    func interstitialDidExpireAd(_ interstitial: InterstitialRenderingAdUnit) {
+        send(interstitial, "onAdExpired")
     }
 }

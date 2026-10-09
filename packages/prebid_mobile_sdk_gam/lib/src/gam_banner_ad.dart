@@ -34,6 +34,10 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Auto-refresh interval in seconds. `null` (default) disables auto-refresh.
   final int? refreshIntervalSeconds;
 
+  /// Custom key-values added to the Google Ad Manager request (Prebid 3.4).
+  /// Prebid's own `hb_*` keys take precedence on conflict.
+  final Map<String, String>? customTargeting;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
 
@@ -47,6 +51,7 @@ class PrebidGamBannerAd extends StatefulWidget {
     this.isVideo = false,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
+    this.customTargeting,
     this.listener,
   });
 
@@ -71,6 +76,8 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
       'autoLoad': widget.autoLoad,
       if (widget.refreshIntervalSeconds != null)
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
+      if (widget.customTargeting != null)
+        'customTargeting': widget.customTargeting,
     };
 
     return SizedBox(
@@ -123,6 +130,8 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
           widget.listener?.onAdClicked?.call();
         case 'onAdClosed':
           widget.listener?.onAdClosed?.call();
+        case 'onAdExpired':
+          widget.listener?.onAdExpired?.call();
       }
     });
   }

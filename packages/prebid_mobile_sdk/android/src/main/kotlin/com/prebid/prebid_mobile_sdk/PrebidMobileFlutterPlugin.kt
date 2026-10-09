@@ -155,6 +155,28 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         PrebidMobile.assignNativeAssetID(assign)
     }
 
+    override fun setFilterOutUncachedBids(filter: Boolean) {
+        PrebidMobile.setFilterOutUncachedBids(filter)
+    }
+
+    override fun setEidsPlacement(placement: String) {
+        PrebidMobile.setEidsPlacement(
+            when (placement) {
+                "openRtb26" -> org.prebid.mobile.EidsPlacement.OPEN_RTB_2_6
+                "openRtb25" -> org.prebid.mobile.EidsPlacement.OPEN_RTB_2_5
+                else -> org.prebid.mobile.EidsPlacement.COMPATIBLE
+            }
+        )
+    }
+
+    override fun setIncludeWinners(include: Boolean) {
+        PrebidMobile.setIncludeWinnersFlag(include)
+    }
+
+    override fun setIncludeBidderKeys(include: Boolean) {
+        PrebidMobile.setIncludeBidderKeysFlag(include)
+    }
+
     // External User IDs
     override fun setExternalUserIds(userIds: List<ExternalUserIdData>) {
         val ids = userIds.map { data ->
@@ -164,7 +186,11 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
                 ext.forEach { (k, v) -> if (k != null && v != null) extMap[k] = v }
                 uniqueId.setExt(extMap)
             }
-            ExternalUserId(data.source, listOf(uniqueId))
+            ExternalUserId(data.source, listOf(uniqueId)).apply {
+                setInserter(data.inserter)
+                setMatcher(data.matcher)
+                setMm(data.mm?.toInt())
+            }
         }
         TargetingParams.setExternalUserIds(ArrayList(ids))
     }
@@ -320,7 +346,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     // InterstitialAdHostApi
     // =========================================================================
 
-    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?) {
+    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?) {
         val act = activity ?: return
 
         // Build EnumSet for ad formats
@@ -341,6 +367,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         // setter (mimes/protocols/etc. come from the SDK defaults); only the max
         // duration is configurable.
         videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
+        impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
@@ -357,6 +384,9 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
             }
             override fun onAdClicked(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}
+            }
+            override fun onAdExpired(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdExpired")) {}
             }
         })
 
@@ -385,9 +415,10 @@ class RewardedAdHostApiImpl(
 
     private val rewardedAds = mutableMapOf<Long, org.prebid.mobile.api.rendering.RewardedAdUnit>()
 
-    override fun loadAd(adId: Long, configId: String) {
+    override fun loadAd(adId: Long, configId: String, impOrtbConfig: String?) {
         val act = plugin.getActivity() ?: return
         val adUnit = org.prebid.mobile.api.rendering.RewardedAdUnit(act, configId)
+        impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
 
         adUnit.setRewardedAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.RewardedAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
@@ -404,6 +435,9 @@ class RewardedAdHostApiImpl(
             }
             override fun onAdClicked(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}
+            }
+            override fun onAdExpired(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdExpired")) {}
             }
             override fun onUserEarnedReward(unit: org.prebid.mobile.api.rendering.RewardedAdUnit, reward: org.prebid.mobile.rendering.interstitial.rewarded.Reward?) {
                 flutterApi.onAdEvent(AdEvent(
@@ -448,6 +482,9 @@ class NativeAdHostApiImpl(
             nativeAdUnit.setPlacementType(org.prebid.mobile.NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { pt -> pt.id == it.toInt() })
         }
         config.placementCount?.let { nativeAdUnit.setPlacementCount(it.toInt()) }
+        config.pbAdSlot?.let { nativeAdUnit.setPbAdSlot(it) }
+        config.gpid?.let { nativeAdUnit.setGpid(it) }
+        config.impOrtbConfig?.let { nativeAdUnit.setImpOrtbConfig(it) }
 
         // Configure assets
         config.assets?.filterNotNull()?.forEach { assetConfig ->
@@ -531,12 +568,6 @@ class NativeAdHostApiImpl(
         }
     }
 
-    // Tracking is automatic once the ad is shown in a PrebidNativeAdView
-    // (NativeAdPlatformView calls registerView); nothing to do manually.
-    override fun trackImpression(adId: Long) {}
-
-    override fun trackClick(adId: Long) {}
-
     override fun destroy(adId: Long) {
         nativeAds.remove(adId)?.destroy()
         NativeAdStore.ads.remove(adId)
@@ -561,6 +592,7 @@ class MultiformatAdHostApiImpl(
 
         // Build PrebidRequest using setters
         val request = org.prebid.mobile.api.original.PrebidRequest()
+        config.gpid?.let { request.setGpid(it) }
 
         if (config.bannerSizes != null && config.bannerSizes.isNotEmpty()) {
             val params = org.prebid.mobile.BannerParameters()
@@ -652,7 +684,9 @@ class MultiformatAdHostApiImpl(
                 resultCode = resultStr,
                 winningFormat = format,
                 targetingKeywords = bidInfo.targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
-                nativeAdCacheId = bidInfo.nativeCacheId
+                nativeAdCacheId = bidInfo.nativeCacheId,
+                exp = bidInfo.exp?.toDouble(),
+                topBidFiltered = bidInfo.isTopBidFiltered
             )))
         }
     }

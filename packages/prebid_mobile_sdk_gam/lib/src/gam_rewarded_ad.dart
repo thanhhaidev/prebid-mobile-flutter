@@ -35,6 +35,10 @@ class PrebidGamRewardedAd {
   /// The Google Ad Manager rewarded ad unit ID.
   final String gamAdUnitId;
 
+  /// Custom key-values added to the Google Ad Manager request (Prebid 3.4).
+  /// Prebid's own `hb_*` keys take precedence on conflict.
+  final Map<String, String>? customTargeting;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
@@ -46,6 +50,7 @@ class PrebidGamRewardedAd {
   PrebidGamRewardedAd({
     required this.configId,
     required this.gamAdUnitId,
+    this.customTargeting,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -55,6 +60,7 @@ class PrebidGamRewardedAd {
       'adId': _adId,
       'configId': configId,
       'gamAdUnitId': gamAdUnitId,
+      'customTargeting': ?customTargeting,
     });
   }
 
@@ -85,6 +91,8 @@ class PrebidGamRewardedAd {
             count: (args?['rewardCount'] as num?)?.toInt() ?? 1,
           ),
         );
+      case 'onAdExpired':
+        listener?.onAdExpired?.call();
     }
   }
 }

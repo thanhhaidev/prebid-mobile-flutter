@@ -148,6 +148,26 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setShouldAssignNativeAssetId(assign: Bool) throws {
         Prebid.shared.shouldAssignNativeAssetID = assign
     }
+
+    func setFilterOutUncachedBids(filter: Bool) throws {
+        Prebid.shared.filterOutUncachedBids = filter
+    }
+
+    func setEidsPlacement(placement: String) throws {
+        switch placement {
+        case "openRtb26": Prebid.shared.eidsPlacement = .openRTB26
+        case "openRtb25": Prebid.shared.eidsPlacement = .openRTB25
+        default: Prebid.shared.eidsPlacement = .compatible
+        }
+    }
+
+    func setIncludeWinners(include: Bool) throws {
+        Prebid.shared.includeWinners = include
+    }
+
+    func setIncludeBidderKeys(include: Bool) throws {
+        Prebid.shared.includeBidderKeys = include
+    }
     
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
@@ -161,7 +181,11 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
                 aType: NSNumber(value: data.atype ?? 0),
                 ext: ext
             )
-            return ExternalUserId(source: data.source, uids: [uid])
+            let eid = ExternalUserId(source: data.source, uids: [uid])
+            eid.inserter = data.inserter
+            eid.matcher = data.matcher
+            eid.mm = data.mm.map { NSNumber(value: $0) }
+            return eid
         }
         Targeting.shared.setExternalUserIds(externalIds)
     }
@@ -285,8 +309,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // InterstitialAdHostApi
     // =========================================================================
     
-    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?) throws {
+    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?) throws {
         let adUnit = InterstitialRenderingAdUnit(configID: configId)
+        if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
         
         if let formats = adFormats {
             var adUnitFormats: Set<AdFormat> = []
@@ -356,6 +381,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         if let pt = config.placementType {
             nativeRequest.placementType = PlacementType(integerLiteral: Int(pt))
         }
+        if let pbAdSlot = config.pbAdSlot { nativeRequest.pbAdSlot = pbAdSlot }
+        if let gpid = config.gpid { nativeRequest.setGPID(gpid) }
+        if let impOrtbConfig = config.impOrtbConfig { nativeRequest.setImpORTBConfig(impOrtbConfig) }
         if let pc = config.placementCount {
             nativeRequest.placementCount = Int(pc)
         }
@@ -444,13 +472,6 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         })
     }
     
-    func trackImpression(adId: Int64) throws {
-        // Impression tracking is handled automatically by the native SDK
-    }
-    
-    func trackClick(adId: Int64) throws {
-        // Click tracking is handled automatically by the native SDK
-    }
 }
 
 // MARK: - Interstitial Delegate
@@ -482,6 +503,10 @@ private class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     func interstitialDidClickAd(_ interstitial: InterstitialRenderingAdUnit) {
         flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdClicked")) { _ in }
     }
+
+    func interstitialDidExpireAd(_ interstitial: InterstitialRenderingAdUnit) {
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdExpired")) { _ in }
+    }
 }
 
 // MARK: - Rewarded Ad Handler
@@ -493,8 +518,9 @@ private class RewardedAdHostApiHandler: RewardedAdHostApi {
         self.flutterApi = flutterApi
     }
     
-    func loadAd(adId: Int64, configId: String) throws {
+    func loadAd(adId: Int64, configId: String, impOrtbConfig: String?) throws {
         let adUnit = RewardedAdUnit(configID: configId)
+        if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
         let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
         adUnit.delegate = delegate
         objc_setAssociatedObject(adUnit, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
@@ -540,6 +566,10 @@ private class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     
     func rewardedAdDidClickAd(_ rewardedAd: RewardedAdUnit) {
         flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdClicked")) { _ in }
+    }
+
+    func rewardedAdDidExpire(_ rewardedAd: RewardedAdUnit) {
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdExpired")) { _ in }
     }
     
     func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {
@@ -658,6 +688,7 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
             isInterstitial: config.isInterstitial,
             isRewarded: config.isRewarded
         )
+        if let gpid = config.gpid { request.setGPID(gpid) }
         
         adUnit.fetchDemand(request: request) { [weak self] bidInfo in
             let resultStr = bidInfo.resultCode.dartCode
@@ -667,6 +698,8 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
             
             completion(.success(MultiformatBidResult(
                 resultCode: resultStr,
+                exp: bidInfo.exp,
+                topBidFiltered: bidInfo.topBidFiltered,
                 winningFormat: format,
                 targetingKeywords: keywords,
                 nativeAdCacheId: bidInfo.nativeAdCacheId

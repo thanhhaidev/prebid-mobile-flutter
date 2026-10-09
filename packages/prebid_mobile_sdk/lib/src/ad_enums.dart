@@ -66,3 +66,16 @@ enum VideoPlacementType {
   /// Video rendered within a content feed.
   inFeed,
 }
+
+/// Where external user IDs (EIDs) are placed in the bid request
+/// (Prebid 3.4, see [PrebidMobile.setEidsPlacement]).
+enum PrebidEidsPlacement {
+  /// Only `user.eids` (OpenRTB 2.6).
+  openRtb26,
+
+  /// Only `user.ext.eids` (OpenRTB 2.5).
+  openRtb25,
+
+  /// Both `user.eids` and `user.ext.eids`. Prebid's default.
+  compatible,
+}

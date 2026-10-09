@@ -25,8 +25,13 @@ class PrebidInterstitialAd {
 
   /// Video playback parameters (protocols, playback methods, etc.).
   ///
-  /// Only used when [adFormats] includes [AdFormat.video].
+  /// Only used when [adFormats] includes [AdFormat.video]. On Android only
+  /// `maxDuration` is applied (the rendering API has no other video setters).
   final VideoParameters? videoParameters;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
+  /// `{"ext":{"gpid":"/1111/interstitial"}}`).
+  final String? impOrtbConfig;
 
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
@@ -36,6 +41,7 @@ class PrebidInterstitialAd {
     required this.configId,
     this.adFormats,
     this.videoParameters,
+    this.impOrtbConfig,
     this.listener,
   }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
@@ -55,6 +61,8 @@ class PrebidInterstitialAd {
         l.onAdClosed?.call();
       case 'onAdClicked':
         l.onAdClicked?.call();
+      case 'onAdExpired':
+        l.onAdExpired?.call();
     }
   }
 
@@ -75,7 +83,7 @@ class PrebidInterstitialAd {
         api: videoParameters!.api?.map((a) => a.value).toList(),
       );
     }
-    api.loadAd(_adId, configId, formats, videoConfig);
+    api.loadAd(_adId, configId, formats, videoConfig, impOrtbConfig);
   }
 
   /// Show the interstitial ad.
@@ -104,11 +112,14 @@ class PrebidRewardedAd {
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
+  final String? impOrtbConfig;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
   /// Creates a [PrebidRewardedAd].
-  PrebidRewardedAd({required this.configId, this.listener})
+  PrebidRewardedAd({required this.configId, this.impOrtbConfig, this.listener})
     : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
   }
@@ -133,15 +144,18 @@ class PrebidRewardedAd {
             PrebidReward(
               type: event.reward!.type ?? '',
               count: event.reward!.count ?? 0,
+              ext: event.reward!.ext?.map((k, v) => MapEntry(k ?? '', v)),
             ),
           );
         }
+      case 'onAdExpired':
+        l.onAdExpired?.call();
     }
   }
 
   /// Load the rewarded ad.
   Future<void> loadAd() async {
-    api.loadAd(_adId, configId);
+    api.loadAd(_adId, configId, impOrtbConfig);
   }
 
   /// Show the rewarded ad.

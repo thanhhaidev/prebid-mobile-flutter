@@ -38,6 +38,10 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
   bool _showAd = false;
   int _adKey = 0;
 
+  /// In-App banners stop refresh in place via the controller; other
+  /// integrations recreate the widget without a refresh interval.
+  final _controller = PrebidBannerAdController();
+
   bool get _isVideo => widget.tc.format == DemoAdFormat.videoBanner;
 
   Future<void> _load() async {
@@ -58,6 +62,10 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
 
   void _stopRefresh() {
     _log.log('Banner', 'Stopping auto-refresh');
+    if (widget.tc.integration == DemoIntegration.inApp) {
+      _controller.stopRefresh();
+      return;
+    }
     setState(() {
       _refreshSeconds = 0;
       _adKey++;
@@ -121,6 +129,7 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
           height: _height,
           isVideo: _isVideo,
           refreshIntervalSeconds: refresh,
+          controller: _controller,
           listener: _listener(),
         );
       case DemoIntegration.gam:

@@ -21,10 +21,13 @@ void main() {
       final ad = PrebidInterstitialAd(
         configId: 'config-1',
         adFormats: {AdFormat.banner, AdFormat.video},
+        impOrtbConfig: '{"ext":{"gpid":"/1/i"}}',
       );
 
       await ad.loadAd();
-      verify(mockApi.loadAd(any, 'config-1', any, any)).called(1);
+      verify(
+        mockApi.loadAd(any, 'config-1', any, any, '{"ext":{"gpid":"/1/i"}}'),
+      ).called(1);
 
       await ad.show();
       verify(mockApi.show(any)).called(1);
@@ -43,10 +46,10 @@ void main() {
     });
 
     test('loadAd, show, and destroy calls pigeon api', () async {
-      final ad = PrebidRewardedAd(configId: 'config-2');
+      final ad = PrebidRewardedAd(configId: 'config-2', impOrtbConfig: '{}');
 
       await ad.loadAd();
-      verify(mockApi.loadAd(any, 'config-2')).called(1);
+      verify(mockApi.loadAd(any, 'config-2', '{}')).called(1);
 
       await ad.show();
       verify(mockApi.show(any)).called(1);
@@ -108,6 +111,25 @@ void main() {
 
       await ad.destroy();
       verify(mockApi.destroy(any)).called(1);
+    });
+
+    test('forwards gpid and maps exp / topBidFiltered', () async {
+      final ad = PrebidMultiformatAd(configId: 'config-5', gpid: '/1111/home');
+      when(mockApi.fetchDemand(any, any)).thenAnswer(
+        (_) async => MultiformatBidResult(
+          resultCode: 'prebidDemandFetchSuccess',
+          exp: 300,
+          topBidFiltered: true,
+        ),
+      );
+
+      final result = await ad.fetchDemand();
+      final config =
+          verify(mockApi.fetchDemand(any, captureAny)).captured.single
+              as MultiformatAdRequestConfig;
+      expect(config.gpid, '/1111/home');
+      expect(result.exp, 300);
+      expect(result.topBidFiltered, isTrue);
     });
   });
 

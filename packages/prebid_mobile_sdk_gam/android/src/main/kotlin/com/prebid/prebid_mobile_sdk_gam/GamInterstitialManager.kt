@@ -57,7 +57,15 @@ class GamInterstitialManager(
                 }
                 if (formats.isEmpty()) formats.add(AdUnitFormat.BANNER)
 
-                val eventHandler = GamInterstitialEventHandler(activity, gamAdUnitId)
+                val eventHandler = GamInterstitialEventHandler(activity, gamAdUnitId).apply {
+                    gamCustomTargeting(args?.get("customTargeting"))?.let { targeting ->
+                        // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+                        // hb_* keys still take precedence.
+                        setAdManagerRequestConfiguration { builder ->
+                            targeting.forEach { (k, v) -> builder.addCustomTargeting(k, v) }
+                        }
+                    }
+                }
                 val adUnit = InterstitialAdUnit(activity, configId, formats, eventHandler)
 
                 adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
@@ -67,6 +75,7 @@ class GamInterstitialManager(
                     override fun onAdDisplayed(unit: InterstitialAdUnit) = send(adId, "onAdDisplayed")
                     override fun onAdClosed(unit: InterstitialAdUnit) = send(adId, "onAdClosed")
                     override fun onAdClicked(unit: InterstitialAdUnit) = send(adId, "onAdClicked")
+                    override fun onAdExpired(unit: InterstitialAdUnit) = send(adId, "onAdExpired")
                 })
 
                 ads[adId] = adUnit

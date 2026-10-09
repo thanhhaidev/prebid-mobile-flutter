@@ -46,6 +46,9 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         let isVideo = args["isVideo"] as? Bool ?? false
         let autoLoad = args["autoLoad"] as? Bool ?? true
         let refreshInterval = args["refreshIntervalSeconds"] as? Int
+        let adFormats = args["adFormats"] as? [String]
+        let pbAdSlot = args["pbAdSlot"] as? String
+        let impOrtbConfig = args["impOrtbConfig"] as? String
 
         let adSize = CGSize(width: width, height: height)
 
@@ -62,15 +65,37 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
 
         super.init()
 
-        if isVideo {
-            bannerView.adFormat = .video
+        if let adFormats = adFormats {
+            // Multiformat banner (Prebid 3.4): banner and/or video in one request.
+            var formats: Set<AdFormat> = []
+            if adFormats.contains("banner") { formats.insert(.banner) }
+            if adFormats.contains("video") { formats.insert(.video) }
+            if !formats.isEmpty { bannerView.adFormats = formats }
+        } else if isVideo {
+            bannerView.adFormats = [.video]
         }
+        if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
+        if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
 
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)
         }
 
         bannerView.delegate = self
+
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "loadAd":
+                self?.bannerView.loadAd()
+                result(nil)
+            case "stopRefresh":
+                self?.bannerView.stopRefresh()
+                result(nil)
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
 
         if autoLoad {
             bannerView.loadAd()
@@ -110,5 +135,9 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
     
     func bannerViewDidDismissModal(_ bannerView: BannerView) {
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
+    }
+
+    func bannerViewDidExpire(_ bannerView: BannerView) {
+        methodChannel.invokeMethod("onAdExpired", arguments: nil)
     }
 }

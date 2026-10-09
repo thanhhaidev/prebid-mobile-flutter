@@ -4,7 +4,51 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'ad_enums.dart';
 import 'ad_listener.dart';
+
+/// Controls a [PrebidBannerAd]: load on demand (with `autoLoad: false`) or
+/// stop auto-refresh.
+///
+/// ```dart
+/// final controller = PrebidBannerAdController();
+/// PrebidBannerAd(configId: '...', width: 320, height: 50,
+///     autoLoad: false, controller: controller);
+/// // later
+/// await controller.loadAd();
+/// ```
+class PrebidBannerAdController {
+  MethodChannel? _channel;
+  bool _pendingLoad = false;
+
+  /// Loads (or reloads) the banner. Safe to call before the banner's native
+  /// view exists — the load runs once it is created.
+  Future<void> loadAd() async {
+    final channel = _channel;
+    if (channel == null) {
+      _pendingLoad = true;
+      return;
+    }
+    await channel.invokeMethod<void>('loadAd');
+  }
+
+  /// Stops auto-refresh for the banner.
+  Future<void> stopRefresh() async {
+    await _channel?.invokeMethod<void>('stopRefresh');
+  }
+
+  void _attach(MethodChannel channel) {
+    _channel = channel;
+    if (_pendingLoad) {
+      _pendingLoad = false;
+      channel.invokeMethod<void>('loadAd');
+    }
+  }
+
+  void _detach(MethodChannel channel) {
+    if (identical(_channel, channel)) _channel = null;
+  }
+}
 
 /// A banner ad widget that displays a Prebid rendered banner.
 ///
@@ -20,7 +64,23 @@ class PrebidBannerAd extends StatefulWidget {
   final int height;
 
   /// Whether this banner should display video ads.
+  ///
+  /// Ignored when [adFormats] is set.
   final bool isVideo;
+
+  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// multiformat banner (Prebid 3.4). Overrides [isVideo] when set.
+  final Set<AdFormat>? adFormats;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
+  /// `{"ext":{"gpid":"/1111/home"}}`).
+  final String? impOrtbConfig;
+
+  /// Optional controller to load on demand / stop refresh.
+  final PrebidBannerAdController? controller;
 
   /// Whether the ad should load automatically when the widget is created.
   final bool autoLoad;
@@ -42,6 +102,10 @@ class PrebidBannerAd extends StatefulWidget {
     required this.width,
     required this.height,
     this.isVideo = false,
+    this.adFormats,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.controller,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
     this.listener,
@@ -69,6 +133,10 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       'autoLoad': widget.autoLoad,
       if (widget.refreshIntervalSeconds != null)
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
+      if (widget.adFormats != null)
+        'adFormats': widget.adFormats!.map((f) => f.name).toList(),
+      if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
+      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
     };
 
     // The slot sizes dynamically: it starts at the requested size and adopts
@@ -103,6 +171,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     // The channel is set up even without a listener so the slot can still
     // resize to the rendered creative via `onAdSize`.
     final channel = MethodChannel('prebid_mobile_flutter/banner_ad_$viewId');
+    _channel = channel;
+    widget.controller?._attach(channel);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':
@@ -125,7 +195,21 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
           widget.listener?.onAdClicked?.call();
         case 'onAdClosed':
           widget.listener?.onAdClosed?.call();
+        case 'onAdExpired':
+          widget.listener?.onAdExpired?.call();
       }
     });
+  }
+
+  MethodChannel? _channel;
+
+  @override
+  void dispose() {
+    final channel = _channel;
+    if (channel != null) {
+      channel.setMethodCallHandler(null);
+      widget.controller?._detach(channel);
+    }
+    super.dispose();
   }
 }

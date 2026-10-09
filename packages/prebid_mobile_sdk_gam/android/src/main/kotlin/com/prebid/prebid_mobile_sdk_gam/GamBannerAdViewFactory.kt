@@ -49,7 +49,15 @@ class GamBannerPlatformView(
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$viewId")
 
-        val eventHandler = GamBannerEventHandler(context, gamAdUnitId, AdSize(width, height))
+        val eventHandler = GamBannerEventHandler(context, gamAdUnitId, AdSize(width, height)).apply {
+            gamCustomTargeting(params["customTargeting"])?.let { targeting ->
+                // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+                // hb_* keys still take precedence.
+                setAdManagerRequestConfiguration { builder ->
+                    targeting.forEach { (k, v) -> builder.addCustomTargeting(k, v) }
+                }
+            }
+        }
         bannerView = BannerView(context, configId, eventHandler)
 
         if (isVideo) {
@@ -88,6 +96,10 @@ class GamBannerPlatformView(
 
             override fun onAdClosed(view: BannerView) {
                 methodChannel.invokeMethod("onAdClosed", null)
+            }
+
+            override fun onAdExpired(view: BannerView) {
+                methodChannel.invokeMethod("onAdExpired", null)
             }
         })
 

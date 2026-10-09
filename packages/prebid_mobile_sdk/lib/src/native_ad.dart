@@ -194,6 +194,15 @@ class PrebidNativeAd {
   /// Number of placements.
   final int? placementCount;
 
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
+  final String? impOrtbConfig;
+
   /// Listener for native ad events.
   final PrebidNativeAdListener? listener;
 
@@ -205,6 +214,9 @@ class PrebidNativeAd {
     this.context,
     this.placementType,
     this.placementCount,
+    this.pbAdSlot,
+    this.gpid,
+    this.impOrtbConfig,
     this.listener,
   }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
@@ -248,6 +260,9 @@ class PrebidNativeAd {
       context: context?.value,
       placementType: placementType?.value,
       placementCount: placementCount,
+      pbAdSlot: pbAdSlot,
+      gpid: gpid,
+      impOrtbConfig: impOrtbConfig,
     );
     api.loadAd(_adId, config);
   }

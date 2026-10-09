@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show AdFormat, PrebidInterstitialAdListener, VideoParameters;
+    show AdFormat, PrebidInterstitialAdListener;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_gam/interstitial',
@@ -57,14 +57,15 @@ class PrebidGamInterstitialAd {
   /// The Google Ad Manager ad unit ID (e.g. `/1234567/your-interstitial`).
   final String gamAdUnitId;
 
+  /// Custom key-values added to the Google Ad Manager request (Prebid 3.4).
+  /// Prebid's own `hb_*` keys take precedence on conflict.
+  final Map<String, String>? customTargeting;
+
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
   /// Ad formats to request. Defaults to display interstitial.
   final Set<AdFormat>? adFormats;
-
-  /// Video configuration. Used when [adFormats] contains [AdFormat.video].
-  final VideoParameters? videoParameters;
 
   bool _loaded = false;
 
@@ -76,7 +77,7 @@ class PrebidGamInterstitialAd {
     required this.configId,
     required this.gamAdUnitId,
     this.adFormats,
-    this.videoParameters,
+    this.customTargeting,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -89,6 +90,7 @@ class PrebidGamInterstitialAd {
       'configId': configId,
       'gamAdUnitId': gamAdUnitId,
       'adFormats': adFormats?.map((f) => f.name).toList(),
+      'customTargeting': ?customTargeting,
     });
   }
 
@@ -114,6 +116,8 @@ class PrebidGamInterstitialAd {
         listener?.onAdClosed?.call();
       case 'onAdClicked':
         listener?.onAdClicked?.call();
+      case 'onAdExpired':
+        listener?.onAdExpired?.call();
     }
   }
 }

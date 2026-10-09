@@ -34,6 +34,15 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
             let gamAdUnitId = args?["gamAdUnitId"] as? String ?? ""
 
             let eventHandler = GAMRewardedAdEventHandler(adUnitID: gamAdUnitId)
+            if let targeting = gamCustomTargeting(args?["customTargeting"]) {
+                // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+                // hb_* keys still take precedence.
+                eventHandler.adManagerRequestConfiguration = { request in
+                    var merged = request.customTargeting ?? [:]
+                    targeting.forEach { merged[$0.key] = $0.value }
+                    request.customTargeting = merged
+                }
+            }
             let adUnit = RewardedAdUnit(configID: configId, eventHandler: eventHandler)
             adUnit.delegate = self
 
@@ -86,6 +95,10 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
 
     func rewardedAdDidClickAd(_ rewardedAd: RewardedAdUnit) {
         send(rewardedAd, "onAdClicked")
+    }
+
+    func rewardedAdDidExpire(_ rewardedAd: RewardedAdUnit) {
+        send(rewardedAd, "onAdExpired")
     }
 
     func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {

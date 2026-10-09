@@ -41,14 +41,25 @@ class BannerAdPlatformView(
         val isVideo = params["isVideo"] as? Boolean ?: false
         val autoLoad = params["autoLoad"] as? Boolean ?: true
         val refreshInterval = params["refreshIntervalSeconds"] as? Int
+        val adFormats = (params["adFormats"] as? List<*>)?.filterIsInstance<String>()
+        val pbAdSlot = params["pbAdSlot"] as? String
+        val impOrtbConfig = params["impOrtbConfig"] as? String
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_flutter/banner_ad_$viewId")
 
         bannerView = BannerView(context, configId, AdSize(width, height))
 
-        if (isVideo) {
+        if (adFormats != null) {
+            // Multiformat banner (Prebid 3.4): banner and/or video in one request.
+            val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
+            if ("banner" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+            if ("video" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)
+            if (formats.isNotEmpty()) bannerView.setAdUnitFormats(formats)
+        } else if (isVideo) {
             bannerView.videoPlacementType = org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
         }
+        pbAdSlot?.let { bannerView.setPbAdSlot(it) }
+        impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
 
         if (refreshInterval != null && refreshInterval > 0) {
             bannerView.setAutoRefreshDelay(refreshInterval)
@@ -86,7 +97,20 @@ class BannerAdPlatformView(
             override fun onAdClosed(view: BannerView) {
                 methodChannel.invokeMethod("onAdClosed", null)
             }
+
+            override fun onAdExpired(view: BannerView) {
+                methodChannel.invokeMethod("onAdExpired", null)
+            }
         })
+
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "loadAd" -> { bannerView.loadAd(); result.success(null) }
+                "stopRefresh" -> { bannerView.stopRefresh(); result.success(null) }
+                else -> result.notImplemented()
+            }
+        }
 
         if (autoLoad) {
             bannerView.loadAd()
@@ -96,6 +120,7 @@ class BannerAdPlatformView(
     override fun getView(): View = bannerView
 
     override fun dispose() {
+        methodChannel.setMethodCallHandler(null)
         bannerView.destroy()
     }
 }

@@ -46,7 +46,15 @@ class GamRewardedManager(
                 val configId = args?.get("configId") as? String ?: ""
                 val gamAdUnitId = args?.get("gamAdUnitId") as? String ?: ""
 
-                val eventHandler = GamRewardedEventHandler(activity, gamAdUnitId)
+                val eventHandler = GamRewardedEventHandler(activity, gamAdUnitId).apply {
+                    gamCustomTargeting(args?.get("customTargeting"))?.let { targeting ->
+                        // Prebid 3.4: app custom targeting on the GAM request; Prebid's
+                        // hb_* keys still take precedence.
+                        setAdManagerRequestConfiguration { builder ->
+                            targeting.forEach { (k, v) -> builder.addCustomTargeting(k, v) }
+                        }
+                    }
+                }
                 val adUnit = RewardedAdUnit(activity, configId, eventHandler)
 
                 adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
@@ -56,6 +64,7 @@ class GamRewardedManager(
                     override fun onAdDisplayed(unit: RewardedAdUnit) = send(adId, "onAdDisplayed")
                     override fun onAdClosed(unit: RewardedAdUnit) = send(adId, "onAdClosed")
                     override fun onAdClicked(unit: RewardedAdUnit) = send(adId, "onAdClicked")
+                    override fun onAdExpired(unit: RewardedAdUnit) = send(adId, "onAdExpired")
                     override fun onUserEarnedReward(unit: RewardedAdUnit, reward: Reward?) =
                         send(
                             adId,

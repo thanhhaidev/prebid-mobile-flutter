@@ -39,11 +39,26 @@ class ExternalUserId {
   /// Optional extra data to include with this user ID.
   final Map<String, dynamic>? ext;
 
+  /// OpenRTB 2.6 EID `inserter`: the canonical domain of the entity that
+  /// inserted the ID into the request.
+  final String? inserter;
+
+  /// OpenRTB 2.6 EID `matcher`: the canonical domain of the entity that
+  /// matched (resolved) the ID.
+  final String? matcher;
+
+  /// OpenRTB 2.6 EID `mm`: match method (e.g. `1` = no match, `2` = browser
+  /// cookie sync, `3` = authenticated, …).
+  final int? mm;
+
   /// Creates an [ExternalUserId].
   const ExternalUserId({
     required this.source,
     required this.identifier,
     this.atype,
     this.ext,
+    this.inserter,
+    this.matcher,
+    this.mm,
   });
 }

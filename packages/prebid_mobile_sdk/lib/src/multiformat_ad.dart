@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
 import 'native_ad.dart';
+import 'prebid_mobile.dart';
 import 'video_parameters.dart';
 
 /// Result of a multiformat bid request.
@@ -20,6 +21,13 @@ class PrebidMultiformatBidResponse {
   /// Cache ID for native ad data (only if winningFormat == "native").
   final String? nativeAdCacheId;
 
+  /// Winning bid expiration in seconds (`bid.exp`), if the bid set one.
+  final double? exp;
+
+  /// Whether the top bid was dropped for a failed Prebid Cache entry and the
+  /// next cached bid promoted (see [PrebidMobile.setFilterOutUncachedBids]).
+  final bool topBidFiltered;
+
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 
@@ -28,6 +36,8 @@ class PrebidMultiformatBidResponse {
     this.winningFormat,
     this.targetingKeywords,
     this.nativeAdCacheId,
+    this.exp,
+    this.topBidFiltered = false,
   });
 }
 
@@ -86,6 +96,9 @@ class PrebidMultiformatAd {
   /// Whether this is a rewarded ad.
   final bool isRewarded;
 
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
+
   /// Creates a [PrebidMultiformatAd].
   PrebidMultiformatAd({
     required this.configId,
@@ -95,6 +108,7 @@ class PrebidMultiformatAd {
     this.nativeEventTrackers,
     this.isInterstitial = false,
     this.isRewarded = false,
+    this.gpid,
   }) : _adId = _nextId++;
 
   /// Fetch demand from Prebid Server for all configured formats.
@@ -145,6 +159,7 @@ class PrebidMultiformatAd {
       nativeConfig: nativeConfig,
       isInterstitial: isInterstitial,
       isRewarded: isRewarded,
+      gpid: gpid,
     );
 
     final result = await api.fetchDemand(_adId, config);
@@ -165,6 +180,8 @@ class PrebidMultiformatAd {
       winningFormat: result.winningFormat,
       targetingKeywords: keywords,
       nativeAdCacheId: result.nativeAdCacheId,
+      exp: result.exp,
+      topBidFiltered: result.topBidFiltered ?? false,
     );
   }
 

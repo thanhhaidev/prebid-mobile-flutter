@@ -90,6 +90,9 @@ class NativeAdRequestConfig {
     this.contextSubType,
     this.placementType,
     this.placementCount,
+    this.pbAdSlot,
+    this.gpid,
+    this.impOrtbConfig,
   });
   final String configId;
   final List<NativeAssetConfig?>? assets;
@@ -98,6 +101,9 @@ class NativeAdRequestConfig {
   final int? contextSubType;
   final int? placementType;
   final int? placementCount;
+  final String? pbAdSlot;
+  final String? gpid;
+  final String? impOrtbConfig;
 }
 
 /// Native ad response data sent back to Flutter.
@@ -127,7 +133,19 @@ class ExternalUserIdData {
     required this.identifier,
     this.atype,
     this.ext,
+    this.inserter,
+    this.matcher,
+    this.mm,
   });
+
+  /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
+  final String? inserter;
+
+  /// OpenRTB 2.6 EID `matcher` (who matched the ID).
+  final String? matcher;
+
+  /// OpenRTB 2.6 EID `mm` (match method).
+  final int? mm;
 
   /// ID source (e.g., "uidapi.com", "sharedid.org").
   final String source;
@@ -199,6 +217,10 @@ abstract class PrebidMobileHostApi {
   void setCreativeFactoryTimeoutPreRenderContent(int timeout);
   void setCustomStatusEndpoint(String endpoint);
   void setShouldAssignNativeAssetId(bool assign);
+  void setFilterOutUncachedBids(bool filter);
+  void setEidsPlacement(String placement);
+  void setIncludeWinners(bool include);
+  void setIncludeBidderKeys(bool include);
 
   // External User IDs
   void setExternalUserIds(List<ExternalUserIdData> userIds);
@@ -280,6 +302,7 @@ abstract class InterstitialAdHostApi {
     String configId,
     List<String>? adFormats,
     VideoParametersConfig? videoConfig,
+    String? impOrtbConfig,
   );
   void show(int adId);
   void destroy(int adId);
@@ -288,7 +311,7 @@ abstract class InterstitialAdHostApi {
 /// Rewarded ad operations (Dart → Native).
 @HostApi()
 abstract class RewardedAdHostApi {
-  void loadAd(int adId, String configId);
+  void loadAd(int adId, String configId, String? impOrtbConfig);
   void show(int adId);
   void destroy(int adId);
 }
@@ -297,8 +320,6 @@ abstract class RewardedAdHostApi {
 @HostApi()
 abstract class NativeAdHostApi {
   void loadAd(int adId, NativeAdRequestConfig config);
-  void trackImpression(int adId);
-  void trackClick(int adId);
   void destroy(int adId);
 }
 
@@ -311,8 +332,10 @@ class MultiformatAdRequestConfig {
     this.nativeConfig,
     this.isInterstitial = false,
     this.isRewarded = false,
+    this.gpid,
   });
   final String configId;
+  final String? gpid;
 
   /// Banner sizes as [width, height, width, height, ...]
   final List<int?>? bannerSizes;
@@ -329,8 +352,17 @@ class MultiformatBidResult {
     this.winningFormat,
     this.targetingKeywords,
     this.nativeAdCacheId,
+    this.exp,
+    this.topBidFiltered,
   });
   final String resultCode;
+
+  /// Winning bid expiration in seconds (`bid.exp`), if provided.
+  final double? exp;
+
+  /// True when the top bid was dropped for a failed Prebid Cache entry and the
+  /// next cached bid was promoted (`filterOutUncachedBids`).
+  final bool? topBidFiltered;
 
   /// "banner", "video", or "native"
   final String? winningFormat;

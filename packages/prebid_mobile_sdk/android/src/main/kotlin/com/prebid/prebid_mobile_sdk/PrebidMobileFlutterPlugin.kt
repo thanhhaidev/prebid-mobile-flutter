@@ -41,6 +41,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
             "prebid_mobile_flutter/banner_ad",
             BannerAdViewFactory(binding.binaryMessenger) { activity }
         )
+        binding.platformViewRegistry.registerViewFactory(
+            "prebid_mobile_flutter/native_ad",
+            NativeAdViewFactory(binding.binaryMessenger, flutterApi)
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -494,6 +498,7 @@ class NativeAdHostApiImpl(
                 if (cacheId != null) {
                     val nativeAd = org.prebid.mobile.PrebidNativeAd.create(cacheId)
                     if (nativeAd != null) {
+                        NativeAdStore.ads[adId] = nativeAd
                         val nativeData = NativeAdData(
                             title = nativeAd.title,
                             text = nativeAd.description,
@@ -522,16 +527,15 @@ class NativeAdHostApiImpl(
         }
     }
 
-    override fun trackImpression(adId: Long) {
-        // Impression tracking handled automatically by native SDK
-    }
+    // Tracking is automatic once the ad is shown in a PrebidNativeAdView
+    // (NativeAdPlatformView calls registerView); nothing to do manually.
+    override fun trackImpression(adId: Long) {}
 
-    override fun trackClick(adId: Long) {
-        // Click tracking handled automatically by native SDK
-    }
+    override fun trackClick(adId: Long) {}
 
     override fun destroy(adId: Long) {
-        nativeAds.remove(adId)
+        nativeAds.remove(adId)?.destroy()
+        NativeAdStore.ads.remove(adId)
     }
 }
 

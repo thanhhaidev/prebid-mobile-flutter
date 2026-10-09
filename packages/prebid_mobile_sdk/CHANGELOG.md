@@ -25,7 +25,7 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support, auto-refresh via `refreshIntervalSeconds`
   - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads with optional `VideoParameters`
   - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with typed `PrebidReward` callbacks
-  - **Native Ads** (`PrebidNativeAd`) — Fetch raw native assets (Title, Image, Icon, Sponsored, Description, CTA)
+  - **Native Ads** (`PrebidNativeAd`) — Load native ads (Title, Image, Icon, Sponsored, Description, CTA); show them with `PrebidNativeAdView`, which renders natively and registers the view so Prebid tracks impressions and clicks (`onAdImpression`, `onAdClicked`, `onAdExpired`)
   - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across banner, video, and native in a single request
   - **In-Stream Video** (`PrebidInstreamVideoAd`) — Fetch VAST video demand
 - **Video Parameters** — Full OpenRTB video configuration

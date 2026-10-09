@@ -1,0 +1,182 @@
+import Flutter
+import UIKit
+import PrebidMobile
+
+/// Loaded In-App native ads, keyed by the Dart ad id, so a
+/// `NativeAdPlatformView` can render and register the ad for tracking.
+enum NativeAdStore {
+    static var ads: [Int64: NativeAd] = [:]
+}
+
+/// PlatformView factory for `PrebidNativeAdView`: renders a loaded `NativeAd`
+/// natively and calls `registerView` so Prebid tracks viewability-based
+/// impressions and clicks.
+class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
+
+    private let messenger: FlutterBinaryMessenger
+    private let flutterApi: AdFlutterApi
+
+    init(messenger: FlutterBinaryMessenger, flutterApi: AdFlutterApi) {
+        self.messenger = messenger
+        self.flutterApi = flutterApi
+        super.init()
+    }
+
+    func create(
+        withFrame frame: CGRect,
+        viewIdentifier viewId: Int64,
+        arguments args: Any?
+    ) -> FlutterPlatformView {
+        return NativeAdPlatformView(
+            viewId: viewId,
+            messenger: messenger,
+            flutterApi: flutterApi,
+            args: args as? [String: Any] ?? [:]
+        )
+    }
+
+    func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        return FlutterStandardMessageCodec.sharedInstance()
+    }
+}
+
+class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate {
+
+    private let container = UIView()
+    private let adId: Int64
+    private let methodChannel: FlutterMethodChannel
+    private let flutterApi: AdFlutterApi
+    // Strong reference: Prebid holds the ad's delegate weakly.
+    private var nativeAd: NativeAd?
+
+    init(viewId: Int64, messenger: FlutterBinaryMessenger, flutterApi: AdFlutterApi, args: [String: Any]) {
+        adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
+        methodChannel = FlutterMethodChannel(
+            name: "prebid_mobile_flutter/native_ad_\(viewId)",
+            binaryMessenger: messenger
+        )
+        self.flutterApi = flutterApi
+        super.init()
+        if let ad = NativeAdStore.ads[adId] {
+            render(ad)
+        }
+    }
+
+    func view() -> UIView {
+        return container
+    }
+
+    // MARK: - Rendering
+
+    private func render(_ ad: NativeAd) {
+        nativeAd = ad
+        ad.delegate = self
+
+        let iconView = UIImageView()
+        let mainImageView = UIImageView()
+        let titleLabel = UILabel()
+        let sponsoredLabel = UILabel()
+        let bodyLabel = UILabel()
+        let ctaButton = UIButton(type: .system)
+
+        titleLabel.font = .boldSystemFont(ofSize: 15)
+        titleLabel.numberOfLines = 2
+        titleLabel.text = ad.title
+        sponsoredLabel.font = .systemFont(ofSize: 11)
+        sponsoredLabel.textColor = .gray
+        sponsoredLabel.text = ad.sponsoredBy
+        bodyLabel.font = .systemFont(ofSize: 13)
+        bodyLabel.numberOfLines = 3
+        bodyLabel.textColor = .gray
+        bodyLabel.text = ad.text
+        ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 14)
+        ctaButton.setTitle(ad.callToAction, for: .normal)
+        iconView.contentMode = .scaleAspectFit
+        iconView.clipsToBounds = true
+        mainImageView.contentMode = .scaleAspectFill
+        mainImageView.clipsToBounds = true
+        mainImageView.isHidden = (ad.imageUrl ?? "").isEmpty
+        downloadImage(ad.iconUrl, into: iconView)
+        downloadImage(ad.imageUrl, into: mainImageView)
+
+        let titleStack = UIStackView(arrangedSubviews: [sponsoredLabel, titleLabel])
+        titleStack.axis = .vertical
+        titleStack.spacing = 2
+        let header = UIStackView(arrangedSubviews: [iconView, titleStack])
+        header.axis = .horizontal
+        header.spacing = 8
+        header.alignment = .center
+
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        mainImageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            iconView.widthAnchor.constraint(equalToConstant: 40),
+            iconView.heightAnchor.constraint(equalToConstant: 40),
+            mainImageView.heightAnchor.constraint(equalToConstant: 180),
+        ])
+
+        let stack = UIStackView(arrangedSubviews: [mainImageView, header, bodyLabel, ctaButton])
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor),
+        ])
+
+        _ = ad.registerView(view: container, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton])
+        reportHeight(of: stack)
+    }
+
+    private func reportHeight(of view: UIView) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let width = self.container.bounds.width > 0
+                ? self.container.bounds.width
+                : UIScreen.main.bounds.width
+            let height = view.systemLayoutSizeFitting(
+                CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+            if height > 0 {
+                self.methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
+            }
+        }
+    }
+
+    private func downloadImage(_ urlString: String?, into imageView: UIImageView) {
+        guard let urlString = urlString, let url = URL(string: urlString) else { return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data = data, let image = UIImage(data: data) else { return }
+            DispatchQueue.main.async { imageView.image = image }
+        }.resume()
+    }
+
+    // MARK: - NativeAdEventDelegate
+
+    func adDidLogImpression(ad: NativeAd) {
+        send("onAdImpression")
+    }
+
+    func adWasClicked(ad: NativeAd) {
+        send("onAdClicked")
+    }
+
+    func adDidExpire(ad: NativeAd) {
+        send("onAdExpired")
+    }
+
+    private func send(_ name: String) {
+        DispatchQueue.main.async { [adId, flutterApi] in
+            flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: name)) { _ in }
+        }
+    }
+}

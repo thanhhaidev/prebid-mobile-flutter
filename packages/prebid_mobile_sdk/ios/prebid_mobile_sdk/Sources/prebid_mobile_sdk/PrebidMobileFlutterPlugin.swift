@@ -55,6 +55,10 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         // Register banner PlatformView factory
         let bannerFactory = BannerAdViewFactory(messenger: registrar.messenger())
         registrar.register(bannerFactory, withId: "prebid_mobile_flutter/banner_ad")
+
+        // Register native ad PlatformView factory (renders + tracks In-App native)
+        let nativeFactory = NativeAdViewFactory(messenger: registrar.messenger(), flutterApi: instance.flutterApi!)
+        registrar.register(nativeFactory, withId: "prebid_mobile_flutter/native_ad")
     }
     
     // =========================================================================
@@ -331,6 +335,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         interstitialAds.removeValue(forKey: adId)
         nativeRequests.removeValue(forKey: adId)
         nativeAdResults.removeValue(forKey: adId)
+        NativeAdStore.ads.removeValue(forKey: adId)
     }
     
     // =========================================================================
@@ -413,6 +418,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
                     return
                 }
                 self.nativeAdResults[adId] = nativeAd
+                NativeAdStore.ads[adId] = nativeAd
                 let nativeData = NativeAdData(
                     title: nativeAd.title,
                     text: nativeAd.text,

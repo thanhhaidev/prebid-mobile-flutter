@@ -11,11 +11,10 @@ import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
 import '../../widgets/ad_unit_header.dart';
 import '../../widgets/event_counter.dart';
-import '../../widgets/native_ad_card.dart';
 
-/// Native ad detail page. In-App renders structured native assets with a custom
-/// Flutter card; GAM / AdMob / MAX render through the ad-server SDK's native
-/// ad view (a PlatformView) so impressions/clicks track correctly.
+/// Native ad detail page. In-App renders the loaded ad with
+/// [PrebidNativeAdView]; GAM / AdMob / MAX render through the ad-server SDK's
+/// native ad view. All are PlatformViews so impressions/clicks track correctly.
 ///
 /// The callback list mirrors Prebid's reference test app: the GAM Original-API
 /// native flow surfaces the full `fetchDemand` → custom/unified request →
@@ -227,8 +226,19 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              if (_isInApp && _response != null)
-                NativeAdCard(response: _response!)
+              if (_isInApp && _response != null && _ad != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.35,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  // Rendered natively so Prebid tracks impressions/clicks.
+                  child: PrebidNativeAdView(ad: _ad!),
+                )
               else if (!_isInApp && _showAd)
                 Container(
                   width: double.infinity,

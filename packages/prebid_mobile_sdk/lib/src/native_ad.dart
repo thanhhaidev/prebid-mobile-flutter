@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'ad_event_router.dart';
 import 'generated/prebid_api.g.dart';
@@ -12,11 +16,15 @@ class PrebidNativeAdListener {
   /// Called when the ad fails to load.
   final void Function(String error)? onAdFailed;
 
-  /// Called when an impression is tracked.
+  /// Called when an impression is tracked. Fires only while the ad is shown
+  /// in a [PrebidNativeAdView] (Prebid measures viewability on that view).
   final void Function()? onAdImpression;
 
-  /// Called when the ad is clicked.
+  /// Called when the ad is clicked inside a [PrebidNativeAdView].
   final void Function()? onAdClicked;
+
+  /// Called when the ad's bid expired (per `bid.exp`) before it was shown.
+  final void Function()? onAdExpired;
 
   /// Creates a [PrebidNativeAdListener].
   const PrebidNativeAdListener({
@@ -24,6 +32,7 @@ class PrebidNativeAdListener {
     this.onAdFailed,
     this.onAdImpression,
     this.onAdClicked,
+    this.onAdExpired,
   });
 }
 
@@ -225,6 +234,8 @@ class PrebidNativeAd {
         l.onAdImpression?.call();
       case 'onAdClicked':
         l.onAdClicked?.call();
+      case 'onAdExpired':
+        l.onAdExpired?.call();
     }
   }
 
@@ -239,16 +250,6 @@ class PrebidNativeAd {
       placementCount: placementCount,
     );
     api.loadAd(_adId, config);
-  }
-
-  /// Manually track an impression.
-  Future<void> trackImpression() async {
-    api.trackImpression(_adId);
-  }
-
-  /// Manually track a click.
-  Future<void> trackClick() async {
-    api.trackClick(_adId);
   }
 
   /// Destroy the native ad and free resources.
@@ -277,5 +278,99 @@ class PrebidNativeAd {
       eventType: tracker.eventType.value,
       methods: tracker.methods.map((m) => m.value).toList(),
     );
+  }
+}
+
+/// Renders a loaded [PrebidNativeAd] with a native view and registers it with
+/// Prebid, so impressions (viewability-based) and clicks are tracked and
+/// reported through the ad's [PrebidNativeAdListener].
+///
+/// Show it after `onAdLoaded` fires:
+///
+/// ```dart
+/// late final PrebidNativeAd ad;
+/// bool loaded = false;
+///
+/// ad = PrebidNativeAd(
+///   configId: 'prebid-demo-banner-native-styles',
+///   listener: PrebidNativeAdListener(
+///     onAdLoaded: (_) => setState(() => loaded = true),
+///     onAdImpression: () => debugPrint('impression'),
+///     onAdClicked: () => debugPrint('click'),
+///   ),
+/// )..loadAd();
+///
+/// // in build():
+/// if (loaded) PrebidNativeAdView(ad: ad);
+/// ```
+///
+/// The layout (main image, icon, sponsored, title, body, call to action) is
+/// rendered natively; the widget grows to the rendered content's height.
+class PrebidNativeAdView extends StatefulWidget {
+  /// The loaded native ad to render.
+  final PrebidNativeAd ad;
+
+  /// Width of the view.
+  final double width;
+
+  /// Initial height, replaced by the rendered content height.
+  final double height;
+
+  /// Creates a [PrebidNativeAdView].
+  const PrebidNativeAdView({
+    super.key,
+    required this.ad,
+    this.width = double.infinity,
+    this.height = 320,
+  });
+
+  @override
+  State<PrebidNativeAdView> createState() => _PrebidNativeAdViewState();
+}
+
+class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
+  static const _viewType = 'prebid_mobile_flutter/native_ad';
+
+  late double _height = widget.height;
+  MethodChannel? _channel;
+
+  void _onPlatformViewCreated(int viewId) {
+    _channel = MethodChannel('prebid_mobile_flutter/native_ad_$viewId')
+      ..setMethodCallHandler((call) async {
+        if (call.method == 'onAdSize') {
+          final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
+          if (h != null && h > 0 && mounted) setState(() => _height = h);
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _channel?.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final creationParams = <String, Object?>{'adId': widget.ad._adId};
+    final Widget view;
+    if (!kIsWeb && Platform.isAndroid) {
+      view = AndroidView(
+        viewType: _viewType,
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: _onPlatformViewCreated,
+      );
+    } else if (!kIsWeb && Platform.isIOS) {
+      view = UiKitView(
+        viewType: _viewType,
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: _onPlatformViewCreated,
+      );
+    } else {
+      view = const SizedBox.shrink();
+    }
+    return SizedBox(width: widget.width, height: _height, child: view);
   }
 }

@@ -22,6 +22,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
   - [PrebidInterstitialAd — Interstitial Ads](#prebidinterstitialad--interstitial-ads)
   - [PrebidRewardedAd — Rewarded Ads](#prebidrewardedad--rewarded-ads)
   - [PrebidNativeAd — Native Ads](#prebidnativead--native-ads)
+  - [PrebidNativeAdView — Native Ad View](#prebidnativeadview--native-ad-view)
   - [PrebidMultiformatAd — Multiformat Ads](#prebidmultiformatad--multiformat-ads)
   - [PrebidInstreamVideoAd — In-Stream Video](#prebidinstreamvideoad--in-stream-video)
   - [VideoParameters — Video Configuration](#videoparameters--video-configuration)
@@ -43,7 +44,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 | **Banner Ads** | Display and video banners via native `PlatformView` widgets with auto-refresh support. |
 | **Interstitial Ads** | Fullscreen display and video ads with load/show lifecycle and video parameters. |
 | **Rewarded Ads** | Fullscreen ads that grant users a typed reward on completion. |
-| **Native Ads** | Fetch raw native assets (Title, Image, Icon, CTA, Sponsored, Description) and render custom Flutter UIs. |
+| **Native Ads** | Load native ads and show them with `PrebidNativeAdView` (native rendering with impression/click tracking); raw assets are also exposed. |
 | **Multiformat Ads** | Request banner, video, and native demand on a single ad unit simultaneously. |
 | **In-Stream Video** | Fetch VAST video demand for integration with your own player or ad server. |
 | **Video Parameters** | Full OpenRTB video configuration — protocols, playback methods, placement, duration limits. |
@@ -364,7 +365,10 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 
 ### `PrebidNativeAd` — Native Ads
 
-Loads structured native ad data that you render with your own Flutter widgets.
+Loads a native ad. Show it with [`PrebidNativeAdView`](#prebidnativeadview--native-ad-view):
+it renders the ad natively and registers it with Prebid, so impressions
+(viewability-based) and clicks are tracked. The parsed assets are also
+delivered to `onAdLoaded` as a `PrebidNativeAdResponse`.
 
 | Property / Method | Type | Description |
 |---|---|---|
@@ -376,9 +380,33 @@ Loads structured native ad data that you render with your own Flutter widgets.
 | `placementCount` | `int?` | Number of placements. |
 | `listener` | `PrebidNativeAdListener?` | Callback listener. |
 | `loadAd()` | `Future<void>` | Request a native ad. |
-| `trackImpression()` | `Future<void>` | Fire an impression tracker. |
-| `trackClick()` | `Future<void>` | Fire a click tracker. |
 | `destroy()` | `Future<void>` | Release all resources. |
+
+### `PrebidNativeAdView` — Native Ad View
+
+Widget that renders a loaded `PrebidNativeAd` (main image, icon, sponsored,
+title, body, call to action) in a native view and tracks it. Impression and
+click events arrive on the ad's `PrebidNativeAdListener`.
+
+```dart
+final ad = PrebidNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  listener: PrebidNativeAdListener(
+    onAdLoaded: (_) => setState(() => _loaded = true),
+    onAdImpression: () => debugPrint('impression'),
+    onAdClicked: () => debugPrint('click'),
+  ),
+)..loadAd();
+
+// build():
+if (_loaded) PrebidNativeAdView(ad: ad);
+```
+
+| Property | Type | Description |
+|---|---|---|
+| `ad` | `PrebidNativeAd` | **Required.** A loaded native ad. |
+| `width` | `double` | View width (default: fill). |
+| `height` | `double` | Initial height; grows to the rendered content. |
 
 ---
 
@@ -553,8 +581,9 @@ await PrebidMobile.setExternalUserIds([
 |---|---|---|
 | `onAdLoaded` | `void Function(PrebidNativeAdResponse)` | Native data ready. |
 | `onAdFailed` | `void Function(String error)` | Failed to load. |
-| `onAdImpression` | `void Function()` | Impression tracked. |
-| `onAdClicked` | `void Function()` | User tapped the ad. |
+| `onAdImpression` | `void Function()` | Impression tracked (ad shown in a `PrebidNativeAdView`). |
+| `onAdClicked` | `void Function()` | User tapped the ad in a `PrebidNativeAdView`. |
+| `onAdExpired` | `void Function()` | The bid expired (`bid.exp`) before it was shown. |
 
 ---
 

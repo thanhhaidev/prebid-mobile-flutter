@@ -64,7 +64,7 @@ void main() {
       PrebidNativeAd.api = mockApi;
     });
 
-    test('loadAd, trackImpression, trackClick, destroy calls api', () async {
+    test('loadAd and destroy call api', () async {
       final ad = PrebidNativeAd(
         configId: 'config-3',
         assets: [const NativeAsset.title(length: 90)],
@@ -72,12 +72,6 @@ void main() {
 
       await ad.loadAd();
       verify(mockApi.loadAd(any, any)).called(1);
-
-      await ad.trackImpression();
-      verify(mockApi.trackImpression(any)).called(1);
-
-      await ad.trackClick();
-      verify(mockApi.trackClick(any)).called(1);
 
       await ad.destroy();
       verify(mockApi.destroy(any)).called(1);

@@ -28,7 +28,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  pigeon: ^26.2.3
+  # Pinned: CI regenerates the Pigeon API and fails on drift.
+  pigeon: 26.3.2
   mockito: ^5.6.3
   build_runner: ^2.13.1
 

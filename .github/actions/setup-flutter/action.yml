@@ -1,0 +1,23 @@
+name: Set up Flutter
+description: >-
+  Installs the Flutter version pinned in .fvmrc (the same SDK developers use
+  through FVM) and resolves the pub workspace.
+
+runs:
+  using: composite
+  steps:
+    - name: Read Flutter version from .fvmrc
+      id: version
+      shell: bash
+      run: echo "flutter=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+    - name: Install Flutter ${{ steps.version.outputs.flutter }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ steps.version.outputs.flutter }}
+        channel: stable
+        cache: true
+
+    - name: Resolve workspace dependencies
+      shell: bash
+      run: flutter pub get

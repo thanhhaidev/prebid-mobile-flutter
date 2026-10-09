@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Keep the CI / release actions current (e.g. Node runtime deprecations).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

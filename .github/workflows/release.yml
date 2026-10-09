@@ -1,0 +1,128 @@
+name: Release
+
+# Publishes one package to pub.dev per tag, using pub.dev automated publishing
+# (GitHub OIDC; no stored token). Tag format: <package>-v<version>, e.g.
+#   prebid_mobile_sdk-v0.0.2
+#   prebid_mobile_sdk_gam-v0.0.2
+# Publish prebid_mobile_sdk first when a companion depends on its new version.
+# See RELEASING.md for the one-time pub.dev setup.
+#
+# Run it manually (workflow_dispatch) for a dry run of any package.
+
+on:
+  push:
+    tags:
+      - 'prebid_mobile_sdk-v[0-9]*'
+      - 'prebid_mobile_sdk_gam-v[0-9]*'
+      - 'prebid_mobile_sdk_admob-v[0-9]*'
+      - 'prebid_mobile_sdk_max-v[0-9]*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to dry-run
+        required: true
+        type: choice
+        options:
+          - prebid_mobile_sdk
+          - prebid_mobile_sdk_gam
+          - prebid_mobile_sdk_admob
+          - prebid_mobile_sdk_max
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MELOS_SDK_PATH: auto
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.package || github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Optionally require this environment in the pub.dev admin settings so only
+    # this job can publish.
+    environment: pub.dev
+    permissions:
+      contents: write # GitHub release
+      id-token: write # pub.dev OIDC
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve package and version
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${GITHUB_REF_NAME}"
+            package="${tag%-v*}"
+            version="${tag##*-v}"
+          else
+            package="${{ inputs.package }}"
+            version=""
+          fi
+          dir="packages/${package}"
+          [ -f "${dir}/pubspec.yaml" ] || { echo "::error::Unknown package ${package}"; exit 1; }
+          pubspec_version="$(grep -E '^version:' "${dir}/pubspec.yaml" | awk '{print $2}')"
+          if [ -n "${version}" ] && [ "${version}" != "${pubspec_version}" ]; then
+            echo "::error::Tag version ${version} != ${dir}/pubspec.yaml version ${pubspec_version}"
+            exit 1
+          fi
+          version="${pubspec_version}"
+          if ! grep -qE "^## \[?${version//./\\.}\]?( |$)" "${dir}/CHANGELOG.md"; then
+            echo "::error::${dir}/CHANGELOG.md has no '## ${version}' section"
+            exit 1
+          fi
+          {
+            echo "package=${package}"
+            echo "version=${version}"
+            echo "dir=${dir}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Require the core version on pub.dev (companion packages)
+        if: steps.meta.outputs.package != 'prebid_mobile_sdk' && github.event_name == 'push'
+        shell: bash
+        run: |
+          core="$(grep -E '^version:' packages/prebid_mobile_sdk/pubspec.yaml | awk '{print $2}')"
+          if ! curl -fsS https://pub.dev/api/packages/prebid_mobile_sdk \
+              | jq -e --arg v "$core" '.versions[] | select(.version == $v)' > /dev/null; then
+            echo "::error::prebid_mobile_sdk ${core} is not on pub.dev yet; release it first (tag prebid_mobile_sdk-v${core})."
+            exit 1
+          fi
+
+      # Configures the pub.dev OIDC credential; Flutter's `pub publish` reuses it.
+      - uses: dart-lang/setup-dart@v1
+      - uses: ./.github/actions/setup-flutter
+
+      - name: Analyze and test
+        working-directory: ${{ steps.meta.outputs.dir }}
+        run: |
+          flutter analyze --no-pub
+          if [ -d test ]; then flutter test --no-pub; fi
+
+      - name: Dry run
+        working-directory: ${{ steps.meta.outputs.dir }}
+        run: flutter pub publish --dry-run
+
+      - name: Publish to pub.dev
+        if: github.event_name == 'push'
+        working-directory: ${{ steps.meta.outputs.dir }}
+        run: flutter pub publish --force
+
+      - name: Create GitHub release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ steps.meta.outputs.package }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          DIR: ${{ steps.meta.outputs.dir }}
+        run: |
+          # The CHANGELOG section for this version (until the next "## ").
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[?" v "\\]?( |$)" { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' "$DIR/CHANGELOG.md" > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$PACKAGE $VERSION" \
+            --notes-file notes.md

@@ -4,16 +4,44 @@ packages:
   - packages/*
   - example
 
+# Local development uses the FVM-pinned SDK (.fvmrc). CI sets
+# MELOS_SDK_PATH=auto to use the Flutter on PATH instead.
+sdkPath: .fvm/flutter_sdk
+
 scripts:
   analyze:
     description: Analyze all packages.
-    run: melos exec -- flutter analyze
+    # One at a time: parallel `flutter` commands fight over the startup lock.
+    run: dart run melos exec --concurrency=1 -- flutter analyze --no-pub
 
   test:
     description: Run tests in packages that have a test/ directory.
-    run: melos exec --dir-exists="test" -- flutter test
+    run: dart run melos exec --concurrency=1 --dir-exists="test" -- flutter test --no-pub
 
   format:
     description: Format all Dart code.
     run: dart format .
-sdkPath: .fvm/flutter_sdk
+
+  format:check:
+    description: Fail if any Dart file is not formatted.
+    run: dart format --output=none --set-exit-if-changed .
+
+  generate:
+    description: Regenerate the Pigeon API (and format it) in prebid_mobile_sdk.
+    run: >-
+      cd packages/prebid_mobile_sdk &&
+      dart run pigeon --input pigeons/prebid_api.dart &&
+      dart format lib/src/generated
+
+  generate:check:
+    description: Fail if the committed Pigeon output is out of date.
+    run: >-
+      dart run melos run generate &&
+      git diff --exit-code --
+      'packages/prebid_mobile_sdk/*.g.dart'
+      'packages/prebid_mobile_sdk/*.g.kt'
+      'packages/prebid_mobile_sdk/*.g.swift'
+
+  publish:check:
+    description: pub publish --dry-run for every publishable package.
+    run: dart run melos exec --concurrency=1 --no-private -- flutter pub publish --dry-run

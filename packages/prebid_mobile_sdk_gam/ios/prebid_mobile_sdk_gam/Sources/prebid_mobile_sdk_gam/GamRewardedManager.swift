@@ -47,6 +47,7 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
             }
             let adUnit = RewardedAdUnit(configID: configId, eventHandler: eventHandler)
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
+            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             adUnit.delegate = self
 
             ads[adId] = adUnit

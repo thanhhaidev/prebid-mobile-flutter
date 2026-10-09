@@ -16,7 +16,7 @@ void main() {
 
   group('PrebidMobile Configuration API', () {
     test('initializeSdk calls api with correct args', () async {
-      when(mockApi.initializeSdk(any, any)).thenAnswer(
+      when(mockApi.initializeSdk(any, any, any)).thenAnswer(
         (_) async =>
             InitializationResult(status: InitializationStatus.succeeded.name),
       );
@@ -27,7 +27,7 @@ void main() {
       );
 
       verify(
-        mockApi.initializeSdk('https://test.com', 'account-123'),
+        mockApi.initializeSdk('https://test.com', 'account-123', null),
       ).called(1);
     });
 
@@ -207,13 +207,13 @@ void main() {
 
   group('PrebidMobile SharedID, settings id and bid events', () {
     test('isSdkInitialized follows the init status', () async {
-      when(mockApi.initializeSdk(any, any)).thenAnswer(
+      when(mockApi.initializeSdk(any, any, any)).thenAnswer(
         (_) async => InitializationResult(status: 'failed', error: 'x'),
       );
       await PrebidMobile.initializeSdk(prebidServerUrl: 'u', accountId: 'a');
       expect(PrebidMobile.isSdkInitialized, isFalse);
 
-      when(mockApi.initializeSdk(any, any)).thenAnswer(
+      when(mockApi.initializeSdk(any, any, any)).thenAnswer(
         (_) async => InitializationResult(status: 'serverStatusWarning'),
       );
       await PrebidMobile.initializeSdk(prebidServerUrl: 'u', accountId: 'a');

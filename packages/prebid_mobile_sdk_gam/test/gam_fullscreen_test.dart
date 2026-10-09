@@ -19,6 +19,18 @@ void main() {
         controls: const PrebidFullscreenControls(
           closeButtonPosition: PrebidButtonPosition.topLeft,
           skipDelay: 5,
+          supportSKOverlay: true,
+        ),
+        videoParameters: const VideoParameters(
+          mimes: ['video/mp4'],
+          plcmt: VideoPlcmt.interstitial,
+          startDelay: VideoStartDelay.preRoll,
+          linearity: VideoLinearity.linear,
+          skippable: true,
+          battr: [VideoCreativeAttribute.pop],
+          minBitrate: 300,
+          maxBitrate: 1500,
+          maxDuration: 30,
         ),
         listener: PrebidInterstitialAdListener(
           onAdLoaded: () => fired.add('loaded'),
@@ -36,6 +48,18 @@ void main() {
       expect(args['controls'], {
         'closeButtonPosition': 'topLeft',
         'skipDelay': 5,
+        'supportSKOverlay': true,
+      });
+      expect(args['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'maxDuration': 30,
+        'plcmt': 3,
+        'startDelay': 0,
+        'linearity': 1,
+        'skippable': true,
+        'battr': [8],
+        'minBitrate': 300,
+        'maxBitrate': 1500,
       });
 
       final adId = args['adId'] as int;
@@ -65,14 +89,25 @@ void main() {
       final ad = PrebidGamRewardedAd(
         configId: 'config-r',
         gamAdUnitId: '/1/rewarded',
-        controls: const PrebidFullscreenControls(isMuted: true),
+        controls: const PrebidFullscreenControls(
+          isMuted: true,
+          supportSKOverlay: false,
+        ),
+        videoParameters: const VideoParameters(
+          mimes: ['video/mp4'],
+          maxDuration: 60,
+        ),
         listener: PrebidRewardedAdListener(
           onUserEarnedReward: (r) => reward = r,
         ),
       );
       await ad.loadAd();
       final args = h.argsOf('load');
-      expect(args['controls'], {'isMuted': true});
+      expect(args['controls'], {'isMuted': true, 'supportSKOverlay': false});
+      expect(args['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'maxDuration': 60,
+      });
       expect(args.containsKey('customTargeting'), isFalse);
 
       await h.emit('onUserEarnedReward', args['adId'] as int, {
@@ -94,6 +129,7 @@ void main() {
         listener: PrebidRewardedAdListener(onUserEarnedReward: rewards.add),
       );
       await ad.loadAd();
+      expect(h.argsOf('load').containsKey('videoParameters'), isFalse);
       final adId = h.argsOf('load')['adId'] as int;
 
       await h.emit('onAdLoaded', adId);

@@ -89,6 +89,7 @@ class MaxInterstitialManager(
                     mediationUtils,
                 )
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
+                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit, interstitial)
                 ads[adId] = holder
 

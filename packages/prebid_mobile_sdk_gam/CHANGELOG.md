@@ -7,7 +7,11 @@
 * Banner / interstitial / rewarded: `customTargeting` for the GAM request (Prebid 3.4 `adManagerRequestConfiguration`) and `onAdExpired`.
 * Banner: `PrebidBannerAdController` (`loadAd` / `stopRefresh`), `videoPlacementType` and `PrebidBannerVideoListener` video events;
   auto-refresh only when `refreshIntervalSeconds` > 0.
-* Interstitial / rewarded: `PrebidFullscreenControls`; rewarded passes the reward `ext`.
+* Banner: `additionalSizes` (multisize, passed to the GAM event handler), `adFormats`
+  (banner + video multiformat), `pbAdSlot`, `impOrtbConfig` and `videoParameters` (iOS only).
+* Interstitial / rewarded: `PrebidFullscreenControls` (incl. iOS `supportSKOverlay`) and
+  `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video); rewarded passes the
+  reward `ext`.
 * `PrebidGamNativeAd` — GAM Original-API native (Android + iOS): custom-template
   (`customFormatId`) + unified flow, Prebid creative extracted via `findNative`.
   Events via `PrebidGamNativeAdListener` (incl. `onAdExpired`). Request `assets` /

@@ -8,8 +8,9 @@ import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.api.data.Position
 
 // Helpers for the values the Dart side sends over method channels:
-// `NativeAsset.toMap()`, `NativeEventTracker.toMap()` and
-// `PrebidFullscreenControls.toMap()` from prebid_mobile_sdk.
+// `NativeAsset.toMap()`, `NativeEventTracker.toMap()`,
+// `PrebidFullscreenControls.toMap()` and `VideoParameters.toMap()` from
+// prebid_mobile_sdk.
 
 private fun Map<*, *>.int(key: String): Int? = (this[key] as? Number)?.toInt()
 
@@ -61,6 +62,11 @@ internal fun nativeTrackersFrom(raw: Any?): List<NativeEventTracker>? {
     }
 }
 
+/// `maxDuration` from `VideoParameters.toMap()`. Prebid Android's rendering
+/// interstitial / rewarded ad units only expose `setMaxVideoDuration`, so it is
+/// the one video parameter applied on Android (the full set applies on iOS).
+internal fun videoMaxDurationFrom(raw: Any?): Int? = (raw as? Map<*, *>)?.int("maxDuration")
+
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).
 internal class FullscreenControls(m: Map<*, *>) {
     val closeButtonArea = (m["closeButtonArea"] as? Number)?.toDouble()
@@ -72,6 +78,7 @@ internal class FullscreenControls(m: Map<*, *>) {
     val isSoundButtonVisible = m["isSoundButtonVisible"] as? Boolean
     val minWidthPercentage = m.int("minWidthPercentage")
     val minHeightPercentage = m.int("minHeightPercentage")
+    // `supportSKOverlay` is iOS only (SKAdNetwork); ignored here.
 
     companion object {
         fun from(raw: Any?): FullscreenControls? = (raw as? Map<*, *>)?.let { FullscreenControls(it) }

@@ -1,6 +1,10 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show AdFormat, PrebidFullscreenControls, PrebidInterstitialAdListener;
+    show
+        AdFormat,
+        PrebidFullscreenControls,
+        PrebidInterstitialAdListener,
+        VideoParameters;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_gam/interstitial',
@@ -67,8 +71,14 @@ class PrebidGamInterstitialAd {
   /// Ad formats to request. Defaults to display interstitial.
   final Set<AdFormat>? adFormats;
 
-  /// Close / skip button, sound and minimum-size controls.
+  /// Close / skip button, sound, minimum-size and (iOS) SKOverlay controls.
   final PrebidFullscreenControls? controls;
+
+  /// OpenRTB video parameters for a video interstitial. iOS applies every
+  /// field; Prebid Android's interstitial ad unit only exposes
+  /// `setMaxVideoDuration`, so [VideoParameters.maxDuration] only caps the
+  /// rendered video there (nothing is sent in the request).
+  final VideoParameters? videoParameters;
 
   bool _loaded = false;
 
@@ -82,6 +92,7 @@ class PrebidGamInterstitialAd {
     this.adFormats,
     this.customTargeting,
     this.controls,
+    this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -97,6 +108,7 @@ class PrebidGamInterstitialAd {
       'adFormats': adFormats?.map((f) => f.name).toList(),
       'customTargeting': ?customTargeting,
       'controls': ?controls?.toMap(),
+      'videoParameters': ?videoParameters?.toMap(),
     });
   }
 

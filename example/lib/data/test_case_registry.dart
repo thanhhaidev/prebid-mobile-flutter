@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show NativeAsset, NativeDataType;
 
@@ -98,6 +100,7 @@ class TestCaseRegistry {
       format: DemoAdFormat.displayBanner,
       width: 320,
       height: 50,
+      additionalSizes: [Size(728, 90)],
     ),
 
     // =========================================================================
@@ -456,6 +459,7 @@ class TestCaseRegistry {
       adUnitId: '${_gam}prebid_oxb_multisize_banner',
       width: 320,
       height: 50,
+      additionalSizes: [Size(728, 90)],
     ),
     TestCase(
       title: 'MRAID 2.0: Expand - 1 Part (GAM)',

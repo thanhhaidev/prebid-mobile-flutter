@@ -66,6 +66,11 @@ class PrebidBannerAd extends StatefulWidget {
   /// The desired height of the banner ad in dp.
   final int height;
 
+  /// Further sizes the slot accepts besides [width] x [height] (a multisize
+  /// banner, e.g. `[Size(300, 250)]` next to 320x50). The slot resizes to the
+  /// winning creative.
+  final List<Size>? additionalSizes;
+
   /// Whether this banner should display video ads.
   ///
   /// Ignored when [adFormats] is set.
@@ -111,6 +116,7 @@ class PrebidBannerAd extends StatefulWidget {
     required this.configId,
     required this.width,
     required this.height,
+    this.additionalSizes,
     this.isVideo = false,
     this.adFormats,
     this.pbAdSlot,
@@ -143,6 +149,13 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       'height': widget.height,
       'isVideo': widget.isVideo,
       'autoLoad': widget.autoLoad,
+      if (widget.additionalSizes != null)
+        'additionalSizes': [
+          for (final size in widget.additionalSizes!) ...[
+            size.width.round(),
+            size.height.round(),
+          ],
+        ],
       if (widget.refreshIntervalSeconds != null)
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
       if (widget.adFormats != null)

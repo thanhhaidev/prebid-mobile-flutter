@@ -54,6 +54,7 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
                 mediationDelegate: mediationDelegate
             )
             controls?.apply(to: adUnit)
+            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             adUnit.adFormats = isVideo ? [.video] : [.banner]
 
             adUnits[adId] = adUnit

@@ -70,6 +70,7 @@ class AdMobRewardedManager(
                 val mediationUtils = AdMobMediationRewardedUtils(extras)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
+                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit)
                 ads[adId] = holder
 

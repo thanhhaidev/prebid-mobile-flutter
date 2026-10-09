@@ -54,8 +54,16 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         let autoLoad = args["autoLoad"] as? Bool ?? true
         let refreshInterval = args["refreshIntervalSeconds"] as? Int
         let videoPlacement = args["videoPlacementType"] as? String
+        let adFormats = args["adFormats"] as? [String]
+        let pbAdSlot = args["pbAdSlot"] as? String
+        let impOrtbConfig = args["impOrtbConfig"] as? String
 
         let adSize = CGSize(width: width, height: height)
+        // Flat [w, h, w, h, ...] list of extra sizes for a multisize banner.
+        let flatSizes = (args["additionalSizes"] as? [NSNumber] ?? []).map { $0.intValue }
+        let additionalSizes = stride(from: 0, to: flatSizes.count - 1, by: 2).map {
+            CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
+        }
 
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_sdk_gam/banner_\(viewId)",
@@ -64,7 +72,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
         let eventHandler = GAMBannerEventHandler(
             adUnitID: gamAdUnitId,
-            validGADAdSizes: [nsValue(for: adSizeFor(cgSize: adSize))]
+            validGADAdSizes: ([adSize] + additionalSizes).map { nsValue(for: adSizeFor(cgSize: $0)) }
         )
         if let targeting = gamCustomTargeting(args["customTargeting"]) {
             // Prebid 3.4: app custom targeting on the GAM request; Prebid's
@@ -75,23 +83,33 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
                 request.customTargeting = merged
             }
         }
-        bannerView = PrebidMobile.BannerView(
-            frame: CGRect(origin: .zero, size: adSize),
-            configID: configId,
-            adSize: adSize,
-            eventHandler: eventHandler
-        )
+        // Takes the primary size from the event handler and derives
+        // `additionalSizes` from its remaining valid sizes.
+        bannerView = PrebidMobile.BannerView(configID: configId, eventHandler: eventHandler)
 
         super.init()
 
-        if isVideo {
+        if let adFormats = adFormats {
+            // Multiformat banner (Prebid 3.4): banner and/or video in one request.
+            var formats: Set<PrebidMobile.AdFormat> = []
+            if adFormats.contains("banner") { formats.insert(.banner) }
+            if adFormats.contains("video") { formats.insert(.video) }
+            if !formats.isEmpty { bannerView.adFormats = formats }
+        } else if isVideo {
             bannerView.adFormats = [.video]
+        }
+        if bannerView.adFormats.contains(.video) {
             switch videoPlacement {
             case "inArticle": bannerView.videoParameters.placement = .InArticle
             case "inFeed": bannerView.videoParameters.placement = .InFeed
             default: bannerView.videoParameters.placement = .InBanner
             }
         }
+        // `videoParameters` is get-only: configure it in place. An explicit
+        // `placement` here overrides `videoPlacementType`.
+        applyVideoParameters(args["videoParameters"], to: bannerView.videoParameters)
+        if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
+        if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
 
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)

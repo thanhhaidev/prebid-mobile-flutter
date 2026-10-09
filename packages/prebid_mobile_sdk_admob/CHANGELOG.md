@@ -9,5 +9,6 @@
   native ad view (incl. media view). Events via `PrebidAdMobNativeAdListener`.
   Request `assets` / `eventTrackers` are configurable.
 * Banner / interstitial / rewarded report `onAdImpression`; interstitial / rewarded accept
-  `PrebidFullscreenControls`.
+  `PrebidFullscreenControls` (`supportSKOverlay` has no mediation equivalent and is ignored).
+* Interstitial / rewarded: `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video).
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

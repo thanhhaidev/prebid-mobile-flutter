@@ -116,6 +116,10 @@ class NativeAdData {
     this.sponsoredBy,
     this.callToAction,
     this.clickUrl,
+    this.privacyUrl,
+    this.titles,
+    this.images,
+    this.dataAssets,
   });
   final String? title;
   final String? text;
@@ -124,6 +128,28 @@ class NativeAdData {
   final String? sponsoredBy;
   final String? callToAction;
   final String? clickUrl;
+
+  /// AdChoices / privacy link (native `privacy`).
+  final String? privacyUrl;
+
+  /// Every title, image and data asset of the response.
+  final List<String?>? titles;
+  final List<NativeAdImageData?>? images;
+  final List<NativeAdDataAssetData?>? dataAssets;
+}
+
+/// A native response image asset (type: 1=icon, 3=main).
+class NativeAdImageData {
+  NativeAdImageData({required this.type, this.url});
+  final int type;
+  final String? url;
+}
+
+/// A native response data asset (OpenRTB native data asset type).
+class NativeAdDataAssetData {
+  NativeAdDataAssetData({required this.type, this.value});
+  final int type;
+  final String? value;
 }
 
 /// External user ID for third-party identity modules (UID2, SharedID, etc.).
@@ -170,6 +196,13 @@ class VideoParametersConfig {
     this.maxDuration,
     this.minDuration,
     this.api,
+    this.plcmt,
+    this.startDelay,
+    this.linearity,
+    this.skippable,
+    this.battr,
+    this.minBitrate,
+    this.maxBitrate,
   });
 
   /// Supported content MIME types (e.g., ["video/mp4"]).
@@ -192,6 +225,25 @@ class VideoParametersConfig {
 
   /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
   final List<int?>? api;
+
+  /// OpenRTB 2.6 placement subtype (`plcmt`): 1=instream, 2=accompanying
+  /// content, 3=interstitial, 4=no content / standalone.
+  final int? plcmt;
+
+  /// Start delay in seconds, or 0=pre-roll, -1=generic mid-roll,
+  /// -2=generic post-roll.
+  final int? startDelay;
+
+  /// 1=linear (in-stream), 2=non-linear (overlay).
+  final int? linearity;
+  final bool? skippable;
+
+  /// Blocked creative attributes (OpenRTB 5.3).
+  final List<int?>? battr;
+
+  /// Bitrate bounds in Kbps.
+  final int? minBitrate;
+  final int? maxBitrate;
 }
 
 /// Fullscreen (interstitial / rewarded) rendering controls.
@@ -207,6 +259,7 @@ class FullscreenControlsConfig {
     this.isAutoCloseOnCompletionEnabled,
     this.minWidthPercentage,
     this.minHeightPercentage,
+    this.supportSKOverlay,
   });
 
   /// Close button size as a fraction of the screen (0..1).
@@ -232,6 +285,9 @@ class FullscreenControlsConfig {
   /// Minimum creative size in percent of the screen (interstitial only).
   final int? minWidthPercentage;
   final int? minHeightPercentage;
+
+  /// iOS only: show an SKOverlay for SKAdNetwork ads.
+  final bool? supportSKOverlay;
 }
 
 // =============================================================================
@@ -242,7 +298,11 @@ class FullscreenControlsConfig {
 @HostApi()
 abstract class PrebidMobileHostApi {
   @async
-  InitializationResult initializeSdk(String prebidServerUrl, String accountId);
+  InitializationResult initializeSdk(
+    String prebidServerUrl,
+    String accountId,
+    String? nonTrackingUrl,
+  );
 
   void setTimeoutMillis(int timeoutMillis);
   void setShareGeoLocation(bool share);
@@ -344,6 +404,11 @@ abstract class TargetingHostApi {
   void setDomain(String? domain);
 
   // OMID partner
+  /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
+  /// `app.storeurl` iTunes ID.
+  void setSourceApp(String? sourceApp);
+  void setItunesId(String? itunesId);
+
   void setOmidPartnerName(String? name);
   void setOmidPartnerVersion(String? version);
 
@@ -448,10 +513,12 @@ class InstreamVideoAdRequestConfig {
     required this.configId,
     required this.width,
     required this.height,
+    this.videoConfig,
   });
   final String configId;
   final int width;
   final int height;
+  final VideoParametersConfig? videoConfig;
 }
 
 /// In-stream video ad operations (Dart → Native).

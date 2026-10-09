@@ -209,7 +209,7 @@ Static class for SDK initialization, global configuration, and identity manageme
 
 | Method | Returns | Description |
 |---|---|---|
-| `initializeSdk({prebidServerUrl, accountId, completion})` | `Future<void>` | Initialize the SDK with your Prebid Server endpoint and account ID. |
+| `initializeSdk({prebidServerUrl, accountId, nonTrackingUrl, completion})` | `Future<void>` | Initialize the SDK with your Prebid Server endpoint and account ID. `nonTrackingUrl` (iOS) is used when the user hasn't authorized tracking (ATT). |
 | `setTimeoutMillis(int timeout)` | `Future<void>` | Set the bid request timeout in milliseconds. |
 | `setShareGeoLocation(bool share)` | `Future<void>` | Enable or disable sharing the device's geo location. |
 | `setPbsDebug(bool enabled)` | `Future<void>` | Enable PBS debug mode (`"test": 1` in bid requests). |
@@ -316,6 +316,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
 | `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
 | `setOmidPartnerName(String? name)` / `setOmidPartnerVersion(String? version)` | `Future<void>` | OM SDK partner sent in `source.ext.omidpn` / `omidpv`. |
+| `setSourceApp(String?)` / `setItunesId(String?)` | `Future<void>` | iOS only: SKAdNetwork `sourceapp` and your app's iTunes ID (needed for SKAdNetwork bids when Info.plist lists `SKAdNetworkItems`). |
 | `setUserLatLng(double lat, double lng)` | `Future<void>` | User location (`user.geo`). |
 | `setLocationPrecision(int? precision)` | `Future<void>` | Decimal places kept for coordinates; `null` = full precision. |
 
@@ -330,6 +331,7 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `configId` | `String` | **required** | Prebid Server stored impression configuration ID. |
 | `width` | `int` | **required** | Banner width in dp. |
 | `height` | `int` | **required** | Banner height in dp. |
+| `additionalSizes` | `List<Size>?` | `null` | Further accepted sizes (multisize banner); the slot resizes to the winner. |
 | `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
 | `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
 | `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds (Prebid clamps to 30–120 on Android, 15–120 on iOS). `null` or `0` disables it. |
@@ -389,7 +391,10 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 Loads a native ad. Show it with [`PrebidNativeAdView`](#prebidnativeadview--native-ad-view):
 it renders the ad natively and registers it with Prebid, so impressions
 (viewability-based) and clicks are tracked. The parsed assets are also
-delivered to `onAdLoaded` as a `PrebidNativeAdResponse`.
+delivered to `onAdLoaded` as a `PrebidNativeAdResponse`: the common fields
+(`title`, `text`, `iconUrl`, `imageUrl`, `sponsoredBy`, `callToAction`,
+`clickUrl`), the AdChoices `privacyUrl`, and every asset (`titles`, `images`,
+`dataAssets`; `dataOf(NativeDataType.rating)` for one type).
 
 | Property / Method | Type | Description |
 |---|---|---|
@@ -457,6 +462,7 @@ Fetches VAST video demand from Prebid Server.
 |---|---|---|
 | `configId` | `String` | **Required.** Prebid Server config ID. |
 | `size` | `Size` | **Required.** Video player dimensions. |
+| `videoParameters` | `VideoParameters?` | Video signals (mimes, protocols, `plcmt`, durations, start delay). |
 | `fetchDemand()` | `Future<PrebidVideoAdBidResponse>` | Fetch demand. |
 | `destroy()` | `Future<void>` | Release resources. |
 
@@ -471,10 +477,11 @@ const videoParams = VideoParameters(
   mimes: ['video/mp4', 'video/x-ms-wmv'],
   protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0],
   playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
-  placement: VideoPlacement.inBanner,
+  plcmt: VideoPlcmt.accompanyingContent,
   maxDuration: 30,
   minDuration: 5,
   api: [VideoApi.vpaid2_0, VideoApi.omid1],
+  battr: [VideoCreativeAttribute.annoying],
 );
 ```
 
@@ -483,10 +490,21 @@ const videoParams = VideoParameters(
 | `mimes` | `List<String>` | **Required.** Supported MIME types (`["video/mp4"]`). |
 | `protocols` | `List<VideoProtocol>?` | VAST protocol versions. |
 | `playbackMethods` | `List<VideoPlaybackMethod>?` | How the video should play. |
-| `placement` | `VideoPlacement?` | Placement type (in-stream, in-banner, in-feed, etc.). |
+| `placement` | `VideoPlacement?` | Legacy `placement` (deprecated in OpenRTB 2.6; prefer `plcmt`). |
+| `plcmt` | `VideoPlcmt?` | OpenRTB 2.6 placement subtype (instream, accompanying content, interstitial, no content). |
 | `maxDuration` | `int?` | Maximum duration in seconds. |
 | `minDuration` | `int?` | Minimum duration in seconds. |
+| `startDelay` | `int?` | Seconds, or `VideoStartDelay.preRoll` / `genericMidRoll` / `genericPostRoll`. |
+| `linearity` | `VideoLinearity?` | Linear (in-stream) or non-linear (overlay). |
+| `skippable` | `bool?` | Whether the player allows skipping. |
+| `battr` | `List<VideoCreativeAttribute>?` | Blocked creative attributes. |
+| `minBitrate` / `maxBitrate` | `int?` | Bitrate bounds in Kbps. |
 | `api` | `List<VideoApi>?` | Supported API frameworks (VPAID, MRAID, OMID). |
+
+Original API / multiformat / in-stream requests send every field on both
+platforms, and so do iOS interstitials. Prebid Android's rendering
+interstitial has no video-parameters setter: the request carries the SDK's
+defaults and `maxDuration` only caps the rendered video's length.
 
 ---
 

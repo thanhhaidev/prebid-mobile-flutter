@@ -59,6 +59,19 @@ class PrebidNativeAdResponse {
   /// The click-through URL.
   final String? clickUrl;
 
+  /// The AdChoices / privacy notice URL (native `privacy`). Show it as an
+  /// AdChoices link when your layout renders the ad itself.
+  final String? privacyUrl;
+
+  /// Every title asset of the response.
+  final List<String> titles;
+
+  /// Every image asset of the response.
+  final List<PrebidNativeImage> images;
+
+  /// Every data asset of the response (rating, price, likes, address, ...).
+  final List<PrebidNativeData> dataAssets;
+
   const PrebidNativeAdResponse({
     this.title,
     this.text,
@@ -67,7 +80,39 @@ class PrebidNativeAdResponse {
     this.sponsoredBy,
     this.callToAction,
     this.clickUrl,
+    this.privacyUrl,
+    this.titles = const [],
+    this.images = const [],
+    this.dataAssets = const [],
   });
+
+  /// The values of the data assets of [type].
+  List<String> dataOf(NativeDataType type) => [
+    for (final d in dataAssets)
+      if (d.type == type.value && d.value != null) d.value!,
+  ];
+}
+
+/// An image asset of a native response.
+class PrebidNativeImage {
+  /// The OpenRTB image type (see [NativeImageType]).
+  final int type;
+
+  /// The image URL.
+  final String? url;
+
+  const PrebidNativeImage({required this.type, this.url});
+}
+
+/// A data asset of a native response.
+class PrebidNativeData {
+  /// The OpenRTB data asset type (see [NativeDataType]).
+  final int type;
+
+  /// The asset value.
+  final String? value;
+
+  const PrebidNativeData({required this.type, this.value});
 }
 
 /// Defines a native asset for the ad request.
@@ -258,6 +303,20 @@ class PrebidNativeAd {
               sponsoredBy: event.nativeAd!.sponsoredBy,
               callToAction: event.nativeAd!.callToAction,
               clickUrl: event.nativeAd!.clickUrl,
+              privacyUrl: event.nativeAd!.privacyUrl,
+              titles: [...?event.nativeAd!.titles?.nonNulls],
+              images: [
+                for (final i
+                    in event.nativeAd!.images?.nonNulls ??
+                        <NativeAdImageData>[])
+                  PrebidNativeImage(type: i.type, url: i.url),
+              ],
+              dataAssets: [
+                for (final d
+                    in event.nativeAd!.dataAssets?.nonNulls ??
+                        <NativeAdDataAssetData>[])
+                  PrebidNativeData(type: d.type, value: d.value),
+              ],
             ),
           );
         }

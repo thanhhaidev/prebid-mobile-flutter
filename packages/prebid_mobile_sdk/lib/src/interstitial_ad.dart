@@ -26,8 +26,9 @@ class PrebidInterstitialAd {
 
   /// Video playback parameters (protocols, playback methods, etc.).
   ///
-  /// Only used when [adFormats] includes [AdFormat.video]. On Android only
-  /// `maxDuration` is applied (the rendering API has no other video setters).
+  /// Only used when [adFormats] includes [AdFormat.video]. On Android the
+  /// rendering API has no video-parameters setter: the request carries the
+  /// SDK's defaults and `maxDuration` only caps the rendered video's length.
   final VideoParameters? videoParameters;
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
@@ -74,20 +75,7 @@ class PrebidInterstitialAd {
   /// Load the interstitial ad.
   Future<void> loadAd() async {
     final formats = adFormats?.map((f) => f.name).toList();
-    VideoParametersConfig? videoConfig;
-    if (videoParameters != null) {
-      videoConfig = VideoParametersConfig(
-        mimes: videoParameters!.mimes,
-        protocols: videoParameters!.protocols?.map((p) => p.value).toList(),
-        playbackMethods: videoParameters!.playbackMethods
-            ?.map((m) => m.value)
-            .toList(),
-        placement: videoParameters!.placement?.value,
-        maxDuration: videoParameters!.maxDuration,
-        minDuration: videoParameters!.minDuration,
-        api: videoParameters!.api?.map((a) => a.value).toList(),
-      );
-    }
+    final videoConfig = videoParameters?.toConfig();
     await api.loadAd(
       _adId,
       configId,

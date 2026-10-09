@@ -2,7 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidFullscreenControls, PrebidReward, PrebidRewardedAdListener;
+    show
+        PrebidFullscreenControls,
+        PrebidReward,
+        PrebidRewardedAdListener,
+        VideoParameters;
 
 const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_max/rewarded');
 
@@ -58,6 +62,12 @@ class PrebidMaxRewardedAd {
   /// Close / skip button, sound and (interstitial) minimum-size controls.
   final PrebidFullscreenControls? controls;
 
+  /// OpenRTB video parameters for a video rewarded. iOS applies every field;
+  /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
+  /// [VideoParameters.maxDuration] only caps the rendered video there (nothing
+  /// is sent in the request).
+  final VideoParameters? videoParameters;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
@@ -71,6 +81,7 @@ class PrebidMaxRewardedAd {
     required this.configId,
     required this.maxAdUnitId,
     this.controls,
+    this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -84,6 +95,7 @@ class PrebidMaxRewardedAd {
       'configId': configId,
       'maxAdUnitId': maxAdUnitId,
       'controls': ?controls?.toMap(),
+      'videoParameters': ?videoParameters?.toMap(),
     });
   }
 

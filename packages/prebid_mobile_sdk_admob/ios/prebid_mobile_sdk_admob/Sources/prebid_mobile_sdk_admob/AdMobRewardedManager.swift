@@ -50,6 +50,7 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
                 mediationDelegate: mediationDelegate
             )
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
+            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
 

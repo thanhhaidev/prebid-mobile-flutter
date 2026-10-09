@@ -540,7 +540,13 @@ data class NativeAdData (
   val imageUrl: String? = null,
   val sponsoredBy: String? = null,
   val callToAction: String? = null,
-  val clickUrl: String? = null
+  val clickUrl: String? = null,
+  /** AdChoices / privacy link (native `privacy`). */
+  val privacyUrl: String? = null,
+  /** Every title, image and data asset of the response. */
+  val titles: List<String?>? = null,
+  val images: List<NativeAdImageData?>? = null,
+  val dataAssets: List<NativeAdDataAssetData?>? = null
 )
  {
   companion object {
@@ -552,7 +558,11 @@ data class NativeAdData (
       val sponsoredBy = pigeonVar_list[4] as String?
       val callToAction = pigeonVar_list[5] as String?
       val clickUrl = pigeonVar_list[6] as String?
-      return NativeAdData(title, text, iconUrl, imageUrl, sponsoredBy, callToAction, clickUrl)
+      val privacyUrl = pigeonVar_list[7] as String?
+      val titles = pigeonVar_list[8] as List<String?>?
+      val images = pigeonVar_list[9] as List<NativeAdImageData?>?
+      val dataAssets = pigeonVar_list[10] as List<NativeAdDataAssetData?>?
+      return NativeAdData(title, text, iconUrl, imageUrl, sponsoredBy, callToAction, clickUrl, privacyUrl, titles, images, dataAssets)
     }
   }
   fun toList(): List<Any?> {
@@ -564,6 +574,10 @@ data class NativeAdData (
       sponsoredBy,
       callToAction,
       clickUrl,
+      privacyUrl,
+      titles,
+      images,
+      dataAssets,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -574,7 +588,7 @@ data class NativeAdData (
       return true
     }
     val other = other as NativeAdData
-    return PrebidApiPigeonUtils.deepEquals(this.title, other.title) && PrebidApiPigeonUtils.deepEquals(this.text, other.text) && PrebidApiPigeonUtils.deepEquals(this.iconUrl, other.iconUrl) && PrebidApiPigeonUtils.deepEquals(this.imageUrl, other.imageUrl) && PrebidApiPigeonUtils.deepEquals(this.sponsoredBy, other.sponsoredBy) && PrebidApiPigeonUtils.deepEquals(this.callToAction, other.callToAction) && PrebidApiPigeonUtils.deepEquals(this.clickUrl, other.clickUrl)
+    return PrebidApiPigeonUtils.deepEquals(this.title, other.title) && PrebidApiPigeonUtils.deepEquals(this.text, other.text) && PrebidApiPigeonUtils.deepEquals(this.iconUrl, other.iconUrl) && PrebidApiPigeonUtils.deepEquals(this.imageUrl, other.imageUrl) && PrebidApiPigeonUtils.deepEquals(this.sponsoredBy, other.sponsoredBy) && PrebidApiPigeonUtils.deepEquals(this.callToAction, other.callToAction) && PrebidApiPigeonUtils.deepEquals(this.clickUrl, other.clickUrl) && PrebidApiPigeonUtils.deepEquals(this.privacyUrl, other.privacyUrl) && PrebidApiPigeonUtils.deepEquals(this.titles, other.titles) && PrebidApiPigeonUtils.deepEquals(this.images, other.images) && PrebidApiPigeonUtils.deepEquals(this.dataAssets, other.dataAssets)
   }
 
   override fun hashCode(): Int {
@@ -586,6 +600,94 @@ data class NativeAdData (
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.sponsoredBy)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.callToAction)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.clickUrl)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.privacyUrl)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.titles)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.images)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.dataAssets)
+    return result
+  }
+}
+
+/**
+ * A native response image asset (type: 1=icon, 3=main).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeAdImageData (
+  val type: Long,
+  val url: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeAdImageData {
+      val type = pigeonVar_list[0] as Long
+      val url = pigeonVar_list[1] as String?
+      return NativeAdImageData(type, url)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      type,
+      url,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeAdImageData
+    return PrebidApiPigeonUtils.deepEquals(this.type, other.type) && PrebidApiPigeonUtils.deepEquals(this.url, other.url)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.type)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.url)
+    return result
+  }
+}
+
+/**
+ * A native response data asset (OpenRTB native data asset type).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeAdDataAssetData (
+  val type: Long,
+  val value: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeAdDataAssetData {
+      val type = pigeonVar_list[0] as Long
+      val value = pigeonVar_list[1] as String?
+      return NativeAdDataAssetData(type, value)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      type,
+      value,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeAdDataAssetData
+    return PrebidApiPigeonUtils.deepEquals(this.type, other.type) && PrebidApiPigeonUtils.deepEquals(this.value, other.value)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.type)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.value)
     return result
   }
 }
@@ -678,7 +780,25 @@ data class VideoParametersConfig (
   /** Minimum video duration in seconds. */
   val minDuration: Long? = null,
   /** Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.). */
-  val api: List<Long?>? = null
+  val api: List<Long?>? = null,
+  /**
+   * OpenRTB 2.6 placement subtype (`plcmt`): 1=instream, 2=accompanying
+   * content, 3=interstitial, 4=no content / standalone.
+   */
+  val plcmt: Long? = null,
+  /**
+   * Start delay in seconds, or 0=pre-roll, -1=generic mid-roll,
+   * -2=generic post-roll.
+   */
+  val startDelay: Long? = null,
+  /** 1=linear (in-stream), 2=non-linear (overlay). */
+  val linearity: Long? = null,
+  val skippable: Boolean? = null,
+  /** Blocked creative attributes (OpenRTB 5.3). */
+  val battr: List<Long?>? = null,
+  /** Bitrate bounds in Kbps. */
+  val minBitrate: Long? = null,
+  val maxBitrate: Long? = null
 )
  {
   companion object {
@@ -690,7 +810,14 @@ data class VideoParametersConfig (
       val maxDuration = pigeonVar_list[4] as Long?
       val minDuration = pigeonVar_list[5] as Long?
       val api = pigeonVar_list[6] as List<Long?>?
-      return VideoParametersConfig(mimes, protocols, playbackMethods, placement, maxDuration, minDuration, api)
+      val plcmt = pigeonVar_list[7] as Long?
+      val startDelay = pigeonVar_list[8] as Long?
+      val linearity = pigeonVar_list[9] as Long?
+      val skippable = pigeonVar_list[10] as Boolean?
+      val battr = pigeonVar_list[11] as List<Long?>?
+      val minBitrate = pigeonVar_list[12] as Long?
+      val maxBitrate = pigeonVar_list[13] as Long?
+      return VideoParametersConfig(mimes, protocols, playbackMethods, placement, maxDuration, minDuration, api, plcmt, startDelay, linearity, skippable, battr, minBitrate, maxBitrate)
     }
   }
   fun toList(): List<Any?> {
@@ -702,6 +829,13 @@ data class VideoParametersConfig (
       maxDuration,
       minDuration,
       api,
+      plcmt,
+      startDelay,
+      linearity,
+      skippable,
+      battr,
+      minBitrate,
+      maxBitrate,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -712,7 +846,7 @@ data class VideoParametersConfig (
       return true
     }
     val other = other as VideoParametersConfig
-    return PrebidApiPigeonUtils.deepEquals(this.mimes, other.mimes) && PrebidApiPigeonUtils.deepEquals(this.protocols, other.protocols) && PrebidApiPigeonUtils.deepEquals(this.playbackMethods, other.playbackMethods) && PrebidApiPigeonUtils.deepEquals(this.placement, other.placement) && PrebidApiPigeonUtils.deepEquals(this.maxDuration, other.maxDuration) && PrebidApiPigeonUtils.deepEquals(this.minDuration, other.minDuration) && PrebidApiPigeonUtils.deepEquals(this.api, other.api)
+    return PrebidApiPigeonUtils.deepEquals(this.mimes, other.mimes) && PrebidApiPigeonUtils.deepEquals(this.protocols, other.protocols) && PrebidApiPigeonUtils.deepEquals(this.playbackMethods, other.playbackMethods) && PrebidApiPigeonUtils.deepEquals(this.placement, other.placement) && PrebidApiPigeonUtils.deepEquals(this.maxDuration, other.maxDuration) && PrebidApiPigeonUtils.deepEquals(this.minDuration, other.minDuration) && PrebidApiPigeonUtils.deepEquals(this.api, other.api) && PrebidApiPigeonUtils.deepEquals(this.plcmt, other.plcmt) && PrebidApiPigeonUtils.deepEquals(this.startDelay, other.startDelay) && PrebidApiPigeonUtils.deepEquals(this.linearity, other.linearity) && PrebidApiPigeonUtils.deepEquals(this.skippable, other.skippable) && PrebidApiPigeonUtils.deepEquals(this.battr, other.battr) && PrebidApiPigeonUtils.deepEquals(this.minBitrate, other.minBitrate) && PrebidApiPigeonUtils.deepEquals(this.maxBitrate, other.maxBitrate)
   }
 
   override fun hashCode(): Int {
@@ -724,6 +858,13 @@ data class VideoParametersConfig (
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.maxDuration)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minDuration)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.api)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.plcmt)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.startDelay)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.linearity)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.skippable)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.battr)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minBitrate)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.maxBitrate)
     return result
   }
 }
@@ -750,7 +891,9 @@ data class FullscreenControlsConfig (
   val isAutoCloseOnCompletionEnabled: Boolean? = null,
   /** Minimum creative size in percent of the screen (interstitial only). */
   val minWidthPercentage: Long? = null,
-  val minHeightPercentage: Long? = null
+  val minHeightPercentage: Long? = null,
+  /** iOS only: show an SKOverlay for SKAdNetwork ads. */
+  val supportSKOverlay: Boolean? = null
 )
  {
   companion object {
@@ -765,7 +908,8 @@ data class FullscreenControlsConfig (
       val isAutoCloseOnCompletionEnabled = pigeonVar_list[7] as Boolean?
       val minWidthPercentage = pigeonVar_list[8] as Long?
       val minHeightPercentage = pigeonVar_list[9] as Long?
-      return FullscreenControlsConfig(closeButtonArea, closeButtonPosition, skipButtonArea, skipButtonPosition, skipDelay, isMuted, isSoundButtonVisible, isAutoCloseOnCompletionEnabled, minWidthPercentage, minHeightPercentage)
+      val supportSKOverlay = pigeonVar_list[10] as Boolean?
+      return FullscreenControlsConfig(closeButtonArea, closeButtonPosition, skipButtonArea, skipButtonPosition, skipDelay, isMuted, isSoundButtonVisible, isAutoCloseOnCompletionEnabled, minWidthPercentage, minHeightPercentage, supportSKOverlay)
     }
   }
   fun toList(): List<Any?> {
@@ -780,6 +924,7 @@ data class FullscreenControlsConfig (
       isAutoCloseOnCompletionEnabled,
       minWidthPercentage,
       minHeightPercentage,
+      supportSKOverlay,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -790,7 +935,7 @@ data class FullscreenControlsConfig (
       return true
     }
     val other = other as FullscreenControlsConfig
-    return PrebidApiPigeonUtils.deepEquals(this.closeButtonArea, other.closeButtonArea) && PrebidApiPigeonUtils.deepEquals(this.closeButtonPosition, other.closeButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipButtonArea, other.skipButtonArea) && PrebidApiPigeonUtils.deepEquals(this.skipButtonPosition, other.skipButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipDelay, other.skipDelay) && PrebidApiPigeonUtils.deepEquals(this.isMuted, other.isMuted) && PrebidApiPigeonUtils.deepEquals(this.isSoundButtonVisible, other.isSoundButtonVisible) && PrebidApiPigeonUtils.deepEquals(this.isAutoCloseOnCompletionEnabled, other.isAutoCloseOnCompletionEnabled) && PrebidApiPigeonUtils.deepEquals(this.minWidthPercentage, other.minWidthPercentage) && PrebidApiPigeonUtils.deepEquals(this.minHeightPercentage, other.minHeightPercentage)
+    return PrebidApiPigeonUtils.deepEquals(this.closeButtonArea, other.closeButtonArea) && PrebidApiPigeonUtils.deepEquals(this.closeButtonPosition, other.closeButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipButtonArea, other.skipButtonArea) && PrebidApiPigeonUtils.deepEquals(this.skipButtonPosition, other.skipButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipDelay, other.skipDelay) && PrebidApiPigeonUtils.deepEquals(this.isMuted, other.isMuted) && PrebidApiPigeonUtils.deepEquals(this.isSoundButtonVisible, other.isSoundButtonVisible) && PrebidApiPigeonUtils.deepEquals(this.isAutoCloseOnCompletionEnabled, other.isAutoCloseOnCompletionEnabled) && PrebidApiPigeonUtils.deepEquals(this.minWidthPercentage, other.minWidthPercentage) && PrebidApiPigeonUtils.deepEquals(this.minHeightPercentage, other.minHeightPercentage) && PrebidApiPigeonUtils.deepEquals(this.supportSKOverlay, other.supportSKOverlay)
   }
 
   override fun hashCode(): Int {
@@ -805,6 +950,7 @@ data class FullscreenControlsConfig (
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.isAutoCloseOnCompletionEnabled)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minWidthPercentage)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minHeightPercentage)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.supportSKOverlay)
     return result
   }
 }
@@ -944,7 +1090,8 @@ data class MultiformatBidResult (
 data class InstreamVideoAdRequestConfig (
   val configId: String,
   val width: Long,
-  val height: Long
+  val height: Long,
+  val videoConfig: VideoParametersConfig? = null
 )
  {
   companion object {
@@ -952,7 +1099,8 @@ data class InstreamVideoAdRequestConfig (
       val configId = pigeonVar_list[0] as String
       val width = pigeonVar_list[1] as Long
       val height = pigeonVar_list[2] as Long
-      return InstreamVideoAdRequestConfig(configId, width, height)
+      val videoConfig = pigeonVar_list[3] as VideoParametersConfig?
+      return InstreamVideoAdRequestConfig(configId, width, height, videoConfig)
     }
   }
   fun toList(): List<Any?> {
@@ -960,6 +1108,7 @@ data class InstreamVideoAdRequestConfig (
       configId,
       width,
       height,
+      videoConfig,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -970,7 +1119,7 @@ data class InstreamVideoAdRequestConfig (
       return true
     }
     val other = other as InstreamVideoAdRequestConfig
-    return PrebidApiPigeonUtils.deepEquals(this.configId, other.configId) && PrebidApiPigeonUtils.deepEquals(this.width, other.width) && PrebidApiPigeonUtils.deepEquals(this.height, other.height)
+    return PrebidApiPigeonUtils.deepEquals(this.configId, other.configId) && PrebidApiPigeonUtils.deepEquals(this.width, other.width) && PrebidApiPigeonUtils.deepEquals(this.height, other.height) && PrebidApiPigeonUtils.deepEquals(this.videoConfig, other.videoConfig)
   }
 
   override fun hashCode(): Int {
@@ -978,6 +1127,7 @@ data class InstreamVideoAdRequestConfig (
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.configId)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.width)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.height)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.videoConfig)
     return result
   }
 }
@@ -1021,30 +1171,40 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
       }
       136.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          ExternalUserIdData.fromList(it)
+          NativeAdImageData.fromList(it)
         }
       }
       137.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          VideoParametersConfig.fromList(it)
+          NativeAdDataAssetData.fromList(it)
         }
       }
       138.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          FullscreenControlsConfig.fromList(it)
+          ExternalUserIdData.fromList(it)
         }
       }
       139.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatAdRequestConfig.fromList(it)
+          VideoParametersConfig.fromList(it)
         }
       }
       140.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatBidResult.fromList(it)
+          FullscreenControlsConfig.fromList(it)
         }
       }
       141.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatAdRequestConfig.fromList(it)
+        }
+      }
+      142.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatBidResult.fromList(it)
+        }
+      }
+      143.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           InstreamVideoAdRequestConfig.fromList(it)
         }
@@ -1082,28 +1242,36 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
         stream.write(135)
         writeValue(stream, value.toList())
       }
-      is ExternalUserIdData -> {
+      is NativeAdImageData -> {
         stream.write(136)
         writeValue(stream, value.toList())
       }
-      is VideoParametersConfig -> {
+      is NativeAdDataAssetData -> {
         stream.write(137)
         writeValue(stream, value.toList())
       }
-      is FullscreenControlsConfig -> {
+      is ExternalUserIdData -> {
         stream.write(138)
         writeValue(stream, value.toList())
       }
-      is MultiformatAdRequestConfig -> {
+      is VideoParametersConfig -> {
         stream.write(139)
         writeValue(stream, value.toList())
       }
-      is MultiformatBidResult -> {
+      is FullscreenControlsConfig -> {
         stream.write(140)
         writeValue(stream, value.toList())
       }
-      is InstreamVideoAdRequestConfig -> {
+      is MultiformatAdRequestConfig -> {
         stream.write(141)
+        writeValue(stream, value.toList())
+      }
+      is MultiformatBidResult -> {
+        stream.write(142)
+        writeValue(stream, value.toList())
+      }
+      is InstreamVideoAdRequestConfig -> {
+        stream.write(143)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -1118,7 +1286,7 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
  * Generated interface from Pigeon that represents a handler of messages from Flutter.
  */
 interface PrebidMobileHostApi {
-  fun initializeSdk(prebidServerUrl: String, accountId: String, callback: (Result<InitializationResult>) -> Unit)
+  fun initializeSdk(prebidServerUrl: String, accountId: String, nonTrackingUrl: String?, callback: (Result<InitializationResult>) -> Unit)
   fun setTimeoutMillis(timeoutMillis: Long)
   fun setShareGeoLocation(share: Boolean)
   fun setPbsDebug(enabled: Boolean)
@@ -1166,7 +1334,8 @@ interface PrebidMobileHostApi {
             val args = message as List<Any?>
             val prebidServerUrlArg = args[0] as String
             val accountIdArg = args[1] as String
-            api.initializeSdk(prebidServerUrlArg, accountIdArg) { result: Result<InitializationResult> ->
+            val nonTrackingUrlArg = args[2] as String?
+            api.initializeSdk(prebidServerUrlArg, accountIdArg, nonTrackingUrlArg) { result: Result<InitializationResult> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(PrebidApiPigeonUtils.wrapError(error))
@@ -1678,6 +1847,12 @@ interface TargetingHostApi {
   fun setPublisherName(name: String?)
   fun setStoreUrl(url: String?)
   fun setDomain(domain: String?)
+  /**
+   * iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
+   * `app.storeurl` iTunes ID.
+   */
+  fun setSourceApp(sourceApp: String?)
+  fun setItunesId(itunesId: String?)
   fun setOmidPartnerName(name: String?)
   fun setOmidPartnerVersion(version: String?)
   fun setUserLatLng(latitude: Double, longitude: Double)
@@ -2318,6 +2493,42 @@ interface TargetingHostApi {
             val domainArg = args[0] as String?
             val wrapped: List<Any?> = try {
               api.setDomain(domainArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSourceApp$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val sourceAppArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setSourceApp(sourceAppArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setItunesId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val itunesIdArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setItunesId(itunesIdArg)
               listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)

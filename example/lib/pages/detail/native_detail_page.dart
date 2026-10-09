@@ -176,7 +176,13 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
       ],
       listener: PrebidNativeAdListener(
         onAdLoaded: (response) {
-          _tracker.track('onAdLoaded', 'title="${response.title}"');
+          _tracker.track(
+            'onAdLoaded',
+            'title="${response.title}" privacy=${response.privacyUrl} '
+                'assets: ${response.titles.length} title, '
+                '${response.images.length} image, '
+                '${response.dataAssets.length} data',
+          );
           setState(() => _response = response);
         },
         onAdFailed: (e) => _trackError('onAdFailed', e),

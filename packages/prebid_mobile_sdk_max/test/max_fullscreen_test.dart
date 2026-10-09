@@ -19,6 +19,13 @@ void main() {
         controls: const PrebidFullscreenControls(
           minSizePercentage: Size(50, 70),
         ),
+        videoParameters: const VideoParameters(
+          mimes: ['video/mp4'],
+          protocols: [VideoProtocol.vast4_0],
+          plcmt: VideoPlcmt.interstitial,
+          skippable: false,
+          maxDuration: 30,
+        ),
         listener: PrebidInterstitialAdListener(
           onAdLoaded: () => fired.add('loaded'),
           onAdDisplayed: () => fired.add('displayed'),
@@ -36,6 +43,13 @@ void main() {
       expect(args['controls'], {
         'minWidthPercentage': 50,
         'minHeightPercentage': 70,
+      });
+      expect(args['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'protocols': [7],
+        'maxDuration': 30,
+        'plcmt': 3,
+        'skippable': false,
       });
 
       final adId = args['adId'] as int;
@@ -72,6 +86,11 @@ void main() {
         configId: 'config-r',
         maxAdUnitId: 'unit-r',
         controls: const PrebidFullscreenControls(isSoundButtonVisible: true),
+        videoParameters: const VideoParameters(
+          mimes: ['video/mp4'],
+          battr: [VideoCreativeAttribute.adCanBeSkipped],
+          maxBitrate: 2000,
+        ),
         listener: PrebidRewardedAdListener(
           onUserEarnedReward: (r) => reward = r,
           onAdImpression: () => impressions++,
@@ -80,6 +99,11 @@ void main() {
       await ad.loadAd();
       final args = h.argsOf('load');
       expect(args['controls'], {'isSoundButtonVisible': true});
+      expect(args['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'battr': [16],
+        'maxBitrate': 2000,
+      });
 
       final adId = args['adId'] as int;
       await h.emit('onAdImpression', adId);

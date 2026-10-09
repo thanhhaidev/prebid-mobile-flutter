@@ -505,6 +505,10 @@ class NativeAdData {
     this.sponsoredBy,
     this.callToAction,
     this.clickUrl,
+    this.privacyUrl,
+    this.titles,
+    this.images,
+    this.dataAssets,
   });
 
   String? title;
@@ -521,6 +525,16 @@ class NativeAdData {
 
   String? clickUrl;
 
+  /// AdChoices / privacy link (native `privacy`).
+  String? privacyUrl;
+
+  /// Every title, image and data asset of the response.
+  List<String?>? titles;
+
+  List<NativeAdImageData?>? images;
+
+  List<NativeAdDataAssetData?>? dataAssets;
+
   List<Object?> _toList() {
     return <Object?>[
       title,
@@ -530,6 +544,10 @@ class NativeAdData {
       sponsoredBy,
       callToAction,
       clickUrl,
+      privacyUrl,
+      titles,
+      images,
+      dataAssets,
     ];
   }
 
@@ -547,6 +565,11 @@ class NativeAdData {
       sponsoredBy: result[4] as String?,
       callToAction: result[5] as String?,
       clickUrl: result[6] as String?,
+      privacyUrl: result[7] as String?,
+      titles: (result[8] as List<Object?>?)?.cast<String?>(),
+      images: (result[9] as List<Object?>?)?.cast<NativeAdImageData?>(),
+      dataAssets: (result[10] as List<Object?>?)
+          ?.cast<NativeAdDataAssetData?>(),
     );
   }
 
@@ -565,7 +588,93 @@ class NativeAdData {
         _deepEquals(imageUrl, other.imageUrl) &&
         _deepEquals(sponsoredBy, other.sponsoredBy) &&
         _deepEquals(callToAction, other.callToAction) &&
-        _deepEquals(clickUrl, other.clickUrl);
+        _deepEquals(clickUrl, other.clickUrl) &&
+        _deepEquals(privacyUrl, other.privacyUrl) &&
+        _deepEquals(titles, other.titles) &&
+        _deepEquals(images, other.images) &&
+        _deepEquals(dataAssets, other.dataAssets);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A native response image asset (type: 1=icon, 3=main).
+class NativeAdImageData {
+  NativeAdImageData({required this.type, this.url});
+
+  int type;
+
+  String? url;
+
+  List<Object?> _toList() {
+    return <Object?>[type, url];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static NativeAdImageData decode(Object result) {
+    result as List<Object?>;
+    return NativeAdImageData(
+      type: result[0]! as int,
+      url: result[1] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeAdImageData || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(type, other.type) && _deepEquals(url, other.url);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A native response data asset (OpenRTB native data asset type).
+class NativeAdDataAssetData {
+  NativeAdDataAssetData({required this.type, this.value});
+
+  int type;
+
+  String? value;
+
+  List<Object?> _toList() {
+    return <Object?>[type, value];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static NativeAdDataAssetData decode(Object result) {
+    result as List<Object?>;
+    return NativeAdDataAssetData(
+      type: result[0]! as int,
+      value: result[1] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeAdDataAssetData || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(type, other.type) && _deepEquals(value, other.value);
   }
 
   @override
@@ -660,6 +769,13 @@ class VideoParametersConfig {
     this.maxDuration,
     this.minDuration,
     this.api,
+    this.plcmt,
+    this.startDelay,
+    this.linearity,
+    this.skippable,
+    this.battr,
+    this.minBitrate,
+    this.maxBitrate,
   });
 
   /// Supported content MIME types (e.g., ["video/mp4"]).
@@ -683,6 +799,27 @@ class VideoParametersConfig {
   /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
   List<int?>? api;
 
+  /// OpenRTB 2.6 placement subtype (`plcmt`): 1=instream, 2=accompanying
+  /// content, 3=interstitial, 4=no content / standalone.
+  int? plcmt;
+
+  /// Start delay in seconds, or 0=pre-roll, -1=generic mid-roll,
+  /// -2=generic post-roll.
+  int? startDelay;
+
+  /// 1=linear (in-stream), 2=non-linear (overlay).
+  int? linearity;
+
+  bool? skippable;
+
+  /// Blocked creative attributes (OpenRTB 5.3).
+  List<int?>? battr;
+
+  /// Bitrate bounds in Kbps.
+  int? minBitrate;
+
+  int? maxBitrate;
+
   List<Object?> _toList() {
     return <Object?>[
       mimes,
@@ -692,6 +829,13 @@ class VideoParametersConfig {
       maxDuration,
       minDuration,
       api,
+      plcmt,
+      startDelay,
+      linearity,
+      skippable,
+      battr,
+      minBitrate,
+      maxBitrate,
     ];
   }
 
@@ -709,6 +853,13 @@ class VideoParametersConfig {
       maxDuration: result[4] as int?,
       minDuration: result[5] as int?,
       api: (result[6] as List<Object?>?)?.cast<int?>(),
+      plcmt: result[7] as int?,
+      startDelay: result[8] as int?,
+      linearity: result[9] as int?,
+      skippable: result[10] as bool?,
+      battr: (result[11] as List<Object?>?)?.cast<int?>(),
+      minBitrate: result[12] as int?,
+      maxBitrate: result[13] as int?,
     );
   }
 
@@ -727,7 +878,14 @@ class VideoParametersConfig {
         _deepEquals(placement, other.placement) &&
         _deepEquals(maxDuration, other.maxDuration) &&
         _deepEquals(minDuration, other.minDuration) &&
-        _deepEquals(api, other.api);
+        _deepEquals(api, other.api) &&
+        _deepEquals(plcmt, other.plcmt) &&
+        _deepEquals(startDelay, other.startDelay) &&
+        _deepEquals(linearity, other.linearity) &&
+        _deepEquals(skippable, other.skippable) &&
+        _deepEquals(battr, other.battr) &&
+        _deepEquals(minBitrate, other.minBitrate) &&
+        _deepEquals(maxBitrate, other.maxBitrate);
   }
 
   @override
@@ -748,6 +906,7 @@ class FullscreenControlsConfig {
     this.isAutoCloseOnCompletionEnabled,
     this.minWidthPercentage,
     this.minHeightPercentage,
+    this.supportSKOverlay,
   });
 
   /// Close button size as a fraction of the screen (0..1).
@@ -777,6 +936,9 @@ class FullscreenControlsConfig {
 
   int? minHeightPercentage;
 
+  /// iOS only: show an SKOverlay for SKAdNetwork ads.
+  bool? supportSKOverlay;
+
   List<Object?> _toList() {
     return <Object?>[
       closeButtonArea,
@@ -789,6 +951,7 @@ class FullscreenControlsConfig {
       isAutoCloseOnCompletionEnabled,
       minWidthPercentage,
       minHeightPercentage,
+      supportSKOverlay,
     ];
   }
 
@@ -809,6 +972,7 @@ class FullscreenControlsConfig {
       isAutoCloseOnCompletionEnabled: result[7] as bool?,
       minWidthPercentage: result[8] as int?,
       minHeightPercentage: result[9] as int?,
+      supportSKOverlay: result[10] as bool?,
     );
   }
 
@@ -834,7 +998,8 @@ class FullscreenControlsConfig {
           other.isAutoCloseOnCompletionEnabled,
         ) &&
         _deepEquals(minWidthPercentage, other.minWidthPercentage) &&
-        _deepEquals(minHeightPercentage, other.minHeightPercentage);
+        _deepEquals(minHeightPercentage, other.minHeightPercentage) &&
+        _deepEquals(supportSKOverlay, other.supportSKOverlay);
   }
 
   @override
@@ -1005,6 +1170,7 @@ class InstreamVideoAdRequestConfig {
     required this.configId,
     required this.width,
     required this.height,
+    this.videoConfig,
   });
 
   String configId;
@@ -1013,8 +1179,10 @@ class InstreamVideoAdRequestConfig {
 
   int height;
 
+  VideoParametersConfig? videoConfig;
+
   List<Object?> _toList() {
-    return <Object?>[configId, width, height];
+    return <Object?>[configId, width, height, videoConfig];
   }
 
   Object encode() {
@@ -1027,6 +1195,7 @@ class InstreamVideoAdRequestConfig {
       configId: result[0]! as String,
       width: result[1]! as int,
       height: result[2]! as int,
+      videoConfig: result[3] as VideoParametersConfig?,
     );
   }
 
@@ -1042,7 +1211,8 @@ class InstreamVideoAdRequestConfig {
     }
     return _deepEquals(configId, other.configId) &&
         _deepEquals(width, other.width) &&
-        _deepEquals(height, other.height);
+        _deepEquals(height, other.height) &&
+        _deepEquals(videoConfig, other.videoConfig);
   }
 
   @override
@@ -1078,23 +1248,29 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is NativeAdData) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    } else if (value is ExternalUserIdData) {
+    } else if (value is NativeAdImageData) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    } else if (value is VideoParametersConfig) {
+    } else if (value is NativeAdDataAssetData) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    } else if (value is FullscreenControlsConfig) {
+    } else if (value is ExternalUserIdData) {
       buffer.putUint8(138);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatAdRequestConfig) {
+    } else if (value is VideoParametersConfig) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatBidResult) {
+    } else if (value is FullscreenControlsConfig) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
-    } else if (value is InstreamVideoAdRequestConfig) {
+    } else if (value is MultiformatAdRequestConfig) {
       buffer.putUint8(141);
+      writeValue(buffer, value.encode());
+    } else if (value is MultiformatBidResult) {
+      buffer.putUint8(142);
+      writeValue(buffer, value.encode());
+    } else if (value is InstreamVideoAdRequestConfig) {
+      buffer.putUint8(143);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1119,16 +1295,20 @@ class _PigeonCodec extends StandardMessageCodec {
       case 135:
         return NativeAdData.decode(readValue(buffer)!);
       case 136:
-        return ExternalUserIdData.decode(readValue(buffer)!);
+        return NativeAdImageData.decode(readValue(buffer)!);
       case 137:
-        return VideoParametersConfig.decode(readValue(buffer)!);
+        return NativeAdDataAssetData.decode(readValue(buffer)!);
       case 138:
-        return FullscreenControlsConfig.decode(readValue(buffer)!);
+        return ExternalUserIdData.decode(readValue(buffer)!);
       case 139:
-        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+        return VideoParametersConfig.decode(readValue(buffer)!);
       case 140:
-        return MultiformatBidResult.decode(readValue(buffer)!);
+        return FullscreenControlsConfig.decode(readValue(buffer)!);
       case 141:
+        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+      case 142:
+        return MultiformatBidResult.decode(readValue(buffer)!);
+      case 143:
         return InstreamVideoAdRequestConfig.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -1157,6 +1337,7 @@ class PrebidMobileHostApi {
   Future<InitializationResult> initializeSdk(
     String prebidServerUrl,
     String accountId,
+    String? nonTrackingUrl,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.initializeSdk$pigeonVar_messageChannelSuffix';
@@ -1166,7 +1347,7 @@ class PrebidMobileHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[prebidServerUrl, accountId],
+      <Object?>[prebidServerUrl, accountId, nonTrackingUrl],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -2420,6 +2601,48 @@ class TargetingHostApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[domain],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
+  /// `app.storeurl` iTunes ID.
+  Future<void> setSourceApp(String? sourceApp) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSourceApp$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[sourceApp],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> setItunesId(String? itunesId) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setItunesId$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[itunesId],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

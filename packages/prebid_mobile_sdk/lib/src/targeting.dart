@@ -346,6 +346,17 @@ class PrebidTargeting {
   // OM SDK partner
   // ---------------------------------------------------------------------------
 
+  /// iOS only: the SKAdNetwork `sourceapp` (your app's iTunes ID), required
+  /// for SKAdNetwork bids when your Info.plist lists `SKAdNetworkItems`.
+  static Future<void> setSourceApp(String? sourceApp) async {
+    await api.setSourceApp(sourceApp);
+  }
+
+  /// iOS only: your app's iTunes ID, sent as the App Store URL.
+  static Future<void> setItunesId(String? itunesId) async {
+    await api.setItunesId(itunesId);
+  }
+
   /// OM SDK partner name sent in `source.ext.omidpn`.
   static Future<void> setOmidPartnerName(String? name) async {
     api.setOmidPartnerName(name);

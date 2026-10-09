@@ -107,22 +107,33 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // PrebidMobileHostApi
     // =========================================================================
     
-    func initializeSdk(prebidServerUrl: String, accountId: String,
+    func initializeSdk(prebidServerUrl: String, accountId: String, nonTrackingUrl: String?,
                        completion: @escaping (Result<InitializationResult, Error>) -> Void) {
         Prebid.shared.prebidServerAccountId = accountId
+        let callback: PrebidInitializationCallback = { status, error in
+            let statusStr: String
+            switch status {
+            case .succeeded: statusStr = "succeeded"
+            case .serverStatusWarning: statusStr = "serverStatusWarning"
+            default: statusStr = "failed"
+            }
+            completion(.success(InitializationResult(
+                status: statusStr,
+                error: error?.localizedDescription
+            )))
+        }
         do {
-            try Prebid.initializeSDK(serverURL: prebidServerUrl) { status, error in
-                let statusStr: String
-                switch status {
-                case .succeeded: statusStr = "succeeded"
-                case .serverStatusWarning: statusStr = "serverStatusWarning"
-                default: statusStr = "failed"
-                }
-                let result = InitializationResult(
-                    status: statusStr,
-                    error: error?.localizedDescription
+            if let nonTrackingUrl = nonTrackingUrl {
+                // Used instead of serverURL when the user hasn't authorized
+                // tracking (ATT).
+                try Prebid.initializeSDK(
+                    serverURL: prebidServerUrl,
+                    nonTrackingURLString: nonTrackingUrl,
+                    gadMobileAdsVersion: nil,
+                    callback
                 )
-                completion(.success(result))
+            } else {
+                try Prebid.initializeSDK(serverURL: prebidServerUrl, callback)
             }
         } catch {
             let result = InitializationResult(status: "failed", error: error.localizedDescription)
@@ -381,6 +392,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setStoreUrl(url: String?) throws { Targeting.shared.storeURL = url }
     func setDomain(domain: String?) throws { Targeting.shared.domain = domain }
 
+    func setSourceApp(sourceApp: String?) throws { Targeting.shared.sourceapp = sourceApp }
+    func setItunesId(itunesId: String?) throws { Targeting.shared.itunesID = itunesId }
+
     func setOmidPartnerName(name: String?) throws { Targeting.shared.omidPartnerName = name }
     func setOmidPartnerVersion(version: String?) throws { Targeting.shared.omidPartnerVersion = version }
 
@@ -416,24 +430,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         
         // videoParameters is get-only but returns the ad unit's live
         // (reference-type) parameters, so configure it in place.
-        if let vc = videoConfig {
-            let vp = adUnit.videoParameters
-            vp.mimes = vc.mimes
-            if let protocols = vc.protocols {
-                vp.protocols = protocols.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) }
-            }
-            if let methods = vc.playbackMethods {
-                vp.playbackMethod = methods.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) }
-            }
-            if let placement = vc.placement {
-                vp.placement = Signals.Placement(integerLiteral: Int(placement))
-            }
-            if let api = vc.api {
-                vp.api = api.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
-            }
-            if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
-            if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
-        }
+        videoConfig?.apply(to: adUnit.videoParameters)
         
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi!)
         adUnit.delegate = delegate
@@ -563,7 +560,15 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
                     imageUrl: nativeAd.imageUrl,
                     sponsoredBy: nativeAd.sponsoredBy,
                     callToAction: nativeAd.callToAction,
-                    clickUrl: nativeAd.clickURL
+                    clickUrl: nativeAd.clickURL,
+                    privacyUrl: nativeAd.privacyUrl,
+                    titles: nativeAd.titles.map { $0.text },
+                    images: nativeAd.images.compactMap { image in
+                        image.type.map { NativeAdImageData(type: Int64($0), url: image.url) }
+                    },
+                    dataAssets: nativeAd.dataObjects.compactMap { data in
+                        data.type.map { NativeAdDataAssetData(type: Int64($0), value: data.value) }
+                    }
                 )
                 self.flutterApi?.onAdEvent(event: AdEvent(
                     adId: adId, eventName: "onAdLoaded", nativeAd: nativeData
@@ -596,6 +601,7 @@ extension FullscreenControlsConfig {
         if let v = isMuted { adUnit.isMuted = v }
         if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
         if let v = isAutoCloseOnCompletionEnabled { adUnit.isAutoCloseOnCompletionEnabled = v }
+        if let v = supportSKOverlay { adUnit.supportSKOverlay = v }
     }
 
     // Prebid iOS rewarded has no skip-button controls.
@@ -604,6 +610,34 @@ extension FullscreenControlsConfig {
         if let v = closeButtonPosition.flatMap(prebidPosition) { adUnit.closeButtonPosition = v }
         if let v = isMuted { adUnit.isMuted = v }
         if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
+        if let v = supportSKOverlay { adUnit.supportSKOverlay = v }
+    }
+}
+
+// MARK: - Video parameters
+
+extension VideoParametersConfig {
+    func makeVideoParameters() -> VideoParameters {
+        let parameters = VideoParameters(mimes: mimes)
+        apply(to: parameters)
+        return parameters
+    }
+
+    func apply(to vp: VideoParameters) {
+        vp.mimes = mimes
+        if let v = protocols { vp.protocols = v.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) } }
+        if let v = playbackMethods { vp.playbackMethod = v.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) } }
+        if let v = placement { vp.placement = Signals.Placement(integerLiteral: Int(v)) }
+        if let v = plcmt { vp.plcmnt = Signals.Plcmnt(integerLiteral: Int(v)) }
+        if let v = api { vp.api = v.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) } }
+        if let v = maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(v)) }
+        if let v = minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(v)) }
+        if let v = startDelay { vp.startDelay = Signals.StartDelay(integerLiteral: Int(v)) }
+        if let v = linearity { vp.linearity = SingleContainerInt(integerLiteral: Int(v)) }
+        if let v = skippable { vp.isSkippable = v }
+        if let v = battr { vp.battr = v.compactMap { $0 }.map { Signals.CreativeAttribute(integerLiteral: Int($0)) } }
+        if let v = minBitrate { vp.minBitrate = SingleContainerInt(integerLiteral: Int(v)) }
+        if let v = maxBitrate { vp.maxBitrate = SingleContainerInt(integerLiteral: Int(v)) }
     }
 }
 
@@ -784,25 +818,7 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
         }
         
         // Build video parameters
-        var videoParams: VideoParameters?
-        if let vc = config.videoConfig {
-            let vp = VideoParameters(mimes: vc.mimes)
-            if let protocols = vc.protocols {
-                vp.protocols = protocols.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) }
-            }
-            if let methods = vc.playbackMethods {
-                vp.playbackMethod = methods.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) }
-            }
-            if let placement = vc.placement {
-                vp.placement = Signals.Placement(integerLiteral: Int(placement))
-            }
-            if let api = vc.api {
-                vp.api = api.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
-            }
-            if let maxDur = vc.maxDuration { vp.maxDuration = SingleContainerInt(integerLiteral: Int(maxDur)) }
-            if let minDur = vc.minDuration { vp.minDuration = SingleContainerInt(integerLiteral: Int(minDur)) }
-            videoParams = vp
-        }
+        let videoParams = config.videoConfig?.makeVideoParameters()
         
         // Build native parameters
         var nativeParams: NativeParameters?
@@ -897,6 +913,9 @@ private class InstreamVideoAdHostApiHandler: InstreamVideoAdHostApi {
     ) {
         let size = CGSize(width: Int(config.width), height: Int(config.height))
         let adUnit = InstreamVideoAdUnit(configId: config.configId, size: size)
+        if let videoParameters = config.videoConfig?.makeVideoParameters() {
+            adUnit.videoParameters = videoParameters
+        }
         adUnits[adId] = adUnit
         
         let unitId = ObjectIdentifier(adUnit)

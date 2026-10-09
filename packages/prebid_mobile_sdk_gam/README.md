@@ -128,6 +128,16 @@ outstream video events. Banner auto-refresh is off unless
 `refreshIntervalSeconds` is positive (`null` / `0` disable it on both
 platforms).
 
+The banner also mirrors the core `PrebidBannerAd` request options:
+
+| Parameter | Description |
+|---|---|
+| `additionalSizes` | Extra sizes besides `width` x `height` (multisize). All sizes go to the GAM event handler as valid ad sizes and Prebid requests them all. |
+| `adFormats` | `{AdFormat.banner, AdFormat.video}` for a multiformat banner (Prebid 3.4); overrides `isVideo`. |
+| `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). |
+| `impOrtbConfig` | Impression-level OpenRTB JSON merged into the `imp`. |
+| `videoParameters` | OpenRTB video parameters for outstream video. **iOS only** — Prebid Android's `BannerView` has no video-parameters setter. |
+
 `show()` on an interstitial / rewarded ad that is not loaded yet, or when no
 foreground Activity / view controller is available, reports `onAdFailed`
 instead of failing silently; `isLoaded` turns false after `show()`,
@@ -152,15 +162,34 @@ controls: const PrebidFullscreenControls(
 ```
 
 Skip controls apply to interstitials (and to rewarded on Android only);
-`isAutoCloseOnCompletionEnabled` is iOS only.
+`isAutoCloseOnCompletionEnabled` and `supportSKOverlay` (present an SKOverlay
+for SKAdNetwork ads) are iOS only.
+
+### Video parameters
+
+Interstitial and rewarded ads take `videoParameters` (the core
+`VideoParameters`: mimes, protocols, playback methods, `plcmt`, start delay,
+linearity, skippable, `battr`, bitrates, durations, API frameworks):
+
+```dart
+videoParameters: const VideoParameters(
+  mimes: ['video/mp4'],
+  plcmt: VideoPlcmt.interstitial,
+  maxDuration: 30,
+),
+```
+
+iOS sends every field. Prebid Android's rendering interstitial / rewarded ad
+units only expose `setMaxVideoDuration`, which caps the rendered video's length
+but isn't sent in the request.
 
 ## API
 
 | Class | Description |
 |---|---|
-| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. Controller, video events, `onAdExpired`. |
-| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`. |
-| `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`. |
+| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. `additionalSizes`, `adFormats`, `pbAdSlot`, `impOrtbConfig`, `videoParameters` (iOS), controller, video events, `onAdExpired`. |
+| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`, `videoParameters`. |
+| `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`, `videoParameters`. |
 | `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; events via `PrebidGamNativeAdListener`. |
 
 ## License

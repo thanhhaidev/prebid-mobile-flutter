@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
+import 'video_parameters.dart';
 
 /// Result of an in-stream video bid request.
 class PrebidVideoAdBidResponse {
@@ -41,7 +43,8 @@ class PrebidVideoAdBidResponse {
 /// }
 /// ```
 class PrebidInstreamVideoAd {
-  static final InstreamVideoAdHostApi _api = InstreamVideoAdHostApi();
+  @visibleForTesting
+  static InstreamVideoAdHostApi api = InstreamVideoAdHostApi();
   static int _nextId = 4000000;
 
   final int _adId;
@@ -52,9 +55,16 @@ class PrebidInstreamVideoAd {
   /// The video player size.
   final Size size;
 
+  /// Video signals for the request (mimes, protocols, `plcmt`, duration,
+  /// start delay, ...). Buyers usually need at least mimes and protocols.
+  final VideoParameters? videoParameters;
+
   /// Creates a [PrebidInstreamVideoAd].
-  PrebidInstreamVideoAd({required this.configId, required this.size})
-    : _adId = _nextId++;
+  PrebidInstreamVideoAd({
+    required this.configId,
+    required this.size,
+    this.videoParameters,
+  }) : _adId = _nextId++;
 
   /// Fetch demand for this in-stream video ad.
   ///
@@ -65,9 +75,10 @@ class PrebidInstreamVideoAd {
       configId: configId,
       width: size.width.toInt(),
       height: size.height.toInt(),
+      videoConfig: videoParameters?.toConfig(),
     );
 
-    final result = await _api.fetchDemand(_adId, config);
+    final result = await api.fetchDemand(_adId, config);
 
     Map<String, String>? keywords;
     if (result.targetingKeywords != null) {
@@ -88,6 +99,6 @@ class PrebidInstreamVideoAd {
 
   /// Destroy the ad unit and free resources.
   Future<void> destroy() async {
-    await _api.destroy(_adId);
+    await api.destroy(_adId);
   }
 }

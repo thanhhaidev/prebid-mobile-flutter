@@ -518,6 +518,12 @@ struct NativeAdData: Hashable {
   var sponsoredBy: String? = nil
   var callToAction: String? = nil
   var clickUrl: String? = nil
+  /// AdChoices / privacy link (native `privacy`).
+  var privacyUrl: String? = nil
+  /// Every title, image and data asset of the response.
+  var titles: [String?]? = nil
+  var images: [NativeAdImageData?]? = nil
+  var dataAssets: [NativeAdDataAssetData?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -529,6 +535,10 @@ struct NativeAdData: Hashable {
     let sponsoredBy: String? = nilOrValue(pigeonVar_list[4])
     let callToAction: String? = nilOrValue(pigeonVar_list[5])
     let clickUrl: String? = nilOrValue(pigeonVar_list[6])
+    let privacyUrl: String? = nilOrValue(pigeonVar_list[7])
+    let titles: [String?]? = nilOrValue(pigeonVar_list[8])
+    let images: [NativeAdImageData?]? = nilOrValue(pigeonVar_list[9])
+    let dataAssets: [NativeAdDataAssetData?]? = nilOrValue(pigeonVar_list[10])
 
     return NativeAdData(
       title: title,
@@ -537,7 +547,11 @@ struct NativeAdData: Hashable {
       imageUrl: imageUrl,
       sponsoredBy: sponsoredBy,
       callToAction: callToAction,
-      clickUrl: clickUrl
+      clickUrl: clickUrl,
+      privacyUrl: privacyUrl,
+      titles: titles,
+      images: images,
+      dataAssets: dataAssets
     )
   }
   func toList() -> [Any?] {
@@ -549,13 +563,17 @@ struct NativeAdData: Hashable {
       sponsoredBy,
       callToAction,
       clickUrl,
+      privacyUrl,
+      titles,
+      images,
+      dataAssets,
     ]
   }
   static func == (lhs: NativeAdData, rhs: NativeAdData) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.title, rhs.title) && deepEqualsPrebidApi(lhs.text, rhs.text) && deepEqualsPrebidApi(lhs.iconUrl, rhs.iconUrl) && deepEqualsPrebidApi(lhs.imageUrl, rhs.imageUrl) && deepEqualsPrebidApi(lhs.sponsoredBy, rhs.sponsoredBy) && deepEqualsPrebidApi(lhs.callToAction, rhs.callToAction) && deepEqualsPrebidApi(lhs.clickUrl, rhs.clickUrl)
+    return deepEqualsPrebidApi(lhs.title, rhs.title) && deepEqualsPrebidApi(lhs.text, rhs.text) && deepEqualsPrebidApi(lhs.iconUrl, rhs.iconUrl) && deepEqualsPrebidApi(lhs.imageUrl, rhs.imageUrl) && deepEqualsPrebidApi(lhs.sponsoredBy, rhs.sponsoredBy) && deepEqualsPrebidApi(lhs.callToAction, rhs.callToAction) && deepEqualsPrebidApi(lhs.clickUrl, rhs.clickUrl) && deepEqualsPrebidApi(lhs.privacyUrl, rhs.privacyUrl) && deepEqualsPrebidApi(lhs.titles, rhs.titles) && deepEqualsPrebidApi(lhs.images, rhs.images) && deepEqualsPrebidApi(lhs.dataAssets, rhs.dataAssets)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -567,6 +585,86 @@ struct NativeAdData: Hashable {
     deepHashPrebidApi(value: sponsoredBy, hasher: &hasher)
     deepHashPrebidApi(value: callToAction, hasher: &hasher)
     deepHashPrebidApi(value: clickUrl, hasher: &hasher)
+    deepHashPrebidApi(value: privacyUrl, hasher: &hasher)
+    deepHashPrebidApi(value: titles, hasher: &hasher)
+    deepHashPrebidApi(value: images, hasher: &hasher)
+    deepHashPrebidApi(value: dataAssets, hasher: &hasher)
+  }
+}
+
+/// A native response image asset (type: 1=icon, 3=main).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct NativeAdImageData: Hashable {
+  var type: Int64
+  var url: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> NativeAdImageData? {
+    let type = pigeonVar_list[0] as! Int64
+    let url: String? = nilOrValue(pigeonVar_list[1])
+
+    return NativeAdImageData(
+      type: type,
+      url: url
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      type,
+      url,
+    ]
+  }
+  static func == (lhs: NativeAdImageData, rhs: NativeAdImageData) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsPrebidApi(lhs.type, rhs.type) && deepEqualsPrebidApi(lhs.url, rhs.url)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("NativeAdImageData")
+    deepHashPrebidApi(value: type, hasher: &hasher)
+    deepHashPrebidApi(value: url, hasher: &hasher)
+  }
+}
+
+/// A native response data asset (OpenRTB native data asset type).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct NativeAdDataAssetData: Hashable {
+  var type: Int64
+  var value: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> NativeAdDataAssetData? {
+    let type = pigeonVar_list[0] as! Int64
+    let value: String? = nilOrValue(pigeonVar_list[1])
+
+    return NativeAdDataAssetData(
+      type: type,
+      value: value
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      type,
+      value,
+    ]
+  }
+  static func == (lhs: NativeAdDataAssetData, rhs: NativeAdDataAssetData) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsPrebidApi(lhs.type, rhs.type) && deepEqualsPrebidApi(lhs.value, rhs.value)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("NativeAdDataAssetData")
+    deepHashPrebidApi(value: type, hasher: &hasher)
+    deepHashPrebidApi(value: value, hasher: &hasher)
   }
 }
 
@@ -658,6 +756,20 @@ struct VideoParametersConfig: Hashable {
   var minDuration: Int64? = nil
   /// Supported API frameworks (1=VPAID 1.0, 2=VPAID 2.0, 3=MRAID-1, etc.).
   var api: [Int64?]? = nil
+  /// OpenRTB 2.6 placement subtype (`plcmt`): 1=instream, 2=accompanying
+  /// content, 3=interstitial, 4=no content / standalone.
+  var plcmt: Int64? = nil
+  /// Start delay in seconds, or 0=pre-roll, -1=generic mid-roll,
+  /// -2=generic post-roll.
+  var startDelay: Int64? = nil
+  /// 1=linear (in-stream), 2=non-linear (overlay).
+  var linearity: Int64? = nil
+  var skippable: Bool? = nil
+  /// Blocked creative attributes (OpenRTB 5.3).
+  var battr: [Int64?]? = nil
+  /// Bitrate bounds in Kbps.
+  var minBitrate: Int64? = nil
+  var maxBitrate: Int64? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -669,6 +781,13 @@ struct VideoParametersConfig: Hashable {
     let maxDuration: Int64? = nilOrValue(pigeonVar_list[4])
     let minDuration: Int64? = nilOrValue(pigeonVar_list[5])
     let api: [Int64?]? = nilOrValue(pigeonVar_list[6])
+    let plcmt: Int64? = nilOrValue(pigeonVar_list[7])
+    let startDelay: Int64? = nilOrValue(pigeonVar_list[8])
+    let linearity: Int64? = nilOrValue(pigeonVar_list[9])
+    let skippable: Bool? = nilOrValue(pigeonVar_list[10])
+    let battr: [Int64?]? = nilOrValue(pigeonVar_list[11])
+    let minBitrate: Int64? = nilOrValue(pigeonVar_list[12])
+    let maxBitrate: Int64? = nilOrValue(pigeonVar_list[13])
 
     return VideoParametersConfig(
       mimes: mimes,
@@ -677,7 +796,14 @@ struct VideoParametersConfig: Hashable {
       placement: placement,
       maxDuration: maxDuration,
       minDuration: minDuration,
-      api: api
+      api: api,
+      plcmt: plcmt,
+      startDelay: startDelay,
+      linearity: linearity,
+      skippable: skippable,
+      battr: battr,
+      minBitrate: minBitrate,
+      maxBitrate: maxBitrate
     )
   }
   func toList() -> [Any?] {
@@ -689,13 +815,20 @@ struct VideoParametersConfig: Hashable {
       maxDuration,
       minDuration,
       api,
+      plcmt,
+      startDelay,
+      linearity,
+      skippable,
+      battr,
+      minBitrate,
+      maxBitrate,
     ]
   }
   static func == (lhs: VideoParametersConfig, rhs: VideoParametersConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.mimes, rhs.mimes) && deepEqualsPrebidApi(lhs.protocols, rhs.protocols) && deepEqualsPrebidApi(lhs.playbackMethods, rhs.playbackMethods) && deepEqualsPrebidApi(lhs.placement, rhs.placement) && deepEqualsPrebidApi(lhs.maxDuration, rhs.maxDuration) && deepEqualsPrebidApi(lhs.minDuration, rhs.minDuration) && deepEqualsPrebidApi(lhs.api, rhs.api)
+    return deepEqualsPrebidApi(lhs.mimes, rhs.mimes) && deepEqualsPrebidApi(lhs.protocols, rhs.protocols) && deepEqualsPrebidApi(lhs.playbackMethods, rhs.playbackMethods) && deepEqualsPrebidApi(lhs.placement, rhs.placement) && deepEqualsPrebidApi(lhs.maxDuration, rhs.maxDuration) && deepEqualsPrebidApi(lhs.minDuration, rhs.minDuration) && deepEqualsPrebidApi(lhs.api, rhs.api) && deepEqualsPrebidApi(lhs.plcmt, rhs.plcmt) && deepEqualsPrebidApi(lhs.startDelay, rhs.startDelay) && deepEqualsPrebidApi(lhs.linearity, rhs.linearity) && deepEqualsPrebidApi(lhs.skippable, rhs.skippable) && deepEqualsPrebidApi(lhs.battr, rhs.battr) && deepEqualsPrebidApi(lhs.minBitrate, rhs.minBitrate) && deepEqualsPrebidApi(lhs.maxBitrate, rhs.maxBitrate)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -707,6 +840,13 @@ struct VideoParametersConfig: Hashable {
     deepHashPrebidApi(value: maxDuration, hasher: &hasher)
     deepHashPrebidApi(value: minDuration, hasher: &hasher)
     deepHashPrebidApi(value: api, hasher: &hasher)
+    deepHashPrebidApi(value: plcmt, hasher: &hasher)
+    deepHashPrebidApi(value: startDelay, hasher: &hasher)
+    deepHashPrebidApi(value: linearity, hasher: &hasher)
+    deepHashPrebidApi(value: skippable, hasher: &hasher)
+    deepHashPrebidApi(value: battr, hasher: &hasher)
+    deepHashPrebidApi(value: minBitrate, hasher: &hasher)
+    deepHashPrebidApi(value: maxBitrate, hasher: &hasher)
   }
 }
 
@@ -731,6 +871,8 @@ struct FullscreenControlsConfig: Hashable {
   /// Minimum creative size in percent of the screen (interstitial only).
   var minWidthPercentage: Int64? = nil
   var minHeightPercentage: Int64? = nil
+  /// iOS only: show an SKOverlay for SKAdNetwork ads.
+  var supportSKOverlay: Bool? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -745,6 +887,7 @@ struct FullscreenControlsConfig: Hashable {
     let isAutoCloseOnCompletionEnabled: Bool? = nilOrValue(pigeonVar_list[7])
     let minWidthPercentage: Int64? = nilOrValue(pigeonVar_list[8])
     let minHeightPercentage: Int64? = nilOrValue(pigeonVar_list[9])
+    let supportSKOverlay: Bool? = nilOrValue(pigeonVar_list[10])
 
     return FullscreenControlsConfig(
       closeButtonArea: closeButtonArea,
@@ -756,7 +899,8 @@ struct FullscreenControlsConfig: Hashable {
       isSoundButtonVisible: isSoundButtonVisible,
       isAutoCloseOnCompletionEnabled: isAutoCloseOnCompletionEnabled,
       minWidthPercentage: minWidthPercentage,
-      minHeightPercentage: minHeightPercentage
+      minHeightPercentage: minHeightPercentage,
+      supportSKOverlay: supportSKOverlay
     )
   }
   func toList() -> [Any?] {
@@ -771,13 +915,14 @@ struct FullscreenControlsConfig: Hashable {
       isAutoCloseOnCompletionEnabled,
       minWidthPercentage,
       minHeightPercentage,
+      supportSKOverlay,
     ]
   }
   static func == (lhs: FullscreenControlsConfig, rhs: FullscreenControlsConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.closeButtonArea, rhs.closeButtonArea) && deepEqualsPrebidApi(lhs.closeButtonPosition, rhs.closeButtonPosition) && deepEqualsPrebidApi(lhs.skipButtonArea, rhs.skipButtonArea) && deepEqualsPrebidApi(lhs.skipButtonPosition, rhs.skipButtonPosition) && deepEqualsPrebidApi(lhs.skipDelay, rhs.skipDelay) && deepEqualsPrebidApi(lhs.isMuted, rhs.isMuted) && deepEqualsPrebidApi(lhs.isSoundButtonVisible, rhs.isSoundButtonVisible) && deepEqualsPrebidApi(lhs.isAutoCloseOnCompletionEnabled, rhs.isAutoCloseOnCompletionEnabled) && deepEqualsPrebidApi(lhs.minWidthPercentage, rhs.minWidthPercentage) && deepEqualsPrebidApi(lhs.minHeightPercentage, rhs.minHeightPercentage)
+    return deepEqualsPrebidApi(lhs.closeButtonArea, rhs.closeButtonArea) && deepEqualsPrebidApi(lhs.closeButtonPosition, rhs.closeButtonPosition) && deepEqualsPrebidApi(lhs.skipButtonArea, rhs.skipButtonArea) && deepEqualsPrebidApi(lhs.skipButtonPosition, rhs.skipButtonPosition) && deepEqualsPrebidApi(lhs.skipDelay, rhs.skipDelay) && deepEqualsPrebidApi(lhs.isMuted, rhs.isMuted) && deepEqualsPrebidApi(lhs.isSoundButtonVisible, rhs.isSoundButtonVisible) && deepEqualsPrebidApi(lhs.isAutoCloseOnCompletionEnabled, rhs.isAutoCloseOnCompletionEnabled) && deepEqualsPrebidApi(lhs.minWidthPercentage, rhs.minWidthPercentage) && deepEqualsPrebidApi(lhs.minHeightPercentage, rhs.minHeightPercentage) && deepEqualsPrebidApi(lhs.supportSKOverlay, rhs.supportSKOverlay)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -792,6 +937,7 @@ struct FullscreenControlsConfig: Hashable {
     deepHashPrebidApi(value: isAutoCloseOnCompletionEnabled, hasher: &hasher)
     deepHashPrebidApi(value: minWidthPercentage, hasher: &hasher)
     deepHashPrebidApi(value: minHeightPercentage, hasher: &hasher)
+    deepHashPrebidApi(value: supportSKOverlay, hasher: &hasher)
   }
 }
 
@@ -928,6 +1074,7 @@ struct InstreamVideoAdRequestConfig: Hashable {
   var configId: String
   var width: Int64
   var height: Int64
+  var videoConfig: VideoParametersConfig? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -935,11 +1082,13 @@ struct InstreamVideoAdRequestConfig: Hashable {
     let configId = pigeonVar_list[0] as! String
     let width = pigeonVar_list[1] as! Int64
     let height = pigeonVar_list[2] as! Int64
+    let videoConfig: VideoParametersConfig? = nilOrValue(pigeonVar_list[3])
 
     return InstreamVideoAdRequestConfig(
       configId: configId,
       width: width,
-      height: height
+      height: height,
+      videoConfig: videoConfig
     )
   }
   func toList() -> [Any?] {
@@ -947,13 +1096,14 @@ struct InstreamVideoAdRequestConfig: Hashable {
       configId,
       width,
       height,
+      videoConfig,
     ]
   }
   static func == (lhs: InstreamVideoAdRequestConfig, rhs: InstreamVideoAdRequestConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.width, rhs.width) && deepEqualsPrebidApi(lhs.height, rhs.height)
+    return deepEqualsPrebidApi(lhs.configId, rhs.configId) && deepEqualsPrebidApi(lhs.width, rhs.width) && deepEqualsPrebidApi(lhs.height, rhs.height) && deepEqualsPrebidApi(lhs.videoConfig, rhs.videoConfig)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -961,6 +1111,7 @@ struct InstreamVideoAdRequestConfig: Hashable {
     deepHashPrebidApi(value: configId, hasher: &hasher)
     deepHashPrebidApi(value: width, hasher: &hasher)
     deepHashPrebidApi(value: height, hasher: &hasher)
+    deepHashPrebidApi(value: videoConfig, hasher: &hasher)
   }
 }
 
@@ -982,16 +1133,20 @@ private class PrebidApiPigeonCodecReader: FlutterStandardReader {
     case 135:
       return NativeAdData.fromList(self.readValue() as! [Any?])
     case 136:
-      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
+      return NativeAdImageData.fromList(self.readValue() as! [Any?])
     case 137:
-      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
+      return NativeAdDataAssetData.fromList(self.readValue() as! [Any?])
     case 138:
-      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
+      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
     case 139:
-      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
     case 140:
-      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
     case 141:
+      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+    case 142:
+      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+    case 143:
       return InstreamVideoAdRequestConfig.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1022,23 +1177,29 @@ private class PrebidApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? NativeAdData {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? ExternalUserIdData {
+    } else if let value = value as? NativeAdImageData {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? VideoParametersConfig {
+    } else if let value = value as? NativeAdDataAssetData {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? FullscreenControlsConfig {
+    } else if let value = value as? ExternalUserIdData {
       super.writeByte(138)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatAdRequestConfig {
+    } else if let value = value as? VideoParametersConfig {
       super.writeByte(139)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatBidResult {
+    } else if let value = value as? FullscreenControlsConfig {
       super.writeByte(140)
       super.writeValue(value.toList())
-    } else if let value = value as? InstreamVideoAdRequestConfig {
+    } else if let value = value as? MultiformatAdRequestConfig {
       super.writeByte(141)
+      super.writeValue(value.toList())
+    } else if let value = value as? MultiformatBidResult {
+      super.writeByte(142)
+      super.writeValue(value.toList())
+    } else if let value = value as? InstreamVideoAdRequestConfig {
+      super.writeByte(143)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -1065,7 +1226,7 @@ class PrebidApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol PrebidMobileHostApi {
-  func initializeSdk(prebidServerUrl: String, accountId: String, completion: @escaping (Result<InitializationResult, Error>) -> Void)
+  func initializeSdk(prebidServerUrl: String, accountId: String, nonTrackingUrl: String?, completion: @escaping (Result<InitializationResult, Error>) -> Void)
   func setTimeoutMillis(timeoutMillis: Int64) throws
   func setShareGeoLocation(share: Bool) throws
   func setPbsDebug(enabled: Bool) throws
@@ -1108,7 +1269,8 @@ class PrebidMobileHostApiSetup {
         let args = message as! [Any?]
         let prebidServerUrlArg = args[0] as! String
         let accountIdArg = args[1] as! String
-        api.initializeSdk(prebidServerUrl: prebidServerUrlArg, accountId: accountIdArg) { result in
+        let nonTrackingUrlArg: String? = nilOrValue(args[2])
+        api.initializeSdk(prebidServerUrl: prebidServerUrlArg, accountId: accountIdArg, nonTrackingUrl: nonTrackingUrlArg) { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -1542,6 +1704,10 @@ protocol TargetingHostApi {
   func setPublisherName(name: String?) throws
   func setStoreUrl(url: String?) throws
   func setDomain(domain: String?) throws
+  /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
+  /// `app.storeurl` iTunes ID.
+  func setSourceApp(sourceApp: String?) throws
+  func setItunesId(itunesId: String?) throws
   func setOmidPartnerName(name: String?) throws
   func setOmidPartnerVersion(version: String?) throws
   func setUserLatLng(latitude: Double, longitude: Double) throws
@@ -2086,6 +2252,38 @@ class TargetingHostApiSetup {
       }
     } else {
       setDomainChannel.setMessageHandler(nil)
+    }
+    /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
+    /// `app.storeurl` iTunes ID.
+    let setSourceAppChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setSourceApp\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setSourceAppChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let sourceAppArg: String? = nilOrValue(args[0])
+        do {
+          try api.setSourceApp(sourceApp: sourceAppArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setSourceAppChannel.setMessageHandler(nil)
+    }
+    let setItunesIdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setItunesId\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setItunesIdChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let itunesIdArg: String? = nilOrValue(args[0])
+        do {
+          try api.setItunesId(itunesId: itunesIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setItunesIdChannel.setMessageHandler(nil)
     }
     let setOmidPartnerNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setOmidPartnerName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

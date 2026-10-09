@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
+        AdFormat,
         PrebidBannerAdController,
         PrebidBannerAdListener,
         PrebidBannerVideoListener,
+        VideoParameters,
         VideoPlacementType;
 
 /// A banner ad rendered by **Google Ad Manager** with Prebid demand.
@@ -27,8 +29,32 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// The desired height of the banner ad in dp.
   final int height;
 
+  /// Further sizes the slot accepts besides [width] x [height] (a multisize
+  /// banner, e.g. `[Size(300, 250)]` next to 320x50). Passed to the GAM event
+  /// handler as valid ad sizes, from which Prebid derives the request sizes.
+  final List<Size>? additionalSizes;
+
   /// Whether this banner should display video ads.
+  ///
+  /// Ignored when [adFormats] is set.
   final bool isVideo;
+
+  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// multiformat banner (Prebid 3.4). Overrides [isVideo] when set.
+  final Set<AdFormat>? adFormats;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
+  /// `{"ext":{"gpid":"/1111/home"}}`).
+  final String? impOrtbConfig;
+
+  /// OpenRTB video parameters for an outstream video banner. **iOS only**:
+  /// Prebid Android's `BannerView` has no video-parameters setter (use
+  /// [videoPlacementType] there). An explicit `placement` here overrides
+  /// [videoPlacementType].
+  final VideoParameters? videoParameters;
 
   /// Whether the ad should load automatically when the widget is created.
   final bool autoLoad;
@@ -42,7 +68,7 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Prebid's own `hb_*` keys take precedence on conflict.
   final Map<String, String>? customTargeting;
 
-  /// Outstream video placement when [isVideo] is set. Defaults to
+  /// Outstream video placement when the banner requests video. Defaults to
   /// [VideoPlacementType.inBanner].
   final VideoPlacementType? videoPlacementType;
 
@@ -63,7 +89,12 @@ class PrebidGamBannerAd extends StatefulWidget {
     required this.gamAdUnitId,
     required this.width,
     required this.height,
+    this.additionalSizes,
     this.isVideo = false,
+    this.adFormats,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.videoParameters,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
     this.customTargeting,
@@ -92,6 +123,19 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
       'height': widget.height,
       'isVideo': widget.isVideo,
       'autoLoad': widget.autoLoad,
+      if (widget.additionalSizes != null)
+        'additionalSizes': [
+          for (final size in widget.additionalSizes!) ...[
+            size.width.round(),
+            size.height.round(),
+          ],
+        ],
+      if (widget.adFormats != null)
+        'adFormats': widget.adFormats!.map((f) => f.name).toList(),
+      if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
+      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.videoParameters != null)
+        'videoParameters': widget.videoParameters!.toMap(),
       if (widget.refreshIntervalSeconds != null)
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
       if (widget.customTargeting != null)

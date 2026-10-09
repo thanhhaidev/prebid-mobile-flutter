@@ -62,6 +62,7 @@ class MaxRewardedManager: NSObject {
                 mediationDelegate: mediationDelegate
             )
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
+            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             let proxy = MaxAdEventProxy { [weak self] event, payload in
                 self?.send(adId, event, payload)
             }

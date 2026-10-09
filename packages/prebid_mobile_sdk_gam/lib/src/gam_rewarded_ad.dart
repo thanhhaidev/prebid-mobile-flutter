@@ -2,7 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidFullscreenControls, PrebidReward, PrebidRewardedAdListener;
+    show
+        PrebidFullscreenControls,
+        PrebidReward,
+        PrebidRewardedAdListener,
+        VideoParameters;
 
 const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_gam/rewarded');
 
@@ -41,8 +45,15 @@ class PrebidGamRewardedAd {
   /// Prebid's own `hb_*` keys take precedence on conflict.
   final Map<String, String>? customTargeting;
 
-  /// Close button and sound controls (skip controls apply on Android only).
+  /// Close button, sound and (iOS) SKOverlay controls (skip controls apply on
+  /// Android only).
   final PrebidFullscreenControls? controls;
+
+  /// OpenRTB video parameters for the rewarded video. iOS applies every
+  /// field; Prebid Android's rewarded ad unit only exposes
+  /// `setMaxVideoDuration`, so [VideoParameters.maxDuration] only caps the
+  /// rendered video there (nothing is sent in the request).
+  final VideoParameters? videoParameters;
 
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
@@ -57,6 +68,7 @@ class PrebidGamRewardedAd {
     required this.gamAdUnitId,
     this.customTargeting,
     this.controls,
+    this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -69,6 +81,7 @@ class PrebidGamRewardedAd {
       'gamAdUnitId': gamAdUnitId,
       'customTargeting': ?customTargeting,
       'controls': ?controls?.toMap(),
+      'videoParameters': ?videoParameters?.toMap(),
     });
   }
 

@@ -4,8 +4,9 @@ import UIKit
 import PrebidMobile
 
 // Helpers for the values the Dart side sends over method channels:
-// `NativeAsset.toMap()`, `NativeEventTracker.toMap()` and
-// `PrebidFullscreenControls.toMap()` from prebid_mobile_sdk.
+// `NativeAsset.toMap()`, `NativeEventTracker.toMap()`,
+// `PrebidFullscreenControls.toMap()` and `VideoParameters.toMap()` from
+// prebid_mobile_sdk.
 
 private func intValue(_ raw: Any?) -> Int? { (raw as? NSNumber)?.intValue }
 
@@ -61,6 +62,29 @@ func nativeTrackersFrom(_ raw: Any?) -> [NativeEventTracker]? {
     }
 }
 
+/// Copies `VideoParameters.toMap()` onto an ad unit's `videoParameters`, which
+/// Prebid exposes get-only (it is configured in place). Absent keys keep the
+/// SDK defaults.
+func applyVideoParameters(_ raw: Any?, to vp: VideoParameters) {
+    guard let m = raw as? [String: Any] else { return }
+    func ints(_ key: String) -> [Int]? { (m[key] as? [NSNumber])?.map { $0.intValue } }
+
+    if let mimes = m["mimes"] as? [String], !mimes.isEmpty { vp.mimes = mimes }
+    if let v = ints("protocols") { vp.protocols = v.map { Signals.Protocols(integerLiteral: $0) } }
+    if let v = ints("playbackMethods") { vp.playbackMethod = v.map { Signals.PlaybackMethod(integerLiteral: $0) } }
+    if let v = ints("api") { vp.api = v.map { Signals.Api(integerLiteral: $0) } }
+    if let v = intValue(m["placement"]) { vp.placement = Signals.Placement(integerLiteral: v) }
+    if let v = intValue(m["plcmt"]) { vp.plcmnt = Signals.Plcmnt(integerLiteral: v) }
+    if let v = intValue(m["startDelay"]) { vp.startDelay = Signals.StartDelay(integerLiteral: v) }
+    if let v = intValue(m["linearity"]) { vp.linearity = SingleContainerInt(integerLiteral: v) }
+    if let v = ints("battr") { vp.battr = v.map { Signals.CreativeAttribute(integerLiteral: $0) } }
+    if let v = m["skippable"] as? Bool { vp.isSkippable = v }
+    if let v = intValue(m["maxDuration"]) { vp.maxDuration = SingleContainerInt(integerLiteral: v) }
+    if let v = intValue(m["minDuration"]) { vp.minDuration = SingleContainerInt(integerLiteral: v) }
+    if let v = intValue(m["maxBitrate"]) { vp.maxBitrate = SingleContainerInt(integerLiteral: v) }
+    if let v = intValue(m["minBitrate"]) { vp.minBitrate = SingleContainerInt(integerLiteral: v) }
+}
+
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).
 struct FullscreenControls {
     let closeButtonArea: Double?
@@ -71,6 +95,7 @@ struct FullscreenControls {
     let isMuted: Bool?
     let isSoundButtonVisible: Bool?
     let isAutoCloseOnCompletionEnabled: Bool?
+    let supportSKOverlay: Bool?
     let minSizePercentage: CGSize?
 
     init?(_ raw: Any?) {
@@ -83,6 +108,7 @@ struct FullscreenControls {
         isMuted = m["isMuted"] as? Bool
         isSoundButtonVisible = m["isSoundButtonVisible"] as? Bool
         isAutoCloseOnCompletionEnabled = m["isAutoCloseOnCompletionEnabled"] as? Bool
+        supportSKOverlay = m["supportSKOverlay"] as? Bool
         if let w = intValue(m["minWidthPercentage"]), let h = intValue(m["minHeightPercentage"]) {
             minSizePercentage = CGSize(width: w, height: h)
         } else {
@@ -109,6 +135,7 @@ extension FullscreenControls {
         if let v = isMuted { adUnit.isMuted = v }
         if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
         if let v = isAutoCloseOnCompletionEnabled { adUnit.isAutoCloseOnCompletionEnabled = v }
+        if let v = supportSKOverlay { adUnit.supportSKOverlay = v }
     }
 
     // Prebid iOS rewarded has no skip-button controls.
@@ -117,5 +144,6 @@ extension FullscreenControls {
         if let v = closeButtonPosition { adUnit.closeButtonPosition = v }
         if let v = isMuted { adUnit.isMuted = v }
         if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
+        if let v = supportSKOverlay { adUnit.supportSKOverlay = v }
     }
 }

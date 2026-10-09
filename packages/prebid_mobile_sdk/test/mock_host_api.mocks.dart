@@ -60,13 +60,22 @@ class MockPrebidMobileHostApi extends _i1.Mock
   _i4.Future<_i2.InitializationResult> initializeSdk(
     String? prebidServerUrl,
     String? accountId,
+    String? nonTrackingUrl,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#initializeSdk, [prebidServerUrl, accountId]),
+            Invocation.method(#initializeSdk, [
+              prebidServerUrl,
+              accountId,
+              nonTrackingUrl,
+            ]),
             returnValue: _i4.Future<_i2.InitializationResult>.value(
               _FakeInitializationResult_0(
                 this,
-                Invocation.method(#initializeSdk, [prebidServerUrl, accountId]),
+                Invocation.method(#initializeSdk, [
+                  prebidServerUrl,
+                  accountId,
+                  nonTrackingUrl,
+                ]),
               ),
             ),
           )
@@ -658,6 +667,24 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setSourceApp(String? sourceApp) =>
+      (super.noSuchMethod(
+            Invocation.method(#setSourceApp, [sourceApp]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setItunesId(String? itunesId) =>
+      (super.noSuchMethod(
+            Invocation.method(#setItunesId, [itunesId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> setOmidPartnerName(String? name) =>
       (super.noSuchMethod(
             Invocation.method(#setOmidPartnerName, [name]),
@@ -875,6 +902,52 @@ class MockMultiformatAdHostApi extends _i1.Mock
   _i4.Future<_i2.MultiformatBidResult> fetchDemand(
     int? adId,
     _i2.MultiformatAdRequestConfig? config,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchDemand, [adId, config]),
+            returnValue: _i4.Future<_i2.MultiformatBidResult>.value(
+              _FakeMultiformatBidResult_1(
+                this,
+                Invocation.method(#fetchDemand, [adId, config]),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.MultiformatBidResult>);
+
+  @override
+  _i4.Future<void> destroy(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#destroy, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+}
+
+/// A class which mocks [InstreamVideoAdHostApi].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockInstreamVideoAdHostApi extends _i1.Mock
+    implements _i2.InstreamVideoAdHostApi {
+  MockInstreamVideoAdHostApi() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get pigeonVar_messageChannelSuffix =>
+      (super.noSuchMethod(
+            Invocation.getter(#pigeonVar_messageChannelSuffix),
+            returnValue: _i3.dummyValue<String>(
+              this,
+              Invocation.getter(#pigeonVar_messageChannelSuffix),
+            ),
+          )
+          as String);
+
+  @override
+  _i4.Future<_i2.MultiformatBidResult> fetchDemand(
+    int? adId,
+    _i2.InstreamVideoAdRequestConfig? config,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#fetchDemand, [adId, config]),

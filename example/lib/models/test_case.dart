@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show NativeAsset;
 
 import 'demo_ad_format.dart';
@@ -45,6 +47,9 @@ class TestCase {
   final int width;
   final int height;
 
+  /// Further banner sizes (multisize banners).
+  final List<Size>? additionalSizes;
+
   const TestCase({
     required this.title,
     required this.configId,
@@ -58,5 +63,6 @@ class TestCase {
     this.filterUncachedBids = false,
     this.width = 320,
     this.height = 50,
+    this.additionalSizes,
   });
 }

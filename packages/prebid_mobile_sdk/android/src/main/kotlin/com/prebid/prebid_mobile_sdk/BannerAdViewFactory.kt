@@ -49,6 +49,11 @@ class BannerAdPlatformView(
         methodChannel = MethodChannel(messenger, "prebid_mobile_flutter/banner_ad_$viewId")
 
         bannerView = BannerView(context, configId, AdSize(width, height))
+        (params["additionalSizes"] as? List<*>)?.mapNotNull { (it as? Number)?.toInt() }
+            ?.chunked(2)?.filter { it.size == 2 }
+            ?.map { AdSize(it[0], it[1]) }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { bannerView.addAdditionalSizes(*it.toTypedArray()) }
 
         if (adFormats != null) {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.

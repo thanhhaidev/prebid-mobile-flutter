@@ -61,6 +61,9 @@ class PrebidFullscreenControls {
   /// `0..100`). Interstitials only.
   final Size? minSizePercentage;
 
+  /// iOS only: present an SKOverlay (App Store sheet) for SKAdNetwork ads.
+  final bool? supportSKOverlay;
+
   /// Creates [PrebidFullscreenControls].
   const PrebidFullscreenControls({
     this.closeButtonArea,
@@ -72,6 +75,7 @@ class PrebidFullscreenControls {
     this.isSoundButtonVisible,
     this.isAutoCloseOnCompletionEnabled,
     this.minSizePercentage,
+    this.supportSKOverlay,
   });
 
   /// The Pigeon form sent to the core plugin.
@@ -86,6 +90,7 @@ class PrebidFullscreenControls {
     isAutoCloseOnCompletionEnabled: isAutoCloseOnCompletionEnabled,
     minWidthPercentage: minSizePercentage?.width.round(),
     minHeightPercentage: minSizePercentage?.height.round(),
+    supportSKOverlay: supportSKOverlay,
   );
 
   /// The method-channel form sent by the GAM / AdMob / MAX companion
@@ -101,5 +106,6 @@ class PrebidFullscreenControls {
     'isAutoCloseOnCompletionEnabled': ?isAutoCloseOnCompletionEnabled,
     'minWidthPercentage': ?minSizePercentage?.width.round(),
     'minHeightPercentage': ?minSizePercentage?.height.round(),
+    'supportSKOverlay': ?supportSKOverlay,
   };
 }

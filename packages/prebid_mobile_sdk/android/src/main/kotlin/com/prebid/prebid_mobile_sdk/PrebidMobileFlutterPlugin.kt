@@ -100,6 +100,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun initializeSdk(
         prebidServerUrl: String,
         accountId: String,
+        nonTrackingUrl: String?, // iOS only (ATT); Prebid Android has no equivalent.
         callback: (Result<com.prebid.prebid_mobile_sdk.InitializationResult>) -> Unit
     ) {
         PrebidMobile.setPrebidServerAccountId(accountId)
@@ -423,6 +424,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
     override fun setDomain(domain: String?) { TargetingParams.setDomain(domain) }
 
+    // SKAdNetwork / iTunes IDs are iOS concepts; Android reads the package name.
+    override fun setSourceApp(sourceApp: String?) {}
+    override fun setItunesId(itunesId: String?) {}
+
     override fun setOmidPartnerName(name: String?) { TargetingParams.setOmidPartnerName(name) }
     override fun setOmidPartnerVersion(version: String?) { TargetingParams.setOmidPartnerVersion(version) }
 
@@ -674,7 +679,15 @@ class NativeAdHostApiImpl(
                             imageUrl = nativeAd.imageUrl,
                             sponsoredBy = nativeAd.sponsoredBy,
                             callToAction = nativeAd.callToAction,
-                            clickUrl = nativeAd.clickUrl
+                            clickUrl = nativeAd.clickUrl,
+                            privacyUrl = nativeAd.privacyUrl,
+                            titles = nativeAd.titles.map { it.text },
+                            images = nativeAd.images.map {
+                                NativeAdImageData(type = it.typeNumber.toLong(), url = it.url)
+                            },
+                            dataAssets = nativeAd.dataList.map {
+                                NativeAdDataAssetData(type = it.typeNumber.toLong(), value = it.value)
+                            },
                         )
                         flutterApi.onAdEvent(AdEvent(
                             adId = adId, eventName = "onAdLoaded", nativeAd = nativeData
@@ -734,23 +747,7 @@ class MultiformatAdHostApiImpl(
             request.setBannerParameters(params)
         }
 
-        if (config.videoConfig != null) {
-            val vc = config.videoConfig
-            val vp = org.prebid.mobile.VideoParameters(vc.mimes)
-            vc.protocols?.filterNotNull()?.map { it.toInt() }?.let { protocols ->
-                vp.protocols = protocols.mapNotNull { org.prebid.mobile.Signals.Protocols(it) }
-            }
-            vc.playbackMethods?.filterNotNull()?.map { it.toInt() }?.let { methods ->
-                vp.playbackMethod = methods.mapNotNull { org.prebid.mobile.Signals.PlaybackMethod(it) }
-            }
-            vc.placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
-            vc.api?.filterNotNull()?.let { api ->
-                vp.api = api.map { org.prebid.mobile.Signals.Api(it.toInt()) }
-            }
-            vc.maxDuration?.let { vp.maxDuration = it.toInt() }
-            vc.minDuration?.let { vp.minDuration = it.toInt() }
-            request.setVideoParameters(vp)
-        }
+        config.videoConfig?.let { request.setVideoParameters(it.toVideoParameters()) }
 
         // Build native params if provided
         config.nativeConfig?.let { nc ->
@@ -838,6 +835,7 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
             config.width.toInt(),
             config.height.toInt()
         )
+        config.videoConfig?.let { adUnit.videoParameters = it.toVideoParameters() }
         adUnits[adId] = adUnit
 
         adUnit.fetchDemand { bidInfo ->
@@ -884,6 +882,33 @@ internal fun org.prebid.mobile.api.data.BidInfo.dartResultCode(): String =
         resultCode.toDartCode()
     }
 
+/// Builds Prebid video parameters from the Pigeon config.
+internal fun VideoParametersConfig.toVideoParameters(): org.prebid.mobile.VideoParameters {
+    val vp = org.prebid.mobile.VideoParameters(mimes)
+    protocols?.filterNotNull()?.let { list ->
+        vp.protocols = list.map { org.prebid.mobile.Signals.Protocols(it.toInt()) }
+    }
+    playbackMethods?.filterNotNull()?.let { list ->
+        vp.playbackMethod = list.map { org.prebid.mobile.Signals.PlaybackMethod(it.toInt()) }
+    }
+    placement?.let { vp.placement = org.prebid.mobile.Signals.Placement(it.toInt()) }
+    plcmt?.let { vp.plcmt = org.prebid.mobile.Signals.Plcmt(it.toInt()) }
+    api?.filterNotNull()?.let { list ->
+        vp.api = list.map { org.prebid.mobile.Signals.Api(it.toInt()) }
+    }
+    maxDuration?.let { vp.maxDuration = it.toInt() }
+    minDuration?.let { vp.minDuration = it.toInt() }
+    startDelay?.let { vp.startDelay = org.prebid.mobile.Signals.StartDelay(it.toInt()) }
+    linearity?.let { vp.linearity = it.toInt() }
+    skippable?.let { vp.skippable = it }
+    battr?.filterNotNull()?.let { list ->
+        vp.battr = list.map { org.prebid.mobile.Signals.CreativeAttribute(it.toInt()) }
+    }
+    minBitrate?.let { vp.minBitrate = it.toInt() }
+    maxBitrate?.let { vp.maxBitrate = it.toInt() }
+    return vp
+}
+
 /// Applies fullscreen controls to a rendering interstitial / rewarded ad unit.
 internal fun FullscreenControlsConfig.applyTo(adUnit: org.prebid.mobile.api.rendering.BaseInterstitialAdUnit) {
     closeButtonArea?.let { adUnit.setCloseButtonArea(it) }
@@ -893,7 +918,7 @@ internal fun FullscreenControlsConfig.applyTo(adUnit: org.prebid.mobile.api.rend
     skipDelay?.let { adUnit.setSkipDelay(it.toInt()) }
     isMuted?.let { adUnit.setIsMuted(it) }
     isSoundButtonVisible?.let { adUnit.setIsSoundButtonVisible(it) }
-    // isAutoCloseOnCompletionEnabled: iOS only.
+    // isAutoCloseOnCompletionEnabled, supportSKOverlay: iOS only.
 }
 
 internal fun String.toPrebidPosition(): org.prebid.mobile.api.data.Position? = when (this) {

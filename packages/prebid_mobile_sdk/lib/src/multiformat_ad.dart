@@ -137,20 +137,7 @@ class PrebidMultiformatAd {
     }
 
     // Build video config if parameters provided
-    VideoParametersConfig? videoConfig;
-    if (videoParameters != null) {
-      videoConfig = VideoParametersConfig(
-        mimes: videoParameters!.mimes,
-        protocols: videoParameters!.protocols?.map((p) => p.value).toList(),
-        playbackMethods: videoParameters!.playbackMethods
-            ?.map((m) => m.value)
-            .toList(),
-        placement: videoParameters!.placement?.value,
-        maxDuration: videoParameters!.maxDuration,
-        minDuration: videoParameters!.minDuration,
-        api: videoParameters!.api?.map((a) => a.value).toList(),
-      );
-    }
+    final videoConfig = videoParameters?.toConfig();
 
     final config = MultiformatAdRequestConfig(
       configId: configId,

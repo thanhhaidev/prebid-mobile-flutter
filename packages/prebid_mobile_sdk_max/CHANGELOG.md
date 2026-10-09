@@ -9,5 +9,7 @@
 * `PrebidMaxNativeAd` — MAX-mediated native (Android + iOS), rendered via the SDK native ad view.
   Events via `PrebidMaxNativeAdListener`; request `assets` / `eventTrackers` are configurable.
 * Banner / interstitial / rewarded / native report `onAdImpression` (from MAX's revenue callback);
-  interstitial / rewarded accept `PrebidFullscreenControls`.
+  interstitial / rewarded accept `PrebidFullscreenControls` (`supportSKOverlay` has no mediation
+  equivalent and is ignored).
+* Interstitial / rewarded: `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video).
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

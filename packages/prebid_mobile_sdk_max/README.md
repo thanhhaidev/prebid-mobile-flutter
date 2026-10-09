@@ -147,15 +147,35 @@ controls: const PrebidFullscreenControls(
 ```
 
 Skip controls apply to interstitials (and to rewarded on Android only);
-`isAutoCloseOnCompletionEnabled` is iOS only.
+`isAutoCloseOnCompletionEnabled` is iOS only. `supportSKOverlay` does not
+apply to mediation: Prebid's mediation ad units have no SKOverlay setting, so
+it is ignored.
+
+### Video parameters
+
+Interstitial and rewarded ads take `videoParameters` (the core
+`VideoParameters`: mimes, protocols, playback methods, `plcmt`, start delay,
+linearity, skippable, `battr`, bitrates, durations, API frameworks):
+
+```dart
+videoParameters: const VideoParameters(
+  mimes: ['video/mp4'],
+  plcmt: VideoPlcmt.interstitial,
+  maxDuration: 30,
+),
+```
+
+iOS sends every field from the mediation ad unit. Prebid Android's mediation
+interstitial / rewarded ad units only expose `setMaxVideoDuration`, which caps
+the rendered video's length but isn't sent in the request.
 
 ## API
 
 | Class | Description |
 |---|---|
 | `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController`. |
-| `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`. |
-| `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`. |
+| `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`, `videoParameters`. |
+| `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`. |
 | `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener`. |
 
 ## License

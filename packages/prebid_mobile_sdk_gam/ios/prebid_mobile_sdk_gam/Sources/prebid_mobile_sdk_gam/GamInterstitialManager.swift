@@ -63,6 +63,7 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
             if requestedFormats.contains("banner") { formats.insert(.banner) }
             if requestedFormats.contains("video") { formats.insert(.video) }
             adUnit.adFormats = formats.isEmpty ? [.banner] : formats
+            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             adUnit.delegate = self
 
             ads[adId] = adUnit

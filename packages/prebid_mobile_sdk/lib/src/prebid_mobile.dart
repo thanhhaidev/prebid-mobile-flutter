@@ -56,14 +56,22 @@ class PrebidMobile {
   /// - [prebidServerUrl] — Your Prebid Server endpoint URL
   ///   (e.g., `https://prebid-server-test-j.prebid.org/openrtb2/auction`).
   /// - [accountId] — Your Prebid Server account ID.
+  /// - [nonTrackingUrl] — iOS only: the auction endpoint used when the user
+  ///   has not authorized tracking (ATT), for a server that must not receive
+  ///   identifiers.
   /// - [completion] — Optional callback invoked with the [InitializationStatus]
   ///   and an error message (if any).
   static Future<void> initializeSdk({
     required String prebidServerUrl,
     required String accountId,
+    String? nonTrackingUrl,
     void Function(InitializationStatus status, String? error)? completion,
   }) async {
-    final result = await api.initializeSdk(prebidServerUrl, accountId);
+    final result = await api.initializeSdk(
+      prebidServerUrl,
+      accountId,
+      nonTrackingUrl,
+    );
     final status = switch (result.status) {
       'succeeded' => InitializationStatus.succeeded,
       'serverStatusWarning' => InitializationStatus.serverStatusWarning,

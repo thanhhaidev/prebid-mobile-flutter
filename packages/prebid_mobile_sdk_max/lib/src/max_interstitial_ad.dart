@@ -1,6 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidFullscreenControls, PrebidInterstitialAdListener;
+    show
+        PrebidFullscreenControls,
+        PrebidInterstitialAdListener,
+        VideoParameters;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_max/interstitial',
@@ -64,6 +67,12 @@ class PrebidMaxInterstitialAd {
   /// Close / skip button, sound and (interstitial) minimum-size controls.
   final PrebidFullscreenControls? controls;
 
+  /// OpenRTB video parameters for a video interstitial. iOS applies every field;
+  /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
+  /// [VideoParameters.maxDuration] only caps the rendered video there (nothing
+  /// is sent in the request).
+  final VideoParameters? videoParameters;
+
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
@@ -78,6 +87,7 @@ class PrebidMaxInterstitialAd {
     required this.maxAdUnitId,
     this.isVideo = false,
     this.controls,
+    this.videoParameters,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -91,6 +101,7 @@ class PrebidMaxInterstitialAd {
       'configId': configId,
       'maxAdUnitId': maxAdUnitId,
       'controls': ?controls?.toMap(),
+      'videoParameters': ?videoParameters?.toMap(),
       'isVideo': isVideo,
     });
   }

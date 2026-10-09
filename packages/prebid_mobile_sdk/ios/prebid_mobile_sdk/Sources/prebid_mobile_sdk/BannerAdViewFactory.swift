@@ -66,6 +66,12 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
 
         super.init()
 
+        if let flat = args["additionalSizes"] as? [Int], flat.count >= 2 {
+            bannerView.additionalSizes = stride(from: 0, to: flat.count - 1, by: 2).map {
+                CGSize(width: flat[$0], height: flat[$0 + 1])
+            }
+        }
+
         if let adFormats = adFormats {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.
             var formats: Set<AdFormat> = []

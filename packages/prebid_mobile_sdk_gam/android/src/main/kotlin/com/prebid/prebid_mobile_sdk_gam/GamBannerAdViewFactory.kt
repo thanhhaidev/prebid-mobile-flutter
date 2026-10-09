@@ -46,6 +46,15 @@ class GamBannerPlatformView(
         val isVideo = params["isVideo"] as? Boolean ?: false
         val autoLoad = params["autoLoad"] as? Boolean ?: true
         val refreshInterval = params["refreshIntervalSeconds"] as? Int
+        val adFormats = (params["adFormats"] as? List<*>)?.filterIsInstance<String>()
+        val pbAdSlot = params["pbAdSlot"] as? String
+        val impOrtbConfig = params["impOrtbConfig"] as? String
+        // Flat [w, h, w, h, ...] list of extra sizes for a multisize banner.
+        val additionalSizes = (params["additionalSizes"] as? List<*>).orEmpty()
+            .mapNotNull { (it as? Number)?.toInt() }
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (w, h) -> AdSize(w, h) }
         val videoPlacement = when (params["videoPlacementType"] as? String) {
             "inArticle" -> org.prebid.mobile.api.data.VideoPlacementType.IN_ARTICLE
             "inFeed" -> org.prebid.mobile.api.data.VideoPlacementType.IN_FEED
@@ -54,7 +63,9 @@ class GamBannerPlatformView(
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$viewId")
 
-        val eventHandler = GamBannerEventHandler(context, gamAdUnitId, AdSize(width, height)).apply {
+        // The BannerView requests every size the GAM event handler accepts.
+        val adSizes = (listOf(AdSize(width, height)) + additionalSizes).toTypedArray()
+        val eventHandler = GamBannerEventHandler(context, gamAdUnitId, *adSizes).apply {
             gamCustomTargeting(params["customTargeting"])?.let { targeting ->
                 // Prebid 3.4: app custom targeting on the GAM request; Prebid's
                 // hb_* keys still take precedence.
@@ -65,9 +76,20 @@ class GamBannerPlatformView(
         }
         bannerView = BannerView(context, configId, eventHandler)
 
-        if (isVideo) {
+        if (adFormats != null) {
+            // Multiformat banner (Prebid 3.4): banner and/or video in one request.
+            val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
+            if ("banner" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+            if ("video" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)
+            if (formats.isNotEmpty()) bannerView.setAdUnitFormats(formats)
+            if ("video" in adFormats) bannerView.videoPlacementType = videoPlacement
+        } else if (isVideo) {
             bannerView.videoPlacementType = videoPlacement
         }
+        pbAdSlot?.let { bannerView.setPbAdSlot(it) }
+        impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
+        // `videoParameters` is iOS only: Prebid Android's BannerView has no
+        // video-parameters setter.
 
         // 0 means a single request without auto-refresh (also Prebid's default).
         bannerView.setAutoRefreshDelay(if (refreshInterval != null && refreshInterval > 0) refreshInterval else 0)

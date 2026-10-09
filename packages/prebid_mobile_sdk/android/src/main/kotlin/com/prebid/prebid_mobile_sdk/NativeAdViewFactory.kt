@@ -35,11 +35,11 @@ object NativeAdStore {
     val views = mutableMapOf<Long, View>()
 
     /// Held here: Prebid keeps only a WeakReference to the listener.
-    val listeners = mutableMapOf<Long, PrebidNativeAdEventListener>()
+    val listeners = mutableMapOf<Long, NativeAdEvents>()
 
     fun remove(adId: Long) {
         ads.remove(adId)
-        listeners.remove(adId)
+        listeners.remove(adId)?.stopWatching()
         views.remove(adId)?.let { (it.parent as? ViewGroup)?.removeView(it) }
     }
 }
@@ -80,26 +80,6 @@ class NativeAdPlatformView(
             reportHeight(existing)
         } else if (ad != null) {
             render(ad)
-        }
-    }
-
-    private fun eventListener(): PrebidNativeAdEventListener {
-        val adId = adId
-        val flutterApi = flutterApi
-        // Prebid calls onAdImpression once per impression tracker URL, from a
-        // background thread; report a single impression per ad, on main.
-        val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
-        fun send(name: String) = Handler(Looper.getMainLooper()).post {
-            flutterApi.onAdEvent(AdEvent(adId = adId, eventName = name)) {}
-        }
-        return object : PrebidNativeAdEventListener {
-            override fun onAdClicked() { send("onAdClicked") }
-
-            override fun onAdImpression() {
-                if (impressionReported.compareAndSet(false, true)) send("onAdImpression")
-            }
-
-            override fun onAdExpired() { send("onAdExpired") }
         }
     }
 
@@ -165,14 +145,15 @@ class NativeAdPlatformView(
         }
 
         root.addView(container, matchWidth())
-        val listener = eventListener()
-        NativeAdStore.listeners[adId] = listener
+        val events = NativeAdEvents(adId, flutterApi)
+        NativeAdStore.listeners[adId] = events
         NativeAdStore.views[adId] = container
         ad.registerView(
             container,
             listOf(iconView, titleView, imageView, bodyView, ctaView),
-            listener,
+            events,
         )
+        events.watchViewability(container)
         reportHeight(container)
     }
 
@@ -222,5 +203,86 @@ class NativeAdPlatformView(
         // Keep the registered view for a re-created platform view; detach it
         // so it doesn't keep this one alive. NativeAdStore.remove drops it.
         root.removeAllViews()
+    }
+}
+
+/// `PrebidNativeAdEventListener` → Flutter, one per ad (it outlives platform
+/// views).
+///
+/// Prebid calls onAdImpression once per impression tracker request, from a
+/// background thread, and not at all when the response has no impression
+/// trackers. So the impression is reported from the IAB viewability rule
+/// Prebid applies before firing its trackers (at least half the view on
+/// screen for 1 s, checked every 0.25 s; same as iOS), with the listener as a
+/// fallback, once per ad, on main.
+class NativeAdEvents(
+    private val adId: Long,
+    private val flutterApi: AdFlutterApi,
+) : PrebidNativeAdEventListener {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
+    private var watchedView: java.lang.ref.WeakReference<View>? = null
+    private var viewableChecks = 0
+
+    private val check = object : Runnable {
+        override fun run() {
+            val view = watchedView?.get() ?: return
+            viewableChecks = if (isAtLeastHalfViewable(view)) viewableChecks + 1 else 0
+            if (viewableChecks >= REQUIRED_VIEWABLE_CHECKS) {
+                reportImpression()
+            } else {
+                mainHandler.postDelayed(this, CHECK_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun watchViewability(view: View) {
+        if (impressionReported.get()) return
+        watchedView = java.lang.ref.WeakReference(view)
+        viewableChecks = 0
+        mainHandler.removeCallbacks(check)
+        mainHandler.postDelayed(check, CHECK_INTERVAL_MS)
+    }
+
+    fun stopWatching() {
+        mainHandler.removeCallbacks(check)
+    }
+
+    private fun reportImpression() {
+        stopWatching()
+        if (impressionReported.compareAndSet(false, true)) send("onAdImpression")
+    }
+
+    private fun isAtLeastHalfViewable(view: View): Boolean {
+        if (!view.isShown || view.windowToken == null) return false
+        val area = view.width.toLong() * view.height
+        if (area <= 0) return false
+        val visible = android.graphics.Rect()
+        if (!view.getGlobalVisibleRect(visible)) return false
+        return visible.width().toLong() * visible.height() * 2 >= area
+    }
+
+    override fun onAdClicked() = send("onAdClicked")
+
+    override fun onAdImpression() {
+        mainHandler.post { reportImpression() }
+    }
+
+    override fun onAdExpired() {
+        // Prebid stops tracking an expired ad; so does the watcher.
+        mainHandler.post { stopWatching() }
+        send("onAdExpired")
+    }
+
+    private fun send(name: String) {
+        mainHandler.post {
+            flutterApi.onAdEvent(AdEvent(adId = adId, eventName = name)) {}
+        }
+    }
+
+    private companion object {
+        const val CHECK_INTERVAL_MS = 250L
+        const val REQUIRED_VIEWABLE_CHECKS = 5 // 1 s / 0.25 s + 1, as Prebid iOS
     }
 }

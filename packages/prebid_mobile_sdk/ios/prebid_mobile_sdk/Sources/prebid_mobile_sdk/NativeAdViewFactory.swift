@@ -17,7 +17,7 @@ enum NativeAdStore {
 
     static func remove(_ adId: Int64) {
         ads.removeValue(forKey: adId)
-        delegates.removeValue(forKey: adId)
+        delegates.removeValue(forKey: adId)?.stopWatching()
         views.removeValue(forKey: adId)?.removeFromSuperview()
     }
 }
@@ -168,6 +168,7 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
         embed(stack)
         NativeAdStore.views[adId] = stack
         _ = ad.registerView(view: stack, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton])
+        forwarder.watchViewability(of: stack)
         reportHeight(of: stack)
     }
 
@@ -199,23 +200,84 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
 }
 
 /// `NativeAdEventDelegate` → Flutter, one per ad (it outlives platform views).
+///
+/// Prebid iOS calls `adDidLogImpression` only after an `eventtrackers` URL
+/// request succeeds: never when the response has no event trackers, and only
+/// after a 300 s retry when the request fails. So the impression is reported
+/// from the same IAB viewability rule Prebid applies before firing its
+/// trackers (at least half the view on screen for 1 s, checked every 0.25 s),
+/// with the delegate as a fallback.
 class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     private let adId: Int64
     private let flutterApi: AdFlutterApi
+
+    private static let checkInterval: TimeInterval = 0.25
+    private static let requiredViewableChecks = 5 // 1 s / 0.25 s + 1, as Prebid
+    private weak var watchedView: UIView?
+    private var viewabilityTimer: Timer?
+    private var viewableChecks = 0
 
     init(adId: Int64, flutterApi: AdFlutterApi) {
         self.adId = adId
         self.flutterApi = flutterApi
     }
 
+    deinit {
+        viewabilityTimer?.invalidate()
+    }
+
     // Prebid calls this once per impression tracker URL; report one impression.
     private var impressionReported = false
 
+    func watchViewability(of view: UIView) {
+        guard !impressionReported else { return }
+        watchedView = view
+        viewableChecks = 0
+        viewabilityTimer?.invalidate()
+        viewabilityTimer = Timer.scheduledTimer(
+            withTimeInterval: Self.checkInterval,
+            repeats: true
+        ) { [weak self] timer in
+            guard let self = self, let view = self.watchedView else {
+                timer.invalidate()
+                return
+            }
+            self.viewableChecks = Self.isAtLeastHalfViewable(view) ? self.viewableChecks + 1 : 0
+            if self.viewableChecks >= Self.requiredViewableChecks {
+                self.reportImpression()
+            }
+        }
+    }
+
+    func stopWatching() {
+        viewabilityTimer?.invalidate()
+        viewabilityTimer = nil
+    }
+
+    private func reportImpression() {
+        stopWatching()
+        guard !impressionReported else { return }
+        impressionReported = true
+        send("onAdImpression")
+    }
+
+    /// Prebid's `UIView.pb_isAtLeastHalfViewable` (internal to the SDK).
+    private static func isAtLeastHalfViewable(_ view: UIView) -> Bool {
+        guard !view.isHidden, view.window != nil else { return false }
+        var ancestor = view.superview
+        while let current = ancestor {
+            if current.isHidden { return false }
+            ancestor = current.superview
+        }
+        let rect = view.convert(view.bounds, to: nil)
+        let intersection = UIScreen.main.bounds.intersection(rect)
+        guard !intersection.isNull, rect.width * rect.height > 0 else { return false }
+        return intersection.width * intersection.height >= 0.5 * rect.width * rect.height
+    }
+
     func adDidLogImpression(ad: NativeAd) {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, !self.impressionReported else { return }
-            self.impressionReported = true
-            self.send("onAdImpression")
+            self?.reportImpression()
         }
     }
 
@@ -224,6 +286,8 @@ class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     }
 
     func adDidExpire(ad: NativeAd) {
+        // Prebid stops tracking an expired ad; so does the watcher.
+        DispatchQueue.main.async { [weak self] in self?.stopWatching() }
         send("onAdExpired")
     }
 

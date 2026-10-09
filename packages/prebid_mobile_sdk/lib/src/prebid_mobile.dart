@@ -4,36 +4,8 @@ import 'ad_enums.dart';
 import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
 
-/// Core Prebid Mobile SDK configuration and initialization.
-///
-/// This static class is the entry point for:
-/// - **Initializing the SDK** with your Prebid Server URL and account ID.
-/// - **Configuring global settings** such as timeouts, geo location, debug mode, and log level.
-/// - **Managing stored responses** for deterministic testing.
-/// - **External User IDs** for third-party identity modules.
-///
-/// All methods are static and can be called from anywhere after the SDK is initialized.
-///
-/// ## Example
-///
-/// ```dart
-/// // Initialize
-/// await PrebidMobile.initializeSdk(
-///   prebidServerUrl: 'https://your-pbs.com/openrtb2/auction',
-///   accountId: 'your-account-id',
-///   completion: (status, error) {
-///     debugPrint('SDK status: $status');
-///   },
-/// );
-///
-/// // Configure
-/// await PrebidMobile.setTimeoutMillis(3000);
-/// await PrebidMobile.setShareGeoLocation(true);
-/// await PrebidMobile.setPbsDebug(true);
-/// await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
-/// ```
-/// Receives every Prebid Server bid request / response pair (as JSON
-/// strings) while registered via [PrebidMobile.setEventListener].
+/// Receives each Prebid Server bid request and response (JSON strings)
+/// while registered with [PrebidMobile.setEventListener].
 typedef PrebidBidResponseListener =
     void Function(String? request, String? response);
 

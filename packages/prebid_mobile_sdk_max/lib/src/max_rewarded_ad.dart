@@ -158,6 +158,12 @@ PrebidReward _rewardFrom(Map? args) => PrebidReward(
 Map<String, dynamic>? _decodeExt(Object? raw) {
   if (raw is Map) return Map<String, dynamic>.from(raw);
   if (raw is! String || raw.isEmpty) return null;
-  final decoded = jsonDecode(raw);
+  // A malformed ext must not cost the app the reward callback itself.
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(raw);
+  } on FormatException {
+    return null;
+  }
   return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
 }

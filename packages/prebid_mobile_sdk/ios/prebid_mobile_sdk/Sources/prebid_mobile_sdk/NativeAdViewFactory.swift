@@ -119,11 +119,25 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
         self.store = store
         super.init()
         container.onWidthChange = { [weak self] width in self?.reportHeight(width: width) }
+        // The fraction of the view Flutter paints on screen, from
+        // PrebidNativeAdView: Flutter's clips (scroll viewports, ClipRect)
+        // reach the platform view as a mask the native check can't read.
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            guard call.method == "setVisibleFraction" else {
+                result(FlutterMethodNotImplemented)
+                return
+            }
+            if let self = self, let fraction = (call.arguments as? NSNumber)?.doubleValue {
+                self.store.delegates[self.adId]?.flutterVisibleFraction = fraction
+            }
+            result(nil)
+        }
         store.attach(self)
         show()
     }
 
     deinit {
+        methodChannel.setMethodCallHandler(nil)
         store.detach(self)
         // Keep the registered view for a re-created platform view;
         // NativeAdStore.remove releases it.
@@ -281,6 +295,10 @@ class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     private var viewabilityTimer: Timer?
     private var viewableChecks = 0
 
+    /// The fraction of the view Flutter paints on screen, reported by the
+    /// Dart widget; 1 until the first report.
+    var flutterVisibleFraction: Double = 1
+
     init(adId: Int64, flutterApi: AdFlutterApi) {
         self.adId = adId
         self.flutterApi = flutterApi
@@ -306,7 +324,8 @@ class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
                 timer.invalidate()
                 return
             }
-            self.viewableChecks = Self.isAtLeastHalfViewable(view) ? self.viewableChecks + 1 : 0
+            let viewable = self.flutterVisibleFraction >= 0.5 && Self.isAtLeastHalfViewable(view)
+            self.viewableChecks = viewable ? self.viewableChecks + 1 : 0
             if self.viewableChecks >= Self.requiredViewableChecks {
                 self.reportImpression()
             }
@@ -325,18 +344,28 @@ class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
         send("onAdImpression")
     }
 
-    /// Prebid's `UIView.pb_isAtLeastHalfViewable` (internal to the SDK).
+    /// Prebid's `UIView.pb_isAtLeastHalfViewable` (internal to the SDK),
+    /// stricter: a transparent view or ancestor isn't viewable, and the
+    /// visible area is clipped to the window and to every ancestor that
+    /// clips its subviews. Flutter applies its clips (scroll viewports under
+    /// an app bar, ClipRect/ClipRRect) to platform views as layer masks,
+    /// which expose no geometry to read: those come from the Dart widget as
+    /// `flutterVisibleFraction`.
     private static func isAtLeastHalfViewable(_ view: UIView) -> Bool {
-        guard !view.isHidden, view.window != nil else { return false }
-        var ancestor = view.superview
-        while let current = ancestor {
-            if current.isHidden { return false }
-            ancestor = current.superview
-        }
+        guard let window = view.window else { return false }
         let rect = view.convert(view.bounds, to: nil)
-        let intersection = UIScreen.main.bounds.intersection(rect)
-        guard !intersection.isNull, rect.width * rect.height > 0 else { return false }
-        return intersection.width * intersection.height >= 0.5 * rect.width * rect.height
+        guard rect.width * rect.height > 0 else { return false }
+        var visible = rect.intersection(window.bounds)
+        var current: UIView? = view
+        while let v = current {
+            if v.isHidden || v.alpha < 0.01 { return false }
+            if v !== view, v.clipsToBounds {
+                visible = visible.intersection(v.convert(v.bounds, to: nil))
+            }
+            current = v.superview
+        }
+        guard !visible.isNull else { return false }
+        return visible.width * visible.height >= 0.5 * rect.width * rect.height
     }
 
     func adDidLogImpression(ad: NativeAd) {

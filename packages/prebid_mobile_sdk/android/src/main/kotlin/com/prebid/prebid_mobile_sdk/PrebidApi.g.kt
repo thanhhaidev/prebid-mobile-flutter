@@ -1377,6 +1377,13 @@ interface PrebidMobileHostApi {
   fun getExternalUserIds(): List<ExternalUserIdData>
   fun clearExternalUserIds()
   fun getSdkVersion(): String
+  /**
+   * Destroys every ad this engine holds natively (fullscreen, native,
+   * multiformat, in-stream). Called once by a new Dart isolate before its
+   * first ad: after a hot restart the previous isolate's ads would otherwise
+   * keep running (auto-refresh auctions) under ad ids the new one reuses.
+   */
+  fun releaseAds()
 
   companion object {
     /** The codec used by PrebidMobileHostApi. */
@@ -1879,6 +1886,22 @@ interface PrebidMobileHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.releaseAds$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.releaseAds()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -1926,7 +1949,6 @@ interface TargetingHostApi {
   fun clearAccessControlList()
   fun setGlobalOrtbConfig(ortbConfig: String?)
   fun getGlobalOrtbConfig(): String?
-  fun setContentUrl(url: String?)
   fun setPublisherName(name: String?)
   fun setStoreUrl(url: String?)
   fun setDomain(domain: String?)
@@ -2522,24 +2544,6 @@ interface TargetingHostApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getGlobalOrtbConfig())
-            } catch (exception: Throwable) {
-              PrebidApiPigeonUtils.wrapError(exception)
-            }
-            reply.reply(wrapped)
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setContentUrl$separatedMessageChannelSuffix", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val urlArg = args[0] as String?
-            val wrapped: List<Any?> = try {
-              api.setContentUrl(urlArg)
-              listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)
             }

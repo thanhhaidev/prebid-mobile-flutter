@@ -1,7 +1,5 @@
 import 'dart:ui' show Size;
 
-import 'generated/prebid_api.g.dart';
-
 /// Corner for the fullscreen close / skip buttons.
 enum PrebidButtonPosition {
   /// Top-left corner.
@@ -78,23 +76,9 @@ class PrebidFullscreenControls {
     this.supportSKOverlay,
   });
 
-  /// The Pigeon form sent to the core plugin.
-  FullscreenControlsConfig toConfig() => FullscreenControlsConfig(
-    closeButtonArea: closeButtonArea,
-    closeButtonPosition: closeButtonPosition?.name,
-    skipButtonArea: skipButtonArea,
-    skipButtonPosition: skipButtonPosition?.name,
-    skipDelay: skipDelay,
-    isMuted: isMuted,
-    isSoundButtonVisible: isSoundButtonVisible,
-    isAutoCloseOnCompletionEnabled: isAutoCloseOnCompletionEnabled,
-    minWidthPercentage: minSizePercentage?.width.round(),
-    minHeightPercentage: minSizePercentage?.height.round(),
-    supportSKOverlay: supportSKOverlay,
-  );
-
   /// The method-channel form sent by the GAM / AdMob / MAX companion
-  /// packages. Keys match [FullscreenControlsConfig]'s fields.
+  /// packages. Unset fields are omitted; the min size is sent as
+  /// `minWidthPercentage` / `minHeightPercentage`.
   Map<String, Object?> toMap() => {
     'closeButtonArea': ?closeButtonArea,
     'closeButtonPosition': ?closeButtonPosition?.name,

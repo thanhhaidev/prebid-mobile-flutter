@@ -44,6 +44,9 @@ loading any ad here — e.g. via the
 await AppLovinMAX.initialize('YOUR_APPLOVIN_SDK_KEY');
 ```
 
+Use `applovin_max` **4.0.0 or later**: older releases pin AppLovin SDK 11,
+while Prebid's MAX adapters need AppLovin SDK 13.
+
 Declare the SDK key natively as AppLovin requires:
 
 - **iOS** — `AppLovinSdkKey` in `ios/Runner/Info.plist`.
@@ -118,7 +121,9 @@ await rewarded.loadAd();
 MAX shares one rewarded ad object per ad unit, so only one
 `PrebidMaxRewardedAd` per `maxAdUnitId` is active at a time: loading another
 on the same unit takes it over and the previous one receives `onAdFailed`
-("Replaced by another ad on the same MAX ad unit").
+("Replaced by another ad on the same MAX ad unit"). While an ad on that
+unit is on screen, the new load fails instead, so the visible ad keeps its
+reward: load the next one from `onAdClosed`.
 
 ### Native
 

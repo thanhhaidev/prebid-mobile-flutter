@@ -342,6 +342,12 @@ abstract class PrebidMobileHostApi {
 
   // SDK Version
   String getSdkVersion();
+
+  /// Destroys every ad this engine holds natively (fullscreen, native,
+  /// multiformat, in-stream). Called once by a new Dart isolate before its
+  /// first ad: after a hot restart the previous isolate's ads would otherwise
+  /// keep running (auto-refresh auctions) under ad ids the new one reuses.
+  void releaseAds();
 }
 
 /// Targeting and privacy settings.
@@ -405,7 +411,6 @@ abstract class TargetingHostApi {
   String? getGlobalOrtbConfig();
 
   // App Info
-  void setContentUrl(String? url);
   void setPublisherName(String? name);
   void setStoreUrl(String? url);
   void setDomain(String? domain);

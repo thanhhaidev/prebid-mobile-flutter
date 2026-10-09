@@ -12,8 +12,8 @@
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "androidMinSdk": 24,
           "iosMin": "15.0",
-          "flutter": ">=3.41.5",
-          "dart": "^3.11.0"
+          "flutter": ">=3.44.0",
+          "dart": "^3.12.0"
         }
       ]
     },
@@ -31,8 +31,8 @@
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
           "androidMinSdk": 24,
           "iosMin": "15.0",
-          "flutter": ">=3.41.5",
-          "dart": "^3.11.0"
+          "flutter": ">=3.44.0",
+          "dart": "^3.12.0"
         }
       ]
     },
@@ -50,8 +50,8 @@
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
           "androidMinSdk": 24,
           "iosMin": "15.0",
-          "flutter": ">=3.41.5",
-          "dart": "^3.11.0"
+          "flutter": ">=3.44.0",
+          "dart": "^3.12.0"
         }
       ]
     },
@@ -69,8 +69,8 @@
           "adSdkIos": "AppLovinSDK >= 13.0.0",
           "androidMinSdk": 24,
           "iosMin": "15.0",
-          "flutter": ">=3.41.5",
-          "dart": "^3.11.0"
+          "flutter": ">=3.44.0",
+          "dart": "^3.12.0"
         }
       ]
     }

@@ -50,20 +50,23 @@ class MaxInterstitialManager(
 
         when (call.method) {
             "load" -> {
-                val activity = activityProvider()
-                if (activity == null) {
-                    result.error("no_activity", "No attached Activity to load the interstitial", null)
-                    return
-                }
                 if (adId == null) {
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                val activity = activityProvider()
+                if (activity == null) {
+                    // Reported through the listener, as iOS does and as `show`
+                    // does, rather than as a PlatformException from loadAd().
+                    send(adId, "onAdFailed", "No attached Activity to load the interstitial")
+                    result.success(null)
+                    return
+                }
                 // Reloading an adId replaces (and frees) its previous ad.
                 release(adId)
-                val configId = args?.get("configId") as? String ?: ""
-                val maxAdUnitId = args?.get("maxAdUnitId") as? String ?: ""
-                val isVideo = args?.get("isVideo") as? Boolean ?: false
+                val configId = args.get("configId") as? String ?: ""
+                val maxAdUnitId = args.get("maxAdUnitId") as? String ?: ""
+                val isVideo = args.get("isVideo") as? Boolean ?: false
 
                 val interstitial = MaxInterstitialAd(maxAdUnitId, activity)
                 interstitial.setListener(object : MaxAdListener {
@@ -88,9 +91,9 @@ class MaxInterstitialManager(
                     EnumSet.of(format),
                     mediationUtils,
                 )
-                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
-                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
-                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
+                FullscreenControls.from(args.get("controls"))?.applyTo(adUnit)
+                videoMaxDurationFrom(args.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit, interstitial)
                 ads[adId] = holder
 

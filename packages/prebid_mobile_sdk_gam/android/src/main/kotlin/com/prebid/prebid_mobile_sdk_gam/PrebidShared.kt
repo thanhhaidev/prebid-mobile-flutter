@@ -120,3 +120,20 @@ internal class NativeContext(
         }
     }
 }
+
+/// Maps an Android [org.prebid.mobile.ResultCode] to the result-code names the
+/// core prebid_mobile_sdk Dart API uses (the iOS `ResultCode` case names), so
+/// both platforms report the same strings.
+internal fun org.prebid.mobile.ResultCode.toDartCode(): String = when (this) {
+    org.prebid.mobile.ResultCode.SUCCESS -> "prebidDemandFetchSuccess"
+    org.prebid.mobile.ResultCode.INVALID_ACCOUNT_ID -> "prebidInvalidAccountId"
+    org.prebid.mobile.ResultCode.INVALID_CONFIG_ID -> "prebidInvalidConfigId"
+    org.prebid.mobile.ResultCode.INVALID_SIZE -> "prebidInvalidSize"
+    org.prebid.mobile.ResultCode.INVALID_HOST_URL -> "prebidServerURLInvalid"
+    org.prebid.mobile.ResultCode.NETWORK_ERROR -> "prebidNetworkError"
+    org.prebid.mobile.ResultCode.PREBID_SERVER_ERROR -> "prebidServerError"
+    org.prebid.mobile.ResultCode.NO_BIDS -> "prebidDemandNoBids"
+    org.prebid.mobile.ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
+    org.prebid.mobile.ResultCode.TIMEOUT -> "prebidDemandTimedOut"
+    else -> "prebidInvalidRequest"
+}

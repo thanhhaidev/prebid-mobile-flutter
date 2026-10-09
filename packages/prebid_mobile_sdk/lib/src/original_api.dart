@@ -13,7 +13,14 @@ import 'video_parameters.dart';
 /// Manager via `google_mobile_ads`) renders the ad. Pass [targetingKeywords]
 /// to your ad request as custom targeting.
 class PrebidBidResponse {
-  /// The raw Prebid result code (e.g. `prebidDemandFetchSuccess`).
+  /// The Prebid result code, the same string on Android and iOS. One of
+  /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
+  /// `prebidDemandNoCachedBids`, `prebidDemandTimedOut`,
+  /// `prebidNetworkError`, `prebidServerError`, `prebidInvalidAccountId`,
+  /// `prebidInvalidConfigId`, `prebidInvalidSize`, `prebidServerURLInvalid`,
+  /// `prebidServerNotSpecified`, `prebidInvalidRequest` or
+  /// `prebidSdkNotInitialized`; see
+  /// [PrebidMultiformatBidResponse.resultCode] for their meaning.
   final String resultCode;
 
   /// Bid-winning targeting keywords to hand to your ad server, or `null`/empty
@@ -44,7 +51,9 @@ mixin _AutoRefresh {
   /// Resumes auto-refresh after [stopAutoRefresh].
   Future<void> resumeAutoRefresh() => _delegate.resumeAutoRefresh();
 
-  /// Releases native resources held by this ad unit.
+  /// Releases the native ad unit and stops auto-refresh. Call it when the
+  /// unit is no longer needed (e.g. from `State.dispose`); a later
+  /// `fetchDemand` reuses the unit.
   Future<void> destroy() => _delegate.destroy();
 }
 
@@ -67,6 +76,9 @@ PrebidBidResponse _bidResponse(PrebidMultiformatBidResponse r) =>
 /// // Hand response.targetingKeywords to google_mobile_ads:
 /// //   AdManagerAdRequest(customTargeting: response.targetingKeywords ?? {})
 /// ```
+///
+/// Call [destroy] when the unit is no longer needed (e.g. from
+/// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidBannerAdUnit with _AutoRefresh {
   /// The Prebid Server stored impression config ID.
   final String configId;
@@ -128,6 +140,9 @@ class PrebidBannerAdUnit with _AutoRefresh {
 /// //   adRequest: AdManagerAdRequest(customTargeting: response.targetingKeywords ?? {}),
 /// // );
 /// ```
+///
+/// Call [destroy] when the unit is no longer needed (e.g. from
+/// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidInterstitialAdUnit with _AutoRefresh {
   /// The Prebid Server stored impression config ID.
   final String configId;
@@ -171,6 +186,9 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
 /// A native ad unit for the **Original API** integration: Prebid runs the
 /// auction and returns targeting keywords plus the native cache ID, while your
 /// ad server SDK owns rendering.
+///
+/// Call [destroy] when the unit is no longer needed (e.g. from
+/// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidNativeAdUnit with _AutoRefresh {
   /// The Prebid Server stored impression config ID.
   final String configId;

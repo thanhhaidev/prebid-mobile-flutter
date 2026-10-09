@@ -41,8 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Optionally require this environment in the pub.dev admin settings so only
-    # this job can publish.
-    environment: pub.dev
+    # this job can publish. Tag runs only, so protection rules such as "tags
+    # only" don't block the manual dry run.
+    environment: ${{ github.event_name == 'push' && 'pub.dev' || '' }}
     permissions:
       contents: write # GitHub release
       id-token: write # pub.dev OIDC
@@ -90,8 +91,6 @@ jobs:
             exit 1
           fi
 
-      # Configures the pub.dev OIDC credential; Flutter's `pub publish` reuses it.
-      - uses: dart-lang/setup-dart@v1
       - uses: ./.github/actions/setup-flutter
 
       - name: Analyze and test
@@ -120,6 +119,11 @@ jobs:
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
+
+      # Configures the pub.dev OIDC credential that `flutter pub publish` reuses.
+      # The token is short-lived, so this runs right before publishing.
+      - uses: dart-lang/setup-dart@v1
+        if: github.event_name == 'push' && steps.pubdev.outputs.published != 'true'
 
       - name: Publish to pub.dev
         if: github.event_name == 'push' && steps.pubdev.outputs.published != 'true'

@@ -37,21 +37,24 @@ class GamInterstitialManager(
 
         when (call.method) {
             "load" -> {
-                val activity = activityProvider()
-                if (activity == null) {
-                    result.error("no_activity", "No attached Activity to load the interstitial", null)
-                    return
-                }
                 if (adId == null) {
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                val activity = activityProvider()
+                if (activity == null) {
+                    // Reported through the listener, as iOS does and as `show`
+                    // does, rather than as a PlatformException from loadAd().
+                    send(adId, "onAdFailed", "No attached Activity to load the interstitial")
+                    result.success(null)
+                    return
+                }
                 // Reloading an adId replaces (and frees) its previous ad unit.
                 ads.remove(adId)?.destroy()
-                val configId = args?.get("configId") as? String ?: ""
-                val gamAdUnitId = args?.get("gamAdUnitId") as? String ?: ""
+                val configId = args.get("configId") as? String ?: ""
+                val gamAdUnitId = args.get("gamAdUnitId") as? String ?: ""
                 val formats = java.util.EnumSet.noneOf(AdUnitFormat::class.java)
-                (args?.get("adFormats") as? List<*>)?.forEach { format ->
+                (args.get("adFormats") as? List<*>)?.forEach { format ->
                     when (format as? String) {
                         "banner" -> formats.add(AdUnitFormat.BANNER)
                         "video" -> formats.add(AdUnitFormat.VIDEO)
@@ -60,7 +63,7 @@ class GamInterstitialManager(
                 if (formats.isEmpty()) formats.add(AdUnitFormat.BANNER)
 
                 val eventHandler = GamInterstitialEventHandler(activity, gamAdUnitId).apply {
-                    gamCustomTargeting(args?.get("customTargeting"))?.let { targeting ->
+                    gamCustomTargeting(args.get("customTargeting"))?.let { targeting ->
                         // Prebid 3.4: app custom targeting on the GAM request; Prebid's
                         // hb_* keys still take precedence.
                         setAdManagerRequestConfiguration { builder ->
@@ -69,9 +72,9 @@ class GamInterstitialManager(
                     }
                 }
                 val adUnit = InterstitialAdUnit(activity, configId, formats, eventHandler)
-                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
-                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
-                FullscreenControls.from(args?.get("controls"))?.let { controls ->
+                videoMaxDurationFrom(args.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
+                FullscreenControls.from(args.get("controls"))?.let { controls ->
                     controls.applyTo(adUnit)
                     if (controls.minWidthPercentage != null && controls.minHeightPercentage != null) {
                         adUnit.setMinSizePercentage(

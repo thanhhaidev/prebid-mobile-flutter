@@ -107,7 +107,7 @@ class _FullscreenDetailPageState extends State<FullscreenDetailPage> {
     onAdClosed: _onClosed,
     onUserEarnedReward: (r) => _tracker.track(
       'onUserEarnedReward',
-      '${r.count ?? '-'} ${r.type ?? ''}${r.ext == null ? '' : ' ext=${r.ext}'}',
+      '${r.count} ${r.type}${r.ext == null ? '' : ' ext=${r.ext}'}',
     ),
     onAdExpired: () => _tracker.track('onAdExpired'),
   );

@@ -73,7 +73,7 @@ Each release bundles a fixed Prebid Mobile SDK version per platform:
 
 | prebid_mobile_sdk | Prebid Android | Prebid iOS | Android | iOS | Flutter | Dart |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | API 24+ | 15.0+ | `>=3.41.5` | `^3.11.0` |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | API 24+ | 15.0+ | `>=3.44.0` | `^3.12.0` |
 
 Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 
@@ -99,6 +99,9 @@ Ensure your `ios/Podfile` specifies `platform :ios, '15.0'`, then run:
 ```bash
 cd ios && pod install
 ```
+
+Swift Package Manager is supported too (the plugin ships a
+`Package.swift`). With Swift Package Manager, Xcode also resolves Google Mobile Ads and AppLovin, because Prebid's `Package.swift` declares them for its adapter products, even though the core package only links `PrebidMobile`. An app that pins Google Mobile Ads 12 or AppLovin below 13 can't resolve with Swift Package Manager; CocoaPods doesn't have this issue.
 
 ### Android
 
@@ -325,7 +328,6 @@ Static class for managing privacy consent, first-party data, and targeting param
 |---|---|---|
 | `setGlobalOrtbConfig(String? ortbConfig)` | `Future<void>` | Set global OpenRTB JSON config merged into every bid request. |
 | `getGlobalOrtbConfig()` | `Future<String?>` | Get current global OpenRTB config. |
-| `setContentUrl(String? url)` | `Future<void>` | Set content URL (`app.content.url`). |
 | `setPublisherName(String? name)` | `Future<void>` | Set publisher name (`app.publisher.name`). |
 | `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
 | `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
@@ -352,6 +354,8 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `adFormats` | `Set<AdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
 | `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
+| `adPosition` | `PrebidAdPosition?` | `null` | Ad position on screen (`imp.banner.pos`). |
+| `videoParameters` | `VideoParameters?` | `null` | Video signals for video banners (iOS only: Prebid Android's banner sends the SDK defaults). |
 | `controller` | `PrebidBannerAdController?` | `null` | `loadAd()` (with `autoLoad: false`) and `stopRefresh()`. |
 | `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events (incl. `onAdExpired`). |
 | `videoListener` | `PrebidBannerVideoListener?` | `null` | Outstream video events: completed, paused, resumed, muted, unmuted. |
@@ -394,8 +398,8 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 
 | Field | Type | Description |
 |---|---|---|
-| `type` | `String?` | The reward type (e.g., `"coins"`, `"lives"`). |
-| `count` | `int?` | The reward amount. |
+| `type` | `String` | The reward type (e.g., `"coins"`, `"lives"`; `"reward"` when the creative sets none). |
+| `count` | `int` | The reward amount (`1` when the creative sets none). |
 | `ext` | `Map<String, dynamic>?` | Optional extra data. |
 
 ---
@@ -446,7 +450,7 @@ if (_loaded) PrebidNativeAdView(ad: ad);
 | Property | Type | Description |
 |---|---|---|
 | `ad` | `PrebidNativeAd` | **Required.** A loaded native ad. |
-| `width` | `double` | View width (default: fill). |
+| `width` | `double?` | View width. `null` (default) fills a bounded parent; in an unbounded one (a `Row`, a horizontal list) it uses the screen width. |
 | `height` | `double` | Initial height; grows to the rendered content. |
 
 ---
@@ -609,7 +613,7 @@ await PrebidMobile.setExternalUserIds([
 | Callback | Signature | Triggered When |
 |---|---|---|
 | `onAdLoaded` | `void Function()` | Banner content loaded. |
-| `onAdDisplayed` | `void Function()` | Banner rendered on screen. On iOS this fires together with `onAdLoaded`. |
+| `onAdDisplayed` | `void Function()` | Banner rendered on screen (the SDK's impression), which can be later than `onAdLoaded`. |
 | `onAdFailed` | `void Function(String error)` | Banner failed to load. |
 | `onAdClicked` | `void Function()` | User tapped the banner. |
 | `onAdClosed` | `void Function()` | Banner overlay was dismissed. |

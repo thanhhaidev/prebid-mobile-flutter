@@ -13,7 +13,7 @@ Each release of the Flutter packages pins the native Prebid Mobile SDK it is bui
 
 - **Prebid Android** is an exact Maven version: every app on that release gets the same SDK.
 - **Prebid iOS** is a range. CocoaPods (`'~> 3.4', '>= 3.4.1'`) and Swift Package Manager (`from: "3.4.1"`) resolve the newest PrebidMobile release inside it, so a fresh `pod install` can pick up a newer 3.x patch. Run `pod update PrebidMobile` to move within the range; a new major version needs a new plugin release.
-- **Android / iOS** are the lowest OS versions the plugin supports (`minSdk`, iOS deployment target). **Flutter** is the SDK constraint in `pubspec.yaml`; Dart is `^3.11.0`.
+- **Android / iOS** are the lowest OS versions the plugin supports (`minSdk`, iOS deployment target). **Flutter** is the SDK constraint in `pubspec.yaml`; Dart is `^3.12.0`. Flutter 3.44 is the first release that applies the Kotlin Gradle plugin to plugins on its own, which these packages rely on.
 
 ## Companion packages
 
@@ -31,7 +31,7 @@ Each companion bundles Prebid's adapter (or event handler) for its ad SDK, on th
 
 <CompatibilityTable name="prebid_mobile_sdk_max" />
 
-The ad SDK columns are what Prebid's adapters depend on: Android resolves the listed version unless your app asks for a newer one, iOS accepts any version in the range. If your app also uses [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads) or [`applovin_max`](https://pub.dev/packages/applovin_max), their native SDK must fall in the same range.
+The ad SDK columns are what Prebid's adapters depend on: Android resolves the listed version unless your app asks for a newer one, iOS accepts any version in the range. If your app also uses [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads) or [`applovin_max`](https://pub.dev/packages/applovin_max), their native SDK must fall in the same range: use `google_mobile_ads` 8.0.0 or later (7.x pins Google Mobile Ads iOS 12) and `applovin_max` 4.0.0 or later (3.x pins AppLovin SDK 11).
 
 ## Native artifacts
 

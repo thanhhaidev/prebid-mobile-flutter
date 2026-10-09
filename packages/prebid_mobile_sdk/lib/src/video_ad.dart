@@ -2,11 +2,19 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
+import 'internal/pigeon_conversions.dart';
+import 'internal/session.dart';
 import 'video_parameters.dart';
 
 /// Result of an in-stream video bid request.
 class PrebidVideoAdBidResponse {
-  /// The result code ("prebidDemandFetchSuccess", "prebidDemandNoBids", etc.).
+  /// The Prebid result code, the same string on Android and iOS:
+  /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
+  /// `prebidDemandNoCachedBids`, `prebidDemandTimedOut`,
+  /// `prebidNetworkError`, `prebidServerError`, a configuration error
+  /// (`prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`,
+  /// `prebidServerURLInvalid`, `prebidServerNotSpecified`,
+  /// `prebidInvalidRequest`) or `prebidSdkNotInitialized`.
   final String resultCode;
 
   /// Targeting keywords to pass to the ad server.
@@ -66,7 +74,9 @@ class PrebidInstreamVideoAd {
     required this.configId,
     required this.size,
     this.videoParameters,
-  }) : _adId = _nextId++;
+  }) : _adId = _nextId++ {
+    releasePreviousIsolateAds();
+  }
 
   /// Fetch demand for this in-stream video ad.
   ///
@@ -82,24 +92,16 @@ class PrebidInstreamVideoAd {
 
     final result = await api.fetchDemand(_adId, config);
 
-    Map<String, String>? keywords;
-    if (result.targetingKeywords != null) {
-      keywords = {};
-      result.targetingKeywords!.forEach((key, value) {
-        if (key != null && value != null) {
-          keywords![key] = value;
-        }
-      });
-    }
-
     return PrebidVideoAdBidResponse(
       resultCode: result.resultCode,
-      targetingKeywords: keywords,
+      targetingKeywords: stringMap(result.targetingKeywords),
       exp: result.exp,
     );
   }
 
-  /// Destroy the ad unit and free resources.
+  /// Releases the native ad unit. Call it when the ad unit is no longer
+  /// needed (e.g. from `State.dispose`); [fetchDemand] may be called again
+  /// afterwards.
   Future<void> destroy() async {
     await api.destroy(_adId);
   }

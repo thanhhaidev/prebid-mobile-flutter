@@ -83,7 +83,7 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
             if resultCode == ResultCode.prebidDemandFetchSuccess {
                 self.methodChannel.invokeMethod("fetchDemandSuccess", arguments: nil)
             } else {
-                self.methodChannel.invokeMethod("fetchDemandFailed", arguments: nil)
+                self.methodChannel.invokeMethod("fetchDemandFailed", arguments: resultCode.dartCode)
             }
 
             var adTypes: [AdLoaderAdType] = [.native]

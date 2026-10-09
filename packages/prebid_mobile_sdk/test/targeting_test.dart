@@ -121,4 +121,106 @@ void main() {
       verify(mockApi.setLocationPrecision(2)).called(1);
     });
   });
+
+  group('PrebidTargeting getters', () {
+    test('privacy getters return the api values', () async {
+      when(mockApi.getSubjectToGDPR()).thenAnswer((_) async => true);
+      when(mockApi.getGDPRConsentString()).thenAnswer((_) async => 'tcf');
+      when(mockApi.getPurposeConsents()).thenAnswer((_) async => '101');
+      when(mockApi.getDeviceAccessConsent()).thenAnswer((_) async => false);
+      when(mockApi.getSubjectToCOPPA()).thenAnswer((_) async => null);
+
+      expect(await PrebidTargeting.getSubjectToGDPR(), isTrue);
+      expect(await PrebidTargeting.getGDPRConsentString(), 'tcf');
+      expect(await PrebidTargeting.getPurposeConsents(), '101');
+      expect(await PrebidTargeting.getDeviceAccessConsent(), isFalse);
+      expect(await PrebidTargeting.getSubjectToCOPPA(), isNull);
+    });
+
+    test('purpose consents setter and null clears', () async {
+      await PrebidTargeting.setPurposeConsents('11');
+      await PrebidTargeting.setPurposeConsents(null);
+      await PrebidTargeting.setSubjectToGDPR(null);
+      await PrebidTargeting.setGDPRConsentString(null);
+      verify(mockApi.setPurposeConsents('11')).called(1);
+      verify(mockApi.setPurposeConsents(null)).called(1);
+      verify(mockApi.setSubjectToGDPR(null)).called(1);
+      verify(mockApi.setGDPRConsentString(null)).called(1);
+    });
+
+    test('getGlobalOrtbConfig returns the api value', () async {
+      when(mockApi.getGlobalOrtbConfig()).thenAnswer((_) async => '{}');
+      expect(await PrebidTargeting.getGlobalOrtbConfig(), '{}');
+      await PrebidTargeting.setGlobalOrtbConfig(null);
+      verify(mockApi.setGlobalOrtbConfig(null)).called(1);
+    });
+  });
+
+  group('PrebidTargeting keywords', () {
+    test('user keywords call api', () async {
+      when(mockApi.getUserKeywords()).thenAnswer((_) async => ['a', 'b']);
+      await PrebidTargeting.addUserKeywords({'a', 'b'});
+      await PrebidTargeting.removeUserKeyword('a');
+      await PrebidTargeting.clearUserKeywords();
+      verify(mockApi.addUserKeywords(['a', 'b'])).called(1);
+      verify(mockApi.removeUserKeyword('a')).called(1);
+      verify(mockApi.clearUserKeywords()).called(1);
+      expect(await PrebidTargeting.getUserKeywords(), ['a', 'b']);
+    });
+
+    test('app keywords call api', () async {
+      await PrebidTargeting.addAppKeyword('news');
+      await PrebidTargeting.addAppKeywords({'x', 'y'});
+      await PrebidTargeting.removeAppKeyword('x');
+      await PrebidTargeting.clearAppKeywords();
+      verify(mockApi.addAppKeyword('news')).called(1);
+      verify(mockApi.addAppKeywords(['x', 'y'])).called(1);
+      verify(mockApi.removeAppKeyword('x')).called(1);
+      verify(mockApi.clearAppKeywords()).called(1);
+    });
+  });
+
+  group('PrebidTargeting app ext data and access control', () {
+    test('app ext data calls api', () async {
+      await PrebidTargeting.updateAppExtData(key: 'k', value: {'v1', 'v2'});
+      await PrebidTargeting.removeAppExtData('k');
+      await PrebidTargeting.clearAppExtData();
+      verify(mockApi.updateAppExtData('k', ['v1', 'v2'])).called(1);
+      verify(mockApi.removeAppExtData('k')).called(1);
+      verify(mockApi.clearAppExtData()).called(1);
+    });
+
+    test('access control list calls api', () async {
+      await PrebidTargeting.addBidderToAccessControlList('appnexus');
+      await PrebidTargeting.removeBidderFromAccessControlList('appnexus');
+      await PrebidTargeting.clearAccessControlList();
+      verify(mockApi.addBidderToAccessControlList('appnexus')).called(1);
+      verify(mockApi.removeBidderFromAccessControlList('appnexus')).called(1);
+      verify(mockApi.clearAccessControlList()).called(1);
+    });
+  });
+
+  group('PrebidTargeting app information', () {
+    test('store URL and domain call api', () async {
+      await PrebidTargeting.setStoreUrl('https://store');
+      await PrebidTargeting.setDomain('example.com');
+      await PrebidTargeting.setPublisherName(null);
+      verify(mockApi.setStoreUrl('https://store')).called(1);
+      verify(mockApi.setDomain('example.com')).called(1);
+      verify(mockApi.setPublisherName(null)).called(1);
+    });
+
+    test('nullable setters forward null', () async {
+      await PrebidTargeting.setSourceApp(null);
+      await PrebidTargeting.setItunesId(null);
+      await PrebidTargeting.setOmidPartnerName(null);
+      await PrebidTargeting.setOmidPartnerVersion(null);
+      await PrebidTargeting.setLocationPrecision(null);
+      verify(mockApi.setSourceApp(null)).called(1);
+      verify(mockApi.setItunesId(null)).called(1);
+      verify(mockApi.setOmidPartnerName(null)).called(1);
+      verify(mockApi.setOmidPartnerVersion(null)).called(1);
+      verify(mockApi.setLocationPrecision(null)).called(1);
+    });
+  });
 }

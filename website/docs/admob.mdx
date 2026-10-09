@@ -18,7 +18,7 @@ The package bundles the Google Mobile Ads SDK, which needs an AdMob app ID:
 - **Android:** `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-…~…"/>` in `AndroidManifest.xml`.
 - **iOS:** `GADApplicationIdentifier` in `ios/Runner/Info.plist`.
 
-Initialize Google Mobile Ads once at startup (for example `MobileAds.instance.initialize()`). In the AdMob dashboard, add Prebid as a custom event on your ad units, as described in Prebid's [AdMob integration guide](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).
+Initialize Google Mobile Ads once at startup (for example `MobileAds.instance.initialize()` from `google_mobile_ads` 8.0.0 or later; 7.x pins Google Mobile Ads iOS 12, which Prebid's AdMob adapters don't support). In the AdMob dashboard, add Prebid as a custom event on your ad units, as described in Prebid's [AdMob integration guide](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).
 
 ## Banner
 

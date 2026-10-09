@@ -331,6 +331,15 @@ class MockPrebidMobileHostApi extends _i1.Mock
             ),
           )
           as _i4.Future<String>);
+
+  @override
+  _i4.Future<void> releaseAds() =>
+      (super.noSuchMethod(
+            Invocation.method(#releaseAds, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }
 
 /// A class which mocks [TargetingHostApi].
@@ -648,15 +657,6 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValue: _i4.Future<String?>.value(),
           )
           as _i4.Future<String?>);
-
-  @override
-  _i4.Future<void> setContentUrl(String? url) =>
-      (super.noSuchMethod(
-            Invocation.method(#setContentUrl, [url]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
 
   @override
   _i4.Future<void> setPublisherName(String? name) =>

@@ -5,12 +5,17 @@ import 'ad_event_router.dart';
 import 'ad_listener.dart';
 import 'fullscreen_controls.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/pigeon_conversions.dart';
 import 'video_parameters.dart';
 
 /// A fullscreen interstitial ad using Prebid rendering.
 ///
 /// Create an instance, call [loadAd], and then [show] when ready.
-/// Call [destroy] when the ad is no longer needed.
+///
+/// [destroy] releases the native ad unit; call it when the ad is no longer
+/// needed (e.g. from `State.dispose`) or the native ad leaks. The object
+/// stays usable: calling [loadAd] after [destroy] loads a fresh ad and its
+/// events reach [listener] again.
 class PrebidInterstitialAd {
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
@@ -73,8 +78,10 @@ class PrebidInterstitialAd {
     }
   }
 
-  /// Load the interstitial ad.
+  /// Load the interstitial ad. Also valid after [destroy].
   Future<void> loadAd() async {
+    // Re-register: [destroy] unregisters, and the object may be reused.
+    AdEventRouter.instance.register(_adId, _handleEvent);
     final formats = adFormats?.map((f) => f.name).toList();
     final videoConfig = videoParameters?.toConfig();
     await api.loadAd(
@@ -92,7 +99,8 @@ class PrebidInterstitialAd {
     await api.show(_adId);
   }
 
-  /// Destroy the interstitial ad and free resources.
+  /// Releases the native interstitial and stops event delivery to
+  /// [listener] until the next [loadAd].
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
     await api.destroy(_adId);
@@ -102,7 +110,11 @@ class PrebidInterstitialAd {
 /// A fullscreen rewarded ad using Prebid rendering.
 ///
 /// Create an instance, call [loadAd], and then [show] when ready.
-/// Call [destroy] when the ad is no longer needed.
+///
+/// [destroy] releases the native ad unit; call it when the ad is no longer
+/// needed (e.g. from `State.dispose`) or the native ad leaks. The object
+/// stays usable: calling [loadAd] after [destroy] loads a fresh ad and its
+/// events reach [listener] again.
 class PrebidRewardedAd {
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
@@ -148,22 +160,25 @@ class PrebidRewardedAd {
       case 'onAdClicked':
         l.onAdClicked?.call();
       case 'onUserEarnedReward':
-        if (event.reward != null) {
-          l.onUserEarnedReward?.call(
-            PrebidReward(
-              type: event.reward!.type ?? '',
-              count: event.reward!.count ?? 0,
-              ext: event.reward!.ext?.map((k, v) => MapEntry(k ?? '', v)),
-            ),
-          );
-        }
+        // The platforms always attach a reward, defaulting to 'reward' x 1
+        // (the companion packages' default too); mirror that if it's absent.
+        final reward = event.reward;
+        l.onUserEarnedReward?.call(
+          PrebidReward(
+            type: reward?.type ?? 'reward',
+            count: reward?.count ?? 1,
+            ext: reward?.ext?.map((k, v) => MapEntry(k ?? '', v)),
+          ),
+        );
       case 'onAdExpired':
         l.onAdExpired?.call();
     }
   }
 
-  /// Load the rewarded ad.
+  /// Load the rewarded ad. Also valid after [destroy].
   Future<void> loadAd() async {
+    // Re-register: [destroy] unregisters, and the object may be reused.
+    AdEventRouter.instance.register(_adId, _handleEvent);
     await api.loadAd(_adId, configId, impOrtbConfig, controls?.toConfig());
   }
 
@@ -172,7 +187,8 @@ class PrebidRewardedAd {
     await api.show(_adId);
   }
 
-  /// Destroy the rewarded ad and free resources.
+  /// Releases the native rewarded ad and stops event delivery to [listener]
+  /// until the next [loadAd].
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
     await api.destroy(_adId);

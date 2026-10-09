@@ -38,8 +38,40 @@ enum PrebidPresenter {
         return top
     }
 
+    /// Calls `present` with a controller that can present now, or `fail`
+    /// with the reason. A controller still presenting or dismissing another
+    /// makes UIKit drop the presentation with only a console warning, after
+    /// Prebid has already reported the ad as displayed; so that case waits
+    /// once for the running transition (or the next run loop), then fails.
+    static func whenReady(
+        retry: Bool = true,
+        fail: @escaping (String) -> Void,
+        present: @escaping (UIViewController) -> Void
+    ) {
+        guard let top = topViewController() else { return fail(noViewController) }
+        guard isBusy(top) else { return present(top) }
+        guard retry else { return fail(busy) }
+        let again = {
+            DispatchQueue.main.async {
+                PrebidPresenter.whenReady(retry: false, fail: fail, present: present)
+            }
+        }
+        if let coordinator = (top.presentedViewController ?? top).transitionCoordinator {
+            _ = coordinator.animate(alongsideTransition: nil) { _ in again() }
+        } else {
+            again()
+        }
+    }
+
+    private static func isBusy(_ controller: UIViewController) -> Bool {
+        controller.presentedViewController != nil
+            || controller.isBeingPresented
+            || controller.isBeingDismissed
+    }
+
     static let noViewController = "No view controller to present the ad from"
     static let notReady = "The ad is not loaded"
+    static let busy = "Another view controller is being presented; try again after it is dismissed"
 }
 
 /// Keeps ad units alive while `fetchDemand` runs. Prebid guards its response
@@ -72,7 +104,10 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     private var nativeRequests: [Int64: NativeRequest] = [:]
     private var nativeAdResults: [Int64: NativeAd] = [:]
     private let nativeAdStore = NativeAdStore()
-    private var multiformatHandler: MultiformatAdHostApiHandler?    
+    private var multiformatHandler: MultiformatAdHostApiHandler?
+    private var rewardedHandler: RewardedAdHostApiHandler?
+    private var instreamVideoHandler: InstreamVideoAdHostApiHandler?
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PrebidMobileFlutterPlugin()
         instance.registrar = registrar
@@ -86,6 +121,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         
         // Register rewarded handler as separate class
         let rewardedHandler = RewardedAdHostApiHandler(flutterApi: instance.flutterApi!)
+        instance.rewardedHandler = rewardedHandler
         RewardedAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: rewardedHandler)
         
         NativeAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
@@ -99,6 +135,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         
         // Register in-stream video handler
         let videoHandler = InstreamVideoAdHostApiHandler()
+        instance.instreamVideoHandler = videoHandler
         InstreamVideoAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: videoHandler)
         
         // Register banner PlatformView factory
@@ -116,7 +153,17 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
         // Stop auto-refresh and viewability timers, which would otherwise
         // keep running for the rest of the process.
+        releaseAllAds()
+    }
+
+    func releaseAds() throws {
+        releaseAllAds()
+    }
+
+    private func releaseAllAds() {
         multiformatHandler?.destroyAll()
+        rewardedHandler?.destroyAll()
+        instreamVideoHandler?.destroyAll()
         nativeRequests.removeAll()
         nativeAdResults.removeAll()
         nativeAdStore.removeAll()
@@ -139,10 +186,14 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
             case .serverStatusWarning: statusStr = "serverStatusWarning"
             default: statusStr = "failed"
             }
-            completion(.success(InitializationResult(
-                status: statusStr,
-                error: error?.localizedDescription
-            )))
+            let result = InitializationResult(status: statusStr, error: error?.localizedDescription)
+            // The status check replies on Prebid's URLSession queue; channel
+            // replies belong on the platform (main) thread.
+            if Thread.isMainThread {
+                completion(.success(result))
+            } else {
+                DispatchQueue.main.async { completion(.success(result)) }
+            }
         }
         do {
             if let nonTrackingUrl = nonTrackingUrl {
@@ -416,7 +467,6 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setGlobalOrtbConfig(ortbConfig: String?) throws { Targeting.shared.setGlobalORTBConfig(ortbConfig) }
     func getGlobalOrtbConfig() throws -> String? { Targeting.shared.getGlobalORTBConfig() }
     
-    func setContentUrl(url: String?) throws { Targeting.shared.contentUrl = url }
     func setPublisherName(name: String?) throws { Targeting.shared.publisherName = name }
     func setStoreUrl(url: String?) throws { Targeting.shared.storeURL = url }
     func setDomain(domain: String?) throws { Targeting.shared.domain = domain }
@@ -471,13 +521,17 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     // show(adId:) satisfies InterstitialAdHostApi
     func show(adId: Int64) throws {
-        guard let interstitial = interstitialAds[adId], interstitial.isReady else {
+        guard interstitialAds[adId]?.isReady == true else {
             return sendAdFailed(adId, PrebidPresenter.notReady)
         }
-        guard let viewController = PrebidPresenter.topViewController() else {
-            return sendAdFailed(adId, PrebidPresenter.noViewController)
+        PrebidPresenter.whenReady(fail: { [weak self] error in self?.sendAdFailed(adId, error) }) { [weak self] viewController in
+            // Re-checked: a retry runs later, after a possible destroy.
+            guard let self = self else { return }
+            guard let interstitial = self.interstitialAds[adId], interstitial.isReady else {
+                return self.sendAdFailed(adId, PrebidPresenter.notReady)
+            }
+            interstitial.show(from: viewController)
         }
-        interstitial.show(from: viewController)
     }
 
     private func sendAdFailed(_ adId: Int64, _ error: String) {
@@ -781,13 +835,17 @@ private class RewardedAdHostApiHandler: RewardedAdHostApi {
     }
     
     func show(adId: Int64) throws {
-        guard let rewarded = rewardedAds[adId], rewarded.isReady else {
+        guard rewardedAds[adId]?.isReady == true else {
             return sendAdFailed(adId, PrebidPresenter.notReady)
         }
-        guard let viewController = PrebidPresenter.topViewController() else {
-            return sendAdFailed(adId, PrebidPresenter.noViewController)
+        PrebidPresenter.whenReady(fail: { [weak self] error in self?.sendAdFailed(adId, error) }) { [weak self] viewController in
+            // Re-checked: a retry runs later, after a possible destroy.
+            guard let self = self else { return }
+            guard let rewarded = self.rewardedAds[adId], rewarded.isReady else {
+                return self.sendAdFailed(adId, PrebidPresenter.notReady)
+            }
+            rewarded.show(from: viewController)
         }
-        rewarded.show(from: viewController)
     }
 
     private func sendAdFailed(_ adId: Int64, _ error: String) {
@@ -796,6 +854,10 @@ private class RewardedAdHostApiHandler: RewardedAdHostApi {
     
     func destroy(adId: Int64) throws {
         rewardedAds.removeValue(forKey: adId)
+    }
+
+    func destroyAll() {
+        rewardedAds.removeAll()
     }
 }
 
@@ -1057,6 +1119,10 @@ private class InstreamVideoAdHostApiHandler: InstreamVideoAdHostApi {
     
     func destroy(adId: Int64) throws {
         adUnits.removeValue(forKey: adId)
+    }
+
+    func destroyAll() {
+        adUnits.removeAll()
     }
 }
 

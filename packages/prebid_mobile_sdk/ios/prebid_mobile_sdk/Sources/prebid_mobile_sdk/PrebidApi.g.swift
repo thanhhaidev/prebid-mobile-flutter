@@ -1340,6 +1340,11 @@ protocol PrebidMobileHostApi {
   func getExternalUserIds() throws -> [ExternalUserIdData]
   func clearExternalUserIds() throws
   func getSdkVersion() throws -> String
+  /// Destroys every ad this engine holds natively (fullscreen, native,
+  /// multiformat, in-stream). Called once by a new Dart isolate before its
+  /// first ad: after a hot restart the previous isolate's ads would otherwise
+  /// keep running (auto-refresh auctions) under ad ids the new one reuses.
+  func releaseAds() throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -1762,6 +1767,23 @@ class PrebidMobileHostApiSetup {
     } else {
       getSdkVersionChannel.setMessageHandler(nil)
     }
+    /// Destroys every ad this engine holds natively (fullscreen, native,
+    /// multiformat, in-stream). Called once by a new Dart isolate before its
+    /// first ad: after a hot restart the previous isolate's ads would otherwise
+    /// keep running (auto-refresh auctions) under ad ids the new one reuses.
+    let releaseAdsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.releaseAds\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      releaseAdsChannel.setMessageHandler { _, reply in
+        do {
+          try api.releaseAds()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      releaseAdsChannel.setMessageHandler(nil)
+    }
   }
 }
 /// Targeting and privacy settings.
@@ -1804,7 +1826,6 @@ protocol TargetingHostApi {
   func clearAccessControlList() throws
   func setGlobalOrtbConfig(ortbConfig: String?) throws
   func getGlobalOrtbConfig() throws -> String?
-  func setContentUrl(url: String?) throws
   func setPublisherName(name: String?) throws
   func setStoreUrl(url: String?) throws
   func setDomain(domain: String?) throws
@@ -2313,21 +2334,6 @@ class TargetingHostApiSetup {
       }
     } else {
       getGlobalOrtbConfigChannel.setMessageHandler(nil)
-    }
-    let setContentUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setContentUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      setContentUrlChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let urlArg: String? = nilOrValue(args[0])
-        do {
-          try api.setContentUrl(url: urlArg)
-          reply(wrapResult(nil))
-        } catch {
-          reply(wrapError(error))
-        }
-      }
-    } else {
-      setContentUrlChannel.setMessageHandler(nil)
     }
     let setPublisherNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setPublisherName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

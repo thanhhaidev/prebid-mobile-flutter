@@ -7,6 +7,8 @@ description: Keywords, first-party data, global OpenRTB config, app information 
 
 `PrebidTargeting` attaches first-party data to every bid request. All methods are static and return `Future`s.
 
+Targeting lives in the native Prebid SDK, so it is process-wide: in an add-to-app setup with several Flutter engines, every engine reads and writes the same values.
+
 ## Keywords
 
 ```dart
@@ -59,11 +61,12 @@ For a single ad unit, pass `impOrtbConfig` to the ad instead; it is merged into 
 
 | Method | Request field |
 | --- | --- |
-| `setContentUrl(String?)` | `app.content.url` |
 | `setPublisherName(String?)` | `app.publisher.name` |
 | `setStoreUrl(String?)` | `app.storeurl` |
 | `setDomain(String?)` | `app.domain` |
 | `setOmidPartnerName(String?)`, `setOmidPartnerVersion(String?)` | `source.ext.omidpn`, `source.ext.omidpv` |
+
+Prebid 3.4 has no setter for `app.content.url`; send it with `setGlobalOrtbConfig('{"app":{"content":{"url":"https://example.com/article"}}}')`.
 | `setSourceApp(String?)` <Only platform="ios" /> | SKAdNetwork `sourceapp` |
 | `setItunesId(String?)` <Only platform="ios" /> | Your app's iTunes ID, needed for SKAdNetwork bids when `Info.plist` lists `SKAdNetworkItems` |
 

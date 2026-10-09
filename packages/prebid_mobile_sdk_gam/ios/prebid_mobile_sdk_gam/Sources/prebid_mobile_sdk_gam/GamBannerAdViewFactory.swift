@@ -147,6 +147,13 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         }
     }
 
+    // iOS platform views have no dispose callback: stop answering
+    // PrebidBannerAdController calls and refreshing once the view is gone.
+    deinit {
+        methodChannel.setMethodCallHandler(nil)
+        bannerView.stopRefresh()
+    }
+
     func view() -> UIView {
         return bannerView
     }

@@ -1,5 +1,3 @@
-import 'generated/prebid_api.g.dart';
-
 /// Video parameters for OpenRTB video ad configuration.
 ///
 /// Used with [PrebidInterstitialAd], [PrebidMultiformatAd], and
@@ -80,24 +78,6 @@ class VideoParameters {
     this.minBitrate,
     this.maxBitrate,
   });
-
-  /// The Pigeon config sent to the native SDKs.
-  VideoParametersConfig toConfig() => VideoParametersConfig(
-    mimes: mimes,
-    protocols: protocols?.map((p) => p.value).toList(),
-    playbackMethods: playbackMethods?.map((m) => m.value).toList(),
-    placement: placement?.value,
-    maxDuration: maxDuration,
-    minDuration: minDuration,
-    api: api?.map((a) => a.value).toList(),
-    plcmt: plcmt?.value,
-    startDelay: startDelay,
-    linearity: linearity?.value,
-    skippable: skippable,
-    battr: battr?.map((a) => a.value).toList(),
-    minBitrate: minBitrate,
-    maxBitrate: maxBitrate,
-  );
 
   /// Method-channel payload, for the GAM / AdMob / MAX companion packages.
   Map<String, Object> toMap() => {

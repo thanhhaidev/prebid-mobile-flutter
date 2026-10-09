@@ -28,8 +28,8 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Status check disabled | iOS reports "skipped" | `succeeded` on both |
 | Empty seat bid | Android reports success | `prebidDemandNoBids` on both |
 | Requests before init | Android drops them silently | `onAdFailed` / `prebidSdkNotInitialized` |
-| Native impression | Fired when a tracker request succeeds (never without trackers) | Viewability: half the view for 1 s, once per ad |
-| Banner `onAdDisplayed` | iOS has no separate event | Fired with `onAdLoaded` on iOS |
+| Native impression | Fired when a tracker request succeeds (never without trackers) | Viewability: half the view for 1 s, including Flutter's clipping, once per ad |
+| Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once |
 | Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
 
 ## Remaining differences

@@ -270,17 +270,6 @@ class PrebidTargeting {
   // App Information
   // ---------------------------------------------------------------------------
 
-  /// Set the content URL for contextual targeting.
-  ///
-  /// Prebid 3.4 no longer sends this value (deprecated on iOS, absent on
-  /// Android). Set `app.content.url` via [setGlobalOrtbConfig] instead.
-  @Deprecated(
-    'Not sent by Prebid 3.4. Use setGlobalOrtbConfig with app.content.url.',
-  )
-  static Future<void> setContentUrl(String? url) async {
-    await api.setContentUrl(url);
-  }
-
   /// Set the publisher name.
   ///
   /// Maps to `app.publisher.name` in the OpenRTB request.

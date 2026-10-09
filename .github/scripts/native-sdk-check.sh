@@ -14,12 +14,14 @@ dry_run=false
 compat=website/src/data/compatibility.json
 label=native-sdk-update
 
-# Newest stable version on Maven Central (`release` skips snapshots).
+# Newest stable version on Maven Central. `<release>` can be a beta or RC, so
+# take the highest version without a pre-release suffix instead.
 maven_latest() {
   local path=${1//.//}
   path=${path/://}
   curl -fsSL "https://repo1.maven.org/maven2/${path}/maven-metadata.xml" |
-    sed -n 's:.*<release>\(.*\)</release>.*:\1:p'
+    sed -n 's:.*<version>\(.*\)</version>.*:\1:p' |
+    grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -1
 }
 
 # Newest stable version on CocoaPods trunk (no pre-release suffix).

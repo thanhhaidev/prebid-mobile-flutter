@@ -104,7 +104,7 @@ On iOS, `videoParameters` sets every video signal on the banner (an explicit `pl
 | Callback | When |
 | --- | --- |
 | `onAdLoaded` | The creative loaded. |
-| `onAdDisplayed` | The creative is on screen. iOS reports it together with `onAdLoaded`. |
+| `onAdDisplayed` | The creative is on screen (the SDK's impression), which can be later than `onAdLoaded`. |
 | `onAdFailed(String)` | No bid, a network error or a render failure. |
 | `onAdClicked` | The user tapped the creative. |
 | `onAdClosed` | The click-through (in-app browser or modal) was dismissed. |

@@ -49,13 +49,19 @@ class PlatformViewHarness {
                       )
                       as Map?;
             }
+            createdParams.add(creationParams);
             final name = '${channelPrefix}_$id';
             viewChannel = name;
+            viewChannels.add(name);
             _messenger.setMockMethodCallHandler(MethodChannel(name), (c) async {
               calls.add(c);
               return null;
             });
             return 0;
+          case 'dispose':
+            final args = call.arguments;
+            disposedIds.add(args is Map ? args['id'] as int : args as int);
+            return null;
           case 'resize':
             final args = call.arguments as Map;
             return {'width': args['width'], 'height': args['height']};
@@ -81,7 +87,16 @@ class PlatformViewHarness {
   /// The decoded `creationParams` the widget passed to the platform view.
   Map<Object?, Object?>? creationParams;
 
-  /// Calls the widget sent to the created view's channel.
+  /// The `creationParams` of every view created so far, oldest first.
+  final List<Map<Object?, Object?>?> createdParams = [];
+
+  /// The channel of every view created so far, oldest first.
+  final List<String> viewChannels = [];
+
+  /// Ids of the platform views the widget disposed.
+  final List<int> disposedIds = [];
+
+  /// Calls the widget sent to the created views' channels.
   final List<MethodCall> calls = [];
 
   /// Delivers a native → Dart event on the created view's channel.
@@ -94,12 +109,23 @@ class PlatformViewHarness {
         (_) {},
       );
 
+  /// Delivers a native → Dart event on [channel] (e.g. an older view's).
+  static Future<void> emitOn(
+    String channel,
+    String method, [
+    Object? arguments,
+  ]) => _messenger.handlePlatformMessage(
+    channel,
+    const StandardMethodCodec().encodeMethodCall(MethodCall(method, arguments)),
+    (_) {},
+  );
+
   void dispose() {
     for (final channel in _engineChannels) {
       _messenger.setMockMethodCallHandler(channel, null);
     }
-    if (viewChannel != null) {
-      _messenger.setMockMethodCallHandler(MethodChannel(viewChannel!), null);
+    for (final channel in viewChannels) {
+      _messenger.setMockMethodCallHandler(MethodChannel(channel), null);
     }
   }
 }

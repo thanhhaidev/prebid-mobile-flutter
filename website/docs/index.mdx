@@ -35,7 +35,7 @@ The plugin requires iOS 15. In `ios/Podfile`:
 platform :ios, '15.0'
 ```
 
-Then run `cd ios && pod install`. Swift Package Manager works too: the plugin ships a `Package.swift`.
+Then run `cd ios && pod install`. Swift Package Manager works too: the plugin ships a `Package.swift`. With Swift Package Manager, Xcode also resolves Google Mobile Ads and AppLovin, because Prebid's `Package.swift` declares them for its adapter products, even though the core package only links `PrebidMobile`. An app that pins Google Mobile Ads 12 or AppLovin below 13 can't resolve with Swift Package Manager; CocoaPods doesn't have this issue.
 
 </Step>
 <Step title="Initialize the SDK">

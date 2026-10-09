@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/pigeon_conversions.dart';
+import 'multiformat_event_router.dart';
 import 'native_ad.dart';
 import 'native_ad_enums.dart';
 import 'prebid_mobile.dart';
@@ -11,10 +13,24 @@ import 'video_parameters.dart';
 
 /// Result of a multiformat bid request.
 class PrebidMultiformatBidResponse {
-  /// The result code ("prebidDemandFetchSuccess", "prebidDemandNoBids", etc.).
+  /// The Prebid result code, the same string on Android and iOS:
+  ///
+  /// - `prebidDemandFetchSuccess` — a bid won ([isSuccess]).
+  /// - `prebidDemandNoBids` — the auction returned no bid.
+  /// - `prebidDemandNoCachedBids` — every bid failed Prebid Cache (see
+  ///   [PrebidMobile.setFilterOutUncachedBids]).
+  /// - `prebidDemandTimedOut` — Prebid Server didn't answer in time.
+  /// - `prebidNetworkError`, `prebidServerError` — the request failed.
+  /// - `prebidInvalidAccountId`, `prebidInvalidConfigId`,
+  ///   `prebidInvalidSize`, `prebidServerURLInvalid`,
+  ///   `prebidServerNotSpecified`, `prebidInvalidRequest` — configuration
+  ///   errors.
+  /// - `prebidSdkNotInitialized` — requested before
+  ///   [PrebidMobile.initializeSdk] completed.
   final String resultCode;
 
-  /// The winning ad format ("banner", "video", or "native").
+  /// The winning bid's format (its `hb_format` keyword): `banner`, `video`
+  /// or `native`. `null` when no bid won.
   final String? winningFormat;
 
   /// Targeting keywords to pass to the ad server.
@@ -68,6 +84,11 @@ class PrebidMultiformatBidResponse {
 ///   }
 /// }
 /// ```
+///
+/// [destroy] releases the native ad unit; call it when the ad unit is no
+/// longer needed (e.g. from `State.dispose`). The object stays usable:
+/// calling [fetchDemand] after [destroy] runs a fresh auction and
+/// auto-refreshed results reach [onDemandRefreshed] again.
 class PrebidMultiformatAd {
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
@@ -141,12 +162,18 @@ class PrebidMultiformatAd {
     this.trackInterstitialImpression = false,
     this.onDemandRefreshed,
   }) : _adId = _nextId++ {
-    if (onDemandRefreshed != null) {
-      MultiformatEventRouter.instance.register(
-        _adId,
-        (result) => onDemandRefreshed!(_toResponse(result)),
-      );
-    }
+    _register();
+  }
+
+  /// Routes auto-refreshed results to [onDemandRefreshed]. Idempotent;
+  /// [destroy] undoes it and [fetchDemand] redoes it.
+  void _register() {
+    final callback = onDemandRefreshed;
+    if (callback == null) return;
+    MultiformatEventRouter.instance.register(
+      _adId,
+      (result) => callback(_toResponse(result)),
+    );
   }
 
   /// Fetch demand from Prebid Server for all configured formats.
@@ -154,15 +181,15 @@ class PrebidMultiformatAd {
   /// Returns a [PrebidMultiformatBidResponse] with the result code,
   /// winning format, targeting keywords, and native cache ID. Throws an
   /// [ArgumentError] when no banner size, video parameters or native asset
-  /// is set.
+  /// is set. Also valid after [destroy].
   Future<PrebidMultiformatBidResponse> fetchDemand() async {
     // Build native config if assets provided
     NativeAdRequestConfig? nativeConfig;
     if (nativeAssets != null && nativeAssets!.isNotEmpty) {
       nativeConfig = NativeAdRequestConfig(
         configId: configId,
-        assets: nativeAssets!.map(_convertAsset).toList(),
-        eventTrackers: nativeEventTrackers?.map(_convertTracker).toList(),
+        assets: [for (final a in nativeAssets!) a.toConfig()],
+        eventTrackers: nativeEventTrackers?.map((t) => t.toConfig()).toList(),
         context: nativeContext?.value,
         contextSubType: nativeContextSubType?.value,
         placementType: nativePlacementType?.value,
@@ -188,6 +215,8 @@ class PrebidMultiformatAd {
       );
     }
 
+    // Re-register: [destroy] unregisters, and the object may be reused.
+    _register();
     final config = MultiformatAdRequestConfig(
       configId: configId,
       bannerSizes: flatSizes,
@@ -231,72 +260,17 @@ class PrebidMultiformatAd {
     return PrebidMultiformatBidResponse(
       resultCode: result.resultCode,
       winningFormat: result.winningFormat,
-      targetingKeywords: result.targetingKeywords == null
-          ? null
-          : {
-              for (final e in result.targetingKeywords!.entries)
-                if (e.key != null && e.value != null) e.key!: e.value!,
-            },
+      targetingKeywords: stringMap(result.targetingKeywords),
       nativeAdCacheId: result.nativeAdCacheId,
       exp: result.exp,
       topBidFiltered: result.topBidFiltered ?? false,
     );
   }
 
-  /// Destroy the ad unit and free resources.
+  /// Releases the native ad unit (stopping auto-refresh) and stops
+  /// delivery to [onDemandRefreshed] until the next [fetchDemand].
   Future<void> destroy() async {
     MultiformatEventRouter.instance.unregister(_adId);
     await api.destroy(_adId);
-  }
-
-  NativeAssetConfig _convertAsset(NativeAsset asset) {
-    return NativeAssetConfig(
-      assetType: asset.type.name,
-      required_: asset.required,
-      titleLength: asset.titleLength,
-      imageType: asset.imageType?.value,
-      imageWidth: asset.imageWidth,
-      imageHeight: asset.imageHeight,
-      imageWidthMin: asset.imageWidthMin,
-      imageHeightMin: asset.imageHeightMin,
-      dataType: asset.dataType?.value,
-      dataLength: asset.dataLength,
-    );
-  }
-
-  NativeEventTrackerConfig _convertTracker(NativeEventTracker tracker) {
-    return NativeEventTrackerConfig(
-      eventType: tracker.eventType.value,
-      methods: tracker.methods.map((m) => m.value).toList(),
-    );
-  }
-}
-
-/// Routes [MultiformatFlutterApi] events (auto-refreshed results) to the
-/// [PrebidMultiformatAd] with the event's ad id.
-class MultiformatEventRouter implements MultiformatFlutterApi {
-  MultiformatEventRouter._() {
-    MultiformatFlutterApi.setUp(this);
-  }
-
-  /// The process-wide router, bound to the channel on first use.
-  static final MultiformatEventRouter instance = MultiformatEventRouter._();
-
-  final Map<int, void Function(MultiformatBidResult result)> _handlers = {};
-
-  /// Routes results for [adId] to [handler].
-  void register(int adId, void Function(MultiformatBidResult) handler) {
-    _handlers[adId] = handler;
-  }
-
-  /// Stops routing results for [adId].
-  void unregister(int adId) {
-    _handlers.remove(adId);
-  }
-
-  /// Delivers an auto-refreshed auction result to the ad it belongs to.
-  @override
-  Future<void> onDemandRefreshed(int adId, MultiformatBidResult result) async {
-    _handlers[adId]?.call(result);
   }
 }

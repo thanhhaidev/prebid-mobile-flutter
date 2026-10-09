@@ -11,27 +11,18 @@ import 'ad_enums.dart';
 /// ```
 class PrebidReward {
   /// The reward type identifier (e.g., `"coins"`, `"lives"`, `"points"`).
-  final String? type;
+  ///
+  /// `"reward"` when the creative doesn't name one.
+  final String type;
 
-  /// The reward amount.
-  final int? count;
+  /// The reward amount. `1` when the creative doesn't set one.
+  final int count;
 
   /// Optional extra data from the reward payload.
   final Map<String, dynamic>? ext;
 
   /// Creates a [PrebidReward] with the given [type], [count], and optional [ext] data.
-  const PrebidReward({this.type, this.count, this.ext});
-
-  /// Creates a [PrebidReward] from a deserialized map.
-  factory PrebidReward.fromMap(Map<String, dynamic> map) {
-    return PrebidReward(
-      type: map['type'] as String?,
-      count: map['count'] as int?,
-      ext: map['ext'] != null
-          ? Map<String, dynamic>.from(map['ext'] as Map)
-          : null,
-    );
-  }
+  const PrebidReward({required this.type, required this.count, this.ext});
 }
 
 /// Listener for SDK initialization events.

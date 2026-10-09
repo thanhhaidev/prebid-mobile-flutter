@@ -33,6 +33,8 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
 
     private let bannerView: BannerView
     private let methodChannel: FlutterMethodChannel
+    /// Between willPresentModal and didDismissModal (see willLeaveApplication).
+    private var isModalOpen = false
 
     init(
         frame: CGRect,
@@ -148,9 +150,12 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
             "width": Double(adSize.width),
             "height": Double(adSize.height),
         ])
-        // iOS reports load and render as one event; Android splits them into
-        // onAdLoaded + onAdDisplayed, so emit both here for cross-platform parity.
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+    }
+
+    // Fired once the creative is on screen and its impression is tracked
+    // (BannerView.didDisplayAd), like Android's onAdDisplayed.
+    func bannerViewDidDisplay(_ bannerView: BannerView) {
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
     }
     
@@ -159,11 +164,21 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
     }
     
     func bannerViewWillPresentModal(_ bannerView: BannerView) {
+        isModalOpen = true
         methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
     
     func bannerViewDidDismissModal(_ bannerView: BannerView) {
+        isModalOpen = false
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
+    }
+
+    // Prebid reports leaving the app from a modal it opened (in-app browser
+    // "Open in Safari", expanded MRAID ad), whose click willPresentModal has
+    // already reported; only a leave with no modal open is a new click.
+    func bannerViewWillLeaveApplication(_ bannerView: BannerView) {
+        guard !isModalOpen else { return }
+        methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
 
     func bannerViewDidExpire(_ bannerView: BannerView) {

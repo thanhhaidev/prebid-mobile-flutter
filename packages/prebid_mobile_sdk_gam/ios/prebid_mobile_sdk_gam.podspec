@@ -13,7 +13,7 @@ Mobile Ads SDK.
                        DESC
   s.homepage         = 'https://github.com/thanhhaidev/prebid-mobile-flutter'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'thanhhaidev' => 'hai2571998@gmail.com' }
+  s.author           = { 'thanhhaidev' => 'https://github.com/thanhhaidev' }
   s.source           = { :path => '.' }
   # Shared with the Swift Package (ios/prebid_mobile_sdk_gam/) so CocoaPods and
   # SPM build the same sources.

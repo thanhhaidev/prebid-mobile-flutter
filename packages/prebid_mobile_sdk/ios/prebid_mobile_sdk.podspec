@@ -7,12 +7,13 @@ Pod::Spec.new do |s|
   s.version          = '1.0.0'
   s.summary          = 'Unofficial Flutter plugin for the Prebid Mobile SDK.'
   s.description      = <<-DESC
-A Flutter plugin that wraps the Prebid Mobile SDK for Android and iOS,
-providing banner, interstitial, and rewarded ad formats.
+An unofficial Flutter plugin that wraps the Prebid Mobile SDK for Android and
+iOS: banner, interstitial, rewarded, native, multiformat and in-stream video
+ads, targeting and privacy.
                        DESC
   s.homepage         = 'https://github.com/thanhhaidev/prebid-mobile-flutter'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'thanhhaidev' => 'hai2571998@gmail.com' }
+  s.author           = { 'thanhhaidev' => 'https://github.com/thanhhaidev' }
   s.source           = { :path => '.' }
   # Shared with the Swift Package (ios/prebid_mobile_sdk/) so CocoaPods and SPM
   # build the same sources.

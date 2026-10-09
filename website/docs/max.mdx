@@ -13,7 +13,7 @@ description: prebid_mobile_sdk_max adds Prebid demand to AppLovin MAX mediation 
 flutter pub add prebid_mobile_sdk prebid_mobile_sdk_max
 ```
 
-Initialize the AppLovin SDK with your SDK key **before** loading any MAX ad. This package doesn't do it for you; for example, with [`applovin_max`](https://pub.dev/packages/applovin_max):
+Initialize the AppLovin SDK with your SDK key **before** loading any MAX ad. This package doesn't do it for you; for example, with [`applovin_max`](https://pub.dev/packages/applovin_max) 4.0.0 or later (3.x pins AppLovin SDK 11, which Prebid's MAX adapters don't support):
 
 ```dart
 await AppLovinMAX.initialize('YOUR_APPLOVIN_SDK_KEY');
@@ -59,7 +59,7 @@ await rewarded.loadAd();
 `PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo`.
 
 :::note[One rewarded ad per MAX ad unit]
-MAX shares one rewarded ad object per ad unit. Loading a second `PrebidMaxRewardedAd` on the same `maxAdUnitId` takes it over, and the previous one receives `onAdFailed` ("Replaced by another ad on the same MAX ad unit").
+MAX shares one rewarded ad object per ad unit. Loading a second `PrebidMaxRewardedAd` on the same `maxAdUnitId` takes it over, and the previous one receives `onAdFailed` ("Replaced by another ad on the same MAX ad unit"). While an ad on that unit is on screen, the new load fails instead ("Another ad for this MAX ad unit is showing…"), so the visible ad keeps its reward: load the next one from `onAdClosed`.
 :::
 
 ## Native

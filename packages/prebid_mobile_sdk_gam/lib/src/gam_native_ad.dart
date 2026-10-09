@@ -23,8 +23,16 @@ class PrebidGamNativeAdListener {
   /// The Prebid auction returned a winning bid (`fetchDemand` succeeded).
   final VoidCallback? onFetchDemandSuccess;
 
-  /// The Prebid auction returned no bid / failed.
-  final VoidCallback? onFetchDemandFailed;
+  /// The Prebid auction returned no bid or failed. The GAM request still
+  /// runs, so a direct-sold GAM ad may fill the slot.
+  ///
+  /// `reason` is the Prebid result code name, the same strings the core
+  /// package reports on both platforms: `prebidDemandNoBids`,
+  /// `prebidDemandTimedOut`, `prebidNetworkError`, `prebidServerError`,
+  /// `prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`,
+  /// `prebidServerURLInvalid`, `prebidServerNotSpecified`,
+  /// `prebidDemandNoCachedBids` or `prebidInvalidRequest` (any other code).
+  final void Function(String reason)? onFetchDemandFailed;
 
   /// Google Ad Manager returned a **custom-format** ad.
   final VoidCallback? onCustomAdLoaded;
@@ -148,15 +156,36 @@ class PrebidGamNativeAd extends StatefulWidget {
 class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
   static int _nextViewId = 7000000;
 
-  late final int _logicalId = _nextViewId++;
-  late final MethodChannel _channel;
+  /// Identifies the native view's event channel. The native side starts the
+  /// auction as soon as it is created, before `onPlatformViewCreated`, so the
+  /// channel is named by an id chosen here rather than the platform view id.
+  /// A configuration change gets a new id (and a new native view), so late
+  /// events from the old view never reach the new one.
+  late int _logicalId = _nextViewId++;
+  late MethodChannel _channel;
   late double _height = widget.height;
 
   @override
   void initState() {
     super.initState();
-    _channel = MethodChannel('prebid_mobile_sdk_gam/native_$_logicalId')
-      ..setMethodCallHandler(_onNativeEvent);
+    _channel = _listen(_logicalId);
+  }
+
+  MethodChannel _listen(int logicalId) =>
+      MethodChannel('prebid_mobile_sdk_gam/native_$logicalId')
+        ..setMethodCallHandler(_onNativeEvent);
+
+  @override
+  void didUpdateWidget(PrebidGamNativeAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_config(oldWidget).toString() != _config(widget).toString()) {
+      // The native view reads its configuration once, so a changed config
+      // gets a new view (keyed below) on a new channel, at the initial height.
+      _channel.setMethodCallHandler(null);
+      _logicalId = _nextViewId++;
+      _channel = _listen(_logicalId);
+      _height = widget.height;
+    }
   }
 
   Future<dynamic> _onNativeEvent(MethodCall call) async {
@@ -168,7 +197,9 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
       case 'fetchDemandSuccess':
         l?.onFetchDemandSuccess?.call();
       case 'fetchDemandFailed':
-        l?.onFetchDemandFailed?.call();
+        l?.onFetchDemandFailed?.call(
+          call.arguments as String? ?? 'prebidInvalidRequest',
+        );
       case 'customAdLoaded':
         l?.onCustomAdLoaded?.call();
       case 'unifiedAdLoaded':
@@ -190,10 +221,10 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final creationParams = <String, Object?>{
-      'logicalId': _logicalId,
+  /// The configuration the native view is created with (without the
+  /// per-view channel id).
+  static Map<String, Object?> _config(PrebidGamNativeAd widget) {
+    return <String, Object?>{
       'configId': widget.configId,
       'gamAdUnitId': widget.gamAdUnitId,
       'customFormatId': widget.customFormatId ?? '',
@@ -207,6 +238,14 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
       if (widget.placementType != null)
         'placementType': widget.placementType!.value,
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final creationParams = <String, Object?>{
+      'logicalId': _logicalId,
+      ..._config(widget),
+    };
 
     return SizedBox(
       width: widget.width,
@@ -216,15 +255,19 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
   }
 
   Widget _buildPlatformView(Map<String, Object?> creationParams) {
+    // Recreate the native view when its configuration changes.
+    final key = ValueKey(creationParams.toString());
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
+        key: key,
         viewType: 'prebid_mobile_sdk_gam/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
+        key: key,
         viewType: 'prebid_mobile_sdk_gam/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),

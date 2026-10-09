@@ -92,8 +92,18 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
   late double _height = widget.height;
 
   @override
-  Widget build(BuildContext context) {
-    final creationParams = <String, dynamic>{
+  void didUpdateWidget(PrebidMaxNativeAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_creationParams(oldWidget).toString() !=
+        _creationParams(widget).toString()) {
+      // The native view reads its configuration once, so a changed config
+      // gets a new view (keyed below) that starts at the requested height.
+      _height = widget.height;
+    }
+  }
+
+  static Map<String, dynamic> _creationParams(PrebidMaxNativeAd widget) {
+    return <String, dynamic>{
       'configId': widget.configId,
       'maxAdUnitId': widget.maxAdUnitId,
       if (widget.assets != null)
@@ -106,6 +116,11 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
       if (widget.placementType != null)
         'placementType': widget.placementType!.value,
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final creationParams = _creationParams(widget);
 
     return SizedBox(
       width: double.infinity,
@@ -115,9 +130,12 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
+    // Recreate the native view when its configuration changes.
+    final key = ValueKey(creationParams.toString());
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
+        key: key,
         viewType: 'prebid_mobile_sdk_max/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -125,6 +143,7 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
+        key: key,
         viewType: 'prebid_mobile_sdk_max/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -136,6 +155,9 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
 
   void _onCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_max/native_$viewId');
+    // A re-created view (changed config) replaces the previous one: stop
+    // listening to the old view's channel.
+    _channel?.setMethodCallHandler(null);
     _channel = channel;
     channel.setMethodCallHandler((call) async {
       switch (call.method) {

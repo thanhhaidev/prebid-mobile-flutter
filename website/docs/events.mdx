@@ -20,7 +20,7 @@ Ads report their lifecycle through listener objects. Callbacks run on the Flutte
 | `onAdImpression` | Mediation | Mediation | Mediation | ✓ |
 | `onUserEarnedReward(PrebidReward)` | | | ✓ | |
 
-- **Banner** `onAdClosed` fires when a click-through (in-app browser or modal) is dismissed. On iOS, `onAdDisplayed` arrives together with `onAdLoaded`.
+- **Banner** `onAdClosed` fires when a click-through (in-app browser or modal) is dismissed.
 - **`onAdImpression`** comes from the ad SDK in the AdMob and MAX companions. Prebid-rendered banners and fullscreen ads fire Prebid's impression trackers but don't report a callback. Native ads report it from viewability (see [Native](/docs/native#impressions)).
 - **`onAdExpired`** fires when the bid's `exp` elapses before the ad is shown; load again.
 

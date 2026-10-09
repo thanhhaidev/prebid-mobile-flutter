@@ -1983,6 +1983,28 @@ class PrebidMobileHostApi {
     );
     return pigeonVar_replyValue! as String;
   }
+
+  /// Destroys every ad this engine holds natively (fullscreen, native,
+  /// multiformat, in-stream). Called once by a new Dart isolate before its
+  /// first ad: after a hot restart the previous isolate's ads would otherwise
+  /// keep running (auto-refresh auctions) under ad ids the new one reuses.
+  Future<void> releaseAds() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.releaseAds$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
 }
 
 /// Targeting and privacy settings.
@@ -2666,26 +2688,6 @@ class TargetingHostApi {
       isNullValid: true,
     );
     return pigeonVar_replyValue as String?;
-  }
-
-  Future<void> setContentUrl(String? url) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setContentUrl$pigeonVar_messageChannelSuffix';
-    final pigeonVar_channel = BasicMessageChannel<Object?>(
-      pigeonVar_channelName,
-      pigeonChannelCodec,
-      binaryMessenger: pigeonVar_binaryMessenger,
-    );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[url],
-    );
-    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
-
-    _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
   }
 
   Future<void> setPublisherName(String? name) async {

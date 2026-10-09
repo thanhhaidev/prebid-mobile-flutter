@@ -96,7 +96,7 @@ Impressions and clicks are only tracked for an ad shown in a `PrebidNativeAdView
 
 ## Impressions
 
-`onAdImpression` follows the IAB viewability rule Prebid applies before it fires the impression trackers: at least half of the view on screen for one second. It fires once per loaded ad, also when the bid carries no impression trackers.
+`onAdImpression` follows the IAB viewability rule Prebid applies before it fires the impression trackers: at least half of the view on screen for one second. It fires once per loaded ad, also when the bid carries no impression trackers. "On screen" includes Flutter's own clipping: a view half scrolled under an app bar or out of a list's viewport counts as half visible.
 
 | Callback | When |
 | --- | --- |

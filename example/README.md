@@ -82,7 +82,9 @@ flutter run
 ```
 
 - **iOS**: iOS 15+. Run `pod install` in `example/ios` after adding native
-  files to a plugin.
+  files to a plugin. The Xcode project is signed with the maintainer's team
+  (`DEVELOPMENT_TEAM`); to run on a device, pick your own team under
+  **Runner → Signing & Capabilities**. Simulators need no signing.
 - **Android**: minSdk 24.
 - **AppLovin MAX**: MAX only loads ads after the AppLovin SDK is initialized
   with an SDK key. This example does not initialize it, so MAX cases may not

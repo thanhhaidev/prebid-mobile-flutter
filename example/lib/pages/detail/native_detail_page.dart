@@ -67,7 +67,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
   PrebidGamNativeAdListener _gamNativeListener() => PrebidGamNativeAdListener(
     onFetchDemandSuccess: () => _track('fetchDemand success'),
-    onFetchDemandFailed: () => _track('fetchDemand failed'),
+    onFetchDemandFailed: (reason) => _trackError('fetchDemand failed', reason),
     onCustomAdLoaded: () => _track('custom ad request successful'),
     onUnifiedAdLoaded: () => _track('unified ad request successful'),
     onPrimaryAdFailed: (e) => _trackError('primary ad request failed', e),

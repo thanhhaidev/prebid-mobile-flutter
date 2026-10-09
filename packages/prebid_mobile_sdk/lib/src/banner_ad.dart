@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -165,18 +164,29 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   @override
   void didUpdateWidget(PrebidBannerAd oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final channel = _channel;
-    if (channel != null &&
-        !identical(oldWidget.controller, widget.controller)) {
-      oldWidget.controller?.detachChannel(channel);
-      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
-    }
     if (_creationParams(oldWidget).toString() !=
         _creationParams(widget).toString()) {
       // The native view reads its configuration once, so a changed config
       // gets a new view (keyed below) that starts at the requested size.
       _width = widget.width.toDouble();
       _height = widget.height.toDouble();
+      // The old view is disposed: drop its channel now, so a
+      // `controller.loadAd()` made before the new view exists is queued and
+      // replayed on it (by `attachChannel`) instead of reaching a dead view.
+      final channel = _channel;
+      if (channel != null) {
+        channel.setMethodCallHandler(null);
+        oldWidget.controller?.detachChannel(channel);
+        _channel = null;
+      }
+      // The new controller (if swapped) attaches once the new view exists.
+      return;
+    }
+    final channel = _channel;
+    if (channel != null &&
+        !identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detachChannel(channel);
+      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
     }
   }
 
@@ -224,7 +234,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
     // Recreate the native view when its configuration changes.
     final key = ValueKey(creationParams.toString());
-    if (!kIsWeb && Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         key: key,
         viewType: 'prebid_mobile_flutter/banner_ad',
@@ -232,7 +242,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         key: key,
         viewType: 'prebid_mobile_flutter/banner_ad',

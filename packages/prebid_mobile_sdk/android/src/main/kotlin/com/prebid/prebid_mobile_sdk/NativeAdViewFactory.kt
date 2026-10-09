@@ -1,6 +1,7 @@
 package com.prebid.prebid_mobile_sdk
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
@@ -19,7 +20,11 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import org.prebid.mobile.PrebidNativeAd
 import org.prebid.mobile.PrebidNativeAdEventListener
 
@@ -38,6 +43,9 @@ class NativeAdStore {
     /// Held here: Prebid keeps only a WeakReference to the listener.
     val listeners = mutableMapOf<Long, NativeAdEvents>()
 
+    /// Image downloads of each ad's rendered view, cancelled with the ad.
+    val imageLoads = mutableMapOf<Long, MutableList<Future<*>>>()
+
     /// Platform views currently showing each ad id, newest last.
     private val platformViews = mutableMapOf<Long, MutableList<NativeAdPlatformView>>()
 
@@ -51,11 +59,12 @@ class NativeAdStore {
     fun remove(adId: Long) {
         ads.remove(adId)
         listeners.remove(adId)?.stopWatching()
+        imageLoads.remove(adId)?.forEach { it.cancel(true) }
         views.remove(adId)?.let { (it.parent as? ViewGroup)?.removeView(it) }
     }
 
     fun clear() {
-        (ads.keys + views.keys + listeners.keys).toSet().forEach(::remove)
+        (ads.keys + views.keys + listeners.keys + imageLoads.keys).toSet().forEach(::remove)
         platformViews.clear()
     }
 
@@ -101,6 +110,19 @@ class NativeAdPlatformView(
     private val root = FrameLayout(context)
 
     init {
+        // The fraction of the view Flutter paints on screen, from
+        // PrebidNativeAdView: Flutter's clips (scroll viewports, ClipRect)
+        // are invisible to the native viewability check.
+        methodChannel.setMethodCallHandler { call, result ->
+            if (call.method == "setVisibleFraction") {
+                (call.arguments as? Number)?.toDouble()?.let {
+                    store.listeners[adId]?.flutterVisibleFraction = it
+                }
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
         store.attach(this)
         show()
     }
@@ -152,8 +174,6 @@ class NativeAdPlatformView(
         if (ad.sponsoredBy.isNullOrEmpty()) sponsoredView.visibility = View.GONE
         if (ad.description.isNullOrEmpty()) bodyView.visibility = View.GONE
         if (ad.callToAction.isNullOrEmpty()) ctaView.visibility = View.GONE
-        downloadImage(ad.iconUrl, iconView)
-        downloadImage(ad.imageUrl, imageView)
 
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -199,6 +219,10 @@ class NativeAdPlatformView(
         store.views[adId] = container
         events.watchViewability(container)
         reportHeight(container)
+        // Decoded at the size the views draw them (icon 40dp square, image
+        // full width x 180dp).
+        downloadImage(ad.iconUrl, iconView, container, dp(40), dp(40))
+        downloadImage(ad.imageUrl, imageView, container, context.resources.displayMetrics.widthPixels, dp(180))
     }
 
     /// Reports the content's natural height (root is clamped to the current
@@ -229,16 +253,17 @@ class NativeAdPlatformView(
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
 
-    private fun downloadImage(url: String?, target: ImageView) {
+    /// Best-effort image load: the ad still renders without it. Skipped once
+    /// the ad is destroyed or reloaded ([container] no longer its view).
+    private fun downloadImage(url: String?, target: ImageView, container: View, width: Int, height: Int) {
         if (url.isNullOrEmpty()) return
-        Thread {
-            try {
-                val bitmap = URL(url).openStream().use { BitmapFactory.decodeStream(it) }
-                if (bitmap != null) target.post { target.setImageBitmap(bitmap) }
-            } catch (e: Exception) {
-                // Best-effort image load; the ad still renders without it.
+        val load = NativeImageLoader.executor.submit {
+            val bitmap = NativeImageLoader.load(url, width, height) ?: return@submit
+            NativeImageLoader.mainHandler.post {
+                if (store.views[adId] === container) target.setImageBitmap(bitmap)
             }
-        }.start()
+        }
+        store.imageLoads.getOrPut(adId) { mutableListOf() } += load
     }
 
     override fun getView(): View = root
@@ -246,6 +271,7 @@ class NativeAdPlatformView(
     override fun dispose() {
         // Keep the registered view for a re-created platform view; detach it
         // so it doesn't keep this one alive. NativeAdStore.remove drops it.
+        methodChannel.setMethodCallHandler(null)
         store.detach(this)
         root.removeAllViews()
     }
@@ -269,6 +295,27 @@ class NativeAdEvents(
     private val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
     private var watchedView: java.lang.ref.WeakReference<View>? = null
     private var viewableChecks = 0
+    private var stopped = false
+
+    /// The fraction of the view Flutter paints on screen, reported by the
+    /// Dart widget; 1 until the first report.
+    var flutterVisibleFraction = 1.0
+
+    /// Polls only while the view is in a window: the store keeps it while
+    /// it's off screen (e.g. scrolled out of a list), where it can't be seen.
+    private val attachListener = object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) {
+            if (stopped || impressionReported.get()) return
+            viewableChecks = 0
+            mainHandler.removeCallbacks(check)
+            mainHandler.postDelayed(check, CHECK_INTERVAL_MS)
+        }
+
+        override fun onViewDetachedFromWindow(v: View) {
+            mainHandler.removeCallbacks(check)
+            viewableChecks = 0
+        }
+    }
 
     private val check = object : Runnable {
         override fun run() {
@@ -283,15 +330,21 @@ class NativeAdEvents(
     }
 
     fun watchViewability(view: View) {
-        if (impressionReported.get()) return
+        if (stopped || impressionReported.get()) return
+        watchedView?.get()?.removeOnAttachStateChangeListener(attachListener)
         watchedView = java.lang.ref.WeakReference(view)
+        view.addOnAttachStateChangeListener(attachListener)
         viewableChecks = 0
         mainHandler.removeCallbacks(check)
-        mainHandler.postDelayed(check, CHECK_INTERVAL_MS)
+        if (view.isAttachedToWindow) mainHandler.postDelayed(check, CHECK_INTERVAL_MS)
     }
 
+    /// Stops for good (impression reported, ad expired or destroyed).
     fun stopWatching() {
+        stopped = true
         mainHandler.removeCallbacks(check)
+        watchedView?.get()?.removeOnAttachStateChangeListener(attachListener)
+        watchedView = null
     }
 
     private fun reportImpression() {
@@ -300,6 +353,7 @@ class NativeAdEvents(
     }
 
     private fun isAtLeastHalfViewable(view: View): Boolean {
+        if (flutterVisibleFraction < 0.5) return false
         if (!view.isShown || view.windowToken == null) return false
         val area = view.width.toLong() * view.height
         if (area <= 0) return false
@@ -330,4 +384,60 @@ class NativeAdEvents(
         const val CHECK_INTERVAL_MS = 250L
         const val REQUIRED_VIEWABLE_CHECKS = 5 // 1 s / 0.25 s + 1, as Prebid iOS
     }
+}
+
+/// Downloads native ad images off the main thread, on a small shared pool.
+internal object NativeImageLoader {
+    val mainHandler = Handler(Looper.getMainLooper())
+
+    val executor: ExecutorService = Executors.newFixedThreadPool(2) { task ->
+        Thread(task, "PrebidNativeImage").apply { isDaemon = true }
+    }
+
+    private const val TIMEOUT_MS = 10_000
+    private const val MAX_BYTES = 10 * 1024 * 1024
+
+    /// Downloads and decodes [url], downsampled to about [width] x [height]
+    /// pixels; null on any failure.
+    fun load(url: String, width: Int, height: Int): Bitmap? = try {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.connectTimeout = TIMEOUT_MS
+        connection.readTimeout = TIMEOUT_MS
+        val bytes = try {
+            connection.inputStream.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(16 * 1024)
+                while (true) {
+                    if (Thread.currentThread().isInterrupted) return null
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    out.write(buffer, 0, n)
+                    if (out.size() > MAX_BYTES) return null
+                }
+                out.toByteArray()
+            }
+        } finally {
+            connection.disconnect()
+        }
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, width, height)
+        }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/// The largest power-of-two `inSampleSize` that keeps a [width] x [height]
+/// image at least [reqWidth] x [reqHeight] (so it still fills a cropping
+/// view); 1 when either size is unknown.
+internal fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
+    if (width <= 0 || height <= 0 || reqWidth <= 0 || reqHeight <= 0) return 1
+    var sampleSize = 1
+    while (width / (sampleSize * 2) >= reqWidth && height / (sampleSize * 2) >= reqHeight) {
+        sampleSize *= 2
+    }
+    return sampleSize
 }

@@ -121,10 +121,14 @@ class GamNativePlatformView(
 
         nativeAdUnit.fetchDemand(adRequest) { resultCode: ResultCode ->
             if (disposed) return@fetchDemand
-            if (resultCode == ResultCode.SUCCESS) {
-                send("fetchDemandSuccess")
-            } else {
-                send("fetchDemandFailed", resultCode.name)
+            // Prebid Android reports SUCCESS even when no bid won (iOS reports
+            // no-bids); without hb_* keys on the request there is no Prebid
+            // demand, so report it as no-bids on both platforms.
+            val hasBid = adRequest.customTargeting.keySet().any { it.startsWith("hb_") }
+            when {
+                resultCode != ResultCode.SUCCESS -> send("fetchDemandFailed", resultCode.toDartCode())
+                hasBid -> send("fetchDemandSuccess")
+                else -> send("fetchDemandFailed", "prebidDemandNoBids")
             }
             loader.loadAd(adRequest)
         }

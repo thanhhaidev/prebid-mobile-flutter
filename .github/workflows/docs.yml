@@ -14,6 +14,11 @@ on:
   pull_request:
     paths:
       - 'website/**'
+      - 'packages/*/CHANGELOG.md'
+      - 'packages/*/pubspec.yaml'
+      - 'packages/*/android/build.gradle.kts'
+      - 'packages/*/ios/*.podspec'
+      - 'packages/*/ios/*/Package.swift'
   workflow_dispatch:
   # After a successful release, so the changelog and compatibility tables show
   # the new version's pub.dev date (the Release workflow finishes only once

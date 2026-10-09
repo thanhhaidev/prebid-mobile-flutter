@@ -34,22 +34,25 @@ class GamRewardedManager(
 
         when (call.method) {
             "load" -> {
-                val activity = activityProvider()
-                if (activity == null) {
-                    result.error("no_activity", "No attached Activity to load the rewarded ad", null)
-                    return
-                }
                 if (adId == null) {
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                val activity = activityProvider()
+                if (activity == null) {
+                    // Reported through the listener, as iOS does and as `show`
+                    // does, rather than as a PlatformException from loadAd().
+                    send(adId, "onAdFailed", "No attached Activity to load the rewarded ad")
+                    result.success(null)
+                    return
+                }
                 // Reloading an adId replaces (and frees) its previous ad unit.
                 ads.remove(adId)?.destroy()
-                val configId = args?.get("configId") as? String ?: ""
-                val gamAdUnitId = args?.get("gamAdUnitId") as? String ?: ""
+                val configId = args.get("configId") as? String ?: ""
+                val gamAdUnitId = args.get("gamAdUnitId") as? String ?: ""
 
                 val eventHandler = GamRewardedEventHandler(activity, gamAdUnitId).apply {
-                    gamCustomTargeting(args?.get("customTargeting"))?.let { targeting ->
+                    gamCustomTargeting(args.get("customTargeting"))?.let { targeting ->
                         // Prebid 3.4: app custom targeting on the GAM request; Prebid's
                         // hb_* keys still take precedence.
                         setAdManagerRequestConfiguration { builder ->
@@ -58,9 +61,9 @@ class GamRewardedManager(
                     }
                 }
                 val adUnit = RewardedAdUnit(activity, configId, eventHandler)
-                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
-                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
-                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
+                videoMaxDurationFrom(args.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
+                FullscreenControls.from(args.get("controls"))?.applyTo(adUnit)
 
                 adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
                     override fun onAdLoaded(unit: RewardedAdUnit) = send(adId, "onAdLoaded")

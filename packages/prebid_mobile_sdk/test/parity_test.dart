@@ -4,6 +4,8 @@ import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk/src/ad_event_router.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
+import 'package:prebid_mobile_sdk/src/internal/pigeon_conversions.dart';
+import 'package:prebid_mobile_sdk/src/multiformat_event_router.dart';
 
 import 'mock_host_api.mocks.dart';
 

@@ -19,6 +19,8 @@ import org.prebid.mobile.api.mediation.MediationRewardedVideoAdUnit
 /// MAX hands out one shared [MaxRewardedAd] per ad unit, so at most one `adId`
 /// owns a unit at a time: a new load on the same unit takes it over (the
 /// previous owner gets `onAdFailed`), and only the owner may destroy it.
+/// While the owner's ad is on screen the unit cannot be handed over (its
+/// reward and close would reach the new owner), so a load on it fails.
 class MaxRewardedManager(
     messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
@@ -36,6 +38,10 @@ class MaxRewardedManager(
     /// MAX ad unit id → the `adId` that currently owns its shared instance.
     private val ownerByUnit = mutableMapOf<String, Long>()
 
+    /// MAX ad units whose ad is on screen (from displayed until hidden or
+    /// display-failed).
+    private val showingUnits = mutableSetOf<String>()
+
     init {
         channel.setMethodCallHandler(this)
     }
@@ -51,19 +57,29 @@ class MaxRewardedManager(
 
         when (call.method) {
             "load" -> {
-                val activity = activityProvider()
-                if (activity == null) {
-                    result.error("no_activity", "No attached Activity to load the rewarded ad", null)
-                    return
-                }
                 if (adId == null) {
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                val activity = activityProvider()
+                if (activity == null) {
+                    // Reported through the listener, as iOS does and as `show`
+                    // does, rather than as a PlatformException from loadAd().
+                    send(adId, "onAdFailed", "No attached Activity to load the rewarded ad")
+                    result.success(null)
+                    return
+                }
+                val configId = args.get("configId") as? String ?: ""
+                val maxAdUnitId = args.get("maxAdUnitId") as? String ?: ""
+                if (maxAdUnitId in showingUnits) {
+                    // Handing the shared instance over now would route the
+                    // showing ad's reward and close to this ad; leave it alone.
+                    send(adId, "onAdFailed", SHOWING_ERROR)
+                    result.success(null)
+                    return
+                }
                 // Reloading an adId replaces (and frees) its previous ad.
                 release(adId)
-                val configId = args?.get("configId") as? String ?: ""
-                val maxAdUnitId = args?.get("maxAdUnitId") as? String ?: ""
 
                 // The shared instance moves to this adId; the previous owner
                 // stops receiving events (the listener is replaced below) and
@@ -77,13 +93,21 @@ class MaxRewardedManager(
                 val rewarded = MaxRewardedAd.getInstance(maxAdUnitId, activity)
                 rewarded.setListener(object : MaxRewardedAdListener {
                     override fun onAdLoaded(ad: MaxAd) = send(adId, "onAdLoaded")
-                    override fun onAdDisplayed(ad: MaxAd) = send(adId, "onAdDisplayed")
-                    override fun onAdHidden(ad: MaxAd) = send(adId, "onAdClosed")
+                    override fun onAdDisplayed(ad: MaxAd) {
+                        showingUnits.add(maxAdUnitId)
+                        send(adId, "onAdDisplayed")
+                    }
+                    override fun onAdHidden(ad: MaxAd) {
+                        showingUnits.remove(maxAdUnitId)
+                        send(adId, "onAdClosed")
+                    }
                     override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
                     override fun onAdLoadFailed(adUnitId: String, error: MaxError) =
                         send(adId, "onAdFailed", error.message)
-                    override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) =
+                    override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
+                        showingUnits.remove(maxAdUnitId)
                         send(adId, "onAdFailed", error.message)
+                    }
                     override fun onUserRewarded(ad: MaxAd, reward: MaxReward) {
                         // Same reward keys as the GAM / AdMob packages.
                         val payload = mutableMapOf<String, Any?>(
@@ -100,9 +124,9 @@ class MaxRewardedManager(
 
                 val mediationUtils = MaxMediationRewardedUtils(rewarded)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
-                (args?.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
-                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
-                videoMaxDurationFrom(args?.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
+                (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
+                FullscreenControls.from(args.get("controls"))?.applyTo(adUnit)
+                videoMaxDurationFrom(args.get("videoParameters"))?.let { adUnit.setMaxVideoDuration(it) }
                 val holder = Holder(adUnit, rewarded)
                 ads[adId] = holder
 
@@ -149,6 +173,7 @@ class MaxRewardedManager(
         val unitId = holder.rewarded.adUnitId
         if (ownerByUnit[unitId] == adId) {
             ownerByUnit.remove(unitId)
+            showingUnits.remove(unitId)
             holder.rewarded.destroy()
         }
     }
@@ -157,5 +182,10 @@ class MaxRewardedManager(
         val payload = mutableMapOf<String, Any?>("adId" to adId)
         if (error != null) payload["error"] = error
         channel.invokeMethod(event, payload)
+    }
+
+    private companion object {
+        const val SHOWING_ERROR =
+            "Another ad for this MAX ad unit is showing; load the next one after onAdClosed"
     }
 }

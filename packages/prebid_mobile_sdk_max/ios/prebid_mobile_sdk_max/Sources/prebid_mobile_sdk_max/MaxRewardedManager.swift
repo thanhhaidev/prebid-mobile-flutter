@@ -11,6 +11,8 @@ import AppLovinSDK
 /// MAX hands out one shared `MARewardedAd` per ad unit, so at most one `adId`
 /// owns a unit at a time: a new load on the same unit takes it over (the
 /// previous owner gets `onAdFailed`), and only the owner's events are routed.
+/// While the owner's ad is on screen the unit cannot be handed over (its
+/// reward and close would reach the new owner), so a load on it fails.
 class MaxRewardedManager: NSObject {
 
     private let channel: FlutterMethodChannel
@@ -21,6 +23,12 @@ class MaxRewardedManager: NSObject {
     private var proxies: [Int: MaxAdEventProxy] = [:]
     /// MAX ad unit identifier → the `adId` that currently owns its shared ad.
     private var ownerByUnit: [String: Int] = [:]
+    /// MAX ad units whose ad is on screen (from displayed until hidden or
+    /// display-failed).
+    private var showingUnits: Set<String> = []
+
+    private static let showingError =
+        "Another ad for this MAX ad unit is showing; load the next one after onAdClosed"
 
     init(messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(
@@ -43,10 +51,17 @@ class MaxRewardedManager: NSObject {
                 result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
                 return
             }
-            // Reloading an adId replaces its previous ad.
-            release(adId)
             let configId = args?["configId"] as? String ?? ""
             let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
+            if showingUnits.contains(maxAdUnitId) {
+                // Handing the shared instance over now would route the showing
+                // ad's reward and close to this ad; leave it alone.
+                send(adId, "onAdFailed", ["error": Self.showingError])
+                result(nil)
+                return
+            }
+            // Reloading an adId replaces its previous ad.
+            release(adId)
 
             // The shared instance moves to this adId; the previous owner stops
             // receiving events and is told why.
@@ -65,7 +80,18 @@ class MaxRewardedManager: NSObject {
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
             let proxy = MaxAdEventProxy { [weak self] event, payload in
-                self?.send(adId, event, payload)
+                guard let self = self else { return }
+                switch event {
+                case "onAdDisplayed":
+                    self.showingUnits.insert(maxAdUnitId)
+                case "onAdClosed", "onAdFailed":
+                    // Hidden, or failed to display (a load cannot fail while
+                    // the unit shows: loads are refused meanwhile).
+                    self.showingUnits.remove(maxAdUnitId)
+                default:
+                    break
+                }
+                self.send(adId, event, payload)
             }
             rewarded.delegate = proxy
             rewarded.revenueDelegate = proxy
@@ -119,6 +145,7 @@ class MaxRewardedManager: NSObject {
         if let rewarded = rewardedAds.removeValue(forKey: adId),
            ownerByUnit[rewarded.adUnitIdentifier] == adId {
             ownerByUnit.removeValue(forKey: rewarded.adUnitIdentifier)
+            showingUnits.remove(rewarded.adUnitIdentifier)
             rewarded.delegate = nil
             rewarded.revenueDelegate = nil
         }

@@ -120,6 +120,14 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
         }
     }
 
+    // iOS platform views have no dispose callback: stop answering
+    // PrebidBannerAdController calls and refreshing once the view is gone.
+    deinit {
+        methodChannel.setMethodCallHandler(nil)
+        mediationAdUnit?.stopRefresh()
+        maxAdBannerView.stopAutoRefresh()
+    }
+
     func view() -> UIView {
         return maxAdBannerView
     }

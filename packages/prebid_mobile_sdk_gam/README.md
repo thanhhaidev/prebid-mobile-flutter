@@ -58,6 +58,10 @@ Initialize the Google Mobile Ads SDK once at startup (e.g. via the
 await MobileAds.instance.initialize();
 ```
 
+If your app also depends on `google_mobile_ads`, use **8.0.0 or later**: older
+releases pin Google Mobile Ads iOS SDK 12, while Prebid's GAM event handlers need 13.x,
+so CocoaPods can't resolve both.
+
 In Google Ad Manager, configure Prebid line items/creatives that target the
 `hb_*` keys so a winning Prebid bid renders.
 

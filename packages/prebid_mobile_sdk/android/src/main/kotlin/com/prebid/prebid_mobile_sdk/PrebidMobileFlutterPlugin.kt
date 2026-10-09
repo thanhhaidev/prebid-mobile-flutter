@@ -67,12 +67,15 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         NativeAdHostApi.setUp(binding.binaryMessenger, null)
         MultiformatAdHostApi.setUp(binding.binaryMessenger, null)
         InstreamVideoAdHostApi.setUp(binding.binaryMessenger, null)
-        PrebidMobile.setEventDelegate(null)
-        eventDelegate = null
-        destroyFullscreenAds(reason = null)
+        clearEventDelegate()
         // Stop auto-refresh timers and viewability polls, which would
         // otherwise keep running (and the engine's objects alive) for the
         // rest of the process.
+        releaseAds()
+    }
+
+    override fun releaseAds() {
+        destroyFullscreenAds(reason = null)
         nativeApi.destroyAll()
         multiformatApi.destroyAll()
         instreamApi.destroyAll()
@@ -83,7 +86,13 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         activity = binding.activity
     }
 
-    override fun onDetachedFromActivityForConfigChanges() { activity = null }
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+        // The Activity is destroyed and re-created; units built with it
+        // (Prebid shows them in a Dialog on that Activity) can't be shown on
+        // the new one, so release them like onDetachedFromActivity.
+        destroyFullscreenAds(reason = "The Activity was re-created for a configuration change")
+    }
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
     }
@@ -243,13 +252,23 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     private var eventDelegate: org.prebid.mobile.PrebidEventDelegate? = null
 
     override fun setEventDelegateEnabled(enabled: Boolean) {
-        eventDelegate = if (!enabled) null else org.prebid.mobile.PrebidEventDelegate { request, response ->
+        if (!enabled) return clearEventDelegate()
+        eventDelegate = org.prebid.mobile.PrebidEventDelegate { request, response ->
             // Called on a background thread; Flutter channels need main.
             val req = request?.toString()
             val res = response?.toString()
             mainHandler.post { eventFlutterApi.onBidResponse(req, res) {} }
         }
         PrebidMobile.setEventDelegate(eventDelegate)
+    }
+
+    /// Drops this engine's delegate. Prebid has a single process-wide one, so
+    /// it's only cleared there while it is still this engine's: another
+    /// engine (add-to-app) may have set its own since.
+    private fun clearEventDelegate() {
+        val own = eventDelegate ?: return
+        eventDelegate = null
+        if (PrebidMobile.getEventDelegate() === own) PrebidMobile.setEventDelegate(null)
     }
 
     // SharedID
@@ -259,11 +278,11 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
     override fun getSharedId(): ExternalUserIdData? {
         val id = TargetingParams.getSharedId() ?: return null
-        val uid = id.uniqueIds?.firstOrNull() ?: return null
+        val uid = id.uniqueIds.firstOrNull() ?: return null
         return ExternalUserIdData(
-            source = id.source ?: "",
-            identifier = uid.id ?: "",
-            atype = uid.atype?.toLong(),
+            source = id.source,
+            identifier = uid.id,
+            atype = uid.atype.toLong(),
         )
     }
 
@@ -292,18 +311,18 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun getExternalUserIds(): List<ExternalUserIdData> {
         val ids = TargetingParams.getExternalUserIds() ?: return emptyList()
         return ids.flatMap { uid ->
-            val source = uid.source ?: ""
-            uid.uniqueIds?.map { uniqueId ->
+            val source = uid.source
+            uid.uniqueIds.map { uniqueId ->
                 ExternalUserIdData(
                     source = source,
-                    identifier = uniqueId.id ?: "",
-                    atype = uniqueId.atype?.toLong(),
+                    identifier = uniqueId.id,
+                    atype = uniqueId.atype.toLong(),
                     ext = uniqueId.json?.optJSONObject("ext")?.toMap(),
                     inserter = uid.inserter,
                     matcher = uid.matcher,
                     mm = uid.mm?.toLong(),
                 )
-            } ?: emptyList()
+            }
         }
     }
 
@@ -395,10 +414,11 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         try { TargetingParams.clearExtData() } catch (_: Exception) {}
     }
 
-    // User Ext Data (user.ext.data). Tracked locally and written to
-    // TargetingParams.userExt["data"], which Prebid merges into user.ext —
-    // leaving the global ORTB config and any other user.ext keys untouched.
-    private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
+    // User Ext Data (user.ext.data). Tracked locally (process-wide, like the
+    // TargetingParams it's written to, so engines don't wipe each other's
+    // keys) and written to TargetingParams.userExt["data"], which Prebid
+    // merges into user.ext — leaving the global ORTB config and any other
+    // user.ext keys untouched.
 
     override fun addUserExtData(key: String, value: String) {
         userExtDataMap.getOrPut(key) { mutableSetOf() }.add(value)
@@ -435,10 +455,6 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun setGlobalOrtbConfig(ortbConfig: String?) { TargetingParams.setGlobalOrtbConfig(ortbConfig) }
     override fun getGlobalOrtbConfig(): String? = TargetingParams.getGlobalOrtbConfig()
 
-    override fun setContentUrl(url: String?) {
-        // Not available on Android (and deprecated / not sent on iOS 3.4).
-        // Use the global ORTB config to set app.content.url.
-    }
     override fun setPublisherName(name: String?) { TargetingParams.setPublisherName(name) }
     override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
     override fun setDomain(domain: String?) { TargetingParams.setDomain(domain) }
@@ -542,6 +558,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
         private val pendingInitCallbacks =
             mutableListOf<(Result<InitializationResult>) -> Unit>()
+
+        private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
     }
 }
 
@@ -921,7 +939,15 @@ class MultiformatAdHostApiImpl(
                     mainHandler.post {
                         inFlight -= adUnit
                         if (adUnits[adId] === adUnit) {
-                            flutterApi.onDemandRefreshed(adId, result) {}
+                            flutterApi.onDemandRefreshed(adId, result) { reply ->
+                                // No Dart handler (none registered, or gone
+                                // after a hot restart): nothing can receive
+                                // refreshes, so stop auctioning for them.
+                                val error = reply.exceptionOrNull() as? FlutterError
+                                if (error?.code == "channel-error" && adUnits[adId] === adUnit) {
+                                    cancelRefresh(adId)
+                                }
+                            }
                         } else {
                             adUnit.destroy()
                         }

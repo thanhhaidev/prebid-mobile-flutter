@@ -1,4 +1,5 @@
 import 'generated/prebid_api.g.dart';
+import 'internal/session.dart';
 
 /// Single owner of the Pigeon [AdFlutterApi] event channel.
 ///
@@ -14,6 +15,8 @@ import 'generated/prebid_api.g.dart';
 /// never overlap across ad types.
 class AdEventRouter implements AdFlutterApi {
   AdEventRouter._() {
+    // Created with this isolate's first interstitial, rewarded or native ad.
+    releasePreviousIsolateAds();
     AdFlutterApi.setUp(this);
   }
 

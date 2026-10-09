@@ -1,27 +1,34 @@
 package com.prebid.prebid_mobile_sdk
 
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import org.mockito.Mockito
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /*
- * This demonstrates a simple unit test of the Kotlin portion of this plugin's implementation.
- *
- * Once you have built the plugin's example app, you can run these tests from the command
- * line by running `./gradlew testDebugUnitTest` in the `example/android/` directory, or
- * you can run them directly from IDEs that support JUnit such as Android Studio.
+ * JVM unit tests for the plugin's pure logic. Run them from `example/android`
+ * with `./gradlew :prebid_mobile_sdk:testDebugUnitTest`.
  */
 
 internal class PrebidMobileFlutterPluginTest {
     @Test
-    fun onMethodCall_getPlatformVersion_returnsExpectedValue() {
-        val plugin = PrebidMobileFlutterPlugin()
+    fun calculateInSampleSize_keepsImageAtLeastRequestedSize() {
+        assertEquals(1, calculateInSampleSize(100, 100, 100, 100))
+        assertEquals(1, calculateInSampleSize(199, 199, 100, 100))
+        assertEquals(2, calculateInSampleSize(200, 200, 100, 100))
+        assertEquals(8, calculateInSampleSize(1200, 1200, 120, 120))
+        // Bounded by the dimension closest to its target (cropping view).
+        assertEquals(2, calculateInSampleSize(4000, 400, 1080, 180))
+    }
 
-        val call = MethodCall("getPlatformVersion", null)
-        val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
-        plugin.onMethodCall(call, mockResult)
+    @Test
+    fun calculateInSampleSize_unknownSizesDecodeFullSize() {
+        assertEquals(1, calculateInSampleSize(-1, -1, 100, 100))
+        assertEquals(1, calculateInSampleSize(1000, 1000, 0, 0))
+    }
 
-        Mockito.verify(mockResult).success("Android " + android.os.Build.VERSION.RELEASE)
+    @Test
+    fun toDartCode_mapsResultCodesToDartNames() {
+        assertEquals("prebidDemandFetchSuccess", org.prebid.mobile.ResultCode.SUCCESS.toDartCode())
+        assertEquals("prebidDemandNoBids", org.prebid.mobile.ResultCode.NO_BIDS.toDartCode())
+        assertEquals("prebidDemandTimedOut", org.prebid.mobile.ResultCode.TIMEOUT.toDartCode())
     }
 }

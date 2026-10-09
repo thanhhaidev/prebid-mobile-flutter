@@ -58,6 +58,10 @@ Initialize the Google Mobile Ads SDK once at startup (e.g. via the
 await MobileAds.instance.initialize();
 ```
 
+If your app also depends on `google_mobile_ads`, use **8.0.0 or later**: older
+releases pin Google Mobile Ads iOS SDK 12, while Prebid's AdMob adapters need 13.x,
+so CocoaPods can't resolve both.
+
 In the AdMob dashboard, add Prebid as a mediation / custom-event source on your
 ad units and wire the Prebid adapters, per the
 [Prebid AdMob integration docs](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).

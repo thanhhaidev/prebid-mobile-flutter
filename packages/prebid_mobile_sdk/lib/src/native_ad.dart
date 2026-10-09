@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 
 import 'ad_event_router.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/pigeon_conversions.dart';
+import 'internal/visibility.dart';
 import 'native_ad_enums.dart';
 
 /// Listener for native ad events.
@@ -261,6 +263,11 @@ class NativeEventTracker {
 /// );
 /// nativeAd.loadAd();
 /// ```
+///
+/// [destroy] releases the native ad; call it when the ad is no longer needed
+/// (e.g. from `State.dispose`) or the native ad leaks. The object stays
+/// usable: calling [loadAd] after [destroy] loads a fresh ad and its events
+/// reach [listener] again.
 class PrebidNativeAd {
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
@@ -374,12 +381,14 @@ class PrebidNativeAd {
     }
   }
 
-  /// Load the native ad.
+  /// Load the native ad. Also valid after [destroy].
   Future<void> loadAd() async {
+    // Re-register: [destroy] unregisters, and the object may be reused.
+    AdEventRouter.instance.register(_adId, _handleEvent);
     final config = NativeAdRequestConfig(
       configId: configId,
-      assets: (assets ?? defaultAssets).map(_convertAsset).toList(),
-      eventTrackers: eventTrackers?.map(_convertTracker).toList(),
+      assets: [for (final a in assets ?? defaultAssets) a.toConfig()],
+      eventTrackers: eventTrackers?.map((t) => t.toConfig()).toList(),
       context: context?.value,
       contextSubType: contextSubType?.value,
       placementType: placementType?.value,
@@ -391,32 +400,11 @@ class PrebidNativeAd {
     await api.loadAd(_adId, config);
   }
 
-  /// Destroy the native ad and free resources.
+  /// Releases the native ad and stops event delivery to [listener] until
+  /// the next [loadAd].
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
     await api.destroy(_adId);
-  }
-
-  NativeAssetConfig _convertAsset(NativeAsset asset) {
-    return NativeAssetConfig(
-      assetType: asset.type.name,
-      required_: asset.required,
-      titleLength: asset.titleLength,
-      imageType: asset.imageType?.value,
-      imageWidth: asset.imageWidth,
-      imageHeight: asset.imageHeight,
-      imageWidthMin: asset.imageWidthMin,
-      imageHeightMin: asset.imageHeightMin,
-      dataType: asset.dataType?.value,
-      dataLength: asset.dataLength,
-    );
-  }
-
-  NativeEventTrackerConfig _convertTracker(NativeEventTracker tracker) {
-    return NativeEventTrackerConfig(
-      eventType: tracker.eventType.value,
-      methods: tracker.methods.map((m) => m.value).toList(),
-    );
   }
 }
 
@@ -445,12 +433,21 @@ class PrebidNativeAd {
 ///
 /// The layout (main image, icon, sponsored, title, body, call to action) is
 /// rendered natively; the widget grows to the rendered content's height.
+///
+/// The impression ([PrebidNativeAdListener.onAdImpression]) is reported once
+/// at least half of the view has been on screen for one second. "On screen"
+/// accounts for Flutter's own clipping too, such as a list scrolled under an
+/// app bar.
 class PrebidNativeAdView extends StatefulWidget {
   /// The loaded native ad to render.
   final PrebidNativeAd ad;
 
-  /// Width of the view.
-  final double width;
+  /// Width of the view. `null` (default) fills the parent's width.
+  ///
+  /// Inside a parent that doesn't bound the width (e.g. a horizontal
+  /// `ListView` or a `Row` without `Expanded`) a `null` width falls back to
+  /// the screen width; set an explicit width there instead.
+  final double? width;
 
   /// Initial height, replaced by the rendered content height.
   final double height;
@@ -459,9 +456,10 @@ class PrebidNativeAdView extends StatefulWidget {
   const PrebidNativeAdView({
     super.key,
     required this.ad,
-    this.width = double.infinity,
+    this.width,
     this.height = 320,
-  });
+  }) : assert(width == null || width > 0, 'width must be positive'),
+       assert(height > 0, 'height must be positive');
 
   @override
   State<PrebidNativeAdView> createState() => _PrebidNativeAdViewState();
@@ -470,14 +468,53 @@ class PrebidNativeAdView extends StatefulWidget {
 class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   static const _viewType = 'prebid_mobile_flutter/native_ad';
 
+  /// How often the visible fraction is measured, as the native viewability
+  /// check polls.
+  static const _visibilityInterval = Duration(milliseconds: 250);
+
   late double _height = widget.height;
   MethodChannel? _channel;
+  final _boxKey = GlobalKey();
+  Timer? _visibilityTimer;
+  double? _sentFraction;
 
   @override
   void didUpdateWidget(PrebidNativeAdView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // A different ad gets a new native view (keyed by ad id below).
-    if (oldWidget.ad._adId != widget.ad._adId) _height = widget.height;
+    // A different ad gets a new native view (keyed by ad id below); stop
+    // listening to the old view, whose late size reports would apply to it.
+    if (oldWidget.ad._adId != widget.ad._adId) {
+      _channel?.setMethodCallHandler(null);
+      _channel = null;
+      _stopVisibility();
+      _height = widget.height;
+    }
+  }
+
+  /// Reports the fraction of the view Flutter paints on screen to the native
+  /// view, which counts the ad viewable only when both its own check and
+  /// this fraction reach one half. Sent when it changes.
+  void _startVisibility() {
+    _stopVisibility();
+    _visibilityTimer = Timer.periodic(_visibilityInterval, (_) {
+      final box = _boxKey.currentContext?.findRenderObject();
+      final channel = _channel;
+      if (box is! RenderBox || channel == null) return;
+      final fraction = (visibleFraction(box) * 100).roundToDouble() / 100;
+      if (fraction == _sentFraction) return;
+      _sentFraction = fraction;
+      channel.invokeMethod<void>('setVisibleFraction', fraction).catchError((
+        Object _,
+      ) {
+        // The native view is gone (disposed between ticks).
+      });
+    });
+  }
+
+  void _stopVisibility() {
+    _visibilityTimer?.cancel();
+    _visibilityTimer = null;
+    _sentFraction = null;
   }
 
   void _onPlatformViewCreated(int viewId) {
@@ -489,10 +526,12 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
           if (h != null && h > 0 && mounted) setState(() => _height = h);
         }
       });
+    _startVisibility();
   }
 
   @override
   void dispose() {
+    _stopVisibility();
     _channel?.setMethodCallHandler(null);
     super.dispose();
   }
@@ -502,7 +541,7 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
     final creationParams = <String, Object?>{'adId': widget.ad._adId};
     final key = ValueKey(widget.ad._adId);
     final Widget view;
-    if (!kIsWeb && Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       view = AndroidView(
         key: key,
         viewType: _viewType,
@@ -510,7 +549,7 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       view = UiKitView(
         key: key,
         viewType: _viewType,
@@ -521,6 +560,18 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
     } else {
       view = const SizedBox.shrink();
     }
-    return SizedBox(width: widget.width, height: _height, child: view);
+    final width = widget.width;
+    // `null` fills the parent's width. LimitedBox only applies when the
+    // parent leaves the width unbounded, where a native view can't be
+    // infinitely wide: it then falls back to the screen width.
+    return LimitedBox(
+      maxWidth: width ?? MediaQuery.maybeSizeOf(context)?.width ?? 0,
+      child: SizedBox(
+        key: _boxKey,
+        width: width ?? double.infinity,
+        height: _height,
+        child: view,
+      ),
+    );
   }
 }

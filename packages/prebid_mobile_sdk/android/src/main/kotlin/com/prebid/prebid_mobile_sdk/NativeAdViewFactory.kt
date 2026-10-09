@@ -27,6 +27,21 @@ import org.prebid.mobile.PrebidNativeAdEventListener
 /// [NativeAdPlatformView] can render and register the ad for tracking.
 object NativeAdStore {
     val ads = mutableMapOf<Long, PrebidNativeAd>()
+
+    /// The rendered, registered view of each ad. `registerView` creates new
+    /// impression trackers on every call, so an ad is registered once and its
+    /// view is moved into any platform view re-created for the same ad (e.g.
+    /// after scrolling out of a list and back).
+    val views = mutableMapOf<Long, View>()
+
+    /// Held here: Prebid keeps only a WeakReference to the listener.
+    val listeners = mutableMapOf<Long, PrebidNativeAdEventListener>()
+
+    fun remove(adId: Long) {
+        ads.remove(adId)
+        listeners.remove(adId)
+        views.remove(adId)?.let { (it.parent as? ViewGroup)?.removeView(it) }
+    }
 }
 
 /// PlatformView factory for `PrebidNativeAdView`: renders a loaded
@@ -55,27 +70,37 @@ class NativeAdPlatformView(
     private val methodChannel =
         MethodChannel(messenger, "prebid_mobile_flutter/native_ad_$viewId")
     private val root = FrameLayout(context)
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    // Prebid calls onAdImpression once per impression tracker URL; report a
-    // single impression per ad.
-    private val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
-
-    // Held as a field: Prebid keeps only a WeakReference to the listener.
-    // Prebid fires impressions from a background thread, so hop to main.
-    private val eventListener = object : PrebidNativeAdEventListener {
-        override fun onAdClicked() = sendEvent("onAdClicked")
-
-        override fun onAdImpression() {
-            if (impressionReported.compareAndSet(false, true)) sendEvent("onAdImpression")
-        }
-
-        override fun onAdExpired() = sendEvent("onAdExpired")
-    }
 
     init {
+        val existing = NativeAdStore.views[adId]
         val ad = NativeAdStore.ads[adId]
-        if (ad != null) render(ad)
+        if (existing != null) {
+            (existing.parent as? ViewGroup)?.removeView(existing)
+            root.addView(existing, matchWidth())
+            reportHeight(existing)
+        } else if (ad != null) {
+            render(ad)
+        }
+    }
+
+    private fun eventListener(): PrebidNativeAdEventListener {
+        val adId = adId
+        val flutterApi = flutterApi
+        // Prebid calls onAdImpression once per impression tracker URL, from a
+        // background thread; report a single impression per ad, on main.
+        val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun send(name: String) = Handler(Looper.getMainLooper()).post {
+            flutterApi.onAdEvent(AdEvent(adId = adId, eventName = name)) {}
+        }
+        return object : PrebidNativeAdEventListener {
+            override fun onAdClicked() { send("onAdClicked") }
+
+            override fun onAdImpression() {
+                if (impressionReported.compareAndSet(false, true)) send("onAdImpression")
+            }
+
+            override fun onAdExpired() { send("onAdExpired") }
+        }
     }
 
     private fun render(ad: PrebidNativeAd) {
@@ -139,38 +164,37 @@ class NativeAdPlatformView(
             addView(ctaView, spaced())
         }
 
-        root.addView(
-            container,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ),
-        )
+        root.addView(container, matchWidth())
+        val listener = eventListener()
+        NativeAdStore.listeners[adId] = listener
+        NativeAdStore.views[adId] = container
         ad.registerView(
             container,
             listOf(iconView, titleView, imageView, bodyView, ctaView),
-            eventListener,
+            listener,
         )
+        reportHeight(container)
+    }
 
-        // Report the content's natural height (root is clamped to the current
-        // Flutter-side size) in logical pixels.
+    /// Reports the content's natural height (root is clamped to the current
+    /// Flutter-side size) in logical pixels.
+    private fun reportHeight(content: View) {
         root.post {
-            container.measure(
+            content.measure(
                 View.MeasureSpec.makeMeasureSpec(root.width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
             )
-            val h = container.measuredHeight / context.resources.displayMetrics.density
+            val h = content.measuredHeight / context.resources.displayMetrics.density
             if (h > 0) {
                 methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
             }
         }
     }
 
-    private fun sendEvent(name: String) {
-        mainHandler.post {
-            flutterApi.onAdEvent(AdEvent(adId = adId, eventName = name)) {}
-        }
-    }
+    private fun matchWidth() = FrameLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+    )
 
     private fun spaced() = LinearLayout.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -195,6 +219,8 @@ class NativeAdPlatformView(
     override fun getView(): View = root
 
     override fun dispose() {
-        mainHandler.removeCallbacksAndMessages(null)
+        // Keep the registered view for a re-created platform view; detach it
+        // so it doesn't keep this one alive. NativeAdStore.remove drops it.
+        root.removeAllViews()
     }
 }

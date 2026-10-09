@@ -85,7 +85,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         super.init()
 
         if isVideo {
-            bannerView.adFormat = .video
+            bannerView.adFormats = [.video]
             switch videoPlacement {
             case "inArticle": bannerView.videoParameters.placement = .InArticle
             case "inFeed": bannerView.videoParameters.placement = .InFeed
@@ -95,6 +95,11 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)
+        } else {
+            // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
+            // clamps 0 up to its 15 s minimum — only a negative value is
+            // stored as 0, which disables auto-refresh (parity with Android).
+            bannerView.refreshInterval = -1
         }
 
         bannerView.delegate = self
@@ -126,7 +131,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
     // MARK: - BannerViewDelegate
 
     func bannerViewPresentationController() -> UIViewController? {
-        return UIApplication.shared.keyWindow?.rootViewController
+        return topViewController()
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didReceiveAdWithAdSize adSize: CGSize) {

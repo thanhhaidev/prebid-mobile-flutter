@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import UIKit
 import PrebidMobile
 
 // Helpers for the values the Dart side sends over method channels:
@@ -7,6 +8,21 @@ import PrebidMobile
 // `PrebidFullscreenControls.toMap()` from prebid_mobile_sdk.
 
 private func intValue(_ raw: Any?) -> Int? { (raw as? NSNumber)?.intValue }
+
+/// The view controller to present fullscreen ads / modals from: the top-most
+/// presented controller of the key window in the foreground-active scene
+/// (avoids the deprecated `UIApplication.keyWindow`). `nil` when the app has
+/// no foreground window yet.
+func topViewController() -> UIViewController? {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+    let window = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
+    var top = window?.rootViewController
+    while let presented = top?.presentedViewController, !presented.isBeingDismissed {
+        top = presented
+    }
+    return top
+}
 
 /// Native request assets, or nil when the widget uses the defaults.
 func nativeAssetsFrom(_ raw: Any?) -> [NativeAsset]? {

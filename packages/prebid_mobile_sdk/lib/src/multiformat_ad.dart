@@ -187,7 +187,7 @@ class PrebidMultiformatAd {
 
   /// Destroy the ad unit and free resources.
   Future<void> destroy() async {
-    api.destroy(_adId);
+    await api.destroy(_adId);
   }
 
   NativeAssetConfig _convertAsset(NativeAsset asset) {

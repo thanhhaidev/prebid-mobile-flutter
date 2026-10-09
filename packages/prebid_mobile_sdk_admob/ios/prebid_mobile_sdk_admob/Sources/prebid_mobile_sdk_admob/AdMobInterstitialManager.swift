@@ -38,6 +38,8 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
                 result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
                 return
             }
+            // Reloading an adId replaces its previous ad.
+            release(adId)
             let configId = args?["configId"] as? String ?? ""
             let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
             let isVideo = args?["isVideo"] as? Bool ?? false
@@ -58,12 +60,15 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             mediationDelegates[adId] = mediationDelegate
 
             // 2. Fetch demand, then load the AdMob interstitial.
-            adUnit.fetchDemand { [weak self] _ in
+            adUnit.fetchDemand { [weak self, weak adUnit] _ in
+                // Destroyed / replaced while the auction ran: skip the load.
+                guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
                 GoogleMobileAds.InterstitialAd.load(
                     with: adMobAdUnitId,
                     request: gadRequest
-                ) { [weak self] ad, error in
-                    guard let self = self else { return }
+                ) { [weak self, weak adUnit] ad, error in
+                    // A late load must not re-insert an ad for a released adId.
+                    guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
                     if let error = error {
                         self.send(adId, "onAdFailed", error: error.localizedDescription)
                         return
@@ -78,26 +83,41 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             result(nil)
 
         case "show":
-            if let adId = adId,
-               let ad = interstitials[adId],
-               let root = UIApplication.shared.keyWindow?.rootViewController {
-                ad.present(from: root)
+            guard let adId = adId else {
+                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
+                return
+            }
+            if let ad = interstitials[adId] {
+                if let controller = topViewController() {
+                    ad.present(from: controller)
+                } else {
+                    send(adId, "onAdFailed", error: "No view controller to present the interstitial from")
+                }
+            } else {
+                send(adId, "onAdFailed", error: "The interstitial is not ready to show; wait for onAdLoaded")
             }
             result(nil)
 
         case "destroy":
             if let adId = adId {
-                if let ad = interstitials.removeValue(forKey: adId) {
-                    adIdByInterstitial.removeValue(forKey: ObjectIdentifier(ad))
-                }
-                adUnits.removeValue(forKey: adId)
-                mediationDelegates.removeValue(forKey: adId)
+                release(adId)
             }
             result(nil)
 
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    /// Drops everything held for `adId` (including the reverse map), so late
+    /// callbacks from the released ad are no longer forwarded.
+    private func release(_ adId: Int) {
+        if let ad = interstitials.removeValue(forKey: adId) {
+            ad.fullScreenContentDelegate = nil
+            adIdByInterstitial.removeValue(forKey: ObjectIdentifier(ad))
+        }
+        adUnits.removeValue(forKey: adId)
+        mediationDelegates.removeValue(forKey: adId)
     }
 
     private func send(_ adId: Int, _ event: String, error: String? = nil) {

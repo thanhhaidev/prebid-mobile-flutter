@@ -69,9 +69,8 @@ class GamBannerPlatformView(
             bannerView.videoPlacementType = videoPlacement
         }
 
-        if (refreshInterval != null && refreshInterval > 0) {
-            bannerView.setAutoRefreshDelay(refreshInterval)
-        }
+        // 0 means a single request without auto-refresh (also Prebid's default).
+        bannerView.setAutoRefreshDelay(if (refreshInterval != null && refreshInterval > 0) refreshInterval else 0)
 
         bannerView.setBannerListener(object : BannerViewListener {
             override fun onAdLoaded(view: BannerView) {

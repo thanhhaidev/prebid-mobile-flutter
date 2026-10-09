@@ -88,7 +88,7 @@ class PrebidInterstitialAd {
         api: videoParameters!.api?.map((a) => a.value).toList(),
       );
     }
-    api.loadAd(
+    await api.loadAd(
       _adId,
       configId,
       formats,
@@ -100,13 +100,13 @@ class PrebidInterstitialAd {
 
   /// Show the interstitial ad.
   Future<void> show() async {
-    api.show(_adId);
+    await api.show(_adId);
   }
 
   /// Destroy the interstitial ad and free resources.
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
-    api.destroy(_adId);
+    await api.destroy(_adId);
   }
 }
 
@@ -174,17 +174,17 @@ class PrebidRewardedAd {
 
   /// Load the rewarded ad.
   Future<void> loadAd() async {
-    api.loadAd(_adId, configId, impOrtbConfig, controls?.toConfig());
+    await api.loadAd(_adId, configId, impOrtbConfig, controls?.toConfig());
   }
 
   /// Show the rewarded ad.
   Future<void> show() async {
-    api.show(_adId);
+    await api.show(_adId);
   }
 
   /// Destroy the rewarded ad and free resources.
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
-    api.destroy(_adId);
+    await api.destroy(_adId);
   }
 }

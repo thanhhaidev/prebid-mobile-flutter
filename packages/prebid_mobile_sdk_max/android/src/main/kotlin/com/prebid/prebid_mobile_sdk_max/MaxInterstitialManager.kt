@@ -59,6 +59,8 @@ class MaxInterstitialManager(
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                // Reloading an adId replaces (and frees) its previous ad.
+                release(adId)
                 val configId = args?.get("configId") as? String ?: ""
                 val maxAdUnitId = args?.get("maxAdUnitId") as? String ?: ""
                 val isVideo = args?.get("isVideo") as? Boolean ?: false
@@ -87,30 +89,47 @@ class MaxInterstitialManager(
                     mediationUtils,
                 )
                 FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
-                ads[adId] = Holder(adUnit, interstitial)
+                val holder = Holder(adUnit, interstitial)
+                ads[adId] = holder
 
                 adUnit.fetchDemand {
-                    interstitial.loadAd()
+                    // Destroyed / replaced while the auction ran: skip the load.
+                    if (ads[adId] === holder) interstitial.loadAd()
                 }
                 result.success(null)
             }
 
             "show" -> {
-                adId?.let { ads[it]?.interstitial }?.let { ad ->
-                    if (ad.isReady) ad.showAd()
+                if (adId == null) {
+                    result.error("no_ad_id", "Missing adId", null)
+                    return
+                }
+                val activity = activityProvider()
+                val ad = ads[adId]?.interstitial
+                when {
+                    ad == null || !ad.isReady ->
+                        send(adId, "onAdFailed", "The interstitial is not ready to show; wait for onAdLoaded")
+                    activity == null ->
+                        send(adId, "onAdFailed", "No attached Activity to show the interstitial")
+                    // Show from the current Activity, not the one used to load.
+                    else -> ad.showAd(activity)
                 }
                 result.success(null)
             }
 
             "destroy" -> {
-                adId?.let { ads.remove(it) }?.let {
-                    it.adUnit.destroy()
-                    it.interstitial.destroy()
-                }
+                adId?.let { release(it) }
                 result.success(null)
             }
 
             else -> result.notImplemented()
+        }
+    }
+
+    private fun release(adId: Long) {
+        ads.remove(adId)?.let {
+            it.adUnit.destroy()
+            it.interstitial.destroy()
         }
     }
 

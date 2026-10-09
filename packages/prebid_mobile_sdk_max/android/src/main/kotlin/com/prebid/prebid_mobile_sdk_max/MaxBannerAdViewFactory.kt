@@ -46,6 +46,10 @@ class MaxBannerPlatformView(
     private val methodChannel: MethodChannel
     private var adUnit: MediationBannerAdUnit? = null
 
+    // Set once Flutter disposes the view: an auction finishing later must not
+    // load into the destroyed MaxAdView.
+    private var disposed = false
+
     init {
         val configId = params["configId"] as? String ?: ""
         val maxAdUnitId = params["maxAdUnitId"] as? String ?: ""
@@ -98,16 +102,35 @@ class MaxBannerPlatformView(
             mediationUtils,
         )
 
-        if (autoLoad) {
-            adUnit?.fetchDemand {
-                adView.loadAd()
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "loadAd" -> { load(); result.success(null) }
+                "stopRefresh" -> {
+                    adUnit?.stopRefresh()
+                    adView.stopAutoRefresh()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
+        }
+
+        if (autoLoad) {
+            load()
+        }
+    }
+
+    private fun load() {
+        adUnit?.fetchDemand {
+            if (!disposed) adView.loadAd()
         }
     }
 
     override fun getView(): View = adView
 
     override fun dispose() {
+        disposed = true
+        methodChannel.setMethodCallHandler(null)
         adUnit?.destroy()
         adUnit = null
         adView.destroy()

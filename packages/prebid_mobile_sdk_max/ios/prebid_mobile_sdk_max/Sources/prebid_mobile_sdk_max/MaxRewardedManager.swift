@@ -7,13 +7,20 @@ import AppLovinSDK
 /// Handles MAX-mediated rewarded ads over the `prebid_mobile_sdk_max/rewarded`
 /// method channel. Each ad is keyed by an `adId` allocated on the Dart side;
 /// native events (including the reward) are pushed back over the same channel.
-class MaxRewardedManager: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
+///
+/// MAX hands out one shared `MARewardedAd` per ad unit, so at most one `adId`
+/// owns a unit at a time: a new load on the same unit takes it over (the
+/// previous owner gets `onAdFailed`), and only the owner's events are routed.
+class MaxRewardedManager: NSObject {
 
     private let channel: FlutterMethodChannel
 
     private var adUnits: [Int: MediationRewardedAdUnit] = [:]
     private var mediationDelegates: [Int: MAXMediationRewardedUtils] = [:]
     private var rewardedAds: [Int: MARewardedAd] = [:]
+    private var proxies: [Int: MaxAdEventProxy] = [:]
+    /// MAX ad unit identifier → the `adId` that currently owns its shared ad.
+    private var ownerByUnit: [String: Int] = [:]
 
     init(messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(
@@ -36,8 +43,17 @@ class MaxRewardedManager: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
                 result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
                 return
             }
+            // Reloading an adId replaces its previous ad.
+            release(adId)
             let configId = args?["configId"] as? String ?? ""
             let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
+
+            // The shared instance moves to this adId; the previous owner stops
+            // receiving events and is told why.
+            if let previous = ownerByUnit[maxAdUnitId], previous != adId {
+                release(previous)
+                send(previous, "onAdFailed", ["error": "Replaced by another ad on the same MAX ad unit"])
+            }
 
             let rewarded = MARewardedAd.shared(withAdUnitIdentifier: maxAdUnitId)
             let mediationDelegate = MAXMediationRewardedUtils(rewardedAd: rewarded)
@@ -46,28 +62,46 @@ class MaxRewardedManager: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
                 mediationDelegate: mediationDelegate
             )
             FullscreenControls(args?["controls"])?.apply(to: adUnit)
-            rewarded.delegate = self
-            rewarded.revenueDelegate = self
+            let proxy = MaxAdEventProxy { [weak self] event, payload in
+                self?.send(adId, event, payload)
+            }
+            rewarded.delegate = proxy
+            rewarded.revenueDelegate = proxy
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
             rewardedAds[adId] = rewarded
+            proxies[adId] = proxy
+            ownerByUnit[maxAdUnitId] = adId
 
-            adUnit.fetchDemand { [weak self] _ in
-                self?.rewardedAds[adId]?.load()
+            adUnit.fetchDemand { [weak self, weak adUnit] _ in
+                // Destroyed / replaced while the auction ran: skip the load.
+                guard let self = self, let adUnit = adUnit,
+                      self.adUnits[adId] === adUnit else { return }
+                self.rewardedAds[adId]?.load()
             }
             result(nil)
 
         case "show":
-            if let adId = adId, let rewarded = rewardedAds[adId], rewarded.isReady {
-                rewarded.show()
+            guard let adId = adId else {
+                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
+                return
             }
+            guard let rewarded = rewardedAds[adId], rewarded.isReady else {
+                send(adId, "onAdFailed", ["error": "The rewarded ad is not ready to show; wait for onAdLoaded"])
+                result(nil)
+                return
+            }
+            guard let controller = topViewController() else {
+                send(adId, "onAdFailed", ["error": "No view controller to present the rewarded ad from"])
+                result(nil)
+                return
+            }
+            rewarded.show(forPlacement: nil, customData: nil, viewController: controller)
             result(nil)
 
         case "destroy":
             if let adId = adId {
-                rewardedAds.removeValue(forKey: adId)
-                adUnits.removeValue(forKey: adId)
-                mediationDelegates.removeValue(forKey: adId)
+                release(adId)
             }
             result(nil)
 
@@ -76,77 +110,24 @@ class MaxRewardedManager: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
         }
     }
 
-    private func send(_ adId: Int, _ event: String, error: String? = nil, extra: [String: Any]? = nil) {
+    /// Drops everything held for `adId`. The shared MAX ad is only detached
+    /// when `adId` still owns its unit — a replaced ad must not touch the
+    /// instance (and delegates) the new owner is using.
+    private func release(_ adId: Int) {
+        if let rewarded = rewardedAds.removeValue(forKey: adId),
+           ownerByUnit[rewarded.adUnitIdentifier] == adId {
+            ownerByUnit.removeValue(forKey: rewarded.adUnitIdentifier)
+            rewarded.delegate = nil
+            rewarded.revenueDelegate = nil
+        }
+        proxies.removeValue(forKey: adId)
+        adUnits.removeValue(forKey: adId)
+        mediationDelegates.removeValue(forKey: adId)
+    }
+
+    private func send(_ adId: Int, _ event: String, _ extra: [String: Any] = [:]) {
         var payload: [String: Any] = ["adId": adId]
-        if let error = error {
-            payload["error"] = error
-        }
-        if let extra = extra {
-            payload.merge(extra) { _, new in new }
-        }
+        payload.merge(extra) { _, new in new }
         channel.invokeMethod(event, arguments: payload)
-    }
-
-    /// Resolves the owning `adId` from a MAX ad unit identifier.
-    private func adId(forAdUnitIdentifier identifier: String) -> Int? {
-        for (adId, ad) in rewardedAds where ad.adUnitIdentifier == identifier {
-            return adId
-        }
-        return nil
-    }
-
-    // MARK: - MARewardedAdDelegate
-
-    func didLoad(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdLoaded")
-        }
-    }
-
-    func didFailToLoadAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
-        if let adId = adId(forAdUnitIdentifier: adUnitIdentifier) {
-            send(adId, "onAdFailed", error: error.message)
-        }
-    }
-
-    func didDisplay(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdDisplayed")
-        }
-    }
-
-    func didHide(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdClosed")
-        }
-    }
-
-    // MAX reports revenue when the impression is recorded.
-    func didPayRevenue(for ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdImpression")
-        }
-    }
-
-    func didClick(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdClicked")
-        }
-    }
-
-    func didFail(toDisplay ad: MAAd, withError error: MAError) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdFailed", error: error.message)
-        }
-    }
-
-    func didRewardUser(for ad: MAAd, with reward: MAReward) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(
-                adId,
-                "onUserEarnedReward",
-                extra: ["type": reward.label, "count": reward.amount]
-            )
-        }
     }
 }

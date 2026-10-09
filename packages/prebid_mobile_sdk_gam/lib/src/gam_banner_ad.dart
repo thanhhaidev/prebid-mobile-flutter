@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -35,7 +33,9 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Whether the ad should load automatically when the widget is created.
   final bool autoLoad;
 
-  /// Auto-refresh interval in seconds. `null` (default) disables auto-refresh.
+  /// Auto-refresh interval in seconds. `null` (default) or `0` disables
+  /// auto-refresh on both platforms; positive values are clamped by Prebid to
+  /// its supported range (Android 30–120 s, iOS 15–120 s).
   final int? refreshIntervalSeconds;
 
   /// Custom key-values added to the Google Ad Manager request (Prebid 3.4).
@@ -108,14 +108,15 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    if (!kIsWeb && Platform.isAndroid) {
+    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         viewType: 'prebid_mobile_sdk_gam/banner',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         viewType: 'prebid_mobile_sdk_gam/banner',
         creationParams: creationParams,

@@ -91,6 +91,11 @@ final rewarded = PrebidMaxRewardedAd(
 await rewarded.loadAd();
 ```
 
+MAX shares one rewarded ad object per ad unit, so only one
+`PrebidMaxRewardedAd` per `maxAdUnitId` is active at a time: loading another
+on the same unit takes it over and the previous one receives `onAdFailed`
+("Replaced by another ad on the same MAX ad unit").
+
 ### Native
 
 ```dart
@@ -109,6 +114,15 @@ Rendered through MAX's native ad view so impressions and clicks track. Pass
 
 `onAdImpression` (banner, interstitial, rewarded, native) is reported from
 MAX's revenue callback, which MAX fires when it records the impression.
+
+`PrebidMaxBannerAd` takes a `PrebidBannerAdController` from the core package:
+with `autoLoad: false`, call `controller.loadAd()` to load on demand;
+`controller.stopRefresh()` stops Prebid's bid refresh and MAX's banner auto-refresh.
+
+`show()` on an interstitial / rewarded ad that is not loaded yet, or when no
+foreground Activity / view controller is available, reports `onAdFailed`
+instead of failing silently; `isLoaded` turns false after `show()`,
+`onAdClosed` and `onAdFailed`.
 
 > **AppLovin SDK initialization:** MAX only loads ads after the AppLovin SDK is
 > initialized with your SDK key. This package does not initialize it; do it at
@@ -139,7 +153,7 @@ Skip controls apply to interstitials (and to rewarded on Android only);
 
 | Class | Description |
 |---|---|
-| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. |
+| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController`. |
 | `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`. |
 | `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`. |
 | `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener`. |

@@ -91,8 +91,8 @@ class PrebidBannerAd extends StatefulWidget {
   /// Auto-refresh interval in seconds.
   ///
   /// If set, the banner will automatically request new ads at this interval.
-  /// Minimum recommended value is `30` seconds.
-  /// Set to `null` (default) to disable auto-refresh.
+  /// Prebid clamps it to 30–120 s on Android and 15–120 s on iOS.
+  /// `null` (default) or `0` disables auto-refresh on both platforms.
   final int? refreshIntervalSeconds;
 
   /// Outstream video placement (`imp.video.placement`) when the banner

@@ -124,7 +124,14 @@ Banner, interstitial and rewarded take `customTargeting`, added to the GAM
 request (Prebid's `hb_*` keys win on conflict). `PrebidGamBannerAd` also takes
 a `PrebidBannerAdController` (`loadAd()` with `autoLoad: false`,
 `stopRefresh()`), `videoPlacementType` and a `PrebidBannerVideoListener` for
-outstream video events.
+outstream video events. Banner auto-refresh is off unless
+`refreshIntervalSeconds` is positive (`null` / `0` disable it on both
+platforms).
+
+`show()` on an interstitial / rewarded ad that is not loaded yet, or when no
+foreground Activity / view controller is available, reports `onAdFailed`
+instead of failing silently; `isLoaded` turns false after `show()`,
+`onAdClosed`, `onAdFailed` and `onAdExpired`.
 
 `PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
 `PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and

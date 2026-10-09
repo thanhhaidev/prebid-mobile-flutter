@@ -332,7 +332,7 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `height` | `int` | **required** | Banner height in dp. |
 | `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
 | `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
-| `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds. Minimum `30`. `null` to disable. |
+| `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds (Prebid clamps to 30–120 on Android, 15–120 on iOS). `null` or `0` disables it. |
 | `adFormats` | `Set<AdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
 | `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
@@ -355,7 +355,7 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 | `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
 | `listener` | `PrebidInterstitialAdListener?` | Callback listener (incl. `onAdExpired`). |
 | `loadAd()` | `Future<void>` | Request an interstitial ad. |
-| `show()` | `Future<void>` | Present the loaded ad fullscreen. |
+| `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
 
 ---
@@ -371,7 +371,7 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 | `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only). |
 | `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`, `onAdExpired`). |
 | `loadAd()` | `Future<void>` | Request a rewarded ad. |
-| `show()` | `Future<void>` | Present the loaded ad fullscreen. |
+| `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
 
 **`PrebidReward`:**

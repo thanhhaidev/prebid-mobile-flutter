@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
@@ -41,6 +41,15 @@ void main() {
 
       await ad.destroy();
       verify(mockApi.destroy(any)).called(1);
+    });
+
+    test('platform errors reach the caller', () async {
+      when(
+        mockApi.show(any),
+      ).thenThrow(PlatformException(code: 'error', message: 'boom'));
+      final ad = PrebidInterstitialAd(configId: 'config-1');
+
+      await expectLater(ad.show(), throwsA(isA<PlatformException>()));
     });
   });
 

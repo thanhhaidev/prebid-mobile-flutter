@@ -18,6 +18,44 @@ enum PrebidErrorFormatter {
     }
 }
 
+/// Finds the view controller to present fullscreen ads from: the top-most
+/// presented controller of the foreground key window (scene-aware;
+/// `UIApplication.keyWindow` is deprecated and nil in multi-scene apps).
+enum PrebidPresenter {
+    static func topViewController() -> UIViewController? {
+        let windows = UIApplication.shared.connectedScenes
+            .filter { $0.activationState == .foregroundActive }
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+        let window = windows.first { $0.isKeyWindow } ?? windows.first
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
+    }
+
+    static let noViewController = "No view controller to present the ad from"
+    static let notReady = "The ad is not loaded"
+}
+
+/// Keeps ad units alive while `fetchDemand` runs. Prebid guards its response
+/// and timeout handlers with `[weak self]`, so releasing the unit mid-request
+/// (destroy, or a new fetch for the same ad) drops the completion and leaves
+/// the Dart Future pending. Not captured in the completion itself: the unit
+/// stores it (`lastFetchDemandCompletion`), which would be a retain cycle.
+enum InFlightAdUnits {
+    private static var units: [ObjectIdentifier: AnyObject] = [:]
+
+    static func retain(_ unit: AnyObject) {
+        units[ObjectIdentifier(unit)] = unit
+    }
+
+    static func release(_ id: ObjectIdentifier) {
+        units.removeValue(forKey: id)
+    }
+}
+
 public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     PrebidMobileHostApi, TargetingHostApi, InterstitialAdHostApi, NativeAdHostApi {
     
@@ -407,10 +445,17 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     // show(adId:) satisfies InterstitialAdHostApi
     func show(adId: Int64) throws {
-        guard let rootVC = UIApplication.shared.keyWindow?.rootViewController else { return }
-        if let interstitial = interstitialAds[adId] {
-            interstitial.show(from: rootVC)
+        guard let interstitial = interstitialAds[adId], interstitial.isReady else {
+            return sendAdFailed(adId, PrebidPresenter.notReady)
         }
+        guard let viewController = PrebidPresenter.topViewController() else {
+            return sendAdFailed(adId, PrebidPresenter.noViewController)
+        }
+        interstitial.show(from: viewController)
+    }
+
+    private func sendAdFailed(_ adId: Int64, _ error: String) {
+        flutterApi?.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: error)) { _ in }
     }
     
     // destroy(adId:) satisfies InterstitialAdHostApi and NativeAdHostApi  
@@ -418,7 +463,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         interstitialAds.removeValue(forKey: adId)
         nativeRequests.removeValue(forKey: adId)
         nativeAdResults.removeValue(forKey: adId)
-        NativeAdStore.ads.removeValue(forKey: adId)
+        NativeAdStore.remove(adId)
     }
     
     // =========================================================================
@@ -426,6 +471,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     // =========================================================================
     
     func loadAd(adId: Int64, config: NativeAdRequestConfig) throws {
+        try destroy(adId: adId)
         let nativeRequest = NativeRequest(configId: config.configId)
         
         // Configure context & placement
@@ -492,8 +538,13 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         
         nativeRequests[adId] = nativeRequest
         
+        // A destroyed or reloaded ad's result is ignored.
+        let requestId = ObjectIdentifier(nativeRequest)
+        InFlightAdUnits.retain(nativeRequest)
         nativeRequest.fetchDemand(completionBidInfo: { [weak self] bidInfo in
-            guard let self = self else { return }
+            InFlightAdUnits.release(requestId)
+            guard let self = self,
+                  self.nativeRequests[adId].map(ObjectIdentifier.init) == requestId else { return }
             if bidInfo.resultCode == .prebidDemandFetchSuccess {
                 // Attempt to find native ad from cache
                 guard let cacheId = bidInfo.nativeAdCacheId,
@@ -639,8 +690,17 @@ private class RewardedAdHostApiHandler: RewardedAdHostApi {
     }
     
     func show(adId: Int64) throws {
-        guard let rootVC = UIApplication.shared.keyWindow?.rootViewController else { return }
-        rewardedAds[adId]?.show(from: rootVC)
+        guard let rewarded = rewardedAds[adId], rewarded.isReady else {
+            return sendAdFailed(adId, PrebidPresenter.notReady)
+        }
+        guard let viewController = PrebidPresenter.topViewController() else {
+            return sendAdFailed(adId, PrebidPresenter.noViewController)
+        }
+        rewarded.show(from: viewController)
+    }
+
+    private func sendAdFailed(_ adId: Int64, _ error: String) {
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: error)) { _ in }
     }
     
     func destroy(adId: Int64) throws {
@@ -800,7 +860,10 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
         )
         if let gpid = config.gpid { request.setGPID(gpid) }
         
-        adUnit.fetchDemand(request: request) { [weak self] bidInfo in
+        let unitId = ObjectIdentifier(adUnit)
+        InFlightAdUnits.retain(adUnit)
+        adUnit.fetchDemand(request: request) { bidInfo in
+            InFlightAdUnits.release(unitId)
             let resultStr = bidInfo.resultCode.dartCode
             
             let format = bidInfo.targetingKeywords?["hb_format"]
@@ -836,13 +899,17 @@ private class InstreamVideoAdHostApiHandler: InstreamVideoAdHostApi {
         let adUnit = InstreamVideoAdUnit(configId: config.configId, size: size)
         adUnits[adId] = adUnit
         
-        adUnit.fetchDemand(completionBidInfo: { [weak self] bidInfo in
+        let unitId = ObjectIdentifier(adUnit)
+        InFlightAdUnits.retain(adUnit)
+        adUnit.fetchDemand(completionBidInfo: { bidInfo in
+            InFlightAdUnits.release(unitId)
             let resultStr = bidInfo.resultCode.dartCode
             
             let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
             
             completion(.success(MultiformatBidResult(
                 resultCode: resultStr,
+                exp: bidInfo.exp,
                 winningFormat: "video",
                 targetingKeywords: keywords
             )))

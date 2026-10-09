@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidBannerAdListener;
+    show PrebidBannerAdController, PrebidBannerAdListener;
 
 /// A banner ad mediated by **AppLovin MAX** with Prebid demand.
 ///
@@ -25,8 +23,14 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// The desired height of the banner ad in dp.
   final int height;
 
-  /// Whether the ad should load automatically when the widget is created.
+  /// Whether the ad should load automatically when the widget is created. Set
+  /// to `false` and call [PrebidBannerAdController.loadAd] on [controller] to
+  /// load on demand.
   final bool autoLoad;
+
+  /// Optional controller to load on demand (`autoLoad: false`) or stop
+  /// Prebid's (and the ad server's) auto-refresh.
+  final PrebidBannerAdController? controller;
 
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
@@ -39,6 +43,7 @@ class PrebidMaxBannerAd extends StatefulWidget {
     required this.width,
     required this.height,
     this.autoLoad = true,
+    this.controller,
     this.listener,
   });
 
@@ -70,14 +75,15 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    if (!kIsWeb && Platform.isAndroid) {
+    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         viewType: 'prebid_mobile_sdk_max/banner',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         viewType: 'prebid_mobile_sdk_max/banner',
         creationParams: creationParams,
@@ -90,6 +96,8 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
 
   void _onPlatformViewCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_max/banner_$viewId');
+    _channel = channel;
+    widget.controller?.attachChannel(channel);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':
@@ -116,5 +124,17 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
           widget.listener?.onAdClosed?.call();
       }
     });
+  }
+
+  MethodChannel? _channel;
+
+  @override
+  void dispose() {
+    final channel = _channel;
+    if (channel != null) {
+      channel.setMethodCallHandler(null);
+      widget.controller?.detachChannel(channel);
+    }
+    super.dispose();
   }
 }

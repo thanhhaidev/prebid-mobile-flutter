@@ -285,13 +285,13 @@ class PrebidNativeAd {
       gpid: gpid,
       impOrtbConfig: impOrtbConfig,
     );
-    api.loadAd(_adId, config);
+    await api.loadAd(_adId, config);
   }
 
   /// Destroy the native ad and free resources.
   Future<void> destroy() async {
     AdEventRouter.instance.unregister(_adId);
-    api.destroy(_adId);
+    await api.destroy(_adId);
   }
 
   NativeAssetConfig _convertAsset(NativeAsset asset) {

@@ -76,6 +76,11 @@ class GamNativePlatformView(
     private var unifiedNativeAd: NativeAd? = null
     private var prebidNativeAd: PrebidNativeAd? = null
 
+    // Set once Flutter disposes the view: async SDK callbacks that land later
+    // must not load, render or report anything.
+    @Volatile
+    private var disposed = false
+
     // Held as a strong-referenced field: PrebidMobile keeps only a WeakReference
     // to the event listener, so an inline/anonymous instance would be GC'd and
     // impression/click callbacks would never fire.
@@ -110,6 +115,7 @@ class GamNativePlatformView(
         adLoader = loader
 
         nativeAdUnit.fetchDemand(adRequest) { resultCode: ResultCode ->
+            if (disposed) return@fetchDemand
             if (resultCode == ResultCode.SUCCESS) {
                 send("fetchDemandSuccess")
             } else {
@@ -122,6 +128,10 @@ class GamNativePlatformView(
     private fun buildAdLoader(): AdLoader {
         val builder = AdLoader.Builder(context, gamAdUnitId)
             .forNativeAd { ad: NativeAd ->
+                if (disposed) {
+                    ad.destroy()
+                    return@forNativeAd
+                }
                 send("unifiedAdLoaded")
                 unifiedNativeAd = ad
                 // Unified native ads are GAM's own demand (no Prebid creative to
@@ -136,11 +146,16 @@ class GamNativePlatformView(
             builder.forCustomFormatAd(
                 customFormatId,
                 { customAd: NativeCustomFormatAd ->
+                    if (disposed) {
+                        customAd.destroy()
+                        return@forCustomFormatAd
+                    }
                     send("customAdLoaded")
                     AdViewUtils.findNative(
                         customAd,
                         object : PrebidNativeAdListener {
                             override fun onPrebidNativeLoaded(ad: PrebidNativeAd) {
+                                if (disposed) return
                                 send("nativeAdLoaded")
                                 renderPrebidNative(ad)
                             }
@@ -412,6 +427,7 @@ class GamNativePlatformView(
     /// impression/click events from a background thread, and MethodChannel
     /// must only be used from the platform thread.
     private fun send(method: String, args: Any? = null) {
+        if (disposed) return
         if (Looper.myLooper() == Looper.getMainLooper()) {
             methodChannel.invokeMethod(method, args)
         } else {
@@ -422,6 +438,7 @@ class GamNativePlatformView(
     override fun getView(): View = root
 
     override fun dispose() {
+        disposed = true
         mainHandler.removeCallbacksAndMessages(null)
         adUnit?.destroy()
         unifiedNativeAd?.destroy()

@@ -3,6 +3,7 @@ package com.prebid.prebid_mobile_sdk_max
 import android.app.Activity
 import android.content.Context
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.applovin.mediation.MaxAd
 import com.applovin.mediation.MaxError
@@ -54,6 +55,10 @@ class MaxNativePlatformView(
     private val nativeAdUnit: NativeAdUnit
     private var loadedNativeAd: MaxAd? = null
 
+    // Set once Flutter disposes the view: async SDK callbacks that land later
+    // must not load, render or report anything.
+    private var disposed = false
+
     init {
         val configId = params["configId"] as? String ?: ""
         val maxAdUnitId = params["maxAdUnitId"] as? String ?: ""
@@ -63,17 +68,24 @@ class MaxNativePlatformView(
         nativeAdLoader = MaxNativeAdLoader(maxAdUnitId, context)
         nativeAdLoader.setNativeAdListener(object : MaxNativeAdListener() {
             override fun onNativeAdLoaded(nativeAdView: MaxNativeAdView?, ad: MaxAd) {
+                if (disposed) {
+                    nativeAdLoader.destroy(ad)
+                    return
+                }
                 loadedNativeAd?.let { nativeAdLoader.destroy(it) }
                 loadedNativeAd = ad
                 container.removeAllViews()
-                if (nativeAdView != null) container.addView(nativeAdView)
-                methodChannel.invokeMethod("onAdLoaded", null)
-                container.post {
-                    val h = container.height
-                    if (h > 0) {
-                        methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
-                    }
+                if (nativeAdView != null) {
+                    container.addView(
+                        nativeAdView,
+                        FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ),
+                    )
                 }
+                methodChannel.invokeMethod("onAdLoaded", null)
+                if (nativeAdView != null) reportContentHeight(nativeAdView)
             }
 
             override fun onNativeAdLoadFailed(adUnitId: String, error: MaxError) {
@@ -92,7 +104,24 @@ class MaxNativePlatformView(
         configureNativeAdUnit(nativeAdUnit, params)
 
         nativeAdUnit.fetchDemand(nativeAdLoader) {
-            nativeAdLoader.loadAd(createNativeAdView())
+            if (!disposed) nativeAdLoader.loadAd(createNativeAdView())
+        }
+    }
+
+    /// Measures the content's natural height (the container is clamped to the
+    /// current Flutter-side size, so its own height would only echo that) and
+    /// reports it in logical pixels.
+    private fun reportContentHeight(content: View) {
+        container.post {
+            if (disposed) return@post
+            content.measure(
+                View.MeasureSpec.makeMeasureSpec(container.width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            )
+            val h = content.measuredHeight / container.resources.displayMetrics.density
+            if (h > 0) {
+                methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
+            }
         }
     }
 
@@ -162,7 +191,9 @@ class MaxNativePlatformView(
     override fun getView(): View = container
 
     override fun dispose() {
+        disposed = true
         loadedNativeAd?.let { nativeAdLoader.destroy(it) }
+        loadedNativeAd = null
         nativeAdLoader.destroy()
         nativeAdUnit.destroy()
     }

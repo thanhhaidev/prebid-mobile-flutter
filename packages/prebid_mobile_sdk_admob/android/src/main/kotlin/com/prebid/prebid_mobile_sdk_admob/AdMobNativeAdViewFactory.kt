@@ -56,6 +56,10 @@ class AdMobNativePlatformView(
     private var adUnit: MediationNativeAdUnit? = null
     private var nativeAd: NativeAd? = null
 
+    // Set once Flutter disposes the view: async SDK callbacks that land later
+    // must not load, bind or report anything.
+    private var disposed = false
+
     private val iconView = ImageView(context)
     private val mediaView = MediaView(context)
     private val headlineView = TextView(context)
@@ -87,12 +91,18 @@ class AdMobNativePlatformView(
 
         val adLoader = AdLoader.Builder(context, adMobAdUnitId)
             .forNativeAd { ad ->
+                if (disposed) {
+                    ad.destroy()
+                    return@forNativeAd
+                }
+                nativeAd?.destroy()
                 nativeAd = ad
                 bind(ad)
                 methodChannel.invokeMethod("onAdLoaded", null)
                 // Measure the natural content height (the view itself is clamped
                 // to the current Flutter-side size) and report logical pixels.
                 nativeAdView.post {
+                    if (disposed) return@post
                     val content = nativeAdView.getChildAt(0) ?: return@post
                     content.measure(
                         View.MeasureSpec.makeMeasureSpec(nativeAdView.width, View.MeasureSpec.EXACTLY),
@@ -129,6 +139,7 @@ class AdMobNativePlatformView(
             .build()
 
         adUnit.fetchDemand {
+            if (disposed) return@fetchDemand
             adLoader.loadAd(request)
         }
     }
@@ -207,7 +218,9 @@ class AdMobNativePlatformView(
     override fun getView(): View = nativeAdView
 
     override fun dispose() {
+        disposed = true
         nativeAd?.destroy()
+        nativeAd = null
         adUnit?.destroy()
     }
 }

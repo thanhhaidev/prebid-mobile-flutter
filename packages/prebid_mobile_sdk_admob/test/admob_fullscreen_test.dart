@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
 
+import 'channel_harness.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -47,10 +49,15 @@ void main() {
         await h.emit(e, adId);
       }
       expect(fired, ['loaded', 'displayed', 'impression', 'clicked', 'closed']);
-      expect(ad.isLoaded, isTrue);
+      expect(ad.isLoaded, isFalse); // closed
 
+      await h.emit('onAdLoaded', adId);
       await ad.show();
       expect(h.calls.last.method, 'show');
+      expect(ad.isLoaded, isFalse);
+      await h.emit('onAdLoaded', adId);
+      await h.emit('onAdFailed', adId, {'error': 'x'});
+      expect(ad.isLoaded, isFalse);
       await ad.destroy();
       expect(h.calls.last.method, 'destroy');
     });
@@ -76,39 +83,66 @@ void main() {
 
       final adId = args['adId'] as int;
       await h.emit('onAdImpression', adId);
-      await h.emit('onUserEarnedReward', adId, {'type': 'coins', 'count': 3});
+      await h.emit('onUserEarnedReward', adId, {
+        'rewardType': 'coins',
+        'rewardCount': 3,
+      });
       expect(impressions, 1);
       expect(reward?.type, 'coins');
       expect(reward?.count, 3);
+      expect(reward?.ext, isNull);
+    });
+
+    test('reward parsing matches the GAM package (defaults + ext)', () async {
+      final h = ChannelHarness('prebid_mobile_sdk_admob/rewarded');
+      final rewards = <PrebidReward>[];
+      final ad = PrebidAdMobRewardedAd(
+        configId: 'config-r',
+        adMobAdUnitId: 'unit-r',
+        listener: PrebidRewardedAdListener(onUserEarnedReward: rewards.add),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      await h.emit('onUserEarnedReward', adId);
+      await h.emit('onUserEarnedReward', adId, {
+        'rewardType': 'gems',
+        'rewardCount': 2,
+        'rewardExt': '{"tier":1}',
+      });
+      expect(rewards.map((r) => [r.type, r.count, r.ext]), [
+        ['reward', 1, null],
+        [
+          'gems',
+          2,
+          {'tier': 1},
+        ],
+      ]);
+    });
+
+    test('isLoaded resets on show, close and failure', () async {
+      final h = ChannelHarness('prebid_mobile_sdk_admob/rewarded');
+      final ad = PrebidAdMobRewardedAd(configId: 'c', adMobAdUnitId: 'u');
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      await h.emit('onAdLoaded', adId);
+      expect(ad.isLoaded, isTrue);
+      await ad.show();
+      expect(h.calls.last.method, 'show');
+      expect(ad.isLoaded, isFalse);
+
+      await h.emit('onAdLoaded', adId);
+      await h.emit('onAdClosed', adId);
+      expect(ad.isLoaded, isFalse);
+
+      await h.emit('onAdLoaded', adId);
+      await h.emit('onAdFailed', adId, {'error': 'not ready'});
+      expect(ad.isLoaded, isFalse);
+
+      await h.emit('onAdLoaded', adId);
+      await ad.destroy();
+      expect(ad.isLoaded, isFalse);
     });
   });
-}
-
-/// Records method calls sent to [channel] and lets a test push native events
-/// back over it, as the plugin's Kotlin / Swift side does.
-class ChannelHarness {
-  ChannelHarness(this.channel) {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(MethodChannel(channel), (call) async {
-          calls.add(call);
-          return null;
-        });
-  }
-
-  final String channel;
-  final List<MethodCall> calls = [];
-
-  Map<Object?, Object?> argsOf(String method) =>
-      calls.lastWhere((c) => c.method == method).arguments as Map;
-
-  /// Delivers a native → Dart event for [adId].
-  Future<void> emit(String event, int adId, [Map<String, Object?>? extra]) =>
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .handlePlatformMessage(
-            channel,
-            const StandardMethodCodec().encodeMethodCall(
-              MethodCall(event, {'adId': adId, ...?extra}),
-            ),
-            (_) {},
-          );
 }

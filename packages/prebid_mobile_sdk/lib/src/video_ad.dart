@@ -10,12 +10,16 @@ class PrebidVideoAdBidResponse {
   /// Targeting keywords to pass to the ad server.
   final Map<String, String>? targetingKeywords;
 
+  /// Winning bid expiration in seconds (`bid.exp`), if the bid set one.
+  final double? exp;
+
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 
   const PrebidVideoAdBidResponse({
     required this.resultCode,
     this.targetingKeywords,
+    this.exp,
   });
 }
 
@@ -78,11 +82,12 @@ class PrebidInstreamVideoAd {
     return PrebidVideoAdBidResponse(
       resultCode: result.resultCode,
       targetingKeywords: keywords,
+      exp: result.exp,
     );
   }
 
   /// Destroy the ad unit and free resources.
   Future<void> destroy() async {
-    _api.destroy(_adId);
+    await _api.destroy(_adId);
   }
 }

@@ -42,7 +42,9 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, 
     private var nativeAdLoader: MANativeAdLoader?
     private var mediationDelegate: MAXMediationNativeUtils?
     private var adUnit: MediationNativeAdUnit?
-    private weak var loadedNativeAd: MAAd?
+    // Held strongly so it can be destroyed when replaced or when the view goes
+    // away (MAX keeps native ad resources alive until `destroy`).
+    private var loadedNativeAd: MAAd?
 
     init(viewId: Int64, messenger: FlutterBinaryMessenger, args: [String: Any]) {
         let configId = args["configId"] as? String ?? ""
@@ -85,6 +87,13 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, 
 
     func view() -> UIView {
         return container
+    }
+
+    // iOS platform views have no dispose callback; release the ad on dealloc.
+    deinit {
+        if let ad = loadedNativeAd {
+            nativeAdLoader?.destroy(ad)
+        }
     }
 
     /// Builds a `MANativeAdView` with tagged asset subviews and binds them.
@@ -134,13 +143,9 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, 
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
+        // Asset views stay inside the stack; the binder resolves them by tag via
+        // `viewWithTag`, which searches the whole subtree.
         let adView = MANativeAdView()
-        adView.addSubview(iconView)
-        adView.addSubview(titleLabel)
-        adView.addSubview(advertiserLabel)
-        adView.addSubview(bodyLabel)
-        adView.addSubview(ctaButton)
-        adView.addSubview(mediaView)
         adView.addSubview(stack)
         adView.translatesAutoresizingMaskIntoConstraints = false
 

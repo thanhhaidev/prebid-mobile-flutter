@@ -1,7 +1,8 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
+
+import 'channel_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,11 +44,17 @@ void main() {
       await h.emit('onAdExpired', adId);
       await h.emit('onAdLoaded', adId + 1); // another ad: ignored
       expect(fired, ['loaded', 'failed:boom', 'expired']);
+      expect(ad.isLoaded, isFalse); // failed / expired
+
+      await h.emit('onAdLoaded', adId);
       expect(ad.isLoaded, isTrue);
+      await ad.show();
+      expect(h.calls.last.method, 'show');
+      expect(ad.isLoaded, isFalse);
 
       await ad.destroy();
       await h.emit('onAdLoaded', adId); // unregistered: ignored
-      expect(fired, hasLength(3));
+      expect(fired, hasLength(4));
     });
   });
 
@@ -77,34 +84,26 @@ void main() {
       expect(reward?.count, 10);
       expect(reward?.ext, {'bonus': true});
     });
+
+    test('defaults a bare reward and resets isLoaded on close', () async {
+      final h = ChannelHarness('prebid_mobile_sdk_gam/rewarded');
+      final rewards = <PrebidReward>[];
+      final ad = PrebidGamRewardedAd(
+        configId: 'config-r',
+        gamAdUnitId: '/1/rewarded',
+        listener: PrebidRewardedAdListener(onUserEarnedReward: rewards.add),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      await h.emit('onAdLoaded', adId);
+      expect(ad.isLoaded, isTrue);
+      await h.emit('onUserEarnedReward', adId);
+      await h.emit('onAdClosed', adId);
+      expect(ad.isLoaded, isFalse);
+      expect(rewards.single.type, 'reward');
+      expect(rewards.single.count, 1);
+      expect(rewards.single.ext, isNull);
+    });
   });
-}
-
-/// Records method calls sent to [channel] and lets a test push native events
-/// back over it, as the plugin's Kotlin / Swift side does.
-class ChannelHarness {
-  ChannelHarness(this.channel) {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(MethodChannel(channel), (call) async {
-          calls.add(call);
-          return null;
-        });
-  }
-
-  final String channel;
-  final List<MethodCall> calls = [];
-
-  Map<Object?, Object?> argsOf(String method) =>
-      calls.lastWhere((c) => c.method == method).arguments as Map;
-
-  /// Delivers a native → Dart event for [adId].
-  Future<void> emit(String event, int adId, [Map<String, Object?>? extra]) =>
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .handlePlatformMessage(
-            channel,
-            const StandardMethodCodec().encodeMethodCall(
-              MethodCall(event, {'adId': adId, ...?extra}),
-            ),
-            (_) {},
-          );
 }

@@ -6,6 +6,20 @@ import PrebidMobile
 /// `NativeAdPlatformView` can render and register the ad for tracking.
 enum NativeAdStore {
     static var ads: [Int64: NativeAd] = [:]
+
+    /// The rendered, registered view of each ad. `NativeAd.registerView` only
+    /// accepts one view per ad, so a platform view re-created for the same ad
+    /// (e.g. after scrolling out of a list and back) reuses this one.
+    static var views: [Int64: UIView] = [:]
+
+    /// Event delegates, held strongly: Prebid holds the ad's delegate weakly.
+    static var delegates: [Int64: NativeAdEventForwarder] = [:]
+
+    static func remove(_ adId: Int64) {
+        ads.removeValue(forKey: adId)
+        delegates.removeValue(forKey: adId)
+        views.removeValue(forKey: adId)?.removeFromSuperview()
+    }
 }
 
 /// PlatformView factory for `PrebidNativeAdView`: renders a loaded `NativeAd`
@@ -40,14 +54,12 @@ class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate {
+class NativeAdPlatformView: NSObject, FlutterPlatformView {
 
     private let container = UIView()
     private let adId: Int64
     private let methodChannel: FlutterMethodChannel
     private let flutterApi: AdFlutterApi
-    // Strong reference: Prebid holds the ad's delegate weakly.
-    private var nativeAd: NativeAd?
 
     init(viewId: Int64, messenger: FlutterBinaryMessenger, flutterApi: AdFlutterApi, args: [String: Any]) {
         adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
@@ -57,9 +69,33 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
         )
         self.flutterApi = flutterApi
         super.init()
-        if let ad = NativeAdStore.ads[adId] {
+        if let content = NativeAdStore.views[adId] {
+            content.removeFromSuperview()
+            embed(content)
+            reportHeight(of: content)
+        } else if let ad = NativeAdStore.ads[adId] {
             render(ad)
         }
+    }
+
+    deinit {
+        // Keep the registered view for a re-created platform view;
+        // NativeAdStore.remove releases it.
+        // A newer platform view may already have taken it.
+        if let content = NativeAdStore.views[adId], content.superview === container {
+            content.removeFromSuperview()
+        }
+    }
+
+    private func embed(_ content: UIView) {
+        content.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: container.topAnchor),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            content.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor),
+        ])
     }
 
     func view() -> UIView {
@@ -69,8 +105,9 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
     // MARK: - Rendering
 
     private func render(_ ad: NativeAd) {
-        nativeAd = ad
-        ad.delegate = self
+        let forwarder = NativeAdEventForwarder(adId: adId, flutterApi: flutterApi)
+        NativeAdStore.delegates[adId] = forwarder
+        ad.delegate = forwarder
 
         let iconView = UIImageView()
         let mainImageView = UIImageView()
@@ -125,19 +162,12 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
         stack.axis = .vertical
         stack.spacing = 8
         stack.alignment = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor),
-        ])
-
-        _ = ad.registerView(view: container, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton])
+        embed(stack)
+        NativeAdStore.views[adId] = stack
+        _ = ad.registerView(view: stack, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton])
         reportHeight(of: stack)
     }
 
@@ -166,7 +196,17 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
         }.resume()
     }
 
-    // MARK: - NativeAdEventDelegate
+}
+
+/// `NativeAdEventDelegate` → Flutter, one per ad (it outlives platform views).
+class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
+    private let adId: Int64
+    private let flutterApi: AdFlutterApi
+
+    init(adId: Int64, flutterApi: AdFlutterApi) {
+        self.adId = adId
+        self.flutterApi = flutterApi
+    }
 
     // Prebid calls this once per impression tracker URL; report one impression.
     private var impressionReported = false

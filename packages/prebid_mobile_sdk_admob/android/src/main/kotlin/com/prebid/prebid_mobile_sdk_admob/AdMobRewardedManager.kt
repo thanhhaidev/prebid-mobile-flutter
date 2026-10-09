@@ -57,6 +57,8 @@ class AdMobRewardedManager(
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                // Reloading an adId replaces (and frees) its previous ad.
+                release(adId)
                 val configId = args?.get("configId") as? String ?: ""
                 val adMobAdUnitId = args?.get("adMobAdUnitId") as? String ?: ""
 
@@ -72,18 +74,22 @@ class AdMobRewardedManager(
                 ads[adId] = holder
 
                 adUnit.fetchDemand {
+                    // Destroyed / replaced while the auction ran: skip the load.
+                    if (ads[adId] !== holder) return@fetchDemand
                     RewardedAd.load(
                         activity,
                         adMobAdUnitId,
                         request,
                         object : RewardedAdLoadCallback() {
                             override fun onAdLoaded(ad: RewardedAd) {
+                                if (ads[adId] !== holder) return
                                 holder.rewarded = ad
                                 ad.fullScreenContentCallback = fullScreenCallback(adId)
                                 send(adId, "onAdLoaded")
                             }
 
                             override fun onAdFailedToLoad(error: LoadAdError) {
+                                if (ads[adId] !== holder) return
                                 holder.rewarded = null
                                 send(adId, "onAdFailed", error.message)
                             }
@@ -94,27 +100,48 @@ class AdMobRewardedManager(
             }
 
             "show" -> {
+                if (adId == null) {
+                    result.error("no_ad_id", "Missing adId", null)
+                    return
+                }
                 val activity = activityProvider()
-                val ad = adId?.let { ads[it]?.rewarded }
-                if (ad != null && activity != null) {
-                    ad.show(activity) { rewardItem ->
-                        val payload = mutableMapOf<String, Any?>(
-                            "adId" to adId,
-                            "type" to rewardItem.type,
-                            "count" to rewardItem.amount,
-                        )
-                        channel.invokeMethod("onUserEarnedReward", payload)
+                val ad = ads[adId]?.rewarded
+                when {
+                    ad == null ->
+                        send(adId, "onAdFailed", "The rewarded ad is not ready to show; wait for onAdLoaded")
+                    activity == null ->
+                        send(adId, "onAdFailed", "No attached Activity to show the rewarded ad")
+                    else -> {
+                        ad.show(activity) { rewardItem ->
+                            // Same reward keys as the GAM / MAX packages.
+                            val payload = mutableMapOf<String, Any?>(
+                                "adId" to adId,
+                                "rewardType" to rewardItem.type,
+                                "rewardCount" to rewardItem.amount,
+                            )
+                            channel.invokeMethod("onUserEarnedReward", payload)
+                        }
                     }
                 }
                 result.success(null)
             }
 
             "destroy" -> {
-                adId?.let { ads.remove(it)?.adUnit?.destroy() }
+                adId?.let { release(it) }
                 result.success(null)
             }
 
             else -> result.notImplemented()
+        }
+    }
+
+    /// Frees the ad for [adId]; its callbacks are detached so a late event
+    /// cannot be reported against a newer ad with the same id.
+    private fun release(adId: Long) {
+        ads.remove(adId)?.let {
+            it.rewarded?.fullScreenContentCallback = null
+            it.rewarded = null
+            it.adUnit.destroy()
         }
     }
 

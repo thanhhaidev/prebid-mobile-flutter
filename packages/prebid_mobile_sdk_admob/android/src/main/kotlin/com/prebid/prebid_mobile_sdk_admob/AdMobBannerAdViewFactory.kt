@@ -48,6 +48,11 @@ class AdMobBannerPlatformView(
     private val adView: AdView = AdView(context)
     private val methodChannel: MethodChannel
     private var adUnit: MediationBannerAdUnit? = null
+    private val request: AdRequest
+
+    // Set once Flutter disposes the view: an auction finishing later must not
+    // load into the destroyed AdView.
+    private var disposed = false
 
     init {
         val configId = params["configId"] as? String ?: ""
@@ -89,7 +94,7 @@ class AdMobBannerPlatformView(
 
         // Prebid targeting keywords are written into this Bundle by the adapter.
         val extras = Bundle()
-        val request = AdRequest.Builder()
+        request = AdRequest.Builder()
             .addNetworkExtrasBundle(PrebidBannerAdapter::class.java, extras)
             .build()
 
@@ -101,18 +106,34 @@ class AdMobBannerPlatformView(
             mediationUtils,
         )
 
-        if (autoLoad) {
-            adUnit?.fetchDemand {
-                // The bid (if any) is now attached to the request extras; let
-                // AdMob run its waterfall and render.
-                adView.loadAd(request)
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "loadAd" -> { load(); result.success(null) }
+                "stopRefresh" -> { adUnit?.stopRefresh(); result.success(null) }
+                else -> result.notImplemented()
             }
+        }
+
+        if (autoLoad) {
+            load()
+        }
+    }
+
+    private fun load() {
+        adUnit?.fetchDemand {
+            if (disposed) return@fetchDemand
+            // The bid (if any) is now attached to the request extras; let
+            // AdMob run its waterfall and render.
+            adView.loadAd(request)
         }
     }
 
     override fun getView(): View = adView
 
     override fun dispose() {
+        disposed = true
+        methodChannel.setMethodCallHandler(null)
         adUnit?.destroy()
         adUnit = null
         adView.destroy()

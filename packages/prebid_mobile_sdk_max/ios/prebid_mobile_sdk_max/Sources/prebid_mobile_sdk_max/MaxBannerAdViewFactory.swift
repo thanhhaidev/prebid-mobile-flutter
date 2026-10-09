@@ -83,11 +83,31 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
         )
         mediationAdUnit = adUnit
 
-        if autoLoad {
-            // 3. Fetch demand, then load the MAX banner.
-            adUnit.fetchDemand { [weak self] _ in
-                self?.maxAdBannerView.loadAd()
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "loadAd":
+                self?.load()
+                result(nil)
+            case "stopRefresh":
+                self?.mediationAdUnit?.stopRefresh()
+                self?.maxAdBannerView.stopAutoRefresh()
+                result(nil)
+            default:
+                result(FlutterMethodNotImplemented)
             }
+        }
+
+        if autoLoad {
+            load()
+        }
+    }
+
+    /// 3. Fetch demand, then load the MAX banner. The weak capture skips the
+    /// load when the view was disposed meanwhile.
+    private func load() {
+        mediationAdUnit?.fetchDemand { [weak self] _ in
+            self?.maxAdBannerView.loadAd()
         }
     }
 

@@ -22,6 +22,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     fun getActivity(): Activity? = activity
 
     private val interstitialAds = mutableMapOf<Long, org.prebid.mobile.api.rendering.InterstitialAdUnit>()
+    private lateinit var rewardedApi: RewardedAdHostApiImpl
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -32,7 +33,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         PrebidMobileHostApi.setUp(binding.binaryMessenger, this)
         TargetingHostApi.setUp(binding.binaryMessenger, this)
         InterstitialAdHostApi.setUp(binding.binaryMessenger, this)
-        RewardedAdHostApi.setUp(binding.binaryMessenger, RewardedAdHostApiImpl(flutterApi, this))
+        rewardedApi = RewardedAdHostApiImpl(flutterApi, this)
+        RewardedAdHostApi.setUp(binding.binaryMessenger, rewardedApi)
         NativeAdHostApi.setUp(binding.binaryMessenger, NativeAdHostApiImpl(flutterApi))
 
         // Register multiformat handler as separate class
@@ -60,6 +62,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         InstreamVideoAdHostApi.setUp(binding.binaryMessenger, null)
         PrebidMobile.setEventDelegate(null)
         eventDelegate = null
+        destroyFullscreenAds(reason = null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -70,7 +73,25 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
     }
-    override fun onDetachedFromActivity() { activity = null }
+    override fun onDetachedFromActivity() {
+        activity = null
+        // Fullscreen ad units hold the Activity they were built with; release
+        // them with it instead of leaking it until Dart calls destroy().
+        destroyFullscreenAds(reason = "The Activity was destroyed")
+    }
+
+    private fun destroyFullscreenAds(reason: String?) {
+        val ids = interstitialAds.keys.toList()
+        ids.forEach { interstitialAds.remove(it)?.destroy() }
+        val rewardedIds = rewardedApi.destroyAll()
+        if (reason != null) {
+            (ids + rewardedIds).forEach { sendAdFailed(it, reason) }
+        }
+    }
+
+    internal fun sendAdFailed(adId: Long, error: String) {
+        flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = error)) {}
+    }
 
     // =========================================================================
     // PrebidMobileHostApi
@@ -82,21 +103,34 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         callback: (Result<com.prebid.prebid_mobile_sdk.InitializationResult>) -> Unit
     ) {
         PrebidMobile.setPrebidServerAccountId(accountId)
+        // Prebid's SdkInitializer returns without calling the listener when the
+        // SDK is already initialized (e.g. after a Dart hot restart) or still
+        // initializing, which would leave this Future pending forever.
+        if (PrebidMobile.isSdkInitialized()) {
+            // Still applies the (possibly new) server URL; the listener is skipped.
+            PrebidMobile.initializeSdk(context, prebidServerUrl) {}
+            callback(Result.success(InitializationResult(status = "succeeded")))
+            return
+        }
+        pendingInitCallbacks += callback
+        if (pendingInitCallbacks.size > 1) return
         PrebidMobile.initializeSdk(context, prebidServerUrl) { status ->
             val statusStr = when (status) {
                 InitializationStatus.SUCCEEDED -> "succeeded"
                 InitializationStatus.SERVER_STATUS_WARNING -> "serverStatusWarning"
                 else -> "failed"
             }
-            val result = com.prebid.prebid_mobile_sdk.InitializationResult(
-                status = statusStr,
-                error = status.description
-            )
-            activity?.runOnUiThread {
-                callback(Result.success(result))
-            } ?: callback(Result.success(result))
+            val result = InitializationResult(status = statusStr, error = status.description)
+            mainHandler.post {
+                val callbacks = pendingInitCallbacks.toList()
+                pendingInitCallbacks.clear()
+                callbacks.forEach { it(Result.success(result)) }
+            }
         }
     }
+
+    private val pendingInitCallbacks =
+        mutableListOf<(Result<InitializationResult>) -> Unit>()
 
     override fun setTimeoutMillis(timeoutMillis: Long) {
         PrebidMobile.setTimeoutMillis(timeoutMillis.toInt())
@@ -244,7 +278,11 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
                 ExternalUserIdData(
                     source = source,
                     identifier = uniqueId.id ?: "",
-                    atype = uniqueId.atype?.toLong()
+                    atype = uniqueId.atype?.toLong(),
+                    ext = uniqueId.json?.optJSONObject("ext")?.toMap(),
+                    inserter = uid.inserter,
+                    matcher = uid.matcher,
+                    mm = uid.mm?.toLong(),
                 )
             } ?: emptyList()
         }
@@ -283,20 +321,22 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun getPurposeConsents(): String? = TargetingParams.getPurposeConsents()
     override fun getDeviceAccessConsent(): Boolean? = TargetingParams.getDeviceAccessConsent()
 
-    // US Privacy / CCPA
+    // US Privacy / CCPA. Prebid's UserConsentManager reads (and listens to)
+    // IABUSPrivacy_String in the default shared preferences, the IAB location.
     override fun setUSPrivacyString(value: String?) {
-        // Android SDK reads IABUSPrivacy_String from SharedPreferences, but we can store it
-        val prefs = context.getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE)
+        val prefs = defaultPreferences()
         if (value != null) {
             prefs.edit().putString("IABUSPrivacy_String", value).apply()
         } else {
             prefs.edit().remove("IABUSPrivacy_String").apply()
         }
     }
-    override fun getUSPrivacyString(): String? {
-        val prefs = context.getSharedPreferences("SharedPreferences", Context.MODE_PRIVATE)
-        return prefs.getString("IABUSPrivacy_String", null)
-    }
+    override fun getUSPrivacyString(): String? =
+        defaultPreferences().getString("IABUSPrivacy_String", null)
+
+    // Same file as the deprecated PreferenceManager.getDefaultSharedPreferences.
+    private fun defaultPreferences() =
+        context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
 
     override fun addUserKeyword(keyword: String) { TargetingParams.addUserKeyword(keyword) }
     override fun addUserKeywords(keywords: List<String>) { keywords.forEach { TargetingParams.addUserKeyword(it) } }
@@ -398,7 +438,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     // =========================================================================
 
     override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
-        val act = activity ?: return
+        // A reload replaces the previous unit; destroy it so it stops sending
+        // events under this ad id.
+        interstitialAds.remove(adId)?.destroy()
+        val act = activity ?: return sendAdFailed(adId, NO_ACTIVITY)
 
         // Build EnumSet for ad formats
         val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
@@ -454,13 +497,19 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     }
 
     override fun show(adId: Long) {
-        interstitialAds[adId]?.show()
+        val adUnit = interstitialAds[adId]
+        if (adUnit == null || !adUnit.isLoaded) return sendAdFailed(adId, NOT_READY)
+        adUnit.show()
     }
 
     override fun destroy(adId: Long) {
         interstitialAds.remove(adId)?.destroy()
     }
 
+    internal companion object {
+        const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
+        const val NOT_READY = "The ad is not loaded"
+    }
 }
 
 // =========================================================================
@@ -475,7 +524,9 @@ class RewardedAdHostApiImpl(
     private val rewardedAds = mutableMapOf<Long, org.prebid.mobile.api.rendering.RewardedAdUnit>()
 
     override fun loadAd(adId: Long, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
-        val act = plugin.getActivity() ?: return
+        rewardedAds.remove(adId)?.destroy()
+        val act = plugin.getActivity()
+            ?: return plugin.sendAdFailed(adId, PrebidMobileFlutterPlugin.NO_ACTIVITY)
         val adUnit = org.prebid.mobile.api.rendering.RewardedAdUnit(act, configId)
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
         controls?.applyTo(adUnit)
@@ -517,11 +568,22 @@ class RewardedAdHostApiImpl(
     }
 
     override fun show(adId: Long) {
-        rewardedAds[adId]?.show()
+        val adUnit = rewardedAds[adId]
+        if (adUnit == null || !adUnit.isLoaded) {
+            return plugin.sendAdFailed(adId, PrebidMobileFlutterPlugin.NOT_READY)
+        }
+        adUnit.show()
     }
 
     override fun destroy(adId: Long) {
         rewardedAds.remove(adId)?.destroy()
+    }
+
+    /// Destroys every rewarded unit and returns their ad ids.
+    fun destroyAll(): List<Long> {
+        val ids = rewardedAds.keys.toList()
+        ids.forEach { rewardedAds.remove(it)?.destroy() }
+        return ids
     }
 }
 
@@ -536,6 +598,7 @@ class NativeAdHostApiImpl(
     private val nativeAds = mutableMapOf<Long, org.prebid.mobile.NativeAdUnit>()
 
     override fun loadAd(adId: Long, config: NativeAdRequestConfig) {
+        destroy(adId)
         val nativeAdUnit = org.prebid.mobile.NativeAdUnit(config.configId)
 
         // Set context
@@ -634,7 +697,7 @@ class NativeAdHostApiImpl(
 
     override fun destroy(adId: Long) {
         nativeAds.remove(adId)?.destroy()
-        NativeAdStore.ads.remove(adId)
+        NativeAdStore.remove(adId)
     }
 }
 
@@ -782,7 +845,8 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
                 winningFormat = "video",
-                targetingKeywords = bidInfo.targetingKeywords?.mapKeys { it.key } ?: emptyMap()
+                targetingKeywords = bidInfo.targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
+                exp = bidInfo.exp?.toDouble(),
             )))
         }
     }

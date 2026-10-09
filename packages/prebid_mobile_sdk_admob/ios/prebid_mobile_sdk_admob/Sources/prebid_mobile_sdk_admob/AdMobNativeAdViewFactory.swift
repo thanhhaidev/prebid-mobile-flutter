@@ -85,7 +85,7 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
             guard let self = self else { return }
             let loader = AdLoader(
                 adUnitID: adMobAdUnitId,
-                rootViewController: UIApplication.shared.keyWindow?.rootViewController,
+                rootViewController: topViewController(),
                 adTypes: [.native],
                 options: nil
             )

@@ -38,6 +38,8 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
                 result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
                 return
             }
+            // Reloading an adId replaces its previous ad.
+            release(adId)
             let configId = args?["configId"] as? String ?? ""
             let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
 
@@ -51,9 +53,12 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
 
-            adUnit.fetchDemand { [weak self] _ in
-                RewardedAd.load(with: adMobAdUnitId, request: request) { [weak self] ad, error in
-                    guard let self = self else { return }
+            adUnit.fetchDemand { [weak self, weak adUnit] _ in
+                // Destroyed / replaced while the auction ran: skip the load.
+                guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
+                RewardedAd.load(with: adMobAdUnitId, request: request) { [weak self, weak adUnit] ad, error in
+                    // A late load must not re-insert an ad for a released adId.
+                    guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
                     if let error = error {
                         self.send(adId, "onAdFailed", error: error.localizedDescription)
                         return
@@ -68,33 +73,51 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
             result(nil)
 
         case "show":
-            if let adId = adId,
-               let ad = rewardedAds[adId],
-               let root = UIApplication.shared.keyWindow?.rootViewController {
-                ad.present(from: root) { [weak self] in
-                    let reward = ad.adReward
-                    self?.send(
-                        adId,
-                        "onUserEarnedReward",
-                        extra: ["type": reward.type, "count": reward.amount.intValue]
-                    )
-                }
+            guard let adId = adId else {
+                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
+                return
+            }
+            guard let ad = rewardedAds[adId] else {
+                send(adId, "onAdFailed", error: "The rewarded ad is not ready to show; wait for onAdLoaded")
+                result(nil)
+                return
+            }
+            guard let controller = topViewController() else {
+                send(adId, "onAdFailed", error: "No view controller to present the rewarded ad from")
+                result(nil)
+                return
+            }
+            ad.present(from: controller) { [weak self, weak ad] in
+                guard let reward = ad?.adReward else { return }
+                // Same reward keys as the GAM / MAX packages.
+                self?.send(
+                    adId,
+                    "onUserEarnedReward",
+                    extra: ["rewardType": reward.type, "rewardCount": reward.amount.intValue]
+                )
             }
             result(nil)
 
         case "destroy":
             if let adId = adId {
-                if let ad = rewardedAds.removeValue(forKey: adId) {
-                    adIdByAd.removeValue(forKey: ObjectIdentifier(ad))
-                }
-                adUnits.removeValue(forKey: adId)
-                mediationDelegates.removeValue(forKey: adId)
+                release(adId)
             }
             result(nil)
 
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    /// Drops everything held for `adId` (including the reverse map), so late
+    /// callbacks from the released ad are no longer forwarded.
+    private func release(_ adId: Int) {
+        if let ad = rewardedAds.removeValue(forKey: adId) {
+            ad.fullScreenContentDelegate = nil
+            adIdByAd.removeValue(forKey: ObjectIdentifier(ad))
+        }
+        adUnits.removeValue(forKey: adId)
+        mediationDelegates.removeValue(forKey: adId)
     }
 
     private func send(_ adId: Int, _ event: String, error: String? = nil, extra: [String: Any]? = nil) {

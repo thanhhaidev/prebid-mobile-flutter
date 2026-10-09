@@ -119,6 +119,15 @@ Pass `assets` / `eventTrackers` to change the requested native assets.
 Banner, interstitial and rewarded listeners also receive AdMob's
 `onAdImpression`.
 
+`PrebidAdMobBannerAd` takes a `PrebidBannerAdController` from the core package:
+with `autoLoad: false`, call `controller.loadAd()` to load on demand;
+`controller.stopRefresh()` stops Prebid's bid refresh.
+
+`show()` on an interstitial / rewarded ad that is not loaded yet, or when no
+foreground Activity / view controller is available, reports `onAdFailed`
+instead of failing silently; `isLoaded` turns false after `show()`,
+`onAdClosed` and `onAdFailed`.
+
 `PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
 `PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
 `NativeEventTracker` come from the core
@@ -144,7 +153,7 @@ Skip controls apply to interstitials (and to rewarded on Android only);
 
 | Class | Description |
 |---|---|
-| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. |
+| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController`. |
 | `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`. |
 | `PrebidAdMobRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`. |
 | `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`. |

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -99,14 +97,15 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    if (!kIsWeb && Platform.isAndroid) {
+    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         viewType: 'prebid_mobile_sdk_admob/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         viewType: 'prebid_mobile_sdk_admob/native',
         creationParams: creationParams,
@@ -119,6 +118,7 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
 
   void _onCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_admob/native_$viewId');
+    _channel = channel;
     final l = widget.listener;
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
@@ -137,5 +137,13 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
           l?.onAdFailed?.call(call.arguments as String? ?? '');
       }
     });
+  }
+
+  MethodChannel? _channel;
+
+  @override
+  void dispose() {
+    _channel?.setMethodCallHandler(null);
+    super.dispose();
   }
 }

@@ -89,7 +89,7 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
             }
             let loader = AdLoader(
                 adUnitID: self.gamAdUnitId,
-                rootViewController: UIApplication.shared.keyWindow?.rootViewController,
+                rootViewController: topViewController(),
                 adTypes: adTypes,
                 options: []
             )

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -94,14 +92,15 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    if (!kIsWeb && Platform.isAndroid) {
+    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         viewType: 'prebid_mobile_sdk_max/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onCreated,
       );
-    } else if (!kIsWeb && Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         viewType: 'prebid_mobile_sdk_max/native',
         creationParams: creationParams,
@@ -114,6 +113,7 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
 
   void _onCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_max/native_$viewId');
+    _channel = channel;
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':
@@ -129,5 +129,13 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
           widget.listener?.onAdImpression?.call();
       }
     });
+  }
+
+  MethodChannel? _channel;
+
+  @override
+  void dispose() {
+    _channel?.setMethodCallHandler(null);
+    super.dispose();
   }
 }

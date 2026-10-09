@@ -84,6 +84,7 @@ class PrebidMaxInterstitialAd {
   /// Requests the ad. [PrebidInterstitialAdListener.onAdLoaded] fires when it is
   /// ready to [show].
   Future<void> loadAd() async {
+    _loaded = false;
     _MaxInterstitialRouter.instance.register(_adId, this);
     await _channel.invokeMethod('load', {
       'adId': _adId,
@@ -94,11 +95,17 @@ class PrebidMaxInterstitialAd {
     });
   }
 
-  /// Presents the loaded interstitial fullscreen.
-  Future<void> show() => _channel.invokeMethod('show', {'adId': _adId});
+  /// Presents the loaded interstitial fullscreen. An ad shows once, so [isLoaded]
+  /// turns false; if it cannot be shown (not loaded yet, no foreground
+  /// activity / view controller) the listener's `onAdFailed` fires.
+  Future<void> show() {
+    _loaded = false;
+    return _channel.invokeMethod('show', {'adId': _adId});
+  }
 
   /// Releases native resources held by this ad.
   Future<void> destroy() async {
+    _loaded = false;
     _MaxInterstitialRouter.instance.unregister(_adId);
     await _channel.invokeMethod('destroy', {'adId': _adId});
   }
@@ -109,10 +116,12 @@ class PrebidMaxInterstitialAd {
         _loaded = true;
         listener?.onAdLoaded?.call();
       case 'onAdFailed':
+        _loaded = false;
         listener?.onAdFailed?.call(args?['error'] as String? ?? '');
       case 'onAdDisplayed':
         listener?.onAdDisplayed?.call();
       case 'onAdClosed':
+        _loaded = false;
         listener?.onAdClosed?.call();
       case 'onAdClicked':
         listener?.onAdClicked?.call();

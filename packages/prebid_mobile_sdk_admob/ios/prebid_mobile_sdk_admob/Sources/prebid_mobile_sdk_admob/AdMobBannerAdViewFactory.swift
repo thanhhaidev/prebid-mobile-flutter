@@ -39,6 +39,7 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
     private let gadBanner: GoogleMobileAds.BannerView
     private let methodChannel: FlutterMethodChannel
     private let adSize: CGSize
+    private let gadRequest = Request()
 
     // Retained for the lifetime of the view — the auction runs through these.
     private var mediationDelegate: AdMobMediationBannerUtils?
@@ -63,15 +64,14 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
             binaryMessenger: messenger
         )
 
-        // 1. Create the GMA request and banner view.
-        let gadRequest = Request()
+        // 1. Create the GMA banner view (the request is a stored property).
         gadBanner = GoogleMobileAds.BannerView(adSize: adSizeFor(cgSize: adSize))
         gadBanner.adUnitID = adMobAdUnitId
 
         super.init()
 
         gadBanner.delegate = self
-        gadBanner.rootViewController = UIApplication.shared.keyWindow?.rootViewController
+        gadBanner.rootViewController = topViewController()
 
         // 2. Prebid mediation utils + ad unit.
         let mediationDelegate = AdMobMediationBannerUtils(gadRequest: gadRequest, bannerView: gadBanner)
@@ -83,11 +83,32 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
         )
         mediationAdUnit = adUnit
 
-        if autoLoad {
-            // 3. Fetch demand, then let AdMob run its waterfall and render.
-            adUnit.fetchDemand { [weak self] _ in
-                self?.gadBanner.load(gadRequest)
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "loadAd":
+                self?.load()
+                result(nil)
+            case "stopRefresh":
+                self?.mediationAdUnit?.stopRefresh()
+                result(nil)
+            default:
+                result(FlutterMethodNotImplemented)
             }
+        }
+
+        if autoLoad {
+            load()
+        }
+    }
+
+    /// 3. Fetch demand, then let AdMob run its waterfall and render. The weak
+    /// capture skips the load when the view was disposed meanwhile.
+    private func load() {
+        mediationAdUnit?.fetchDemand { [weak self] _ in
+            guard let self = self else { return }
+            self.gadBanner.rootViewController = topViewController()
+            self.gadBanner.load(self.gadRequest)
         }
     }
 

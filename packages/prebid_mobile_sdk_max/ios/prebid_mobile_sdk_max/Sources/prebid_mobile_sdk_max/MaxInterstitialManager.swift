@@ -4,17 +4,66 @@ import PrebidMobile
 import PrebidMobileMAXAdapters
 import AppLovinSDK
 
+/// Per-ad MAX delegate. `MAAd` carries only the ad unit identifier, so two ads
+/// on the same unit could not be told apart by a shared delegate; each MAX ad
+/// object instead gets its own proxy that already knows its `adId`. MAX holds
+/// delegates weakly, so the managers retain the proxies.
+final class MaxAdEventProxy: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
+
+    private let emit: (_ event: String, _ payload: [String: Any]) -> Void
+
+    init(emit: @escaping (_ event: String, _ payload: [String: Any]) -> Void) {
+        self.emit = emit
+        super.init()
+    }
+
+    func didLoad(_ ad: MAAd) {
+        emit("onAdLoaded", [:])
+    }
+
+    func didFailToLoadAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
+        emit("onAdFailed", ["error": error.message])
+    }
+
+    func didDisplay(_ ad: MAAd) {
+        emit("onAdDisplayed", [:])
+    }
+
+    func didHide(_ ad: MAAd) {
+        emit("onAdClosed", [:])
+    }
+
+    func didClick(_ ad: MAAd) {
+        emit("onAdClicked", [:])
+    }
+
+    func didFail(toDisplay ad: MAAd, withError error: MAError) {
+        emit("onAdFailed", ["error": error.message])
+    }
+
+    // MAX reports revenue when the impression is recorded.
+    func didPayRevenue(for ad: MAAd) {
+        emit("onAdImpression", [:])
+    }
+
+    // Rewarded only; same reward keys as the GAM / AdMob packages.
+    func didRewardUser(for ad: MAAd, with reward: MAReward) {
+        emit("onUserEarnedReward", ["rewardType": reward.label, "rewardCount": reward.amount])
+    }
+}
+
 /// Handles MAX-mediated interstitials over the
 /// `prebid_mobile_sdk_max/interstitial` method channel. Each ad is keyed by an
 /// `adId` allocated on the Dart side; native events are pushed back over the
 /// same channel.
-class MaxInterstitialManager: NSObject, MAAdDelegate, MAAdRevenueDelegate {
+class MaxInterstitialManager: NSObject {
 
     private let channel: FlutterMethodChannel
 
     private var adUnits: [Int: MediationInterstitialAdUnit] = [:]
     private var mediationDelegates: [Int: MAXMediationInterstitialUtils] = [:]
     private var interstitials: [Int: MAInterstitialAd] = [:]
+    private var proxies: [Int: MaxAdEventProxy] = [:]
 
     init(messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(
@@ -37,6 +86,8 @@ class MaxInterstitialManager: NSObject, MAAdDelegate, MAAdRevenueDelegate {
                 result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
                 return
             }
+            // Reloading an adId replaces its previous ad.
+            release(adId)
             let configId = args?["configId"] as? String ?? ""
             let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
             let isVideo = args?["isVideo"] as? Bool ?? false
@@ -53,29 +104,46 @@ class MaxInterstitialManager: NSObject, MAAdDelegate, MAAdRevenueDelegate {
             adUnit.adFormats = isVideo ? [.video] : [.banner]
             controls?.apply(to: adUnit)
 
-            interstitial.delegate = self
-            interstitial.revenueDelegate = self
+            let proxy = MaxAdEventProxy { [weak self] event, payload in
+                self?.send(adId, event, payload)
+            }
+            interstitial.delegate = proxy
+            interstitial.revenueDelegate = proxy
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
             interstitials[adId] = interstitial
+            proxies[adId] = proxy
 
-            // 2. Fetch demand, then load the MAX interstitial.
-            adUnit.fetchDemand { [weak self] _ in
-                self?.interstitials[adId]?.load()
+            // 2. Fetch demand, then load the MAX interstitial (unless it was
+            // destroyed / replaced while the auction ran).
+            adUnit.fetchDemand { [weak self, weak interstitial] _ in
+                guard let self = self, let interstitial = interstitial,
+                      self.interstitials[adId] === interstitial else { return }
+                interstitial.load()
             }
             result(nil)
 
         case "show":
-            if let adId = adId, let interstitial = interstitials[adId], interstitial.isReady {
-                interstitial.show()
+            guard let adId = adId else {
+                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
+                return
             }
+            guard let interstitial = interstitials[adId], interstitial.isReady else {
+                send(adId, "onAdFailed", ["error": "The interstitial is not ready to show; wait for onAdLoaded"])
+                result(nil)
+                return
+            }
+            guard let controller = topViewController() else {
+                send(adId, "onAdFailed", ["error": "No view controller to present the interstitial from"])
+                result(nil)
+                return
+            }
+            interstitial.show(forPlacement: nil, customData: nil, viewController: controller)
             result(nil)
 
         case "destroy":
             if let adId = adId {
-                interstitials.removeValue(forKey: adId)
-                adUnits.removeValue(forKey: adId)
-                mediationDelegates.removeValue(forKey: adId)
+                release(adId)
             }
             result(nil)
 
@@ -84,66 +152,21 @@ class MaxInterstitialManager: NSObject, MAAdDelegate, MAAdRevenueDelegate {
         }
     }
 
-    private func send(_ adId: Int, _ event: String, error: String? = nil) {
+    /// Drops everything held for `adId`; releasing the proxy detaches the
+    /// (weak) MAX delegates so late callbacks are no longer forwarded.
+    private func release(_ adId: Int) {
+        if let interstitial = interstitials.removeValue(forKey: adId) {
+            interstitial.delegate = nil
+            interstitial.revenueDelegate = nil
+        }
+        proxies.removeValue(forKey: adId)
+        adUnits.removeValue(forKey: adId)
+        mediationDelegates.removeValue(forKey: adId)
+    }
+
+    private func send(_ adId: Int, _ event: String, _ extra: [String: Any] = [:]) {
         var payload: [String: Any] = ["adId": adId]
-        if let error = error {
-            payload["error"] = error
-        }
+        payload.merge(extra) { _, new in new }
         channel.invokeMethod(event, arguments: payload)
-    }
-
-    // MARK: - MAAdDelegate
-
-    func didLoad(_ ad: MAAd) {
-        // MAAd does not carry the ad unit instance; resolve by unit identifier.
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdLoaded")
-        }
-    }
-
-    func didFailToLoadAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
-        if let adId = adId(forAdUnitIdentifier: adUnitIdentifier) {
-            send(adId, "onAdFailed", error: error.message)
-        }
-    }
-
-    func didDisplay(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdDisplayed")
-        }
-    }
-
-    func didHide(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdClosed")
-        }
-    }
-
-    // MAX reports revenue when the impression is recorded.
-    func didPayRevenue(for ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdImpression")
-        }
-    }
-
-    func didClick(_ ad: MAAd) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdClicked")
-        }
-    }
-
-    func didFail(toDisplay ad: MAAd, withError error: MAError) {
-        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
-            send(adId, "onAdFailed", error: error.message)
-        }
-    }
-
-    /// Resolves the owning `adId` from a MAX ad unit identifier.
-    private func adId(forAdUnitIdentifier identifier: String) -> Int? {
-        for (adId, interstitial) in interstitials
-        where interstitial.adUnitIdentifier == identifier {
-            return adId
-        }
-        return nil
     }
 }

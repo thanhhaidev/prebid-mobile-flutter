@@ -59,6 +59,8 @@ class AdMobInterstitialManager(
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                // Reloading an adId replaces (and frees) its previous ad.
+                release(adId)
                 val configId = args?.get("configId") as? String ?: ""
                 val adMobAdUnitId = args?.get("adMobAdUnitId") as? String ?: ""
                 val isVideo = args?.get("isVideo") as? Boolean ?: false
@@ -81,18 +83,22 @@ class AdMobInterstitialManager(
                 ads[adId] = holder
 
                 adUnit.fetchDemand {
+                    // Destroyed / replaced while the auction ran: skip the load.
+                    if (ads[adId] !== holder) return@fetchDemand
                     InterstitialAd.load(
                         activity,
                         adMobAdUnitId,
                         request,
                         object : InterstitialAdLoadCallback() {
                             override fun onAdLoaded(ad: InterstitialAd) {
+                                if (ads[adId] !== holder) return
                                 holder.interstitial = ad
                                 ad.fullScreenContentCallback = fullScreenCallback(adId)
                                 send(adId, "onAdLoaded")
                             }
 
                             override fun onAdFailedToLoad(error: LoadAdError) {
+                                if (ads[adId] !== holder) return
                                 holder.interstitial = null
                                 send(adId, "onAdFailed", error.message)
                             }
@@ -103,20 +109,40 @@ class AdMobInterstitialManager(
             }
 
             "show" -> {
+                if (adId == null) {
+                    result.error("no_ad_id", "Missing adId", null)
+                    return
+                }
                 val activity = activityProvider()
-                val ad = adId?.let { ads[it]?.interstitial }
-                if (ad != null && activity != null) {
-                    ad.show(activity)
+                val ad = ads[adId]?.interstitial
+                when {
+                    ad == null ->
+                        send(adId, "onAdFailed", "The interstitial is not ready to show; wait for onAdLoaded")
+                    activity == null ->
+                        send(adId, "onAdFailed", "No attached Activity to show the interstitial")
+                    else -> {
+                        ad.show(activity)
+                    }
                 }
                 result.success(null)
             }
 
             "destroy" -> {
-                adId?.let { ads.remove(it)?.adUnit?.destroy() }
+                adId?.let { release(it) }
                 result.success(null)
             }
 
             else -> result.notImplemented()
+        }
+    }
+
+    /// Frees the ad for [adId]; its callbacks are detached so a late event
+    /// cannot be reported against a newer ad with the same id.
+    private fun release(adId: Long) {
+        ads.remove(adId)?.let {
+            it.interstitial?.fullScreenContentCallback = null
+            it.interstitial = null
+            it.adUnit.destroy()
         }
     }
 

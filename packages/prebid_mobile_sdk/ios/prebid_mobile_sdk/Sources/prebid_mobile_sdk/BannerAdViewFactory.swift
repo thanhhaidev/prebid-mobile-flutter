@@ -75,14 +75,20 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
         } else if isVideo {
             bannerView.adFormats = [.video]
         }
-        if let placement = videoPlacement.flatMap(signalsPlacement) {
-            bannerView.videoParameters.placement = placement
+        // Same default as Android: a video banner is in-banner placement.
+        if bannerView.adFormats.contains(.video) {
+            bannerView.videoParameters.placement =
+                videoPlacement.flatMap(signalsPlacement) ?? .InBanner
         }
         if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
 
+        // iOS defaults to a 60s refresh (Android: none) and clamps 0 up to 15s;
+        // a negative value is what disables it.
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)
+        } else {
+            bannerView.refreshInterval = -1
         }
 
         bannerView.delegate = self
@@ -107,6 +113,11 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
         }
     }
 
+    deinit {
+        methodChannel.setMethodCallHandler(nil)
+        bannerView.stopRefresh()
+    }
+
     func view() -> UIView {
         return bannerView
     }
@@ -114,7 +125,7 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
     // MARK: - BannerViewDelegate
 
     func bannerViewPresentationController() -> UIViewController? {
-        return UIApplication.shared.keyWindow?.rootViewController
+        return PrebidPresenter.topViewController()
     }
 
     func bannerView(_ bannerView: BannerView, didReceiveAdWithAdSize adSize: CGSize) {

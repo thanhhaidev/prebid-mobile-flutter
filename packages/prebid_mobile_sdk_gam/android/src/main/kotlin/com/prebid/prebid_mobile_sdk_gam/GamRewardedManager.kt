@@ -43,6 +43,8 @@ class GamRewardedManager(
                     result.error("no_ad_id", "Missing adId", null)
                     return
                 }
+                // Reloading an adId replaces (and frees) its previous ad unit.
+                ads.remove(adId)?.destroy()
                 val configId = args?.get("configId") as? String ?: ""
                 val gamAdUnitId = args?.get("gamAdUnitId") as? String ?: ""
 
@@ -82,7 +84,19 @@ class GamRewardedManager(
             }
 
             "show" -> {
-                ads[adId]?.show()
+                if (adId == null) {
+                    result.error("no_ad_id", "Missing adId", null)
+                    return
+                }
+                val adUnit = ads[adId]
+                when {
+                    adUnit == null || !adUnit.isLoaded ->
+                        send(adId, "onAdFailed", "The rewarded ad is not ready to show; wait for onAdLoaded")
+                    // Prebid shows from the Activity the ad unit was loaded with.
+                    activityProvider() == null ->
+                        send(adId, "onAdFailed", "No attached Activity to show the rewarded ad")
+                    else -> adUnit.show()
+                }
                 result.success(null)
             }
 

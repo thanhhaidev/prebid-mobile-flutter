@@ -1,5 +1,8 @@
 /// Google Ad Manager (GAM) **rendering** integration for Prebid Mobile Flutter.
 ///
+/// Unofficial: an independent, community-maintained project, not affiliated
+/// with or endorsed by Prebid.org.
+///
 /// This optional companion package lets Google Ad Manager render the ad while
 /// Prebid demand competes in the same auction, using Prebid's GAM
 /// [event handlers](https://docs.prebid.org/prebid-mobile/pbm-api/android/pbm-ad-unit-banner-android.html).

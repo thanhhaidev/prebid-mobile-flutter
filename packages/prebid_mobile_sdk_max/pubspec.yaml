@@ -1,9 +1,10 @@
 name: prebid_mobile_sdk_max
-description: "AppLovin MAX mediation for the Prebid Mobile Flutter SDK, via Prebid's MAX adapters. Optional companion to prebid_mobile_sdk."
+description: "Unofficial AppLovin MAX mediation for prebid_mobile_sdk, via Prebid's MAX adapters. Optional companion package."
 version: 1.0.0
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
 repository: https://github.com/thanhhaidev/prebid-mobile-flutter
 issue_tracker: https://github.com/thanhhaidev/prebid-mobile-flutter/issues
+documentation: https://thanhhaidev.github.io/prebid-mobile-flutter/docs/max
 
 topics:
   - ads

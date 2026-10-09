@@ -1,5 +1,8 @@
 /// Prebid Mobile Flutter Plugin.
 ///
+/// Unofficial: an independent, community-maintained project, not affiliated
+/// with or endorsed by Prebid.org.
+///
 /// A comprehensive Flutter wrapper for the Prebid Mobile SDK,
 /// supporting both Android and iOS platforms.
 ///

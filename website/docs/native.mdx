@@ -1,0 +1,111 @@
+---
+title: Native
+description: Load Prebid native ads, render them with PrebidNativeAdView and read every asset.
+---
+
+# Native
+
+`PrebidNativeAd` runs the auction and parses the native response. `PrebidNativeAdView` renders it in a native view and registers it with Prebid, so impressions and clicks are tracked.
+
+```dart
+class NativeSlot extends StatefulWidget {
+  const NativeSlot({super.key});
+
+  @override
+  State<NativeSlot> createState() => _NativeSlotState();
+}
+
+class _NativeSlotState extends State<NativeSlot> {
+  var _loaded = false;
+  late final PrebidNativeAd _ad = PrebidNativeAd(
+    configId: 'prebid-demo-banner-native-styles',
+    listener: PrebidNativeAdListener(
+      onAdLoaded: (response) => setState(() => _loaded = true),
+      onAdFailed: (error) => debugPrint('native failed: $error'),
+      onAdImpression: () => debugPrint('impression'),
+      onAdClicked: () => debugPrint('click'),
+    ),
+  )..loadAd();
+
+  @override
+  void dispose() {
+    _ad.destroy();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _loaded ? PrebidNativeAdView(ad: _ad) : const SizedBox.shrink();
+}
+```
+
+The view lays out the main image, icon, sponsored line, title, body and call to action, and grows to the rendered height. Reloading the ad (`loadAd()` again) shows the new ad in the view already on screen.
+
+## Requested assets
+
+Without `assets`, the ad requests title, main image, icon, sponsored, description and call to action (`PrebidNativeAd.defaultAssets`). Pass your own list to change it:
+
+```dart
+PrebidNativeAd(
+  configId: 'your-config-id',
+  assets: const [
+    NativeAsset.title(length: 90, required: true),
+    NativeAsset.image(imageType: NativeImageType.main, widthMin: 300, heightMin: 150, required: true),
+    NativeAsset.image(imageType: NativeImageType.icon, width: 50, height: 50),
+    NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+    NativeAsset.data(dataType: NativeDataType.desc),
+    NativeAsset.data(dataType: NativeDataType.ctaText),
+    NativeAsset.data(dataType: NativeDataType.rating),
+  ],
+  eventTrackers: const [
+    NativeEventTracker(
+      eventType: NativeEventType.impression,
+      methods: [NativeEventTrackingMethod.image, NativeEventTrackingMethod.js],
+    ),
+  ],
+  context: NativeContextType.socialCentric,
+  contextSubType: NativeContextSubType.social,
+  placementType: NativePlacementType.inFeed,
+);
+```
+
+| Parameter | Description |
+| --- | --- |
+| `assets` | `NativeAsset.title`, `.image` and `.data` entries. |
+| `eventTrackers` | Impression / viewability trackers to request. |
+| `context`, `contextSubType`, `placementType` | Where the ad appears (OpenRTB Native 1.2). |
+| `placementCount` | Number of identical placements. |
+| `pbAdSlot`, `gpid`, `impOrtbConfig` | Ad slot, GPID and impression-level OpenRTB JSON. |
+
+If a creative references assets by ID, call `PrebidMobile.setShouldAssignNativeAssetId(true)` so the request numbers them sequentially.
+
+## Reading the response
+
+`onAdLoaded` receives a `PrebidNativeAdResponse`, for apps that build their own layout or log the ad:
+
+| Field | Content |
+| --- | --- |
+| `title`, `text`, `sponsoredBy`, `callToAction` | The main text assets. |
+| `iconUrl`, `imageUrl` | Icon and main image URLs. |
+| `clickUrl` | The click-through URL. |
+| `privacyUrl` | The AdChoices link, when the bid has one. |
+| `titles`, `images`, `dataAssets` | Every asset of each kind (`PrebidNativeImage.type`, `PrebidNativeData.type`). |
+| `dataOf(NativeDataType)` | The values of one data type, e.g. `dataOf(NativeDataType.rating)`. |
+
+Impressions and clicks are only tracked for an ad shown in a `PrebidNativeAdView`; a layout built from the raw assets is not registered with Prebid.
+
+## Impressions
+
+`onAdImpression` follows the IAB viewability rule Prebid applies before it fires the impression trackers: at least half of the view on screen for one second. It fires once per loaded ad, also when the bid carries no impression trackers.
+
+| Callback | When |
+| --- | --- |
+| `onAdLoaded(PrebidNativeAdResponse)` | The native response was parsed. |
+| `onAdFailed(String)` | No bid, a parse error, or the SDK isn't initialized. |
+| `onAdImpression` | The view was viewable for one second. |
+| `onAdClicked` | The user tapped an asset of the view. |
+| `onAdExpired` | The bid expired before it was shown; the view stays empty. Load again. |
+
+## Original API native
+
+To let your ad server render native demand (GAM custom native formats), use [`PrebidNativeAdUnit`](/docs/original-api#native) or the [GAM native](/docs/gam#native) widget.

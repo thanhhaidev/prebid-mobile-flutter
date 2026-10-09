@@ -1,0 +1,82 @@
+---
+title: Targeting
+description: Keywords, first-party data, global OpenRTB config, app information and location for Prebid requests.
+---
+
+# Targeting
+
+`PrebidTargeting` attaches first-party data to every bid request. All methods are static and return `Future`s.
+
+## Keywords
+
+```dart
+await PrebidTargeting.addUserKeywords({'sports', 'football'});
+await PrebidTargeting.addAppKeyword('news');
+final keywords = await PrebidTargeting.getUserKeywords();
+```
+
+| Methods | Request field |
+| --- | --- |
+| `addUserKeyword`, `addUserKeywords`, `removeUserKeyword`, `clearUserKeywords`, `getUserKeywords` | `user.keywords` |
+| `addAppKeyword`, `addAppKeywords`, `removeAppKeyword`, `clearAppKeywords` | `app.keywords` |
+
+## First-party data
+
+```dart
+await PrebidTargeting.addUserExtData(key: 'interests', value: 'cycling');
+await PrebidTargeting.updateAppExtData(key: 'section', value: {'sports', 'news'});
+await PrebidTargeting.removeAppExtData('section');
+```
+
+| Methods | Request field |
+| --- | --- |
+| `addUserExtData`, `updateUserExtData`, `removeUserExtData`, `clearUserExtData` | `user.ext.data` |
+| `addAppExtData`, `updateAppExtData`, `removeAppExtData`, `clearAppExtData` | `app.ext.data` |
+
+`add…` appends a value to a key; `update…` replaces all values of a key.
+
+## Access control list
+
+Only bidders on the list receive the first-party data above (`ext.prebid.data.bidders`):
+
+```dart
+await PrebidTargeting.addBidderToAccessControlList('appnexus');
+await PrebidTargeting.removeBidderFromAccessControlList('appnexus');
+await PrebidTargeting.clearAccessControlList();
+```
+
+## Global OpenRTB config
+
+Arbitrary OpenRTB JSON merged into every request:
+
+```dart
+await PrebidTargeting.setGlobalOrtbConfig('{"ext":{"prebid":{"debug":1}}}');
+```
+
+For a single ad unit, pass `impOrtbConfig` to the ad instead; it is merged into that ad's `imp`. This is also how to set a GPID where there is no dedicated parameter: `'{"ext":{"gpid":"/1111/home"}}'`.
+
+## App information
+
+| Method | Request field |
+| --- | --- |
+| `setContentUrl(String?)` | `app.content.url` |
+| `setPublisherName(String?)` | `app.publisher.name` |
+| `setStoreUrl(String?)` | `app.storeurl` |
+| `setDomain(String?)` | `app.domain` |
+| `setOmidPartnerName(String?)`, `setOmidPartnerVersion(String?)` | `source.ext.omidpn`, `source.ext.omidpv` |
+| `setSourceApp(String?)` <Only platform="ios" /> | SKAdNetwork `sourceapp` |
+| `setItunesId(String?)` <Only platform="ios" /> | Your app's iTunes ID, needed for SKAdNetwork bids when `Info.plist` lists `SKAdNetworkItems` |
+
+## Location
+
+```dart
+await PrebidMobile.setShareGeoLocation(true);
+await PrebidTargeting.setUserLatLng(37.7749, -122.4194);
+await PrebidTargeting.setLocationPrecision(2); // decimal places, null = full
+```
+
+`setUserLatLng` sets `user.geo`; `setShareGeoLocation` lets the SDK send the device's location (`device.geo`) when the app has location permission.
+
+## User IDs
+
+External identity providers' IDs and Prebid's SharedID are set on `PrebidMobile`: see [Configuration](/docs/configuration#external-user-ids).

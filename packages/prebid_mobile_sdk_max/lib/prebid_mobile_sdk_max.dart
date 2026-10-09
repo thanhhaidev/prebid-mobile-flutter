@@ -1,5 +1,8 @@
 /// AppLovin **MAX mediation** integration for Prebid Mobile Flutter.
 ///
+/// Unofficial: an independent, community-maintained project, not affiliated
+/// with or endorsed by Prebid.org.
+///
 /// This optional companion package competes Prebid demand inside the AppLovin
 /// MAX mediation waterfall, using Prebid's
 /// [MAX adapters](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-max.html).

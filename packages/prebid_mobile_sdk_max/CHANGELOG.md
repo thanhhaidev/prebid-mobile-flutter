@@ -1,18 +1,22 @@
-## 1.0.0 - 2026-10-10
+# Changelog
 
-* Initial release: AppLovin MAX mediation for `prebid_mobile_sdk`.
-* `PrebidMaxBannerAd` — MAX-mediated banner (Android + iOS) with dynamic sizing and
-  `PrebidBannerAdController` (`loadAd` / `stopRefresh`).
-* `PrebidMaxInterstitialAd` — MAX-mediated interstitial (Android + iOS).
-* `PrebidMaxRewardedAd` — MAX-mediated rewarded (Android + iOS) with reward callback; one active
-  ad per MAX ad unit (MAX shares the rewarded instance).
-* `PrebidMaxNativeAd` — MAX-mediated native (Android + iOS), rendered via the SDK native ad view.
-  Events via `PrebidMaxNativeAdListener`; request `assets` / `eventTrackers` are configurable.
-* Banner / interstitial / rewarded / native report `onAdImpression` (from MAX's revenue callback);
-  interstitial / rewarded accept `PrebidFullscreenControls` (`supportSKOverlay` has no mediation
-  equivalent and is ignored).
-* Interstitial / rewarded: `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video).
-* Banner takes `adPosition` and `impOrtbConfig`; interstitial / rewarded take `impOrtbConfig` (also how to set the GPID: `ext.gpid`); native takes `context` / `contextSubType` / `placementType`.
-* Banner: a 300x250 slot loads with MAX's MREC format (MREC ad units are rejected by the banner format).
-* Banner widgets re-attach a swapped `PrebidBannerAdController` and recreate the native view when their configuration changes.
-* Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).
+All notable changes to this package are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-10-10
+
+First stable release: Prebid demand in AppLovin MAX mediation through Prebid's
+MAX adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
+1.0.0 and an initialized AppLovin SDK.
+
+### Added
+
+- Banner (including 300x250 MREC), interstitial, rewarded and native ads
+  mediated by MAX, with MAX's impression events.
+- Banners that resize to the rendered creative and can load on demand.
+- Rendering controls and video signals for interstitial and rewarded ads;
+  one rewarded ad per MAX ad unit, as MAX shares the rewarded ad object.
+- Native ads rendered in MAX's native ad view, with configurable assets and
+  context.
+- Ad position and per-impression OpenRTB configuration, including the GPID.

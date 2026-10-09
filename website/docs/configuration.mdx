@@ -1,0 +1,94 @@
+---
+title: Configuration
+description: Initialize the Prebid SDK and set global options such as timeouts, Prebid Server flags, external user IDs and SharedID.
+---
+
+# Configuration
+
+`PrebidMobile` holds the global SDK settings. Every setter returns a `Future` that completes once the native SDK has applied the value; settings apply to every request made afterwards.
+
+## Initialization
+
+```dart
+await PrebidMobile.initializeSdk(
+  prebidServerUrl: 'https://your-pbs.example.com/openrtb2/auction',
+  accountId: 'your-account-id',
+  nonTrackingUrl: 'https://your-pbs-no-tracking.example.com/openrtb2/auction', // iOS
+  completion: (status, error) => debugPrint('Prebid: $status $error'),
+);
+```
+
+| Status | Meaning |
+| --- | --- |
+| `InitializationStatus.succeeded` | Ready. Also reported when the status check is disabled. |
+| `InitializationStatus.serverStatusWarning` | Prebid Server's `/status` endpoint didn't answer as expected; requests still go out. |
+| `InitializationStatus.failed` | The SDK couldn't initialize (for example an invalid server URL). |
+
+- Calling `initializeSdk` again (for example after a hot restart) completes immediately and applies the new server URL.
+- `nonTrackingUrl` <Only platform="ios" /> is used instead of `prebidServerUrl` while the user hasn't authorized tracking (App Tracking Transparency).
+- `PrebidMobile.isSdkInitialized` tells whether initialization completed with a usable status.
+- Call `setDisableStatusCheck(true)` **before** `initializeSdk` to skip the `/status` request.
+
+## Requests
+
+| Method | Description |
+| --- | --- |
+| `setTimeoutMillis(int)` | Bid request timeout in milliseconds. |
+| `setCustomHeaders(Map<String, String>)` | Extra HTTP headers on every bid request. |
+| `setShareGeoLocation(bool)` | Send the device location when the app has location permission. |
+| `setPbsDebug(bool)` | Ask Prebid Server for debug output (`test: 1`). |
+| `setCustomStatusEndpoint(String)` | Override the `/status` URL used at initialization. |
+| `setLogLevel(PrebidLogLevel)` | Native SDK log verbosity: `debug`, `verbose`, `info`, `warn`, `error`, `severe`. |
+
+## Prebid Server flags
+
+| Method | Request field |
+| --- | --- |
+| `setIncludeWinners(bool)` | `ext.prebid.targeting.includewinners` |
+| `setIncludeBidderKeys(bool)` | `ext.prebid.targeting.includebidderkeys` |
+| `setAuctionSettingsId(String?)` | Request-level stored request ID (`ext.prebid.storedrequest.id`), the account ID by default |
+| `setFilterOutUncachedBids(bool)` | Drop bids whose Prebid Cache entry failed and promote the next cached bid (`topBidFiltered` in responses). |
+| `setShouldAssignNativeAssetId(bool)` | Number native request assets sequentially, for creatives that reference assets by ID. |
+| `setEidsPlacement(PrebidEidsPlacement)` | Send external IDs in `user.eids` (OpenRTB 2.6), `user.ext.eids` (2.5) or both. |
+
+## Rendering
+
+| Method | Description |
+| --- | --- |
+| `setCreativeFactoryTimeout(int)` | Milliseconds an HTML creative may take to render. |
+| `setCreativeFactoryTimeoutPreRenderContent(int)` | The same for pre-rendered video content. |
+
+## External user IDs
+
+Identity providers' IDs go to bidders in `user.eids`:
+
+```dart
+await PrebidMobile.setExternalUserIds([
+  ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc-123', atype: 3),
+  ExternalUserId(
+    source: 'liveramp.com',
+    identifier: 'lr-def-456',
+    atype: 3,
+    inserter: 'your-company.com',
+  ),
+]);
+
+final ids = await PrebidMobile.getExternalUserIds();
+await PrebidMobile.clearExternalUserIds();
+```
+
+`ExternalUserId` carries `source`, `identifier`, `atype` (1 device, 2 person-based, 3 user) and the OpenRTB 2.6 `inserter`, `matcher` and `mm` fields, plus a free-form `ext`.
+
+### SharedID
+
+Prebid's first-party ID, stored on the device:
+
+```dart
+await PrebidMobile.setSendSharedId(true);   // send it in user.eids
+final sharedId = await PrebidMobile.getSharedId();
+await PrebidMobile.resetSharedId();         // a new ID on the next request
+```
+
+## Testing helpers
+
+Stored responses, the bid inspector and SDK version checks are on the [Debugging](/docs/debugging) page.

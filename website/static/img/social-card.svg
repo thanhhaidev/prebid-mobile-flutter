@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#001C33"/>
+  <path d="M760 630L980 0h90L850 630z" fill="#F67725" opacity=".18"/>
+  <text x="80" y="270" font-family="Rethink Sans, sans-serif" font-size="76" font-weight="800" fill="#FFFFFF" letter-spacing="-3">Header bidding for Flutter</text>
+  <text x="80" y="360" font-family="Rethink Sans, sans-serif" font-size="76" font-weight="800" fill="#F67725" letter-spacing="-3">on Android and iOS</text>
+  <text x="80" y="450" font-family="JetBrains Mono, monospace" font-size="30" fill="#CCEAFF">prebid_mobile_sdk · unofficial Flutter plugin</text>
+</svg>

@@ -1,0 +1,49 @@
+---
+title: Events & errors
+description: Every listener callback across the ad formats, and how failures are reported.
+---
+
+# Events & errors
+
+Ads report their lifecycle through listener objects. Callbacks run on the Flutter UI isolate, and each is optional.
+
+## Callbacks by format
+
+| Callback | Banner | Interstitial | Rewarded | Native |
+| --- | :-: | :-: | :-: | :-: |
+| `onAdLoaded` | ✓ | ✓ | ✓ | ✓ (with the response) |
+| `onAdDisplayed` | ✓ | ✓ | ✓ | |
+| `onAdFailed(String)` | ✓ | ✓ | ✓ | ✓ |
+| `onAdClicked` | ✓ | ✓ | ✓ | ✓ |
+| `onAdClosed` | ✓ | ✓ | ✓ | |
+| `onAdExpired` | ✓ | ✓ | ✓ | ✓ |
+| `onAdImpression` | Mediation | Mediation | Mediation | ✓ |
+| `onUserEarnedReward(PrebidReward)` | | | ✓ | |
+
+- **Banner** `onAdClosed` fires when a click-through (in-app browser or modal) is dismissed. On iOS, `onAdDisplayed` arrives together with `onAdLoaded`.
+- **`onAdImpression`** comes from the ad SDK in the AdMob and MAX companions. Prebid-rendered banners and fullscreen ads fire Prebid's impression trackers but don't report a callback. Native ads report it from viewability (see [Native](/docs/native#impressions)).
+- **`onAdExpired`** fires when the bid's `exp` elapses before the ad is shown; load again.
+
+Banner video playback has its own [`PrebidBannerVideoListener`](/docs/banner#outstream-video); GAM, AdMob and MAX native have their own listeners, documented on their pages.
+
+## Errors
+
+Load, show and render failures are **not thrown**. They arrive through `onAdFailed` with the native SDK's message:
+
+```dart
+PrebidInterstitialAdListener(
+  onAdFailed: (error) => debugPrint('Interstitial failed: $error'),
+)
+```
+
+Common causes:
+
+| Message / code | Cause |
+| --- | --- |
+| No bids / `prebidDemandNoBids` | The auction returned no bid for this config ID. |
+| `The ad is not loaded` | `show()` was called before `onAdLoaded`, or after the ad was shown. |
+| `No Activity is attached…` / `No view controller…` | `show()` with the app in the background. |
+| `The Prebid SDK is not initialized` / `prebidSdkNotInitialized` | A load before `initializeSdk` completed (Android). |
+| Timeout / `prebidDemandTimedOut` | The auction exceeded `setTimeoutMillis`. |
+
+Other calls (setters, `fetchDemand`, `loadAd`) return `Future`s. They complete once the native side has applied the call and only fail when the platform call itself fails, for example a `PlatformException` when the plugin isn't registered in a test. `fetchDemand` of the [Original API](/docs/original-api#result-codes) reports the auction outcome through its `resultCode`.

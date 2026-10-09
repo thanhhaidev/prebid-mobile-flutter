@@ -1,0 +1,141 @@
+---
+title: Original API
+description: Run the Prebid auction and pass its targeting keywords to Google Ad Manager with google_mobile_ads.
+---
+
+# Original API
+
+In the Original API, Prebid only runs the auction. It returns targeting keywords (`hb_pb`, `hb_bidder`, `hb_cache_id`, …) that you add to your Google Ad Manager request; a Prebid line item targeting those keys serves the Prebid Universal Creative when the bid wins.
+
+The plugin doesn't depend on `google_mobile_ads`: add it to your app and wire the handoff yourself.
+
+## Setup
+
+1. Add [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads) and call `MobileAds.instance.initialize()` at startup.
+2. Declare your Ad Manager app ID: `GADApplicationIdentifier` in `ios/Runner/Info.plist` and the `com.google.android.gms.ads.APPLICATION_ID` `<meta-data>` in `AndroidManifest.xml`.
+3. In Google Ad Manager, set up Prebid line items and creatives that target the `hb_*` keys.
+
+## Banner
+
+```dart
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+
+final unit = PrebidBannerAdUnit(
+  configId: 'your-config-id',
+  sizes: const [Size(300, 250)],
+  adPosition: PrebidAdPosition.aboveTheFold,
+);
+
+final bid = await unit.fetchDemand();
+
+final banner = AdManagerBannerAd(
+  adUnitId: '/1234567/your-ad-unit',
+  sizes: [AdSize.mediumRectangle],
+  request: AdManagerAdRequest(customTargeting: bid.targetingKeywords ?? const {}),
+  listener: AdManagerBannerAdListener(
+    onAdLoaded: (_) => unit.activateImpressionTracker(),
+    onAdFailedToLoad: (ad, error) => ad.dispose(),
+  ),
+);
+await banner.load();
+```
+
+Render it with `AdWidget(ad: banner)` inside a `SizedBox` of the requested size. A won Prebid banner isn't resized dynamically: request the size of your GAM ad unit.
+
+`PrebidBidResponse` has `resultCode` (`prebidDemandFetchSuccess`, `prebidDemandNoBids`, …), `isSuccess` and `targetingKeywords`. Send the GAM request even without a bid, so direct-sold demand can still serve.
+
+## Interstitial
+
+```dart
+final unit = PrebidInterstitialAdUnit(
+  configId: 'your-config-id',
+  sizes: const [Size(320, 480)],
+  videoParameters: const VideoParameters(mimes: ['video/mp4']),
+  trackImpression: true,
+);
+final bid = await unit.fetchDemand();
+
+await AdManagerInterstitialAd.load(
+  adUnitId: '/1234567/your-interstitial',
+  request: AdManagerAdRequest(customTargeting: bid.targetingKeywords ?? const {}),
+  adLoadCallback: AdManagerInterstitialAdLoadCallback(
+    onAdLoaded: (ad) => ad.show(),
+    onAdFailedToLoad: (error) {},
+  ),
+);
+```
+
+Pass `sizes` for display, `videoParameters` for video, or both. A unit with neither throws an `ArgumentError`.
+
+## Native
+
+```dart
+final unit = PrebidNativeAdUnit(
+  configId: 'your-config-id',
+  assets: const [
+    NativeAsset.title(length: 90, required: true),
+    NativeAsset.image(imageType: NativeImageType.main, required: true),
+  ],
+  context: NativeContextType.contentCentric,
+  placementType: NativePlacementType.inFeed,
+);
+final bid = await unit.fetchDemand(); // also bid.nativeAdCacheId
+```
+
+For GAM's custom native formats rendered through Prebid, the [GAM native](/docs/gam#native) widget does the whole flow.
+
+## Multiformat
+
+`PrebidMultiformatAd` asks for banner, video and native demand in a single request:
+
+```dart
+final ad = PrebidMultiformatAd(
+  configId: 'your-config-id',
+  bannerSizes: const [Size(300, 250)],
+  videoParameters: const VideoParameters(mimes: ['video/mp4']),
+  nativeAssets: const [NativeAsset.title(length: 90)],
+);
+final bid = await ad.fetchDemand();
+debugPrint('${bid.winningFormat}'); // banner, video or native
+```
+
+`PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp` and `topBidFiltered`.
+
+## Auto-refresh
+
+```dart
+final unit = PrebidBannerAdUnit(
+  configId: 'your-config-id',
+  sizes: const [Size(320, 50)],
+  onDemandRefreshed: (bid) {
+    // Reload the GAM banner with bid.targetingKeywords.
+  },
+);
+await unit.fetchDemand();
+await unit.setAutoRefreshInterval(60); // 30–120 s
+await unit.stopAutoRefresh();
+await unit.resumeAutoRefresh();
+await unit.destroy();
+```
+
+Prebid re-runs the auction on the interval and `onDemandRefreshed` receives each result; reload your GAM ad with the new keywords. Intervals are clamped to 30–120 seconds on both platforms.
+
+## Impression tracking
+
+Prebid can fire the bid's impression URL (`burl`) when GAM shows the Prebid creative:
+
+- **Banner:** call `unit.activateImpressionTracker()` from GAM's `onAdLoaded`. It looks for the Google Mobile Ads banner in the window (a Flutter widget can't hand over the native view), so it needs exactly one GMA banner on screen and returns `false` otherwise. On iOS the current bid is tracked; Prebid Android attaches the view when an auction starts, so on Android tracking applies from the next auction (auto-refresh or the next `fetchDemand`).
+- **Interstitial:** create the unit with `trackImpression: true`.
+
+## Result codes
+
+| `resultCode` | Meaning |
+| --- | --- |
+| `prebidDemandFetchSuccess` | A bid won; keywords are set. |
+| `prebidDemandNoBids` | No bid (also reported for an empty seat bid on Android). |
+| `prebidDemandTimedOut` | The auction exceeded the timeout. |
+| `prebidDemandNoCachedBids` | Every bid was dropped for a failed cache entry (`setFilterOutUncachedBids`). |
+| `prebidNetworkError`, `prebidServerError` | The request failed. |
+| `prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`, `prebidServerURLInvalid` | Configuration errors. |
+| `prebidSdkNotInitialized` | `fetchDemand` ran before `initializeSdk` completed (Android). |

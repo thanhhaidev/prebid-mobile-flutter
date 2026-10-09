@@ -1,0 +1,116 @@
+---
+title: Google Ad Manager
+description: prebid_mobile_sdk_gam renders Prebid and Google Ad Manager demand through Prebid's GAM event handlers.
+---
+
+# Google Ad Manager
+
+[`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam) wraps Prebid's GAM event handlers. Prebid runs the auction, Google Ad Manager runs its own with the Prebid bid as a line item, and the winner renders: the Prebid creative or the GAM ad. Unlike the [Original API](/docs/original-api), the widgets make the GAM request for you.
+
+## Install
+
+```bash
+flutter pub add prebid_mobile_sdk prebid_mobile_sdk_gam
+```
+
+The package bundles the Google Mobile Ads SDK, which crashes at startup without an app ID:
+
+- **Android:** `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-…"/>` in `AndroidManifest.xml`.
+- **iOS:** `GADApplicationIdentifier` in `ios/Runner/Info.plist`.
+
+Initialize Google Mobile Ads once at startup (for example `MobileAds.instance.initialize()` from `google_mobile_ads`), then configure Prebid line items targeting the `hb_*` keys in Ad Manager.
+
+## Banner
+
+```dart
+import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
+
+PrebidGamBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  gamAdUnitId: '/21808260008/prebid_oxb_320x50_banner',
+  width: 320,
+  height: 50,
+  customTargeting: const {'section': 'home'},
+  listener: PrebidBannerAdListener(
+    onAdLoaded: () => debugPrint('GAM banner loaded'),
+  ),
+)
+```
+
+`PrebidGamBannerAd` takes the [core banner](/docs/banner) parameters (`additionalSizes`, `adFormats`, `isVideo`, `videoPlacementType`, `videoParameters` <Only platform="ios" />, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `refreshIntervalSeconds`, `autoLoad`, `controller`, `videoListener`) plus:
+
+| Parameter | Description |
+| --- | --- |
+| `gamAdUnitId` | **Required.** Your Ad Manager ad unit path. |
+| `customTargeting` | Key-values added to the GAM request; Prebid's `hb_*` keys win on conflict. |
+
+Every size (`width` × `height` and `additionalSizes`) is a valid GAM ad size. The slot resizes to the creative that renders, whether the Prebid bid or GAM's own ad won.
+
+## Interstitial and rewarded
+
+```dart
+late final PrebidGamInterstitialAd interstitial;
+
+interstitial = PrebidGamInterstitialAd(
+  configId: 'prebid-demo-display-interstitial-320-480',
+  gamAdUnitId: '/21808260008/prebid_oxb_html_interstitial',
+  listener: PrebidInterstitialAdListener(
+    onAdLoaded: () => interstitial.show(),
+    onAdClosed: () => interstitial.destroy(),
+  ),
+);
+await interstitial.loadAd();
+```
+
+```dart
+late final PrebidGamRewardedAd rewarded;
+
+rewarded = PrebidGamRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  gamAdUnitId: '/21808260008/prebid_oxb_rewarded_video',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+await rewarded.loadAd();
+```
+
+Both take `customTargeting`, [`controls`](/docs/fullscreen#rendering-controls) (`supportSKOverlay` included <Only platform="ios" />), `videoParameters` and `impOrtbConfig`; the interstitial also takes `adFormats`. The lifecycle matches the [core fullscreen ads](/docs/fullscreen#lifecycle), with `isLoaded` to check readiness.
+
+Set the GPID or ad slot of a fullscreen ad through `impOrtbConfig`, e.g. `'{"ext":{"gpid":"/1111/interstitial","data":{"pbadslot":"/1111/interstitial"}}}'`.
+
+## Native
+
+GAM native follows Prebid's Original API flow: Prebid runs the auction, GAM returns a custom-format or a unified native ad, and Prebid looks for its winning bid in it.
+
+```dart
+PrebidGamNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  gamAdUnitId: '/21808260008/apollo_custom_template_native_ad_unit',
+  customFormatId: '11934135',
+  listener: PrebidGamNativeAdListener(
+    onNativeAdLoaded: () => debugPrint('Prebid native rendered'),
+    onPrimaryAdWinCustom: () => debugPrint('GAM custom format won'),
+    onPrimaryAdWinUnified: () => debugPrint('GAM unified native won'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+)
+```
+
+| Callback | When |
+| --- | --- |
+| `onFetchDemandSuccess` / `onFetchDemandFailed` | The Prebid auction returned a bid / no bid. |
+| `onCustomAdLoaded` / `onUnifiedAdLoaded` | GAM returned a custom-format / unified native ad. |
+| `onPrimaryAdFailed(String)` | The GAM request failed. |
+| `onNativeAdLoaded` | A Prebid native creative was found and rendered. |
+| `onPrimaryAdWinCustom` / `onPrimaryAdWinUnified` | No Prebid creative: the GAM ad renders. |
+| `onAdImpression`, `onAdClicked` | Tracked on the rendered ad. |
+| `onAdExpired` | The Prebid bid expired before an impression. |
+
+Without `customFormatId`, only unified native ads are requested. `assets` and `eventTrackers` change the requested native assets (default: title, icon, main image, sponsored, description, call to action); `context`, `contextSubType` and `placementType` default to social, general social and in-feed.
+
+## Compatibility
+
+<CompatibilityTable name="prebid_mobile_sdk_gam" />

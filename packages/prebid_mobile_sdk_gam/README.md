@@ -1,7 +1,16 @@
 # prebid_mobile_sdk_gam
 
+> **Unofficial project.** This is an independent, community-maintained
+> Flutter wrapper around the official
+> [Prebid Mobile SDKs](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html).
+> It is not affiliated with, endorsed by, or maintained by Prebid.org. Report
+> issues with this plugin in [its repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues),
+> not to Prebid.
+
 Google Ad Manager (GAM) **rendering** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter
 plugin, via Prebid's GAM event handlers.
+
+**Documentation:** [thanhhaidev.github.io/prebid-mobile-flutter](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/gam)
 
 Prebid runs the auction and lets **Google Ad Manager render** the ad: a winning
 Prebid bid is served through a GAM line item + the Prebid Universal Creative,
@@ -51,6 +60,21 @@ await MobileAds.instance.initialize();
 
 In Google Ad Manager, configure Prebid line items/creatives that target the
 `hb_*` keys so a winning Prebid bid renders.
+
+## Compatibility
+
+<!-- compatibility:start -->
+<!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
+
+| prebid_mobile_sdk_gam | Prebid Android (`prebid-mobile-sdk-gam-event-handlers`) | Prebid iOS (`PrebidMobileGAMEventHandlers`) | Google Mobile Ads Android | Google Mobile Ads iOS |
+| --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` |
+
+Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
+
+Full mapping: [Compatibility](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/compatibility).
+
+<!-- compatibility:end -->
 
 ## Usage
 

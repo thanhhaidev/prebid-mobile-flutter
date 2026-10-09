@@ -1,0 +1,118 @@
+---
+slug: /
+title: Getting started
+sidebar_label: Introduction
+description: Install prebid_mobile_sdk, initialize the Prebid SDK and show your first ad.
+---
+
+# Getting started
+
+`prebid_mobile_sdk` brings the [Prebid Mobile SDK](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html) to Flutter on Android and iOS. Prebid runs a header-bidding auction against your Prebid Server, then either renders the winning creative itself or hands the result to your ad server.
+
+:::note[Unofficial project]
+`prebid_mobile_sdk` is an independent, community-maintained wrapper around the official Prebid Mobile SDKs. It is not affiliated with, endorsed by, or maintained by Prebid.org. Report problems with the plugin in [its GitHub repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues); for Prebid Server, bidders and the native SDKs themselves, see [docs.prebid.org](https://docs.prebid.org).
+:::
+
+The core package depends on Prebid alone. Google Ad Manager rendering, AdMob mediation and AppLovin MAX mediation live in [companion packages](/docs/integrations), so an app only bundles the ad SDKs it uses.
+
+## Install
+
+<Steps>
+<Step title="Add the package">
+
+```bash
+flutter pub add prebid_mobile_sdk
+```
+
+Android needs no further setup: Gradle pulls the Prebid SDK from Maven Central. Your app's `minSdk` must be 24 or higher.
+
+</Step>
+<Step title="Set the iOS platform">
+
+The plugin requires iOS 15. In `ios/Podfile`:
+
+```ruby
+platform :ios, '15.0'
+```
+
+Then run `cd ios && pod install`. Swift Package Manager works too: the plugin ships a `Package.swift`.
+
+</Step>
+<Step title="Initialize the SDK">
+
+Call `initializeSdk` once at startup with your Prebid Server endpoint and account ID, and **await it before loading ads**: Prebid Android drops requests made before initialization completes (the plugin reports them as `onAdFailed`).
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await PrebidMobile.initializeSdk(
+    prebidServerUrl: 'https://prebid-server-test-j.prebid.org/openrtb2/auction',
+    accountId: '0689a263-318d-448b-a3d4-b02e8a709d9d',
+    completion: (status, error) {
+      if (status == InitializationStatus.failed) {
+        debugPrint('Prebid init failed: $error');
+      }
+    },
+  );
+
+  runApp(const MyApp());
+}
+```
+
+The server and account above are Prebid's public test setup; the config IDs on this site (`prebid-demo-…`) return test bids from it.
+
+</Step>
+<Step title="Show a banner">
+
+```dart
+PrebidBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  width: 320,
+  height: 50,
+  listener: PrebidBannerAdListener(
+    onAdLoaded: () => debugPrint('Banner loaded'),
+    onAdFailed: (error) => debugPrint('Banner failed: $error'),
+  ),
+)
+```
+
+</Step>
+</Steps>
+
+## Integration models
+
+| Model | Who renders | Use |
+| --- | --- | --- |
+| **Prebid rendering** | The Prebid SDK | [`PrebidBannerAd`](/docs/banner), [`PrebidInterstitialAd`](/docs/fullscreen), [`PrebidRewardedAd`](/docs/fullscreen), [`PrebidNativeAd`](/docs/native) |
+| **Original API** | Your ad server, from Prebid's targeting keywords | [`PrebidBannerAdUnit`](/docs/original-api) and friends with `google_mobile_ads` |
+| **GAM rendering** | Google Ad Manager, through Prebid's event handlers | [`prebid_mobile_sdk_gam`](/docs/gam) |
+| **Mediation** | AdMob or AppLovin MAX, with Prebid as a network | [`prebid_mobile_sdk_admob`](/docs/admob), [`prebid_mobile_sdk_max`](/docs/max) |
+
+[Choosing an integration](/docs/integrations) compares them.
+
+## Explore
+
+<Cards>
+  <Card to="/docs/configuration" icon="⚙" title="Configuration" tags={['timeouts', 'flags']}>
+    Global SDK settings, from timeouts to Prebid Server flags.
+  </Card>
+  <Card to="/docs/banner" icon="▭" title="Banner" tags={['multisize', 'video']}>
+    Display and outstream video banners with auto-refresh.
+  </Card>
+  <Card to="/docs/fullscreen" icon="⛶" title="Interstitial & rewarded" tags={['load', 'show']}>
+    Fullscreen display and video, rewards and controls.
+  </Card>
+  <Card to="/docs/native" icon="▤" title="Native" tags={['assets', 'tracking']}>
+    Native rendering with impression and click tracking.
+  </Card>
+  <Card to="/docs/privacy" icon="⚑" title="Privacy" tags={['GDPR', 'CCPA']}>
+    Consent signals and first-party data rules.
+  </Card>
+  <Card to="/docs/compatibility" icon="⌗" title="Compatibility" tags={['Prebid', 'versions']}>
+    The native Prebid SDK behind every release.
+  </Card>
+</Cards>

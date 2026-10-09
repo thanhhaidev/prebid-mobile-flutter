@@ -1,0 +1,71 @@
+---
+title: Debugging
+description: Inspect bid requests and responses, use stored responses for deterministic tests, and read native SDK logs.
+---
+
+# Debugging
+
+## Bid inspector
+
+`setEventListener` receives every request the Prebid-rendered ads send to Prebid Server, and the server's response, as JSON strings:
+
+```dart
+await PrebidMobile.setEventListener((request, response) {
+  debugPrint('Prebid request: $request');
+  debugPrint('Prebid response: $response');
+});
+
+// Stop listening:
+await PrebidMobile.setEventListener(null);
+```
+
+Original API requests (`PrebidBannerAdUnit`, `PrebidMultiformatAd`, …) don't go through this listener: read them in the native log instead (below).
+
+## Stored responses
+
+Prebid Server can answer from stored data instead of running a live auction, which makes tests deterministic:
+
+```dart
+// The whole auction response.
+await PrebidMobile.setStoredAuctionResponse('your-stored-auction-response-id');
+await PrebidMobile.clearStoredAuctionResponse();
+
+// One bidder's response.
+await PrebidMobile.addStoredBidResponse('appnexus', 'your-stored-bid-response-id');
+await PrebidMobile.clearStoredBidResponses();
+```
+
+The stored response stays set until you clear it, including after a banner is disposed (Prebid iOS clears it when a banner is deallocated; the plugin restores it).
+
+## Prebid Server debug
+
+```dart
+await PrebidMobile.setPbsDebug(true); // test: 1, debug output in ext.debug
+```
+
+## Native logs
+
+```dart
+await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
+```
+
+- **Android:** `adb logcat | grep -i prebid`. At the debug level, every request and response body is logged (`PrebidBaseNetworkTask`).
+- **iOS:** the Xcode console, or Console.app filtered on your app.
+
+## Versions
+
+```dart
+final version = await PrebidMobile.getSdkVersion();
+```
+
+returns the native Prebid SDK version. The [Compatibility](/docs/compatibility) page lists the version each release bundles.
+
+## Example app
+
+The repository's [`example/`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example) app has 90+ test cases mirroring Prebid's internal test app (In-App, GAM rendering, GAM Original API, AdMob and MAX), with every callback logged per case, the bid inspector, and screens for every SDK setting and targeting field:
+
+```bash
+git clone https://github.com/thanhhaidev/prebid-mobile-flutter.git
+cd prebid-mobile-flutter/example
+flutter run
+```

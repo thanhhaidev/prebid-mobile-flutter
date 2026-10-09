@@ -5,7 +5,7 @@
 Pod::Spec.new do |s|
   s.name             = 'prebid_mobile_sdk_gam'
   s.version          = '1.0.0'
-  s.summary          = 'Google Ad Manager rendering for the Prebid Mobile Flutter SDK.'
+  s.summary          = 'Unofficial Google Ad Manager rendering for the prebid_mobile_sdk Flutter plugin.'
   s.description      = <<-DESC
 Optional companion to prebid_mobile_sdk that renders Prebid demand through
 Google Ad Manager using Prebid's GAM event handlers. Pulls in the Google

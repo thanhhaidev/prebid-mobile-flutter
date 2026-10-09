@@ -1,0 +1,53 @@
+---
+title: Compatibility
+description: The native Prebid Mobile SDK version behind every prebid_mobile_sdk release, per platform, and the ad SDKs the companion packages bundle.
+---
+
+# Compatibility
+
+Each release of the Flutter packages pins the native Prebid Mobile SDK it is built and tested against. This page maps every release to those native versions.
+
+## Core package
+
+<CompatibilityTable name="prebid_mobile_sdk" />
+
+- **Prebid Android** is an exact Maven version: every app on that release gets the same SDK.
+- **Prebid iOS** is a range. CocoaPods (`'~> 3.4', '>= 3.4.1'`) and Swift Package Manager (`from: "3.4.1"`) resolve the newest PrebidMobile release inside it, so a fresh `pod install` can pick up a newer 3.x patch. Run `pod update PrebidMobile` to move within the range; a new major version needs a new plugin release.
+- **Android / iOS** are the lowest OS versions the plugin supports (`minSdk`, iOS deployment target). **Flutter** is the SDK constraint in `pubspec.yaml`; Dart is `^3.11.0`.
+
+## Companion packages
+
+Each companion bundles Prebid's adapter (or event handler) for its ad SDK, on the same Prebid version as the core package, and requires the matching core release.
+
+### Google Ad Manager
+
+<CompatibilityTable name="prebid_mobile_sdk_gam" />
+
+### AdMob
+
+<CompatibilityTable name="prebid_mobile_sdk_admob" />
+
+### AppLovin MAX
+
+<CompatibilityTable name="prebid_mobile_sdk_max" />
+
+The ad SDK columns are what Prebid's adapters depend on: Android resolves the listed version unless your app asks for a newer one, iOS accepts any version in the range. If your app also uses [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads) or [`applovin_max`](https://pub.dev/packages/applovin_max), their native SDK must fall in the same range.
+
+## Native artifacts
+
+The dependencies each package declares, for the latest release:
+
+<ArtifactTable />
+
+## Checking the versions in your app
+
+```dart
+final version = await PrebidMobile.getSdkVersion(); // e.g. "3.4.0" on Android
+```
+
+- **Android:** `./gradlew :app:dependencies --configuration releaseRuntimeClasspath | grep org.prebid`
+- **iOS:** the `PrebidMobile` entry in `ios/Podfile.lock`, or `Package.resolved` with Swift Package Manager.
+
+:::info[How this table stays correct]
+The table is generated from `website/src/data/compatibility.json`. The same file generates the compatibility tables in every package README, and CI checks the newest entry of each package against its `pubspec.yaml`, `build.gradle.kts`, podspec and `Package.swift`, so a release cannot change a native version without updating this page.
+:::

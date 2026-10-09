@@ -1,7 +1,16 @@
 # prebid_mobile_sdk_max
 
+> **Unofficial project.** This is an independent, community-maintained
+> Flutter wrapper around the official
+> [Prebid Mobile SDKs](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html).
+> It is not affiliated with, endorsed by, or maintained by Prebid.org. Report
+> issues with this plugin in [its repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues),
+> not to Prebid.
+
 AppLovin **MAX mediation** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter plugin, via
 Prebid's MAX adapters.
+
+**Documentation:** [thanhhaidev.github.io/prebid-mobile-flutter](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/max)
 
 Prebid demand competes inside the **AppLovin MAX mediation waterfall**: Prebid's
 `MediationBannerAdUnit` / `MediationInterstitialAdUnit` run the auction and hand
@@ -43,6 +52,21 @@ Declare the SDK key natively as AppLovin requires:
 In the AppLovin MAX dashboard, add Prebid as a custom network on your ad units
 and wire the Prebid MAX adapter, per the
 [Prebid MAX integration docs](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-max.html).
+
+## Compatibility
+
+<!-- compatibility:start -->
+<!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
+
+| prebid_mobile_sdk_max | Prebid Android (`prebid-mobile-sdk-max-adapters`) | Prebid iOS (`PrebidMobileMAXAdapters`) | AppLovin MAX Android | AppLovin MAX iOS |
+| --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `applovin-sdk 13.1.0` | `AppLovinSDK >= 13.0.0` |
+
+Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
+
+Full mapping: [Compatibility](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/compatibility).
+
+<!-- compatibility:end -->
 
 ## Usage
 

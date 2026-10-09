@@ -1,9 +1,10 @@
 name: prebid_mobile_sdk
-description: "Flutter plugin for the Prebid Mobile SDK (3.4): banner, interstitial, rewarded, native, multiformat and in-stream ads, plus targeting, privacy and OpenRTB settings."
+description: "Unofficial Flutter plugin for the Prebid Mobile SDK 3.4: banner, interstitial, rewarded, native, multiformat and in-stream ads, targeting and privacy."
 version: 1.0.0
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
 repository: https://github.com/thanhhaidev/prebid-mobile-flutter
 issue_tracker: https://github.com/thanhhaidev/prebid-mobile-flutter/issues
+documentation: https://thanhhaidev.github.io/prebid-mobile-flutter/
 
 topics:
   - ads

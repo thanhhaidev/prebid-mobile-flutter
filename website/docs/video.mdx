@@ -1,0 +1,90 @@
+---
+title: Video
+description: In-stream video demand for your own player, and the OpenRTB 2.6 video parameters every video request takes.
+---
+
+# Video
+
+Video demand comes in three shapes:
+
+- **Outstream** in a banner slot: [`PrebidBannerAd`](/docs/banner#outstream-video) with `adFormats: {AdFormat.video}`.
+- **Fullscreen** video: [`PrebidInterstitialAd`](/docs/fullscreen) with `adFormats: {AdFormat.video}`, or [`PrebidRewardedAd`](/docs/fullscreen#rewarded).
+- **In-stream**, played by your own video player or IMA: `PrebidInstreamVideoAd`, below.
+
+## In-stream video
+
+`PrebidInstreamVideoAd` runs the auction and returns targeting keywords; your ad server (for example Google Ad Manager through the IMA SDK) returns the winning VAST.
+
+```dart
+final video = PrebidInstreamVideoAd(
+  configId: 'prebid-demo-video-interstitial-320-480-original-api',
+  size: const Size(640, 480),
+  videoParameters: const VideoParameters(
+    mimes: ['video/mp4'],
+    protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0, VideoProtocol.vast4_0],
+    playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
+    plcmt: VideoPlcmt.instream,
+    startDelay: VideoStartDelay.preRoll,
+    maxDuration: 30,
+  ),
+);
+
+final bid = await video.fetchDemand();
+if (bid.isSuccess) {
+  // Append bid.targetingKeywords to your ad tag's cust_params.
+}
+await video.destroy();
+```
+
+`PrebidVideoAdBidResponse` has the `resultCode`, `targetingKeywords`, `isSuccess` and the bid's `exp` (seconds before it expires).
+
+## Video parameters
+
+`VideoParameters` describes what your player supports. The same class configures interstitial, rewarded, outstream, multiformat, Original API and in-stream requests.
+
+```dart
+const params = VideoParameters(
+  mimes: ['video/mp4', 'video/webm'],
+  protocols: [VideoProtocol.vast3_0, VideoProtocol.vast4_0],
+  playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
+  api: [VideoApi.omid1],
+  plcmt: VideoPlcmt.accompanyingContent,
+  startDelay: VideoStartDelay.genericMidRoll,
+  linearity: VideoLinearity.linear,
+  skippable: true,
+  battr: [VideoCreativeAttribute.annoying, VideoCreativeAttribute.surveys],
+  minDuration: 5,
+  maxDuration: 30,
+  minBitrate: 300,
+  maxBitrate: 1500,
+);
+```
+
+| Field | OpenRTB | Values |
+| --- | --- | --- |
+| `mimes` | `mimes` | **Required.** MIME types, e.g. `video/mp4`. |
+| `protocols` | `protocols` | `vast1_0` … `vast4_0` and their `…Wrapper` variants. |
+| `playbackMethods` | `playbackmethod` | `autoPlaySoundOn`, `autoPlaySoundOff`, `clickToPlay`, `mouseOver`, `enterSoundOn`, `enterSoundOff`. |
+| `api` | `api` | `vpaid1_0`, `vpaid2_0`, `mraid1`, `ormma`, `mraid2`, `mraid3`, `omid1`. |
+| `plcmt` | `plcmt` (2.6) | `instream`, `accompanyingContent`, `interstitial`, `noContent`. |
+| `placement` | `placement` (deprecated) | `inStream`, `inBanner`, `inArticle`, `inFeed`, `interstitial`. Prefer `plcmt`. |
+| `startDelay` | `startdelay` | Seconds, or `VideoStartDelay.preRoll` (0), `genericMidRoll` (-1), `genericPostRoll` (-2). |
+| `linearity` | `linearity` | `linear` (in-stream) or `nonLinear` (overlay). |
+| `skippable` | `skip` | Whether the player lets the user skip. |
+| `battr` | `battr` | Blocked creative attributes, e.g. `annoying`, `surveys`, `pop`. |
+| `minDuration`, `maxDuration` | `minduration`, `maxduration` | Seconds. |
+| `minBitrate`, `maxBitrate` | `minbitrate`, `maxbitrate` | Kbps. |
+
+Every field except `mimes` is optional; unset fields are left out of the request.
+
+### Where each field is sent
+
+| Request | Android | iOS |
+| --- | --- | --- |
+| In-stream, multiformat, Original API | Every field | Every field |
+| Prebid-rendered interstitial / rewarded | SDK defaults; `maxDuration` caps the rendered video | Every field |
+| AdMob / MAX interstitial / rewarded | SDK defaults; `maxDuration` caps the rendered video | Every field |
+| GAM interstitial / rewarded | SDK defaults; `maxDuration` caps the rendered video | Every field |
+| Banner (outstream) | SDK defaults plus the placement | Every field |
+
+Prebid Android exposes no video-parameters setter on its rendering and mediation units, which is why those rows send the SDK's defaults.

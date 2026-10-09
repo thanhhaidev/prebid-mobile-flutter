@@ -1,0 +1,46 @@
+---
+title: Choosing an integration
+sidebar_label: Choosing an integration
+description: Prebid rendering, the Original API keyword handoff, GAM rendering, and AdMob or AppLovin MAX mediation compared.
+---
+
+# Choosing an integration
+
+Prebid can run on its own or next to the ad server you already use. All models share the same [configuration](/docs/configuration), [privacy](/docs/privacy) and [targeting](/docs/targeting) setup.
+
+| | Prebid rendering | Original API | GAM rendering | AdMob / MAX mediation |
+| --- | --- | --- | --- | --- |
+| **Package** | `prebid_mobile_sdk` | `prebid_mobile_sdk` + `google_mobile_ads` | `prebid_mobile_sdk_gam` | `prebid_mobile_sdk_admob` / `_max` |
+| **Auction** | Prebid | Prebid, then GAM | Prebid, then GAM | Prebid inside the mediation waterfall |
+| **Renders** | Prebid SDK | GAM, via the Prebid Universal Creative | GAM or Prebid, through Prebid's event handlers | AdMob / MAX, or the Prebid creative through the adapter |
+| **Ad server setup** | None | Prebid line items targeting `hb_*` keys | Prebid line items targeting `hb_*` keys | Prebid as a custom network / custom event |
+| **Formats** | Banner, interstitial, rewarded, native, video | Banner, interstitial, native, in-stream video | Banner, interstitial, rewarded, native | Banner, interstitial, rewarded, native |
+| **Bundles an ad SDK** | No | Your app adds `google_mobile_ads` | Google Mobile Ads | Google Mobile Ads / AppLovin MAX |
+
+## Which one?
+
+- **No ad server yet, or Prebid-only demand:** Prebid rendering. Nothing to configure outside Prebid Server.
+- **Already on Google Ad Manager with `google_mobile_ads` widgets:** the [Original API](/docs/original-api). You keep your GAM ad objects and add Prebid's keywords to their requests.
+- **On Google Ad Manager, and fine with Prebid's widgets:** [GAM rendering](/docs/gam). The banner, interstitial, rewarded and native widgets handle the GAM request for you.
+- **Monetizing through AdMob or AppLovin MAX mediation:** the [AdMob](/docs/admob) or [MAX](/docs/max) companion.
+
+Packages can be combined: an app can render some placements with Prebid and send others through GAM.
+
+## Companion packages
+
+<Cards>
+  <Card to="/docs/original-api" icon="⇢" title="Original API" tags={['keywords', 'GAM']}>
+    Prebid keywords on your own Google Ad Manager requests.
+  </Card>
+  <Card to="/docs/gam" icon="G" title="Google Ad Manager" tags={['event handlers']}>
+    GAM renders through Prebid's event handlers.
+  </Card>
+  <Card to="/docs/admob" icon="A" title="AdMob" tags={['mediation']}>
+    Prebid demand in AdMob mediation.
+  </Card>
+  <Card to="/docs/max" icon="M" title="AppLovin MAX" tags={['mediation']}>
+    Prebid demand in MAX mediation.
+  </Card>
+</Cards>
+
+Every companion requires the core package at the same release; the native SDK versions each one bundles are on the [Compatibility](/docs/compatibility) page.

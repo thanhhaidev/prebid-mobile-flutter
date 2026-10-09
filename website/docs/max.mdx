@@ -1,0 +1,86 @@
+---
+title: AppLovin MAX
+description: prebid_mobile_sdk_max adds Prebid demand to AppLovin MAX mediation through Prebid's MAX adapters.
+---
+
+# AppLovin MAX
+
+[`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max) puts Prebid demand inside **AppLovin MAX mediation**. Prebid's mediation ad units run the auction and hand the winning bid to the MAX ad through the Prebid MAX adapter; MAX renders the Prebid creative or a competing network's ad.
+
+## Install
+
+```bash
+flutter pub add prebid_mobile_sdk prebid_mobile_sdk_max
+```
+
+Initialize the AppLovin SDK with your SDK key **before** loading any MAX ad. This package doesn't do it for you; for example, with [`applovin_max`](https://pub.dev/packages/applovin_max):
+
+```dart
+await AppLovinMAX.initialize('YOUR_APPLOVIN_SDK_KEY');
+```
+
+Declare the SDK key natively as AppLovin requires: `AppLovinSdkKey` in `ios/Runner/Info.plist` and the `applovin.sdk.key` `<meta-data>` in `AndroidManifest.xml`. In the MAX dashboard, add Prebid as a custom network on your ad units, per Prebid's [MAX integration guide](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-max.html).
+
+## Banner
+
+```dart
+import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
+
+PrebidMaxBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  maxAdUnitId: 'YOUR_MAX_BANNER_AD_UNIT_ID',
+  width: 320,
+  height: 50,
+  listener: PrebidBannerAdListener(
+    onAdLoaded: () => debugPrint('MAX banner loaded'),
+  ),
+)
+```
+
+A 300×250 slot loads with MAX's MREC format; every other size uses the banner format. The parameters match the [AdMob banner](/docs/admob#banner) (`autoLoad`, `controller`, `adPosition`, `impOrtbConfig`). `controller.stopRefresh()` stops both Prebid's bid refresh and MAX's banner auto-refresh.
+
+## Interstitial and rewarded
+
+```dart
+late final PrebidMaxRewardedAd rewarded;
+
+rewarded = PrebidMaxRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  maxAdUnitId: 'YOUR_MAX_REWARDED_AD_UNIT_ID',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+await rewarded.loadAd();
+```
+
+`PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo`.
+
+:::note[One rewarded ad per MAX ad unit]
+MAX shares one rewarded ad object per ad unit. Loading a second `PrebidMaxRewardedAd` on the same `maxAdUnitId` takes it over, and the previous one receives `onAdFailed` ("Replaced by another ad on the same MAX ad unit").
+:::
+
+## Native
+
+```dart
+PrebidMaxNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  maxAdUnitId: 'YOUR_MAX_NATIVE_AD_UNIT_ID',
+  listener: PrebidMaxNativeAdListener(
+    onAdLoaded: () => debugPrint('native loaded'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+)
+```
+
+Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked` and `onAdFailed`; `assets`, `eventTrackers`, `context`, `contextSubType` and `placementType` work as on [AdMob](/docs/admob#native).
+
+## Events
+
+`onAdImpression` (banner, interstitial, rewarded, native) comes from MAX's revenue callback, which MAX fires when it records the impression. `show()` before the ad is loaded reports `onAdFailed`.
+
+## Compatibility
+
+<CompatibilityTable name="prebid_mobile_sdk_max" />

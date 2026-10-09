@@ -1,0 +1,103 @@
+---
+title: Interstitial & rewarded
+description: Prebid-rendered fullscreen display and video ads, rewards and rendering controls.
+---
+
+# Interstitial & rewarded
+
+Fullscreen ads follow a load → show → destroy lifecycle. Both classes present from the top-most view controller (iOS) or the current Activity (Android).
+
+## Interstitial
+
+```dart
+late final PrebidInterstitialAd interstitial;
+
+interstitial = PrebidInterstitialAd(
+  configId: 'prebid-demo-display-interstitial-320-480',
+  adFormats: const {AdFormat.banner, AdFormat.video},
+  listener: PrebidInterstitialAdListener(
+    onAdLoaded: () => interstitial.show(),
+    onAdFailed: (error) => debugPrint('failed: $error'),
+    onAdClosed: () => interstitial.destroy(),
+  ),
+);
+
+await interstitial.loadAd();
+```
+
+| Parameter | Description |
+| --- | --- |
+| `configId` | **Required.** Stored impression ID. |
+| `adFormats` | `{AdFormat.banner}` (default), `{AdFormat.video}` or both. |
+| `videoParameters` | [Video signals](/docs/video#video-parameters) for video demand. |
+| `controls` | [Rendering controls](#rendering-controls). |
+| `impOrtbConfig` | OpenRTB JSON merged into the impression. |
+| `listener` | `PrebidInterstitialAdListener`. |
+
+## Rewarded
+
+```dart
+late final PrebidRewardedAd rewarded;
+
+rewarded = PrebidRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+
+await rewarded.loadAd();
+```
+
+`PrebidReward` carries `type`, `count` and the creative's optional `ext` map. The reward rules (after a playback event, after a time, on completion) come from the bid's `rewarded` configuration on Prebid Server.
+
+## Lifecycle
+
+- `loadAd()` again replaces the previous ad; the old one stops sending events.
+- `show()` before `onAdLoaded`, or with no foreground Activity / view controller, reports `onAdFailed` instead of failing silently.
+- `onAdExpired` fires when the bid's `exp` elapses before `show()`. Load again.
+- Call `destroy()` when you're done, typically in `onAdClosed` or your widget's `dispose`.
+
+| Callback | When |
+| --- | --- |
+| `onAdLoaded` | Ready to show. |
+| `onAdFailed(String)` | Load or show failed. |
+| `onAdDisplayed` | On screen. |
+| `onAdClicked` | The user tapped the creative. |
+| `onAdClosed` | The user closed the ad. |
+| `onUserEarnedReward(PrebidReward)` | Rewarded only: the reward condition was met. |
+| `onAdExpired` | The bid expired before it was shown. |
+| `onAdImpression` | Mediation only (AdMob, MAX). |
+
+## Rendering controls
+
+```dart
+PrebidInterstitialAd(
+  configId: 'prebid-demo-video-interstitial-320-480',
+  adFormats: const {AdFormat.video},
+  controls: const PrebidFullscreenControls(
+    closeButtonPosition: PrebidButtonPosition.topLeft,
+    closeButtonArea: 0.1,
+    skipDelay: 5,
+    isMuted: true,
+    isSoundButtonVisible: true,
+  ),
+);
+```
+
+| Field | Description | Platforms |
+| --- | --- | --- |
+| `closeButtonArea`, `closeButtonPosition` | Close button size (fraction of the screen, `0..1`) and corner. | Both |
+| `skipButtonArea`, `skipButtonPosition`, `skipDelay` | Skip button size, corner, and the seconds before it appears. | Interstitial: both. Rewarded: Android |
+| `isMuted`, `isSoundButtonVisible` | Start muted; show the mute button. | Both |
+| `minSizePercentage` | Minimum creative size as a percentage of the screen. | Interstitial only |
+| `isAutoCloseOnCompletionEnabled` | Close when the video completes. | <Only platform="ios" /> |
+| `supportSKOverlay` | Present an SKOverlay (App Store sheet) for SKAdNetwork ads. | <Only platform="ios" /> |
+
+Every field is optional: `null` keeps the SDK default.
+
+## Video parameters on Android
+
+Prebid Android's rendering interstitial and rewarded units have no video-parameters setter, so the request carries the SDK's defaults and `videoParameters.maxDuration` only caps the length of the rendered video. iOS sends every field. See [Platform differences](/docs/platform-differences).

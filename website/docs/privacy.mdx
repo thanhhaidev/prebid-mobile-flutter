@@ -1,0 +1,59 @@
+---
+title: Privacy
+description: GDPR / TCF, CCPA, GPP and COPPA signals for Prebid requests, and what the native SDKs read on their own.
+---
+
+# Privacy
+
+Prebid adds consent signals to every bid request. Most apps don't set them by hand: a consent management platform (CMP) writes the IAB keys to the device and the native SDKs read them. `PrebidTargeting` lets you set or override them when you don't use a CMP.
+
+## What the SDK reads by itself
+
+| Framework | Keys | Storage |
+| --- | --- | --- |
+| TCF v2 (GDPR) | `IABTCF_gdprApplies`, `IABTCF_TCString`, `IABTCF_PurposeConsents` | Default `SharedPreferences` (Android) / `UserDefaults` (iOS) |
+| US Privacy (CCPA) | `IABUSPrivacy_String` | Same |
+| GPP | `IABGPP_HDR_GppString`, `IABGPP_GppSID` | Same |
+
+A CMP SDK that follows the IAB specs fills these in; Prebid sends them as `regs.gdpr`, `user.ext.consent`, `regs.us_privacy`, `regs.gpp` and `regs.gpp_sid`.
+
+## Setting signals explicitly
+
+```dart
+// GDPR / TCF v2
+await PrebidTargeting.setSubjectToGDPR(true);
+await PrebidTargeting.setGDPRConsentString('CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+await PrebidTargeting.setPurposeConsents('101111');
+
+// CCPA
+await PrebidTargeting.setUSPrivacyString('1YNN');
+
+// COPPA
+await PrebidTargeting.setSubjectToCOPPA(true);
+```
+
+Pass `null` to any setter to clear the value. Explicit values take precedence over the CMP's.
+
+| Method | Description |
+| --- | --- |
+| `setSubjectToGDPR(bool?)` / `getSubjectToGDPR()` | Whether GDPR applies (`regs.gdpr`). |
+| `setGDPRConsentString(String?)` / `getGDPRConsentString()` | The TCF consent string. |
+| `setPurposeConsents(String?)` / `getPurposeConsents()` | TCF purpose consents as a binary string (`"101…"`). |
+| `getPurposeConsent(int index)` | Consent for one purpose, 0-based (purpose 1 is index 0). |
+| `getDeviceAccessConsent()` | TCF purpose 1: storing and reading information on the device. |
+| `setUSPrivacyString(String?)` / `getUSPrivacyString()` | The IAB US Privacy string (`regs.us_privacy`). |
+| `setSubjectToCOPPA(bool?)` / `getSubjectToCOPPA()` | COPPA (`regs.coppa`). |
+
+On Android the US Privacy string is written to the default shared preferences, where Prebid reads it, so it also reaches any other SDK that follows the IAB spec.
+
+## Device data and consent
+
+Prebid limits what it sends when consent is missing: without device-access consent (TCF purpose 1) under GDPR, the advertising ID and other device identifiers are left out. `setShareGeoLocation(true)` sends the location only when the app holds the location permission.
+
+## App Tracking Transparency <Only platform="ios" />
+
+Ask for ATT permission before initializing the SDK if you rely on the IDFA. With `initializeSdk(nonTrackingUrl: …)`, Prebid sends requests to a separate Prebid Server endpoint while tracking isn't authorized.
+
+## First-party data access
+
+To limit which bidders receive your first-party data, see the [access control list](/docs/targeting#access-control-list).

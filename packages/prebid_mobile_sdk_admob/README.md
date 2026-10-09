@@ -1,7 +1,16 @@
 # prebid_mobile_sdk_admob
 
+> **Unofficial project.** This is an independent, community-maintained
+> Flutter wrapper around the official
+> [Prebid Mobile SDKs](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html).
+> It is not affiliated with, endorsed by, or maintained by Prebid.org. Report
+> issues with this plugin in [its repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues),
+> not to Prebid.
+
 Google **AdMob mediation** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter plugin, via
 Prebid's AdMob adapters.
+
+**Documentation:** [thanhhaidev.github.io/prebid-mobile-flutter](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/admob)
 
 Prebid demand competes inside the **Google AdMob mediation waterfall**: Prebid's
 `MediationBannerAdUnit` / `MediationInterstitialAdUnit` run the auction and hand
@@ -52,6 +61,21 @@ await MobileAds.instance.initialize();
 In the AdMob dashboard, add Prebid as a mediation / custom-event source on your
 ad units and wire the Prebid adapters, per the
 [Prebid AdMob integration docs](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).
+
+## Compatibility
+
+<!-- compatibility:start -->
+<!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
+
+| prebid_mobile_sdk_admob | Prebid Android (`prebid-mobile-sdk-admob-adapters`) | Prebid iOS (`PrebidMobileAdMobAdapters`) | Google Mobile Ads Android | Google Mobile Ads iOS |
+| --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` |
+
+Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
+
+Full mapping: [Compatibility](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/compatibility).
+
+<!-- compatibility:end -->
 
 ## Usage
 

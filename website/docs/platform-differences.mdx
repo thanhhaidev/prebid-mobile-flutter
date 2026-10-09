@@ -1,0 +1,39 @@
+---
+title: Platform differences
+description: Where Prebid Mobile behaves differently on Android and iOS, and what the plugin does about it.
+---
+
+# Platform differences
+
+The plugin reports the same callbacks and result codes on both platforms. Where the native SDKs differ and the plugin can't close the gap, the difference is listed here.
+
+## Not available on one platform
+
+| Feature | Android | iOS |
+| --- | --- | --- |
+| `initializeSdk(nonTrackingUrl:)` | Ignored | ✓ |
+| `setSourceApp`, `setItunesId` (SKAdNetwork) | Ignored | ✓ |
+| `PrebidFullscreenControls.supportSKOverlay` | Ignored | ✓ (core and GAM) |
+| `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ |
+| Rewarded skip controls | ✓ | Ignored |
+| Banner `videoParameters` | SDK defaults | ✓ |
+| Interstitial / rewarded `videoParameters` | `maxDuration` caps the rendered video | ✓ every field |
+
+## Behavior the plugin aligns
+
+| Topic | Native difference | What you get |
+| --- | --- | --- |
+| Banner auto-refresh | iOS refreshes every 60 s by default and clamps `0` to 15 s | `null` / `0` disables refresh on both |
+| Original API auto-refresh | Prebid Android's `PrebidAdUnit` can't refresh; iOS ignores intervals under 30 s | Refresh works on both, clamped to 30–120 s |
+| Status check disabled | iOS reports "skipped" | `succeeded` on both |
+| Empty seat bid | Android reports success | `prebidDemandNoBids` on both |
+| Requests before init | Android drops them silently | `onAdFailed` / `prebidSdkNotInitialized` |
+| Native impression | Fired when a tracker request succeeds (never without trackers) | Viewability: half the view for 1 s, once per ad |
+| Banner `onAdDisplayed` | iOS has no separate event | Fired with `onAdLoaded` on iOS |
+| Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
+
+## Remaining differences
+
+- **Banner refresh bounds:** Prebid clamps the banner interval to 30–120 s on Android and 15–120 s on iOS.
+- **Banner impression tracker (Original API):** iOS tracks the current bid; Android attaches the GAM view when the next auction starts. See [impression tracking](/docs/original-api#impression-tracking).
+- **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).

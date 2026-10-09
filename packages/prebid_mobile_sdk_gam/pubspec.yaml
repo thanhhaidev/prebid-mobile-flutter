@@ -1,9 +1,10 @@
 name: prebid_mobile_sdk_gam
-description: "Google Ad Manager (GAM) rendering for the Prebid Mobile Flutter SDK, via Prebid's GAM event handlers. Optional companion to prebid_mobile_sdk."
+description: "Unofficial Google Ad Manager (GAM) rendering for prebid_mobile_sdk, via Prebid's GAM event handlers. Optional companion package."
 version: 1.0.0
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
 repository: https://github.com/thanhhaidev/prebid-mobile-flutter
 issue_tracker: https://github.com/thanhhaidev/prebid-mobile-flutter/issues
+documentation: https://thanhhaidev.github.io/prebid-mobile-flutter/docs/gam
 
 topics:
   - ads

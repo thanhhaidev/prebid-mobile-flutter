@@ -1,5 +1,12 @@
 # Prebid Mobile Flutter Example App
 
+> **Unofficial project.** This is an independent, community-maintained
+> Flutter wrapper around the official
+> [Prebid Mobile SDKs](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html).
+> It is not affiliated with, endorsed by, or maintained by Prebid.org. Report
+> issues with this plugin in [its repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues),
+> not to Prebid.
+
 A test app for the `prebid_mobile_sdk` plugin and its GAM / AdMob / MAX
 companion packages, structured like Prebid's
 [`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).

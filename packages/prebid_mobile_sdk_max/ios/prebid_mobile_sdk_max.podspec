@@ -5,7 +5,7 @@
 Pod::Spec.new do |s|
   s.name             = 'prebid_mobile_sdk_max'
   s.version          = '1.0.0'
-  s.summary          = 'AppLovin MAX mediation for the Prebid Mobile Flutter SDK.'
+  s.summary          = 'Unofficial AppLovin MAX mediation for the prebid_mobile_sdk Flutter plugin.'
   s.description      = <<-DESC
 Optional companion to prebid_mobile_sdk that competes Prebid demand inside the
 AppLovin MAX mediation waterfall using Prebid's MAX adapters. Pulls in the

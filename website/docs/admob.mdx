@@ -1,0 +1,87 @@
+---
+title: AdMob
+description: prebid_mobile_sdk_admob adds Prebid demand to Google AdMob mediation through Prebid's AdMob adapters.
+---
+
+# AdMob
+
+[`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob) puts Prebid demand inside the **AdMob mediation waterfall**. Prebid's mediation ad units run the auction and hand the winning bid to the AdMob ad through the Prebid AdMob adapter; AdMob renders the Prebid creative or a competing AdMob ad.
+
+## Install
+
+```bash
+flutter pub add prebid_mobile_sdk prebid_mobile_sdk_admob
+```
+
+The package bundles the Google Mobile Ads SDK, which needs an AdMob app ID:
+
+- **Android:** `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-…~…"/>` in `AndroidManifest.xml`.
+- **iOS:** `GADApplicationIdentifier` in `ios/Runner/Info.plist`.
+
+Initialize Google Mobile Ads once at startup (for example `MobileAds.instance.initialize()`). In the AdMob dashboard, add Prebid as a custom event on your ad units, as described in Prebid's [AdMob integration guide](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).
+
+## Banner
+
+```dart
+import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+
+PrebidAdMobBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/6300978111',
+  width: 320,
+  height: 50,
+  listener: PrebidBannerAdListener(
+    onAdLoaded: () => debugPrint('AdMob banner loaded'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+)
+```
+
+| Parameter | Description |
+| --- | --- |
+| `configId`, `adMobAdUnitId` | **Required.** Prebid stored impression ID and AdMob ad unit ID. |
+| `width`, `height` | **Required.** The slot resizes to the rendered creative. |
+| `autoLoad`, `controller` | Load on demand with a [`PrebidBannerAdController`](/docs/banner#load-on-demand). |
+| `adPosition`, `impOrtbConfig` | Ad position and impression-level OpenRTB JSON. |
+
+## Interstitial and rewarded
+
+```dart
+late final PrebidAdMobInterstitialAd interstitial;
+
+interstitial = PrebidAdMobInterstitialAd(
+  configId: 'prebid-demo-display-interstitial-320-480',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/1033173712',
+  listener: PrebidInterstitialAdListener(
+    onAdLoaded: () => interstitial.show(),
+    onAdClosed: () => interstitial.destroy(),
+  ),
+);
+await interstitial.loadAd();
+```
+
+`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
+
+## Native
+
+```dart
+PrebidAdMobNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  adMobAdUnitId: 'YOUR_ADMOB_NATIVE_AD_UNIT_ID',
+  listener: PrebidAdMobNativeAdListener(
+    onAdLoaded: () => debugPrint('native loaded'),
+    onAdImpression: () => debugPrint('impression'),
+    onAdClicked: () => debugPrint('click'),
+  ),
+)
+```
+
+Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `assets` and `eventTrackers` change the requested assets; `context`, `contextSubType` and `placementType` default to social, general social and in-feed on both platforms.
+
+## Events
+
+Banner, interstitial and rewarded listeners receive AdMob's `onAdImpression` as well as the core callbacks. `show()` before the ad is loaded, or without a foreground Activity / view controller, reports `onAdFailed`; `isLoaded` turns false after `show()`, `onAdClosed` and `onAdFailed`.
+
+## Compatibility
+
+<CompatibilityTable name="prebid_mobile_sdk_admob" />

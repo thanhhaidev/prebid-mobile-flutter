@@ -1,17 +1,21 @@
-## 1.0.0 - 2026-10-10
+# Changelog
 
-* Initial release: Google AdMob mediation for `prebid_mobile_sdk`.
-* `PrebidAdMobBannerAd` — AdMob-mediated banner (Android + iOS) with dynamic sizing and
-  `PrebidBannerAdController` (`loadAd` / `stopRefresh`).
-* `PrebidAdMobInterstitialAd` — AdMob-mediated interstitial (Android + iOS).
-* `PrebidAdMobRewardedAd` — AdMob-mediated rewarded (Android + iOS) with reward callback.
-* `PrebidAdMobNativeAd` — AdMob-mediated native (Android + iOS), rendered via the SDK
-  native ad view (incl. media view). Events via `PrebidAdMobNativeAdListener`.
-  Request `assets` / `eventTrackers` are configurable.
-* Banner / interstitial / rewarded report `onAdImpression`; interstitial / rewarded accept
-  `PrebidFullscreenControls` (`supportSKOverlay` has no mediation equivalent and is ignored).
-* Interstitial / rewarded: `videoParameters` (sent in the request on iOS; on Android `maxDuration` only caps the rendered video).
-* Banner takes `adPosition` and `impOrtbConfig`; interstitial / rewarded take `impOrtbConfig` (also how to set the GPID: `ext.gpid`); native takes `context` / `contextSubType` / `placementType`.
-* Android native requests the same default context, subtype and placement as iOS (social, general social, in feed).
-* Banner widgets re-attach a swapped `PrebidBannerAdController` and recreate the native view when their configuration changes.
-* Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).
+All notable changes to this package are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-10-10
+
+First stable release: Prebid demand in Google AdMob mediation through Prebid's
+AdMob adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
+1.0.0.
+
+### Added
+
+- Banner, interstitial, rewarded and native ads mediated by AdMob, with
+  AdMob's impression events.
+- Banners that resize to the rendered creative and can load on demand.
+- Rendering controls and video signals for interstitial and rewarded ads.
+- Native ads rendered in AdMob's native ad view, with configurable assets and
+  context.
+- Ad position and per-impression OpenRTB configuration, including the GPID.

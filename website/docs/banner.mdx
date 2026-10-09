@@ -1,0 +1,112 @@
+---
+title: Banner
+description: Prebid-rendered display, multisize and outstream video banners with PrebidBannerAd.
+---
+
+# Banner
+
+`PrebidBannerAd` is a widget that runs a Prebid auction and renders the winning creative in a native view. It starts at the requested size and resizes to the creative that wins.
+
+```dart
+PrebidBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  width: 320,
+  height: 50,
+  refreshIntervalSeconds: 30,
+  listener: PrebidBannerAdListener(
+    onAdLoaded: () => debugPrint('loaded'),
+    onAdDisplayed: () => debugPrint('on screen'),
+    onAdFailed: (error) => debugPrint('failed: $error'),
+    onAdClicked: () => debugPrint('clicked'),
+    onAdClosed: () => debugPrint('click-through closed'),
+    onAdExpired: () => debugPrint('bid expired before display'),
+  ),
+)
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `configId` | `String` | **Required.** Stored impression ID on your Prebid Server. |
+| `width`, `height` | `int` | **Required.** Requested size in logical pixels. |
+| `additionalSizes` | `List<Size>?` | More sizes the slot accepts (multisize). |
+| `refreshIntervalSeconds` | `int?` | Auto-refresh interval. `null` or `0` disables refresh. |
+| `autoLoad` | `bool` | Load when the view is created (default `true`). |
+| `controller` | `PrebidBannerAdController?` | Load on demand and stop refresh. |
+| `adFormats` | `Set<AdFormat>?` | `{AdFormat.banner, AdFormat.video}` for a multiformat banner. Overrides `isVideo`. |
+| `isVideo` | `bool` | Request outstream video only. |
+| `videoPlacementType` | `VideoPlacementType?` | `inBanner` (default), `inArticle` or `inFeed`. |
+| `videoParameters` | `VideoParameters?` | Video signals. <Only platform="ios" /> |
+| `adPosition` | `PrebidAdPosition?` | Position on screen (`imp.banner.pos`): `header`, `footer`, `aboveTheFold`, … |
+| `pbAdSlot` | `String?` | Prebid ad slot (`imp.ext.data.pbadslot`). |
+| `impOrtbConfig` | `String?` | OpenRTB JSON merged into the impression, e.g. `{"ext":{"gpid":"/1111/home"}}`. |
+| `listener` | `PrebidBannerAdListener?` | Lifecycle callbacks. |
+| `videoListener` | `PrebidBannerVideoListener?` | Outstream video playback callbacks. |
+
+Prebid clamps the refresh interval to 30–120 seconds on Android and 15–120 seconds on iOS. Changing a parameter rebuilds the native view with the new configuration and loads it again; swapping the `listener` doesn't.
+
+## Multisize
+
+```dart
+PrebidBannerAd(
+  configId: 'prebid-demo-banner-multisize',
+  width: 320,
+  height: 50,
+  additionalSizes: const [Size(728, 90)],
+)
+```
+
+Prebid requests every size and the widget adopts the winner's size once it renders.
+
+## Load on demand
+
+```dart
+final controller = PrebidBannerAdController();
+
+PrebidBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  width: 320,
+  height: 50,
+  autoLoad: false,
+  controller: controller,
+);
+
+// Later, for example once the slot scrolls into view:
+await controller.loadAd();
+await controller.stopRefresh();
+```
+
+`loadAd()` is safe to call before the native view exists: the load runs when the view is created. The same controller works with the GAM, AdMob and MAX banners.
+
+## Outstream video
+
+```dart
+PrebidBannerAd(
+  configId: 'prebid-demo-video-outstream',
+  width: 300,
+  height: 250,
+  adFormats: const {AdFormat.video},
+  videoPlacementType: VideoPlacementType.inArticle,
+  videoListener: PrebidBannerVideoListener(
+    onVideoCompleted: () => debugPrint('video completed'),
+    onVideoMuted: () => debugPrint('muted'),
+  ),
+)
+```
+
+`PrebidBannerVideoListener` has `onVideoCompleted`, `onVideoPaused`, `onVideoResumed`, `onVideoMuted` and `onVideoUnmuted`.
+
+On iOS, `videoParameters` sets every video signal on the banner (an explicit `placement` overrides `videoPlacementType`). Prebid Android's `BannerView` has no video-parameters setter, so Android sends the SDK's defaults plus the placement.
+
+## Events
+
+| Callback | When |
+| --- | --- |
+| `onAdLoaded` | The creative loaded. |
+| `onAdDisplayed` | The creative is on screen. iOS reports it together with `onAdLoaded`. |
+| `onAdFailed(String)` | No bid, a network error or a render failure. |
+| `onAdClicked` | The user tapped the creative. |
+| `onAdClosed` | The click-through (in-app browser or modal) was dismissed. |
+| `onAdExpired` | The bid expired (`bid.exp`) before it was shown. |
+| `onAdImpression` | Mediation only: the AdMob and MAX banners report the ad SDK's impression. |

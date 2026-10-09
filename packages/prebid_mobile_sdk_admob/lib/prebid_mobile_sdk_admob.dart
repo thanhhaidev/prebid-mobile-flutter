@@ -1,5 +1,8 @@
 /// Google **AdMob mediation** integration for Prebid Mobile Flutter.
 ///
+/// Unofficial: an independent, community-maintained project, not affiliated
+/// with or endorsed by Prebid.org.
+///
 /// This optional companion package competes Prebid demand inside the Google
 /// AdMob mediation waterfall, using Prebid's
 /// [AdMob adapters](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-admob.html).

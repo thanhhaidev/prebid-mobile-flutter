@@ -3,7 +3,16 @@
 [![pub package](https://img.shields.io/pub/v/prebid_mobile_sdk.svg)](https://pub.dev/packages/prebid_mobile_sdk)
 [![Flutter CI](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml/badge.svg)](https://github.com/thanhhaidev/prebid-mobile-flutter/actions/workflows/flutter_ci.yml)
 
+> **Unofficial project.** This is an independent, community-maintained
+> Flutter wrapper around the official
+> [Prebid Mobile SDKs](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html).
+> It is not affiliated with, endorsed by, or maintained by Prebid.org. Report
+> issues with this plugin in [its repository](https://github.com/thanhhaidev/prebid-mobile-flutter/issues),
+> not to Prebid.
+
 A comprehensive Flutter plugin wrapping the [Prebid Mobile SDK](https://docs.prebid.org/prebid-mobile/prebid-mobile-getting-started.html) for **Android** and **iOS**.
+
+**Documentation:** [thanhhaidev.github.io/prebid-mobile-flutter](https://thanhhaidev.github.io/prebid-mobile-flutter/)
 
 This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the Prebid SDK handles both the auction and rendering directly, with no external ad server required.
 
@@ -12,7 +21,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 ## Table of Contents
 
 - [Features](#features)
-- [Platform Requirements](#platform-requirements)
+- [Platform Requirements](#platform-requirements) (native Prebid SDK versions)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
@@ -57,17 +66,20 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 
 ## Platform Requirements
 
-| Platform | Minimum Version |
-|----------|----------------|
-| Flutter  | ≥ 3.41.0       |
-| Dart     | ≥ 3.11.0       |
-| Android  | API 24 (Android 7.0) |
-| iOS      | 15.0           |
+Each release bundles a fixed Prebid Mobile SDK version per platform:
 
-**Native SDK versions bundled:**
+<!-- compatibility:start -->
+<!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
 
-- **Android:** Prebid Mobile SDK `3.4.0` (Maven)
-- **iOS:** PrebidMobile `3.4.1+` (CocoaPods / SPM)
+| prebid_mobile_sdk | Prebid Android | Prebid iOS | Android | iOS | Flutter | Dart |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | API 24+ | 15.0+ | `>=3.41.5` | `^3.11.0` |
+
+Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
+
+Full mapping: [Compatibility](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/compatibility).
+
+<!-- compatibility:end -->
 
 ---
 
@@ -802,7 +814,7 @@ See [example/README.md](https://github.com/thanhhaidev/prebid-mobile-flutter/tre
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/thanhhaidev/prebid-mobile-flutter).
+Contributions are welcome: see [CONTRIBUTING.md](https://github.com/thanhhaidev/prebid-mobile-flutter/blob/main/CONTRIBUTING.md) and the [Code of Conduct](https://github.com/thanhhaidev/prebid-mobile-flutter/blob/main/CODE_OF_CONDUCT.md).
 
 ---
 

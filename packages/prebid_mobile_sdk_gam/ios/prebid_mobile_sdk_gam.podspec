@@ -20,8 +20,8 @@ Mobile Ads SDK.
   s.source_files = 'prebid_mobile_sdk_gam/Sources/prebid_mobile_sdk_gam/**/*.swift'
   s.dependency 'Flutter'
   # Brings in PrebidMobile + Google-Mobile-Ads-SDK transitively.
-  s.dependency 'PrebidMobileGAMEventHandlers', '~> 3.1'
-  s.platform = :ios, '13.0'
+  s.dependency 'PrebidMobileGAMEventHandlers', '~> 3.4', '>= 3.4.1'
+  s.platform = :ios, '15.0'
 
   # The Google Mobile Ads SDK (pulled in transitively) ships as a static
   # framework, so this pod must be a static framework too — otherwise CocoaPods

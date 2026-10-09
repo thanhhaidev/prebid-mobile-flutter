@@ -61,12 +61,12 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 | Flutter  | ≥ 3.41.0       |
 | Dart     | ≥ 3.11.0       |
 | Android  | API 24 (Android 7.0) |
-| iOS      | 13.0           |
+| iOS      | 15.0           |
 
 **Native SDK versions bundled:**
 
-- **Android:** Prebid Mobile SDK `3.3.0` (Maven)
-- **iOS:** PrebidMobile `~> 3.1` (CocoaPods)
+- **Android:** Prebid Mobile SDK `3.4.0` (Maven)
+- **iOS:** PrebidMobile `3.4.1+` (CocoaPods / SPM)
 
 ---
 
@@ -81,7 +81,7 @@ dependencies:
 
 ### iOS
 
-Ensure your `ios/Podfile` specifies `platform :ios, '13.0'`, then run:
+Ensure your `ios/Podfile` specifies `platform :ios, '15.0'`, then run:
 
 ```bash
 cd ios && pod install

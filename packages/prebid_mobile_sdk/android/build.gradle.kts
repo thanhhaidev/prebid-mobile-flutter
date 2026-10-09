@@ -71,7 +71,7 @@ android {
 }
 
 dependencies {
-    implementation("org.prebid:prebid-mobile-sdk:3.3.0")
+    implementation("org.prebid:prebid-mobile-sdk:3.4.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }

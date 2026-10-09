@@ -21,8 +21,8 @@ providing banner, interstitial, and rewarded ad formats.
     'prebid_mobile_sdk_privacy' => ['prebid_mobile_sdk/Sources/prebid_mobile_sdk/Resources/PrivacyInfo.xcprivacy']
   }
   s.dependency 'Flutter'
-  s.dependency 'PrebidMobile', '~> 3.1'
-  s.platform = :ios, '13.0'
+  s.dependency 'PrebidMobile', '~> 3.4', '>= 3.4.1'
+  s.platform = :ios, '15.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

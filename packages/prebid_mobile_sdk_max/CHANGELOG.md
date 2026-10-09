@@ -5,3 +5,4 @@
 * `PrebidMaxInterstitialAd` — MAX-mediated interstitial (Android + iOS).
 * `PrebidMaxRewardedAd` — MAX-mediated rewarded (Android + iOS) with reward callback.
 * `PrebidMaxNativeAd` — MAX-mediated native (Android + iOS), rendered via the SDK native ad view.
+* Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

@@ -45,8 +45,8 @@ Initial release of the `prebid_mobile_sdk` plugin.
 - **Error Handling**
   - `PrebidException` with typed `PrebidErrorCode` (`initializationFailed`, `adLoadFailed`, `timeout`, etc.)
 - **Infrastructure**
-  - **Android** — Prebid Mobile SDK `3.3.0` via Maven
-  - **iOS** — PrebidMobile `~> 3.1` via CocoaPods
+  - **Android** — Prebid Mobile SDK `3.4.0` via Maven
+  - **iOS** — PrebidMobile `3.4.1+` via CocoaPods / SPM (iOS 15.0+)
   - Pigeon-based code generation for Dart, Kotlin, and Swift
 - **Testing**
   - Unit tests via Mockito covering SDK, targeting, and all ad format classes

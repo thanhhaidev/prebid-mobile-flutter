@@ -54,5 +54,5 @@ android {
 dependencies {
     // Prebid AdMob adapters. Pulls in the Google Mobile Ads SDK
     // (play-services-ads) transitively — the reason this is a separate package.
-    implementation("org.prebid:prebid-mobile-sdk-admob-adapters:3.3.0")
+    implementation("org.prebid:prebid-mobile-sdk-admob-adapters:3.4.0")
 }

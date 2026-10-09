@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
   name: "prebid_mobile_sdk_admob",
   platforms: [
-    .iOS("13.0")
+    .iOS("15.0")
   ],
   products: [
     .library(name: "prebid-mobile-sdk-admob", targets: ["prebid_mobile_sdk_admob"])
   ],
   dependencies: [
-    .package(url: "https://github.com/prebid/prebid-mobile-ios.git", from: "3.3.3"),
+    .package(url: "https://github.com/prebid/prebid-mobile-ios.git", from: "3.4.1"),
     .package(
       url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
       from: "13.0.0"

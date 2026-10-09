@@ -1,5 +1,5 @@
 PODS:
-  - AppLovinSDK (13.6.3)
+  - AppLovinSDK (13.6.4)
   - Flutter (1.0.0)
   - Google-Mobile-Ads-SDK (13.3.0):
     - GoogleUserMessagingPlatform (>= 1.1)
@@ -12,28 +12,28 @@ PODS:
     - Flutter
   - prebid_mobile_sdk (0.0.1):
     - Flutter
-    - PrebidMobile (~> 3.1)
+    - PrebidMobile (>= 3.4.1, ~> 3.4)
   - prebid_mobile_sdk_admob (0.0.1):
     - Flutter
-    - PrebidMobileAdMobAdapters (~> 3.1)
+    - PrebidMobileAdMobAdapters (>= 3.4.1, ~> 3.4)
   - prebid_mobile_sdk_gam (0.0.1):
     - Flutter
-    - PrebidMobileGAMEventHandlers (~> 3.1)
+    - PrebidMobileGAMEventHandlers (>= 3.4.1, ~> 3.4)
   - prebid_mobile_sdk_max (0.0.1):
     - Flutter
-    - PrebidMobileMAXAdapters (~> 3.1)
-  - PrebidMobile (3.3.0):
-    - PrebidMobile/core (= 3.3.0)
-  - PrebidMobile/core (3.3.0)
-  - PrebidMobileAdMobAdapters (3.3.0):
+    - PrebidMobileMAXAdapters (>= 3.4.1, ~> 3.4)
+  - PrebidMobile (3.4.1):
+    - PrebidMobile/core (= 3.4.1)
+  - PrebidMobile/core (3.4.1)
+  - PrebidMobileAdMobAdapters (3.4.1):
     - Google-Mobile-Ads-SDK (>= 13.0.0)
-    - PrebidMobile (= 3.3.0)
-  - PrebidMobileGAMEventHandlers (3.3.0):
+    - PrebidMobile (= 3.4.1)
+  - PrebidMobileGAMEventHandlers (3.4.1):
     - Google-Mobile-Ads-SDK (>= 13.0.0)
-    - PrebidMobile (= 3.3.0)
-  - PrebidMobileMAXAdapters (3.3.0):
+    - PrebidMobile (= 3.4.1)
+  - PrebidMobileMAXAdapters (3.4.1):
     - AppLovinSDK
-    - PrebidMobile (= 3.3.0)
+    - PrebidMobile (= 3.4.1)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -88,24 +88,24 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
-  AppLovinSDK: f3da9503e8193d8c4badc1a9965d73a0779812fa
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  AppLovinSDK: 730be87bac90c5b0f7d507c3a2530213f7685370
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   Google-Mobile-Ads-SDK: 7692126a35ed859f20635af281c50a2162be8bea
   google_mobile_ads: bab325fd4e31c9705cab0cb298e4f5a9bdb7370f
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  prebid_mobile_sdk: e879d34c385fd7bd334ea2a18a1fe41b369583e3
-  prebid_mobile_sdk_admob: 6e54bd8114d9e0466b054cd3d0654eefa37a5791
-  prebid_mobile_sdk_gam: 9d25b26460c7f2758c2fc9c6e652b348855514ee
-  prebid_mobile_sdk_max: a5d279635218d64204d00f072beec9f077c5b29f
-  PrebidMobile: 3712f3c98fd66f918dde268e8a9ac0ee8e09fcca
-  PrebidMobileAdMobAdapters: afcfd2bda54dc024a7ec9ea43f521b5a6e4d5563
-  PrebidMobileGAMEventHandlers: bcac5da28f521db8b0b90a5c88efd8b467fa03ba
-  PrebidMobileMAXAdapters: eaa7106f1aab284737423ed5547c611c092a6e98
+  prebid_mobile_sdk: a01d51e8871ab7215d8db4ed849be0f49ca25666
+  prebid_mobile_sdk_admob: 004df980d77ce0baabffa699d40e7d30ebaff004
+  prebid_mobile_sdk_gam: 8250f180a18a30bd97a574fc098fbd66e031141a
+  prebid_mobile_sdk_max: fa1f1407f962dee6ee2816087f63fa8670917e94
+  PrebidMobile: 2ebb30717214023ac5178f050a4aa1a7c41396d6
+  PrebidMobileAdMobAdapters: ace94831a3e855c068410f912d0763f15add8a7f
+  PrebidMobileGAMEventHandlers: b79e23615d5903aeeb1421070ed8a5e628978d34
+  PrebidMobileMAXAdapters: 1efd6bbf00e7d30f6df34d7d4357c1da0cbebcf9
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+PODFILE CHECKSUM: 3ba3a73b1b12adcf321a227a745625fe0888cc82
 
 COCOAPODS: 1.16.2

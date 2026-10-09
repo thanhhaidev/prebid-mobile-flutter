@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
   name: "prebid_mobile_sdk",
   platforms: [
-    .iOS("13.0")
+    .iOS("15.0")
   ],
   products: [
     .library(name: "prebid-mobile-sdk", targets: ["prebid_mobile_sdk"])
   ],
   dependencies: [
-    .package(url: "https://github.com/prebid/prebid-mobile-ios.git", from: "3.3.3")
+    .package(url: "https://github.com/prebid/prebid-mobile-ios.git", from: "3.4.1")
   ],
   targets: [
     .target(

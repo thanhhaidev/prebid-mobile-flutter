@@ -20,8 +20,8 @@ AppLovin MAX SDK.
   s.source_files = 'prebid_mobile_sdk_max/Sources/prebid_mobile_sdk_max/**/*.swift'
   s.dependency 'Flutter'
   # Brings in PrebidMobile + AppLovinSDK transitively.
-  s.dependency 'PrebidMobileMAXAdapters', '~> 3.1'
-  s.platform = :ios, '13.0'
+  s.dependency 'PrebidMobileMAXAdapters', '~> 3.4', '>= 3.4.1'
+  s.platform = :ios, '15.0'
 
   # The AppLovin MAX SDK (pulled in transitively) ships as a static framework,
   # so this pod must be a static framework too — otherwise CocoaPods rejects the

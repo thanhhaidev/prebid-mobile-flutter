@@ -166,6 +166,15 @@ class PrebidMobile {
     api.setCustomStatusEndpoint(endpoint);
   }
 
+  /// Assign sequential IDs (1, 2, …) to native request assets.
+  ///
+  /// Required when the native creative refers to assets by ID — Prebid Server
+  /// drops a bid whose response assets don't match an ID in the request.
+  /// Default `false`.
+  static Future<void> setShouldAssignNativeAssetId(bool assign) async {
+    api.setShouldAssignNativeAssetId(assign);
+  }
+
   // ---------------------------------------------------------------------------
   // External User IDs
   // ---------------------------------------------------------------------------

@@ -41,6 +41,25 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
   bool get _isInApp => widget.tc.integration == DemoIntegration.inApp;
 
+  static const _defaultAssets = [
+    NativeAsset.title(length: 90, required: true),
+    NativeAsset.image(
+      imageType: NativeImageType.main,
+      widthMin: 200,
+      heightMin: 50,
+      required: true,
+    ),
+    NativeAsset.image(
+      imageType: NativeImageType.icon,
+      widthMin: 20,
+      heightMin: 20,
+      required: true,
+    ),
+    NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+    NativeAsset.data(dataType: NativeDataType.desc, required: true),
+    NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
+  ];
+
   void _track(String event) {
     _tracker.track(event);
     _log.log('Native', event);
@@ -138,26 +157,12 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
     _ad?.destroy();
     setState(() => _response = null);
+    await PrebidMobile.setShouldAssignNativeAssetId(
+      widget.tc.assignNativeAssetIds,
+    );
     _ad = PrebidNativeAd(
       configId: widget.tc.configId,
-      assets: const [
-        NativeAsset.title(length: 90, required: true),
-        NativeAsset.image(
-          imageType: NativeImageType.main,
-          widthMin: 200,
-          heightMin: 50,
-          required: true,
-        ),
-        NativeAsset.image(
-          imageType: NativeImageType.icon,
-          widthMin: 20,
-          heightMin: 20,
-          required: true,
-        ),
-        NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
-        NativeAsset.data(dataType: NativeDataType.desc, required: true),
-        NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
-      ],
+      assets: widget.tc.nativeAssets ?? _defaultAssets,
       eventTrackers: const [
         NativeEventTracker(
           eventType: NativeEventType.impression,

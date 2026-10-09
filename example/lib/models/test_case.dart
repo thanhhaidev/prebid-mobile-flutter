@@ -1,3 +1,5 @@
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show NativeAsset;
+
 import 'demo_ad_format.dart';
 import 'demo_integration.dart';
 
@@ -27,6 +29,15 @@ class TestCase {
   /// native and all non-GAM-native cases.
   final String? customFormatId;
 
+  /// Native assets to request for In-App native cases; `null` uses the page's
+  /// default asset set.
+  final List<NativeAsset>? nativeAssets;
+
+  /// Whether native request assets get sequential IDs
+  /// (`PrebidMobile.setShouldAssignNativeAssetId`). Needed when the creative
+  /// references assets by ID, e.g. `prebid-demo-native-links`.
+  final bool assignNativeAssetIds;
+
   final int width;
   final int height;
 
@@ -38,6 +49,8 @@ class TestCase {
     this.integration = DemoIntegration.inApp,
     this.adUnitId,
     this.customFormatId,
+    this.nativeAssets,
+    this.assignNativeAssetIds = false,
     this.width = 320,
     this.height = 50,
   });

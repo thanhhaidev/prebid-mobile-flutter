@@ -96,6 +96,12 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
         mainImageView.contentMode = .scaleAspectFill
         mainImageView.clipsToBounds = true
         mainImageView.isHidden = (ad.imageUrl ?? "").isEmpty
+        // Hide asset views the ad doesn't carry (e.g. data-only creatives).
+        iconView.isHidden = (ad.iconUrl ?? "").isEmpty
+        titleLabel.isHidden = (ad.title ?? "").isEmpty
+        sponsoredLabel.isHidden = (ad.sponsoredBy ?? "").isEmpty
+        bodyLabel.isHidden = (ad.text ?? "").isEmpty
+        ctaButton.isHidden = (ad.callToAction ?? "").isEmpty
         downloadImage(ad.iconUrl, into: iconView)
         downloadImage(ad.imageUrl, into: mainImageView)
 
@@ -162,8 +168,15 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView, NativeAdEventDelegate
 
     // MARK: - NativeAdEventDelegate
 
+    // Prebid calls this once per impression tracker URL; report one impression.
+    private var impressionReported = false
+
     func adDidLogImpression(ad: NativeAd) {
-        send("onAdImpression")
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, !self.impressionReported else { return }
+            self.impressionReported = true
+            self.send("onAdImpression")
+        }
     }
 
     func adWasClicked(ad: NativeAd) {

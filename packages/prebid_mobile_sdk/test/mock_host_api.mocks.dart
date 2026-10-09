@@ -183,6 +183,15 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setShouldAssignNativeAssetId(bool? assign) =>
+      (super.noSuchMethod(
+            Invocation.method(#setShouldAssignNativeAssetId, [assign]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> setExternalUserIds(List<_i2.ExternalUserIdData>? userIds) =>
       (super.noSuchMethod(
             Invocation.method(#setExternalUserIds, [userIds]),

@@ -1,3 +1,6 @@
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
+    show NativeAsset, NativeDataType;
+
 import '../models/demo_ad_format.dart';
 import '../models/demo_integration.dart';
 import '../models/test_case.dart';
@@ -370,10 +373,20 @@ class TestCaseRegistry {
       configId: 'prebid-demo-banner-native-styles',
       format: DemoAdFormat.native,
     ),
+    // The links creative returns four data assets with IDs 1-4 (each with its
+    // own link), so request exactly those with sequential asset IDs — Prebid
+    // Server drops the bid otherwise. Mirrors Prebid's internal test app.
     TestCase(
       title: 'Native Ad Links (In-App)',
       configId: 'prebid-demo-native-links',
       format: DemoAdFormat.native,
+      assignNativeAssetIds: true,
+      nativeAssets: [
+        NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+        NativeAsset.data(dataType: NativeDataType.desc, required: true),
+        NativeAsset.data(dataType: NativeDataType.rating, required: true),
+        NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
+      ],
     ),
 
     // =========================================================================

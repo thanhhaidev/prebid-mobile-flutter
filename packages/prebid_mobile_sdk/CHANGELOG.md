@@ -17,6 +17,7 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - Custom headers, stored auction/bid responses
   - Creative factory timeout settings
   - `getSdkVersion()` to query native SDK version
+  - `setShouldAssignNativeAssetId()` — sequential native asset IDs (needed when a creative references assets by ID)
 - **External User IDs** — Third-party identity module support
   - `ExternalUserId` class with `source`, `identifier`, `atype`, and `ext`
   - `setExternalUserIds()`, `getExternalUserIds()`, `clearExternalUserIds()`

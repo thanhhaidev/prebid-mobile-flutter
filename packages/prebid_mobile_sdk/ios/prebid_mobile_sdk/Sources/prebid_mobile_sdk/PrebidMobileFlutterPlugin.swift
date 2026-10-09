@@ -144,6 +144,10 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setCustomStatusEndpoint(endpoint: String) throws {
         Prebid.shared.customStatusEndpoint = endpoint
     }
+
+    func setShouldAssignNativeAssetId(assign: Bool) throws {
+        Prebid.shared.shouldAssignNativeAssetID = assign
+    }
     
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {

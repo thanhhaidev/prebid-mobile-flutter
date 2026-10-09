@@ -57,12 +57,18 @@ class NativeAdPlatformView(
     private val root = FrameLayout(context)
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    // Prebid calls onAdImpression once per impression tracker URL; report a
+    // single impression per ad.
+    private val impressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
+
     // Held as a field: Prebid keeps only a WeakReference to the listener.
     // Prebid fires impressions from a background thread, so hop to main.
     private val eventListener = object : PrebidNativeAdEventListener {
         override fun onAdClicked() = sendEvent("onAdClicked")
 
-        override fun onAdImpression() = sendEvent("onAdImpression")
+        override fun onAdImpression() {
+            if (impressionReported.compareAndSet(false, true)) sendEvent("onAdImpression")
+        }
 
         override fun onAdExpired() = sendEvent("onAdExpired")
     }
@@ -98,6 +104,12 @@ class NativeAdPlatformView(
             dp(180),
         )
         if (ad.imageUrl.isNullOrEmpty()) imageView.visibility = View.GONE
+        // Hide asset views the ad doesn't carry (e.g. data-only creatives).
+        if (ad.iconUrl.isNullOrEmpty()) iconView.visibility = View.GONE
+        if (ad.title.isNullOrEmpty()) titleView.visibility = View.GONE
+        if (ad.sponsoredBy.isNullOrEmpty()) sponsoredView.visibility = View.GONE
+        if (ad.description.isNullOrEmpty()) bodyView.visibility = View.GONE
+        if (ad.callToAction.isNullOrEmpty()) ctaView.visibility = View.GONE
         downloadImage(ad.iconUrl, iconView)
         downloadImage(ad.imageUrl, imageView)
 

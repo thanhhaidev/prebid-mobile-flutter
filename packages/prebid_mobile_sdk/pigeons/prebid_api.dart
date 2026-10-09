@@ -7,7 +7,8 @@ import 'package:pigeon/pigeon.dart';
     kotlinOut:
         'android/src/main/kotlin/com/prebid/prebid_mobile_sdk/PrebidApi.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.prebid.prebid_mobile_sdk'),
-    swiftOut: 'ios/Classes/PrebidApi.g.swift',
+    swiftOut:
+        'ios/prebid_mobile_sdk/Sources/prebid_mobile_sdk/PrebidApi.g.swift',
   ),
 )
 // =============================================================================
@@ -197,6 +198,7 @@ abstract class PrebidMobileHostApi {
   void setCreativeFactoryTimeout(int timeout);
   void setCreativeFactoryTimeoutPreRenderContent(int timeout);
   void setCustomStatusEndpoint(String endpoint);
+  void setShouldAssignNativeAssetId(bool assign);
 
   // External User IDs
   void setExternalUserIds(List<ExternalUserIdData> userIds);

@@ -166,8 +166,15 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
 
     // MARK: - PrebidMobile.NativeAdEventDelegate
 
+    // Prebid calls this once per impression tracker URL; report one impression.
+    private var prebidImpressionReported = false
+
     func adDidLogImpression(ad: PrebidMobile.NativeAd) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, !self.prebidImpressionReported else { return }
+            self.prebidImpressionReported = true
+            self.methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        }
     }
 
     func adWasClicked(ad: PrebidMobile.NativeAd) {

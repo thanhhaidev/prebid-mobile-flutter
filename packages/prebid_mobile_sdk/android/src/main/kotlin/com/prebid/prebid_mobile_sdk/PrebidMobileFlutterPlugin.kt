@@ -151,6 +151,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         PrebidMobile.setCustomStatusEndpoint(endpoint)
     }
 
+    override fun setShouldAssignNativeAssetId(assign: Boolean) {
+        PrebidMobile.assignNativeAssetID(assign)
+    }
+
     // External User IDs
     override fun setExternalUserIds(userIds: List<ExternalUserIdData>) {
         val ids = userIds.map { data ->
@@ -493,7 +497,7 @@ class NativeAdHostApiImpl(
         nativeAds[adId] = nativeAdUnit
 
         nativeAdUnit.fetchDemand { bidInfo ->
-            if (bidInfo.resultCode == org.prebid.mobile.ResultCode.SUCCESS) {
+            if (bidInfo.dartResultCode() == "prebidDemandFetchSuccess") {
                 val cacheId = bidInfo.nativeCacheId
                 if (cacheId != null) {
                     val nativeAd = org.prebid.mobile.PrebidNativeAd.create(cacheId)
@@ -521,7 +525,7 @@ class NativeAdHostApiImpl(
             } else {
                 flutterApi.onAdEvent(AdEvent(
                     adId = adId, eventName = "onAdFailed",
-                    error = bidInfo.resultCode.toDartCode()
+                    error = bidInfo.dartResultCode()
                 )) {}
             }
         }
@@ -642,7 +646,7 @@ class MultiformatAdHostApiImpl(
         request.setRewarded(config.isRewarded)
 
         adUnit.fetchDemand(request) { bidInfo ->
-            val resultStr = bidInfo.resultCode.toDartCode()
+            val resultStr = bidInfo.dartResultCode()
             val format = bidInfo.targetingKeywords?.get("hb_format")
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
@@ -676,7 +680,7 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         adUnits[adId] = adUnit
 
         adUnit.fetchDemand { bidInfo ->
-            val resultStr = bidInfo.resultCode.toDartCode()
+            val resultStr = bidInfo.dartResultCode()
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
                 winningFormat = "video",
@@ -706,3 +710,14 @@ internal fun org.prebid.mobile.ResultCode.toDartCode(): String = when (this) {
     org.prebid.mobile.ResultCode.TIMEOUT -> "prebidDemandTimedOut"
     else -> "prebidInvalidRequest"
 }
+
+/// Result code for a fetchDemand [org.prebid.mobile.api.data.BidInfo].
+/// Prebid Android's Original API reports SUCCESS even for an empty seatbid
+/// (no winning bid); iOS reports no-bids. Treat SUCCESS without targeting
+/// keywords as no-bids so both platforms agree.
+internal fun org.prebid.mobile.api.data.BidInfo.dartResultCode(): String =
+    if (resultCode == org.prebid.mobile.ResultCode.SUCCESS && targetingKeywords.isNullOrEmpty()) {
+        "prebidDemandNoBids"
+    } else {
+        resultCode.toDartCode()
+    }

@@ -77,13 +77,16 @@ class GamNativePlatformView(
     // Held as a strong-referenced field: PrebidMobile keeps only a WeakReference
     // to the event listener, so an inline/anonymous instance would be GC'd and
     // impression/click callbacks would never fire.
+    private val prebidImpressionReported = java.util.concurrent.atomic.AtomicBoolean(false)
+
     private val nativeEventListener = object : PrebidNativeAdEventListener {
         override fun onAdClicked() {
             send("onAdClicked")
         }
 
+        // Prebid calls this once per impression tracker URL; report one.
         override fun onAdImpression() {
-            send("onAdImpression")
+            if (prebidImpressionReported.compareAndSet(false, true)) send("onAdImpression")
         }
 
         override fun onAdExpired() {}

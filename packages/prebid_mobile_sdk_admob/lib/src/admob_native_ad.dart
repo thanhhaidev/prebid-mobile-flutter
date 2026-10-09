@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
+    show NativeAsset, NativeEventTracker;
 
 /// Listener for [PrebidAdMobNativeAd] events, mirroring the AdMob native
 /// callback set from Prebid's reference integration.
@@ -50,6 +52,13 @@ class PrebidAdMobNativeAd extends StatefulWidget {
   /// native layout reports its measured height.
   final double height;
 
+  /// Native assets to request. `null` requests Prebid's reference set
+  /// (title, icon, sponsored, description, call to action).
+  final List<NativeAsset>? assets;
+
+  /// Native event trackers. `null` requests impression trackers (image + JS).
+  final List<NativeEventTracker>? eventTrackers;
+
   /// Listener for native ad events.
   final PrebidAdMobNativeAdListener? listener;
 
@@ -59,6 +68,8 @@ class PrebidAdMobNativeAd extends StatefulWidget {
     required this.configId,
     required this.adMobAdUnitId,
     this.height = 320,
+    this.assets,
+    this.eventTrackers,
     this.listener,
   });
 
@@ -74,6 +85,10 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
     final creationParams = <String, dynamic>{
       'configId': widget.configId,
       'adMobAdUnitId': widget.adMobAdUnitId,
+      if (widget.assets != null)
+        'assets': widget.assets!.map((a) => a.toMap()).toList(),
+      if (widget.eventTrackers != null)
+        'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
     };
 
     return SizedBox(

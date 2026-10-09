@@ -78,6 +78,10 @@ class AdMobBannerPlatformView(
                 methodChannel.invokeMethod("onAdClicked", null)
             }
 
+            override fun onAdImpression() {
+                methodChannel.invokeMethod("onAdImpression", null)
+            }
+
             override fun onAdClosed() {
                 methodChannel.invokeMethod("onAdClosed", null)
             }

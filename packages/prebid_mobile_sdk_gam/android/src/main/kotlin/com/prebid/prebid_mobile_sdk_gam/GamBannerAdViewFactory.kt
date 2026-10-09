@@ -46,6 +46,11 @@ class GamBannerPlatformView(
         val isVideo = params["isVideo"] as? Boolean ?: false
         val autoLoad = params["autoLoad"] as? Boolean ?: true
         val refreshInterval = params["refreshIntervalSeconds"] as? Int
+        val videoPlacement = when (params["videoPlacementType"] as? String) {
+            "inArticle" -> org.prebid.mobile.api.data.VideoPlacementType.IN_ARTICLE
+            "inFeed" -> org.prebid.mobile.api.data.VideoPlacementType.IN_FEED
+            else -> org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+        }
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$viewId")
 
@@ -61,7 +66,7 @@ class GamBannerPlatformView(
         bannerView = BannerView(context, configId, eventHandler)
 
         if (isVideo) {
-            bannerView.videoPlacementType = org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+            bannerView.videoPlacementType = videoPlacement
         }
 
         if (refreshInterval != null && refreshInterval > 0) {
@@ -103,6 +108,23 @@ class GamBannerPlatformView(
             }
         })
 
+        bannerView.setBannerVideoListener(object : org.prebid.mobile.api.rendering.listeners.BannerVideoListener {
+            override fun onVideoCompleted(view: BannerView) { methodChannel.invokeMethod("onVideoCompleted", null) }
+            override fun onVideoPaused(view: BannerView) { methodChannel.invokeMethod("onVideoPaused", null) }
+            override fun onVideoResumed(view: BannerView) { methodChannel.invokeMethod("onVideoResumed", null) }
+            override fun onVideoUnMuted(view: BannerView) { methodChannel.invokeMethod("onVideoUnmuted", null) }
+            override fun onVideoMuted(view: BannerView) { methodChannel.invokeMethod("onVideoMuted", null) }
+        })
+
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "loadAd" -> { bannerView.loadAd(); result.success(null) }
+                "stopRefresh" -> { bannerView.stopRefresh(); result.success(null) }
+                else -> result.notImplemented()
+            }
+        }
+
         if (autoLoad) {
             bannerView.loadAd()
         }
@@ -111,6 +133,7 @@ class GamBannerPlatformView(
     override fun getView(): View = bannerView
 
     override fun dispose() {
+        methodChannel.setMethodCallHandler(null)
         bannerView.destroy()
     }
 }

@@ -4,7 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidBannerAdListener;
+    show
+        PrebidBannerAdController,
+        PrebidBannerAdListener,
+        PrebidBannerVideoListener,
+        VideoPlacementType;
 
 /// A banner ad rendered by **Google Ad Manager** with Prebid demand.
 ///
@@ -38,8 +42,19 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Prebid's own `hb_*` keys take precedence on conflict.
   final Map<String, String>? customTargeting;
 
+  /// Outstream video placement when [isVideo] is set. Defaults to
+  /// [VideoPlacementType.inBanner].
+  final VideoPlacementType? videoPlacementType;
+
+  /// Optional controller to load on demand (`autoLoad: false`) or stop
+  /// auto-refresh.
+  final PrebidBannerAdController? controller;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
+
+  /// Listener for video playback events (outstream video creatives).
+  final PrebidBannerVideoListener? videoListener;
 
   /// Creates a [PrebidGamBannerAd] widget.
   const PrebidGamBannerAd({
@@ -52,7 +67,10 @@ class PrebidGamBannerAd extends StatefulWidget {
     this.autoLoad = true,
     this.refreshIntervalSeconds,
     this.customTargeting,
+    this.videoPlacementType,
+    this.controller,
     this.listener,
+    this.videoListener,
   });
 
   @override
@@ -78,6 +96,8 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
       if (widget.customTargeting != null)
         'customTargeting': widget.customTargeting,
+      if (widget.videoPlacementType != null)
+        'videoPlacementType': widget.videoPlacementType!.name,
     };
 
     return SizedBox(
@@ -108,6 +128,8 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
 
   void _onPlatformViewCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_gam/banner_$viewId');
+    _channel = channel;
+    widget.controller?.attachChannel(channel);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':
@@ -132,7 +154,21 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
           widget.listener?.onAdClosed?.call();
         case 'onAdExpired':
           widget.listener?.onAdExpired?.call();
+        default:
+          widget.videoListener?.dispatch(call.method);
       }
     });
+  }
+
+  MethodChannel? _channel;
+
+  @override
+  void dispose() {
+    final channel = _channel;
+    if (channel != null) {
+      channel.setMethodCallHandler(null);
+      widget.controller?.detachChannel(channel);
+    }
+    super.dispose();
   }
 }

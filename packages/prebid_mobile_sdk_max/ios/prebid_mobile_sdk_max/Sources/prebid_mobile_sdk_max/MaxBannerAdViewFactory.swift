@@ -34,7 +34,7 @@ class MaxBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate {
+class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, MAAdRevenueDelegate {
 
     private let maxAdBannerView: MAAdView
     private let methodChannel: FlutterMethodChannel
@@ -71,6 +71,7 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate {
         super.init()
 
         maxAdBannerView.delegate = self
+        maxAdBannerView.revenueDelegate = self
 
         // 2. Prebid mediation utils + ad unit.
         let mediationDelegate = MAXMediationBannerUtils(adView: maxAdBannerView)
@@ -125,6 +126,11 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate {
 
     func didHide(_ ad: MAAd) {
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
+    }
+
+    // MAX reports revenue when the impression is recorded.
+    func didPayRevenue(for ad: MAAd) {
+        methodChannel.invokeMethod("onAdImpression", arguments: nil)
     }
 
     func didDisplay(_ ad: MAAd) {}

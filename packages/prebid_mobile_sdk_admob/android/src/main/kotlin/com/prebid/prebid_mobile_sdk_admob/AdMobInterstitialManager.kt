@@ -76,6 +76,7 @@ class AdMobInterstitialManager(
                     EnumSet.of(format),
                     mediationUtils,
                 )
+                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 val holder = Holder(adUnit)
                 ads[adId] = holder
 
@@ -123,6 +124,7 @@ class AdMobInterstitialManager(
         override fun onAdShowedFullScreenContent() = send(adId, "onAdDisplayed")
         override fun onAdDismissedFullScreenContent() = send(adId, "onAdClosed")
         override fun onAdClicked() = send(adId, "onAdClicked")
+        override fun onAdImpression() = send(adId, "onAdImpression")
         override fun onAdFailedToShowFullScreenContent(error: AdError) =
             send(adId, "onAdFailed", error.message)
     }

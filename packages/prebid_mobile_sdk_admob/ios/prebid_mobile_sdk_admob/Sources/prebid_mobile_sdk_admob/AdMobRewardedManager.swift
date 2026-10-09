@@ -47,6 +47,7 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
                 configId: configId,
                 mediationDelegate: mediationDelegate
             )
+            FullscreenControls(args?["controls"])?.apply(to: adUnit)
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
 
@@ -118,6 +119,12 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
             send(adId, "onAdClosed")
+        }
+    }
+
+    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
+        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
+            send(adId, "onAdImpression")
         }
     }
 

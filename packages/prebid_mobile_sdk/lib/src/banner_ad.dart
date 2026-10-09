@@ -37,7 +37,9 @@ class PrebidBannerAdController {
     await _channel?.invokeMethod<void>('stopRefresh');
   }
 
-  void _attach(MethodChannel channel) {
+  /// Binds the controller to a banner view's method channel. Called by the
+  /// banner widgets (including `PrebidGamBannerAd`); not for app code.
+  void attachChannel(MethodChannel channel) {
     _channel = channel;
     if (_pendingLoad) {
       _pendingLoad = false;
@@ -45,7 +47,8 @@ class PrebidBannerAdController {
     }
   }
 
-  void _detach(MethodChannel channel) {
+  /// Unbinds the controller from [channel] when its banner is disposed.
+  void detachChannel(MethodChannel channel) {
     if (identical(_channel, channel)) _channel = null;
   }
 }
@@ -92,8 +95,15 @@ class PrebidBannerAd extends StatefulWidget {
   /// Set to `null` (default) to disable auto-refresh.
   final int? refreshIntervalSeconds;
 
+  /// Outstream video placement (`imp.video.placement`) when the banner
+  /// requests video. Defaults to [VideoPlacementType.inBanner].
+  final VideoPlacementType? videoPlacementType;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
+
+  /// Listener for video playback events (outstream video creatives).
+  final PrebidBannerVideoListener? videoListener;
 
   /// Creates a [PrebidBannerAd] widget.
   const PrebidBannerAd({
@@ -108,7 +118,9 @@ class PrebidBannerAd extends StatefulWidget {
     this.controller,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
+    this.videoPlacementType,
     this.listener,
+    this.videoListener,
   });
 
   @override
@@ -137,6 +149,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
         'adFormats': widget.adFormats!.map((f) => f.name).toList(),
       if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.videoPlacementType != null)
+        'videoPlacementType': widget.videoPlacementType!.name,
     };
 
     // The slot sizes dynamically: it starts at the requested size and adopts
@@ -172,7 +186,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     // resize to the rendered creative via `onAdSize`.
     final channel = MethodChannel('prebid_mobile_flutter/banner_ad_$viewId');
     _channel = channel;
-    widget.controller?._attach(channel);
+    widget.controller?.attachChannel(channel);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':
@@ -197,6 +211,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
           widget.listener?.onAdClosed?.call();
         case 'onAdExpired':
           widget.listener?.onAdExpired?.call();
+        default:
+          widget.videoListener?.dispatch(call.method);
       }
     });
   }
@@ -208,7 +224,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     final channel = _channel;
     if (channel != null) {
       channel.setMethodCallHandler(null);
-      widget.controller?._detach(channel);
+      widget.controller?.detachChannel(channel);
     }
     super.dispose();
   }

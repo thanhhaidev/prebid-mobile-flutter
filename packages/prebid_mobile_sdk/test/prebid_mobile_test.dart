@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
@@ -201,6 +202,71 @@ void main() {
       expect(ids.single.inserter, 'inserter.com');
       expect(ids.single.matcher, 'matcher.com');
       expect(ids.single.mm, 3);
+    });
+  });
+
+  group('PrebidMobile SharedID, settings id and bid events', () {
+    test('isSdkInitialized follows the init status', () async {
+      when(mockApi.initializeSdk(any, any)).thenAnswer(
+        (_) async => InitializationResult(status: 'failed', error: 'x'),
+      );
+      await PrebidMobile.initializeSdk(prebidServerUrl: 'u', accountId: 'a');
+      expect(PrebidMobile.isSdkInitialized, isFalse);
+
+      when(mockApi.initializeSdk(any, any)).thenAnswer(
+        (_) async => InitializationResult(status: 'serverStatusWarning'),
+      );
+      await PrebidMobile.initializeSdk(prebidServerUrl: 'u', accountId: 'a');
+      expect(PrebidMobile.isSdkInitialized, isTrue);
+    });
+
+    test('SharedID calls api and maps the id', () async {
+      when(mockApi.getSharedId()).thenAnswer(
+        (_) async => ExternalUserIdData(
+          source: 'pubcid.org',
+          identifier: 'abc',
+          atype: 1,
+        ),
+      );
+      await PrebidMobile.setSendSharedId(true);
+      final id = await PrebidMobile.getSharedId();
+      await PrebidMobile.resetSharedId();
+
+      verify(mockApi.setSendSharedId(true)).called(1);
+      verify(mockApi.resetSharedId()).called(1);
+      expect(id?.source, 'pubcid.org');
+      expect(id?.identifier, 'abc');
+      expect(id?.atype, 1);
+    });
+
+    test('setAuctionSettingsId calls api', () async {
+      await PrebidMobile.setAuctionSettingsId('settings-1');
+      verify(mockApi.setAuctionSettingsId('settings-1')).called(1);
+    });
+
+    test('event listener toggles the delegate and receives bids', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final received = <(String?, String?)>[];
+      await PrebidMobile.setEventListener(
+        (req, res) => received.add((req, res)),
+      );
+      verify(mockApi.setEventDelegateEnabled(true)).called(1);
+
+      const channel =
+          'dev.flutter.pigeon.prebid_mobile_sdk.PrebidEventFlutterApi.onBidResponse';
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(
+            channel,
+            const StandardMessageCodec().encodeMessage(<Object?>[
+              '{"id":"req"}',
+              '{"id":"res"}',
+            ]),
+            (_) {},
+          );
+      expect(received, [('{"id":"req"}', '{"id":"res"}')]);
+
+      await PrebidMobile.setEventListener(null);
+      verify(mockApi.setEventDelegateEnabled(false)).called(1);
     });
   });
 }

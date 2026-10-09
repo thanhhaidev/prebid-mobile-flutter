@@ -56,6 +56,7 @@ class GamRewardedManager(
                     }
                 }
                 val adUnit = RewardedAdUnit(activity, configId, eventHandler)
+                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
 
                 adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
                     override fun onAdLoaded(unit: RewardedAdUnit) = send(adId, "onAdLoaded")
@@ -71,6 +72,7 @@ class GamRewardedManager(
                             "onUserEarnedReward",
                             rewardType = reward?.type ?: "reward",
                             rewardCount = reward?.count ?: 1,
+                            rewardExt = reward?.ext?.toString(),
                         )
                 })
 
@@ -99,11 +101,13 @@ class GamRewardedManager(
         error: String? = null,
         rewardType: String? = null,
         rewardCount: Int? = null,
+        rewardExt: String? = null,
     ) {
         val payload = mutableMapOf<String, Any?>("adId" to adId)
         if (error != null) payload["error"] = error
         if (rewardType != null) payload["rewardType"] = rewardType
         if (rewardCount != null) payload["rewardCount"] = rewardCount
+        if (rewardExt != null) payload["rewardExt"] = rewardExt
         channel.invokeMethod(event, payload)
     }
 }

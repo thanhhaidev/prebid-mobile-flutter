@@ -4,7 +4,30 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidBannerAdListener;
+    show NativeAsset, NativeEventTracker;
+
+/// Listener for [PrebidMaxNativeAd] events.
+class PrebidMaxNativeAdListener {
+  /// The native ad loaded and is rendered.
+  final VoidCallback? onAdLoaded;
+
+  /// MAX recorded an impression (reported through its revenue callback).
+  final VoidCallback? onAdImpression;
+
+  /// The native ad was clicked.
+  final VoidCallback? onAdClicked;
+
+  /// The native ad failed to load.
+  final void Function(String error)? onAdFailed;
+
+  /// Creates a [PrebidMaxNativeAdListener].
+  const PrebidMaxNativeAdListener({
+    this.onAdLoaded,
+    this.onAdImpression,
+    this.onAdClicked,
+    this.onAdFailed,
+  });
+}
 
 /// A native ad mediated by **AppLovin MAX** with Prebid demand.
 ///
@@ -24,8 +47,15 @@ class PrebidMaxNativeAd extends StatefulWidget {
   /// native layout reports its measured height.
   final double height;
 
-  /// Listener for native ad events (`onAdLoaded` / `onAdFailed` / `onAdClicked`).
-  final PrebidBannerAdListener? listener;
+  /// Native assets to request. `null` requests Prebid's reference set
+  /// (title, icon, sponsored, description, call to action).
+  final List<NativeAsset>? assets;
+
+  /// Native event trackers. `null` requests impression trackers (image + JS).
+  final List<NativeEventTracker>? eventTrackers;
+
+  /// Listener for native ad events.
+  final PrebidMaxNativeAdListener? listener;
 
   /// Creates a [PrebidMaxNativeAd] widget.
   const PrebidMaxNativeAd({
@@ -33,6 +63,8 @@ class PrebidMaxNativeAd extends StatefulWidget {
     required this.configId,
     required this.maxAdUnitId,
     this.height = 320,
+    this.assets,
+    this.eventTrackers,
     this.listener,
   });
 
@@ -48,6 +80,10 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
     final creationParams = <String, dynamic>{
       'configId': widget.configId,
       'maxAdUnitId': widget.maxAdUnitId,
+      if (widget.assets != null)
+        'assets': widget.assets!.map((a) => a.toMap()).toList(),
+      if (widget.eventTrackers != null)
+        'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
     };
 
     return SizedBox(
@@ -89,6 +125,8 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
           widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
         case 'onAdClicked':
           widget.listener?.onAdClicked?.call();
+        case 'onAdImpression':
+          widget.listener?.onAdImpression?.call();
       }
     });
   }

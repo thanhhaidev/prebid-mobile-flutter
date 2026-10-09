@@ -29,7 +29,7 @@ class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
+class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, BannerViewVideoPlaybackDelegate {
 
     private let bannerView: BannerView
     private let methodChannel: FlutterMethodChannel
@@ -49,6 +49,7 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         let adFormats = args["adFormats"] as? [String]
         let pbAdSlot = args["pbAdSlot"] as? String
         let impOrtbConfig = args["impOrtbConfig"] as? String
+        let videoPlacement = args["videoPlacementType"] as? String
 
         let adSize = CGSize(width: width, height: height)
 
@@ -74,6 +75,9 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         } else if isVideo {
             bannerView.adFormats = [.video]
         }
+        if let placement = videoPlacement.flatMap(signalsPlacement) {
+            bannerView.videoParameters.placement = placement
+        }
         if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
 
@@ -82,6 +86,7 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
         }
 
         bannerView.delegate = self
+        bannerView.videoPlaybackDelegate = self
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { [weak self] call, result in
@@ -139,5 +144,36 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate {
 
     func bannerViewDidExpire(_ bannerView: BannerView) {
         methodChannel.invokeMethod("onAdExpired", arguments: nil)
+    }
+
+    // MARK: - BannerViewVideoPlaybackDelegate
+
+    func videoPlaybackDidPause(_ banner: BannerView) {
+        methodChannel.invokeMethod("onVideoPaused", arguments: nil)
+    }
+
+    func videoPlaybackDidResume(_ banner: BannerView) {
+        methodChannel.invokeMethod("onVideoResumed", arguments: nil)
+    }
+
+    func videoPlaybackWasMuted(_ banner: BannerView) {
+        methodChannel.invokeMethod("onVideoMuted", arguments: nil)
+    }
+
+    func videoPlaybackWasUnmuted(_ banner: BannerView) {
+        methodChannel.invokeMethod("onVideoUnmuted", arguments: nil)
+    }
+
+    func videoPlaybackDidComplete(_ banner: BannerView) {
+        methodChannel.invokeMethod("onVideoCompleted", arguments: nil)
+    }
+}
+
+func signalsPlacement(_ name: String) -> Signals.Placement? {
+    switch name {
+    case "inBanner": return .InBanner
+    case "inArticle": return .InArticle
+    case "inFeed": return .InFeed
+    default: return nil
     }
 }

@@ -194,6 +194,46 @@ class VideoParametersConfig {
   final List<int?>? api;
 }
 
+/// Fullscreen (interstitial / rewarded) rendering controls.
+class FullscreenControlsConfig {
+  FullscreenControlsConfig({
+    this.closeButtonArea,
+    this.closeButtonPosition,
+    this.skipButtonArea,
+    this.skipButtonPosition,
+    this.skipDelay,
+    this.isMuted,
+    this.isSoundButtonVisible,
+    this.isAutoCloseOnCompletionEnabled,
+    this.minWidthPercentage,
+    this.minHeightPercentage,
+  });
+
+  /// Close button size as a fraction of the screen (0..1).
+  final double? closeButtonArea;
+
+  /// "topLeft" or "topRight".
+  final String? closeButtonPosition;
+
+  /// Skip button size as a fraction of the screen (0..1).
+  final double? skipButtonArea;
+
+  /// "topLeft" or "topRight".
+  final String? skipButtonPosition;
+
+  /// Seconds before the skip button appears.
+  final int? skipDelay;
+  final bool? isMuted;
+  final bool? isSoundButtonVisible;
+
+  /// iOS only.
+  final bool? isAutoCloseOnCompletionEnabled;
+
+  /// Minimum creative size in percent of the screen (interstitial only).
+  final int? minWidthPercentage;
+  final int? minHeightPercentage;
+}
+
 // =============================================================================
 // Host APIs (Dart → Native)
 // =============================================================================
@@ -221,6 +261,16 @@ abstract class PrebidMobileHostApi {
   void setEidsPlacement(String placement);
   void setIncludeWinners(bool include);
   void setIncludeBidderKeys(bool include);
+  void setAuctionSettingsId(String? settingsId);
+
+  /// Enables / disables forwarding bid request + response pairs to
+  /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
+  void setEventDelegateEnabled(bool enabled);
+
+  // SharedID
+  void setSendSharedId(bool send);
+  ExternalUserIdData? getSharedId();
+  void resetSharedId();
 
   // External User IDs
   void setExternalUserIds(List<ExternalUserIdData> userIds);
@@ -292,6 +342,14 @@ abstract class TargetingHostApi {
   void setPublisherName(String? name);
   void setStoreUrl(String? url);
   void setDomain(String? domain);
+
+  // OMID partner
+  void setOmidPartnerName(String? name);
+  void setOmidPartnerVersion(String? version);
+
+  // Location
+  void setUserLatLng(double latitude, double longitude);
+  void setLocationPrecision(int? precision);
 }
 
 /// Interstitial ad operations (Dart → Native).
@@ -303,6 +361,7 @@ abstract class InterstitialAdHostApi {
     List<String>? adFormats,
     VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    FullscreenControlsConfig? controls,
   );
   void show(int adId);
   void destroy(int adId);
@@ -311,7 +370,12 @@ abstract class InterstitialAdHostApi {
 /// Rewarded ad operations (Dart → Native).
 @HostApi()
 abstract class RewardedAdHostApi {
-  void loadAd(int adId, String configId, String? impOrtbConfig);
+  void loadAd(
+    int adId,
+    String configId,
+    String? impOrtbConfig,
+    FullscreenControlsConfig? controls,
+  );
   void show(int adId);
   void destroy(int adId);
 }
@@ -409,4 +473,10 @@ abstract class InstreamVideoAdHostApi {
 @FlutterApi()
 abstract class AdFlutterApi {
   void onAdEvent(AdEvent event);
+}
+
+/// Bid request / response pairs from `PrebidEventDelegate` (native → Flutter).
+@FlutterApi()
+abstract class PrebidEventFlutterApi {
+  void onBidResponse(String? request, String? response);
 }

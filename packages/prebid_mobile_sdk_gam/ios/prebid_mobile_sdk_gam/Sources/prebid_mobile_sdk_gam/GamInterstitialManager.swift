@@ -47,7 +47,16 @@ class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
                     request.customTargeting = merged
                 }
             }
-            let adUnit = InterstitialRenderingAdUnit(configID: configId, eventHandler: eventHandler)
+            let controls = FullscreenControls(args?["controls"])
+            let adUnit: InterstitialRenderingAdUnit
+            if let minSize = controls?.minSizePercentage {
+                adUnit = InterstitialRenderingAdUnit(
+                    configID: configId, minSizePercentage: minSize, eventHandler: eventHandler
+                )
+            } else {
+                adUnit = InterstitialRenderingAdUnit(configID: configId, eventHandler: eventHandler)
+            }
+            controls?.apply(to: adUnit)
             var formats: Set<AdFormat> = []
             if requestedFormats.contains("banner") { formats.insert(.banner) }
             if requestedFormats.contains("video") { formats.insert(.video) }

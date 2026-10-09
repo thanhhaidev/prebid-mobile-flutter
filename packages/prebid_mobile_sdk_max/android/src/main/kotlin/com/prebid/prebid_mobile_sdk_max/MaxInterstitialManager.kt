@@ -75,6 +75,9 @@ class MaxInterstitialManager(
                     override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
                 })
 
+                // MAX reports revenue when the impression is recorded.
+                interstitial.setRevenueListener { send(adId, "onAdImpression") }
+
                 val mediationUtils = MaxMediationInterstitialUtils(interstitial)
                 val format = if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER
                 val adUnit = MediationInterstitialAdUnit(
@@ -83,6 +86,7 @@ class MaxInterstitialManager(
                     EnumSet.of(format),
                     mediationUtils,
                 )
+                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 ads[adId] = Holder(adUnit, interstitial)
 
                 adUnit.fetchDemand {

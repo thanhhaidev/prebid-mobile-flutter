@@ -32,9 +32,21 @@ import 'generated/prebid_api.g.dart';
 /// await PrebidMobile.setPbsDebug(true);
 /// await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
 /// ```
+/// Receives every Prebid Server bid request / response pair (as JSON
+/// strings) while registered via [PrebidMobile.setEventListener].
+typedef PrebidBidResponseListener =
+    void Function(String? request, String? response);
+
 class PrebidMobile {
   @visibleForTesting
   static PrebidMobileHostApi api = PrebidMobileHostApi();
+
+  static bool _initialized = false;
+
+  /// Whether [initializeSdk] has completed with a usable status
+  /// ([InitializationStatus.succeeded] or
+  /// [InitializationStatus.serverStatusWarning]).
+  static bool get isSdkInitialized => _initialized;
 
   /// Initialize the Prebid Mobile SDK.
   ///
@@ -52,15 +64,13 @@ class PrebidMobile {
     void Function(InitializationStatus status, String? error)? completion,
   }) async {
     final result = await api.initializeSdk(prebidServerUrl, accountId);
-
-    if (completion != null) {
-      final status = switch (result.status) {
-        'succeeded' => InitializationStatus.succeeded,
-        'serverStatusWarning' => InitializationStatus.serverStatusWarning,
-        _ => InitializationStatus.failed,
-      };
-      completion(status, result.error);
-    }
+    final status = switch (result.status) {
+      'succeeded' => InitializationStatus.succeeded,
+      'serverStatusWarning' => InitializationStatus.serverStatusWarning,
+      _ => InitializationStatus.failed,
+    };
+    _initialized = status != InitializationStatus.failed;
+    completion?.call(status, result.error);
   }
 
   /// Set the timeout for bid requests in milliseconds.
@@ -200,6 +210,50 @@ class PrebidMobile {
     api.setIncludeBidderKeys(include);
   }
 
+  /// Sets the stored auction-settings id (`ext.prebid.storedrequest.id` at
+  /// the request level). `null` clears it.
+  static Future<void> setAuctionSettingsId(String? settingsId) async {
+    api.setAuctionSettingsId(settingsId);
+  }
+
+  /// Registers [listener] to receive every Prebid Server bid request and
+  /// response as JSON (Prebid's `PrebidEventDelegate`). Pass `null` to stop.
+  ///
+  /// Useful for debugging and analytics; the payloads can be large.
+  static Future<void> setEventListener(
+    PrebidBidResponseListener? listener,
+  ) async {
+    _PrebidEventReceiver.instance.listener = listener;
+    await api.setEventDelegateEnabled(listener != null);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SharedID
+  // ---------------------------------------------------------------------------
+
+  /// Adds Prebid's first-party SharedID (`pubcid.org`) to `user.eids`.
+  /// Consult your legal team before enabling. Default `false`.
+  static Future<void> setSendSharedId(bool send) async {
+    api.setSendSharedId(send);
+  }
+
+  /// The current SharedID. It stays stable across sessions while local
+  /// storage access is allowed, until [resetSharedId].
+  static Future<ExternalUserId?> getSharedId() async {
+    final d = await api.getSharedId();
+    if (d == null) return null;
+    return ExternalUserId(
+      source: d.source,
+      identifier: d.identifier,
+      atype: d.atype,
+    );
+  }
+
+  /// Clears the stored SharedID; the next one is freshly generated.
+  static Future<void> resetSharedId() async {
+    api.resetSharedId();
+  }
+
   // ---------------------------------------------------------------------------
   // External User IDs
   // ---------------------------------------------------------------------------
@@ -264,5 +318,22 @@ class PrebidMobile {
   /// Returns the version of the underlying Android or iOS Prebid SDK.
   static Future<String> getSdkVersion() async {
     return api.getSdkVersion();
+  }
+}
+
+/// Owns the [PrebidEventFlutterApi] channel and forwards to the listener set
+/// with [PrebidMobile.setEventListener].
+class _PrebidEventReceiver implements PrebidEventFlutterApi {
+  _PrebidEventReceiver._() {
+    PrebidEventFlutterApi.setUp(this);
+  }
+
+  static final _PrebidEventReceiver instance = _PrebidEventReceiver._();
+
+  PrebidBidResponseListener? listener;
+
+  @override
+  void onBidResponse(String? request, String? response) {
+    listener?.call(request, response);
   }
 }

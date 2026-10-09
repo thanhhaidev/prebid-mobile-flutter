@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidRewardedAdListener, PrebidReward;
+    show PrebidFullscreenControls, PrebidRewardedAdListener, PrebidReward;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_admob/rewarded',
@@ -55,6 +55,9 @@ class PrebidAdMobRewardedAd {
   /// The AdMob rewarded ad unit ID.
   final String adMobAdUnitId;
 
+  /// Close / skip button, sound and (interstitial) minimum-size controls.
+  final PrebidFullscreenControls? controls;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
@@ -67,6 +70,7 @@ class PrebidAdMobRewardedAd {
   PrebidAdMobRewardedAd({
     required this.configId,
     required this.adMobAdUnitId,
+    this.controls,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -78,6 +82,7 @@ class PrebidAdMobRewardedAd {
       'adId': _adId,
       'configId': configId,
       'adMobAdUnitId': adMobAdUnitId,
+      'controls': ?controls?.toMap(),
     });
   }
 
@@ -103,6 +108,8 @@ class PrebidAdMobRewardedAd {
         listener?.onAdClosed?.call();
       case 'onAdClicked':
         listener?.onAdClicked?.call();
+      case 'onAdImpression':
+        listener?.onAdImpression?.call();
       case 'onUserEarnedReward':
         listener?.onUserEarnedReward?.call(
           PrebidReward(

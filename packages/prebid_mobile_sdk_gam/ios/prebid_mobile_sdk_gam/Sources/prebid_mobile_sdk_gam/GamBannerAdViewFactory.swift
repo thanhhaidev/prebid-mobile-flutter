@@ -34,7 +34,8 @@ class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate {
+class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate,
+    BannerViewVideoPlaybackDelegate {
 
     private let bannerView: PrebidMobile.BannerView
     private let methodChannel: FlutterMethodChannel
@@ -52,6 +53,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         let isVideo = args["isVideo"] as? Bool ?? false
         let autoLoad = args["autoLoad"] as? Bool ?? true
         let refreshInterval = args["refreshIntervalSeconds"] as? Int
+        let videoPlacement = args["videoPlacementType"] as? String
 
         let adSize = CGSize(width: width, height: height)
 
@@ -84,6 +86,11 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
         if isVideo {
             bannerView.adFormat = .video
+            switch videoPlacement {
+            case "inArticle": bannerView.videoParameters.placement = .InArticle
+            case "inFeed": bannerView.videoParameters.placement = .InFeed
+            default: bannerView.videoParameters.placement = .InBanner
+            }
         }
 
         if let interval = refreshInterval, interval > 0 {
@@ -91,6 +98,21 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         }
 
         bannerView.delegate = self
+        bannerView.videoPlaybackDelegate = self
+
+        // Calls from PrebidBannerAdController.
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "loadAd":
+                self?.bannerView.loadAd()
+                result(nil)
+            case "stopRefresh":
+                self?.bannerView.stopRefresh()
+                result(nil)
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
 
         if autoLoad {
             bannerView.loadAd()
@@ -132,5 +154,27 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
     func bannerViewDidExpire(_ bannerView: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onAdExpired", arguments: nil)
+    }
+
+    // MARK: - BannerViewVideoPlaybackDelegate
+
+    func videoPlaybackDidPause(_ banner: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onVideoPaused", arguments: nil)
+    }
+
+    func videoPlaybackDidResume(_ banner: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onVideoResumed", arguments: nil)
+    }
+
+    func videoPlaybackWasMuted(_ banner: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onVideoMuted", arguments: nil)
+    }
+
+    func videoPlaybackWasUnmuted(_ banner: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onVideoUnmuted", arguments: nil)
+    }
+
+    func videoPlaybackDidComplete(_ banner: PrebidMobile.BannerView) {
+        methodChannel.invokeMethod("onVideoCompleted", arguments: nil)
     }
 }

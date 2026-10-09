@@ -114,6 +114,10 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
         methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
     }
 
+    func bannerViewDidRecordImpression(_ bannerView: GoogleMobileAds.BannerView) {
+        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+    }
+
     func bannerViewDidRecordClick(_ bannerView: GoogleMobileAds.BannerView) {
         methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }

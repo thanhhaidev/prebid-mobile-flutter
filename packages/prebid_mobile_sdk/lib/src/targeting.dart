@@ -341,4 +341,33 @@ class PrebidTargeting {
   static Future<void> clearUserExtData() async {
     api.clearUserExtData();
   }
+
+  // ---------------------------------------------------------------------------
+  // OM SDK partner
+  // ---------------------------------------------------------------------------
+
+  /// OM SDK partner name sent in `source.ext.omidpn`.
+  static Future<void> setOmidPartnerName(String? name) async {
+    api.setOmidPartnerName(name);
+  }
+
+  /// OM SDK partner version sent in `source.ext.omidpv`.
+  static Future<void> setOmidPartnerVersion(String? version) async {
+    api.setOmidPartnerVersion(version);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Location
+  // ---------------------------------------------------------------------------
+
+  /// Sets the user's location (`user.geo`).
+  static Future<void> setUserLatLng(double latitude, double longitude) async {
+    api.setUserLatLng(latitude, longitude);
+  }
+
+  /// Number of decimal places kept when rounding device / user coordinates.
+  /// `null` sends full precision.
+  static Future<void> setLocationPrecision(int? precision) async {
+    api.setLocationPrecision(precision);
+  }
 }

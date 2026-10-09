@@ -44,6 +44,7 @@ class BannerAdPlatformView(
         val adFormats = (params["adFormats"] as? List<*>)?.filterIsInstance<String>()
         val pbAdSlot = params["pbAdSlot"] as? String
         val impOrtbConfig = params["impOrtbConfig"] as? String
+        val videoPlacement = videoPlacementType(params["videoPlacementType"] as? String)
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_flutter/banner_ad_$viewId")
 
@@ -55,8 +56,11 @@ class BannerAdPlatformView(
             if ("banner" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.BANNER)
             if ("video" in adFormats) formats.add(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)
             if (formats.isNotEmpty()) bannerView.setAdUnitFormats(formats)
+            if ("video" in adFormats) {
+                bannerView.videoPlacementType = videoPlacement ?: org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+            }
         } else if (isVideo) {
-            bannerView.videoPlacementType = org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+            bannerView.videoPlacementType = videoPlacement ?: org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
         }
         pbAdSlot?.let { bannerView.setPbAdSlot(it) }
         impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
@@ -103,6 +107,14 @@ class BannerAdPlatformView(
             }
         })
 
+        bannerView.setBannerVideoListener(object : org.prebid.mobile.api.rendering.listeners.BannerVideoListener {
+            override fun onVideoCompleted(view: BannerView) { methodChannel.invokeMethod("onVideoCompleted", null) }
+            override fun onVideoPaused(view: BannerView) { methodChannel.invokeMethod("onVideoPaused", null) }
+            override fun onVideoResumed(view: BannerView) { methodChannel.invokeMethod("onVideoResumed", null) }
+            override fun onVideoUnMuted(view: BannerView) { methodChannel.invokeMethod("onVideoUnmuted", null) }
+            override fun onVideoMuted(view: BannerView) { methodChannel.invokeMethod("onVideoMuted", null) }
+        })
+
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -123,4 +135,11 @@ class BannerAdPlatformView(
         methodChannel.setMethodCallHandler(null)
         bannerView.destroy()
     }
+}
+
+internal fun videoPlacementType(name: String?): org.prebid.mobile.api.data.VideoPlacementType? = when (name) {
+    "inBanner" -> org.prebid.mobile.api.data.VideoPlacementType.IN_BANNER
+    "inArticle" -> org.prebid.mobile.api.data.VideoPlacementType.IN_ARTICLE
+    "inFeed" -> org.prebid.mobile.api.data.VideoPlacementType.IN_FEED
+    else -> null
 }

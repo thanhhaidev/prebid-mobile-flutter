@@ -8,7 +8,7 @@ import AppLovinSDK
 /// `prebid_mobile_sdk_max/interstitial` method channel. Each ad is keyed by an
 /// `adId` allocated on the Dart side; native events are pushed back over the
 /// same channel.
-class MaxInterstitialManager: NSObject, MAAdDelegate {
+class MaxInterstitialManager: NSObject, MAAdDelegate, MAAdRevenueDelegate {
 
     private let channel: FlutterMethodChannel
 
@@ -44,13 +44,17 @@ class MaxInterstitialManager: NSObject, MAAdDelegate {
             // 1. Create the MAX interstitial + Prebid mediation utils + ad unit.
             let interstitial = MAInterstitialAd(adUnitIdentifier: maxAdUnitId)
             let mediationDelegate = MAXMediationInterstitialUtils(interstitialAd: interstitial)
+            let controls = FullscreenControls(args?["controls"])
             let adUnit = MediationInterstitialAdUnit(
                 configId: configId,
+                minSizePercentage: controls?.minSizePercentage,
                 mediationDelegate: mediationDelegate
             )
             adUnit.adFormats = isVideo ? [.video] : [.banner]
+            controls?.apply(to: adUnit)
 
             interstitial.delegate = self
+            interstitial.revenueDelegate = self
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
             interstitials[adId] = interstitial
@@ -112,6 +116,13 @@ class MaxInterstitialManager: NSObject, MAAdDelegate {
     func didHide(_ ad: MAAd) {
         if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
             send(adId, "onAdClosed")
+        }
+    }
+
+    // MAX reports revenue when the impression is recorded.
+    func didPayRevenue(for ad: MAAd) {
+        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
+            send(adId, "onAdImpression")
         }
     }
 

@@ -66,11 +66,11 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
 
         super.init()
 
-        let unit = NativeRequest(configId: configId, assets: Self.requestAssets)
+        let unit = NativeRequest(configId: configId, assets: nativeAssetsFrom(args["assets"]) ?? Self.requestAssets)
         unit.context = ContextType.Social
         unit.placementType = PlacementType.FeedContent
         unit.contextSubType = ContextSubType.Social
-        unit.eventtrackers = [
+        unit.eventtrackers = nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: EventType.Impression, methods: [EventTracking.Image, EventTracking.js])
         ]
         nativeUnit = unit
@@ -181,7 +181,9 @@ class GamNativePlatformView: NSObject, FlutterPlatformView,
         methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
 
-    func adDidExpire(ad: PrebidMobile.NativeAd) {}
+    func adDidExpire(ad: PrebidMobile.NativeAd) {
+        methodChannel.invokeMethod("onAdExpired", arguments: nil)
+    }
 
     // MARK: - GoogleMobileAds.NativeAdDelegate (unified)
 

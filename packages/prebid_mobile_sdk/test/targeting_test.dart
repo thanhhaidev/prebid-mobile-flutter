@@ -105,4 +105,20 @@ void main() {
       verify(mockApi.clearUserExtData()).called(1);
     });
   });
+
+  group('PrebidTargeting OMID and location', () {
+    test('OMID partner name / version call api', () async {
+      await PrebidTargeting.setOmidPartnerName('Prebid');
+      await PrebidTargeting.setOmidPartnerVersion('1.0');
+      verify(mockApi.setOmidPartnerName('Prebid')).called(1);
+      verify(mockApi.setOmidPartnerVersion('1.0')).called(1);
+    });
+
+    test('user location and precision call api', () async {
+      await PrebidTargeting.setUserLatLng(10.5, 106.7);
+      await PrebidTargeting.setLocationPrecision(2);
+      verify(mockApi.setUserLatLng(10.5, 106.7)).called(1);
+      verify(mockApi.setLocationPrecision(2)).called(1);
+    });
+  });
 }

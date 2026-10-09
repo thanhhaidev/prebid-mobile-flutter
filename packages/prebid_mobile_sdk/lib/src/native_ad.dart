@@ -133,6 +133,21 @@ class NativeAsset {
          dataLength: length,
          required: required,
        );
+
+  /// The method-channel form used by the GAM / AdMob / MAX native widgets.
+  /// Keys match the Pigeon `NativeAssetConfig` fields.
+  Map<String, Object?> toMap() => {
+    'assetType': type.name,
+    'required': required,
+    'titleLength': ?titleLength,
+    'imageType': ?imageType?.value,
+    'imageWidth': ?imageWidth,
+    'imageHeight': ?imageHeight,
+    'imageWidthMin': ?imageWidthMin,
+    'imageHeightMin': ?imageHeightMin,
+    'dataType': ?dataType?.value,
+    'dataLength': ?dataLength,
+  };
 }
 
 /// Defines a native event tracker for the ad request.
@@ -141,6 +156,12 @@ class NativeEventTracker {
   final List<NativeEventTrackingMethod> methods;
 
   const NativeEventTracker({required this.eventType, required this.methods});
+
+  /// The method-channel form used by the GAM / AdMob / MAX native widgets.
+  Map<String, Object?> toMap() => {
+    'eventType': eventType.value,
+    'methods': methods.map((m) => m.value).toList(),
+  };
 }
 
 /// A native ad that loads structured ad data and renders via Flutter widgets.

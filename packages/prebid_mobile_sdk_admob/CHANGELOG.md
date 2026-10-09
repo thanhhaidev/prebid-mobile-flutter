@@ -6,4 +6,7 @@
 * `PrebidAdMobRewardedAd` — AdMob-mediated rewarded (Android + iOS) with reward callback.
 * `PrebidAdMobNativeAd` — AdMob-mediated native (Android + iOS), rendered via the SDK
   native ad view (incl. media view). Events via `PrebidAdMobNativeAdListener`.
+  Request `assets` / `eventTrackers` are configurable.
+* Banner / interstitial / rewarded report `onAdImpression`; interstitial / rewarded accept
+  `PrebidFullscreenControls`.
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

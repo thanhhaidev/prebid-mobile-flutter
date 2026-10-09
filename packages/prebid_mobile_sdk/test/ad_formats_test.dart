@@ -26,7 +26,14 @@ void main() {
 
       await ad.loadAd();
       verify(
-        mockApi.loadAd(any, 'config-1', any, any, '{"ext":{"gpid":"/1/i"}}'),
+        mockApi.loadAd(
+          any,
+          'config-1',
+          any,
+          any,
+          '{"ext":{"gpid":"/1/i"}}',
+          null,
+        ),
       ).called(1);
 
       await ad.show();
@@ -34,6 +41,47 @@ void main() {
 
       await ad.destroy();
       verify(mockApi.destroy(any)).called(1);
+    });
+  });
+
+  group('PrebidFullscreenControls', () {
+    test('interstitial forwards controls and min size', () async {
+      final mockApi = MockInterstitialAdHostApi();
+      PrebidInterstitialAd.api = mockApi;
+      final ad = PrebidInterstitialAd(
+        configId: 'config-c',
+        controls: const PrebidFullscreenControls(
+          closeButtonArea: 0.2,
+          closeButtonPosition: PrebidButtonPosition.topLeft,
+          skipButtonPosition: PrebidButtonPosition.topRight,
+          skipDelay: 5,
+          isMuted: true,
+          isSoundButtonVisible: true,
+          isAutoCloseOnCompletionEnabled: false,
+          minSizePercentage: Size(50, 70),
+        ),
+      );
+      await ad.loadAd();
+      final c =
+          verify(
+                mockApi.loadAd(any, 'config-c', any, any, any, captureAny),
+              ).captured.single
+              as FullscreenControlsConfig;
+      expect(c.closeButtonArea, 0.2);
+      expect(c.closeButtonPosition, 'topLeft');
+      expect(c.skipButtonPosition, 'topRight');
+      expect(c.skipDelay, 5);
+      expect(c.isMuted, isTrue);
+      expect(c.isSoundButtonVisible, isTrue);
+      expect(c.isAutoCloseOnCompletionEnabled, isFalse);
+      expect(c.minWidthPercentage, 50);
+      expect(c.minHeightPercentage, 70);
+    });
+
+    test('toMap omits unset fields', () {
+      expect(const PrebidFullscreenControls(skipDelay: 3).toMap(), {
+        'skipDelay': 3,
+      });
     });
   });
 
@@ -49,7 +97,7 @@ void main() {
       final ad = PrebidRewardedAd(configId: 'config-2', impOrtbConfig: '{}');
 
       await ad.loadAd();
-      verify(mockApi.loadAd(any, 'config-2', '{}')).called(1);
+      verify(mockApi.loadAd(any, 'config-2', '{}', null)).called(1);
 
       await ad.show();
       verify(mockApi.show(any)).called(1);

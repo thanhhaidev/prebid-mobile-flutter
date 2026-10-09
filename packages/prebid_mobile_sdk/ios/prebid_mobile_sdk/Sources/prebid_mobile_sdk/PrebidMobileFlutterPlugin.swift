@@ -23,6 +23,9 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     private var registrar: FlutterPluginRegistrar?
     private var flutterApi: AdFlutterApi?
+    private var eventFlutterApi: PrebidEventFlutterApi?
+    // Strong reference: Prebid holds its event delegate weakly.
+    private var eventDelegate: BidEventForwarder?
     
     private var interstitialAds: [Int64: InterstitialRenderingAdUnit] = [:]
     private var nativeRequests: [Int64: NativeRequest] = [:]
@@ -32,6 +35,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         let instance = PrebidMobileFlutterPlugin()
         instance.registrar = registrar
         instance.flutterApi = AdFlutterApi(binaryMessenger: registrar.messenger())
+        instance.eventFlutterApi = PrebidEventFlutterApi(binaryMessenger: registrar.messenger())
         
         // Register Pigeon APIs
         PrebidMobileHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
@@ -169,6 +173,40 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         Prebid.shared.includeBidderKeys = include
     }
     
+    func setAuctionSettingsId(settingsId: String?) throws {
+        Prebid.shared.auctionSettingsId = settingsId
+    }
+
+    func setEventDelegateEnabled(enabled: Bool) throws {
+        if enabled, let api = eventFlutterApi {
+            let forwarder = BidEventForwarder(api: api)
+            eventDelegate = forwarder
+            Prebid.shared.eventDelegate = forwarder
+        } else {
+            Prebid.shared.eventDelegate = nil
+            eventDelegate = nil
+        }
+    }
+
+    // SharedID
+    func setSendSharedId(send: Bool) throws {
+        Targeting.shared.sendSharedId = send
+    }
+
+    func getSharedId() throws -> ExternalUserIdData? {
+        let id = Targeting.shared.sharedId
+        guard let uid = id.uids.first else { return nil }
+        return ExternalUserIdData(
+            source: id.source,
+            identifier: uid.uniqueId,
+            atype: uid.aType.int64Value
+        )
+    }
+
+    func resetSharedId() throws {
+        Targeting.shared.resetSharedId()
+    }
+
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
         let externalIds = userIds.map { data -> ExternalUserId in
@@ -304,14 +342,30 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setPublisherName(name: String?) throws { Targeting.shared.publisherName = name }
     func setStoreUrl(url: String?) throws { Targeting.shared.storeURL = url }
     func setDomain(domain: String?) throws { Targeting.shared.domain = domain }
+
+    func setOmidPartnerName(name: String?) throws { Targeting.shared.omidPartnerName = name }
+    func setOmidPartnerVersion(version: String?) throws { Targeting.shared.omidPartnerVersion = version }
+
+    func setUserLatLng(latitude: Double, longitude: Double) throws {
+        Targeting.shared.setLatitude(latitude, longitude: longitude)
+    }
+    func setLocationPrecision(precision: Int64?) throws {
+        Targeting.shared.locationPrecision = precision.map { NSNumber(value: $0) }
+    }
     
     // =========================================================================
     // InterstitialAdHostApi
     // =========================================================================
     
-    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?) throws {
-        let adUnit = InterstitialRenderingAdUnit(configID: configId)
+    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?) throws {
+        let adUnit: InterstitialRenderingAdUnit
+        if let minSize = controls?.minSizePercentage {
+            adUnit = InterstitialRenderingAdUnit(configID: configId, minSizePercentage: minSize)
+        } else {
+            adUnit = InterstitialRenderingAdUnit(configID: configId)
+        }
         if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        controls?.apply(to: adUnit)
         
         if let formats = adFormats {
             var adUnitFormats: Set<AdFormat> = []
@@ -474,6 +528,61 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
 }
 
+// MARK: - Fullscreen controls
+
+extension FullscreenControlsConfig {
+    var minSizePercentage: CGSize? {
+        guard let w = minWidthPercentage, let h = minHeightPercentage else { return nil }
+        return CGSize(width: Int(w), height: Int(h))
+    }
+
+    func apply(to adUnit: InterstitialRenderingAdUnit) {
+        if let v = closeButtonArea { adUnit.closeButtonArea = v }
+        if let v = closeButtonPosition.flatMap(prebidPosition) { adUnit.closeButtonPosition = v }
+        if let v = skipButtonArea { adUnit.skipButtonArea = v }
+        if let v = skipButtonPosition.flatMap(prebidPosition) { adUnit.skipButtonPosition = v }
+        if let v = skipDelay { adUnit.skipDelay = Double(v) }
+        if let v = isMuted { adUnit.isMuted = v }
+        if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
+        if let v = isAutoCloseOnCompletionEnabled { adUnit.isAutoCloseOnCompletionEnabled = v }
+    }
+
+    // Prebid iOS rewarded has no skip-button controls.
+    func apply(to adUnit: RewardedAdUnit) {
+        if let v = closeButtonArea { adUnit.closeButtonArea = v }
+        if let v = closeButtonPosition.flatMap(prebidPosition) { adUnit.closeButtonPosition = v }
+        if let v = isMuted { adUnit.isMuted = v }
+        if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
+    }
+}
+
+private func prebidPosition(_ name: String) -> Position? {
+    switch name {
+    case "topLeft": return .topLeft
+    case "topRight": return .topRight
+    default: return nil
+    }
+}
+
+// MARK: - Bid event forwarder
+
+/// `PrebidEventDelegate` → Flutter. Prebid calls it on a background queue.
+private class BidEventForwarder: NSObject, PrebidEventDelegate {
+    private let api: PrebidEventFlutterApi
+
+    init(api: PrebidEventFlutterApi) {
+        self.api = api
+    }
+
+    func prebidBidRequestDidFinish(requestData: Data?, responseData: Data?) {
+        let request = requestData.flatMap { String(data: $0, encoding: .utf8) }
+        let response = responseData.flatMap { String(data: $0, encoding: .utf8) }
+        DispatchQueue.main.async { [api] in
+            api.onBidResponse(request: request, response: response) { _ in }
+        }
+    }
+}
+
 // MARK: - Interstitial Delegate
 private class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     let adId: Int64
@@ -518,9 +627,10 @@ private class RewardedAdHostApiHandler: RewardedAdHostApi {
         self.flutterApi = flutterApi
     }
     
-    func loadAd(adId: Int64, configId: String, impOrtbConfig: String?) throws {
+    func loadAd(adId: Int64, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?) throws {
         let adUnit = RewardedAdUnit(configID: configId)
         if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        controls?.apply(to: adUnit)
         let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
         adUnit.delegate = delegate
         objc_setAssociatedObject(adUnit, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)

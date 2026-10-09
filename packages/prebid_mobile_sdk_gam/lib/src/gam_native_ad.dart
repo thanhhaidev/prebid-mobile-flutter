@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
+    show NativeAsset, NativeEventTracker;
 
 /// Listener for the GAM native ad flow, surfacing the full set of callbacks
 /// from Prebid's Original-API GAM native integration (mirrors the reference
@@ -43,6 +45,9 @@ class PrebidGamNativeAdListener {
   /// The rendered native ad was clicked.
   final VoidCallback? onAdClicked;
 
+  /// The Prebid native bid expired (per `bid.exp`) before an impression.
+  final VoidCallback? onAdExpired;
+
   /// Creates a [PrebidGamNativeAdListener].
   const PrebidGamNativeAdListener({
     this.onFetchDemandSuccess,
@@ -55,6 +60,7 @@ class PrebidGamNativeAdListener {
     this.onPrimaryAdWinUnified,
     this.onAdImpression,
     this.onAdClicked,
+    this.onAdExpired,
   });
 }
 
@@ -94,6 +100,13 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Initial height of the native view (grows to the rendered content).
   final double height;
 
+  /// Native assets to request. `null` requests Prebid's reference set
+  /// (title, icon, main image, sponsored, description, call to action).
+  final List<NativeAsset>? assets;
+
+  /// Native event trackers. `null` requests impression trackers (image + JS).
+  final List<NativeEventTracker>? eventTrackers;
+
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
 
@@ -104,6 +117,8 @@ class PrebidGamNativeAd extends StatefulWidget {
     this.customFormatId,
     this.width = double.infinity,
     this.height = 320,
+    this.assets,
+    this.eventTrackers,
     this.listener,
   });
 
@@ -151,6 +166,8 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
         l?.onAdImpression?.call();
       case 'onAdClicked':
         l?.onAdClicked?.call();
+      case 'onAdExpired':
+        l?.onAdExpired?.call();
     }
   }
 
@@ -161,6 +178,10 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
       'configId': widget.configId,
       'gamAdUnitId': widget.gamAdUnitId,
       'customFormatId': widget.customFormatId ?? '',
+      if (widget.assets != null)
+        'assets': widget.assets!.map((a) => a.toMap()).toList(),
+      if (widget.eventTrackers != null)
+        'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
     };
 
     return SizedBox(

@@ -228,6 +228,50 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setAuctionSettingsId(String? settingsId) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAuctionSettingsId, [settingsId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setEventDelegateEnabled(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setEventDelegateEnabled, [enabled]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setSendSharedId(bool? send) =>
+      (super.noSuchMethod(
+            Invocation.method(#setSendSharedId, [send]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<_i2.ExternalUserIdData?> getSharedId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getSharedId, []),
+            returnValue: _i4.Future<_i2.ExternalUserIdData?>.value(),
+          )
+          as _i4.Future<_i2.ExternalUserIdData?>);
+
+  @override
+  _i4.Future<void> resetSharedId() =>
+      (super.noSuchMethod(
+            Invocation.method(#resetSharedId, []),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<void> setExternalUserIds(List<_i2.ExternalUserIdData>? userIds) =>
       (super.noSuchMethod(
             Invocation.method(#setExternalUserIds, [userIds]),
@@ -612,6 +656,42 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setOmidPartnerName(String? name) =>
+      (super.noSuchMethod(
+            Invocation.method(#setOmidPartnerName, [name]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setOmidPartnerVersion(String? version) =>
+      (super.noSuchMethod(
+            Invocation.method(#setOmidPartnerVersion, [version]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setUserLatLng(double? latitude, double? longitude) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUserLatLng, [latitude, longitude]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setLocationPrecision(int? precision) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLocationPrecision, [precision]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }
 
 /// A class which mocks [InterstitialAdHostApi].
@@ -641,6 +721,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
     List<String>? adFormats,
     _i2.VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    _i2.FullscreenControlsConfig? controls,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -649,6 +730,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
               adFormats,
               videoConfig,
               impOrtbConfig,
+              controls,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
@@ -694,9 +776,19 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
           as String);
 
   @override
-  _i4.Future<void> loadAd(int? adId, String? configId, String? impOrtbConfig) =>
+  _i4.Future<void> loadAd(
+    int? adId,
+    String? configId,
+    String? impOrtbConfig,
+    _i2.FullscreenControlsConfig? controls,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#loadAd, [adId, configId, impOrtbConfig]),
+            Invocation.method(#loadAd, [
+              adId,
+              configId,
+              impOrtbConfig,
+              controls,
+            ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

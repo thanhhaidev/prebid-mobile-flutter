@@ -16,6 +16,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     private lateinit var context: Context
     private var activity: Activity? = null
     private lateinit var flutterApi: AdFlutterApi
+    private lateinit var eventFlutterApi: PrebidEventFlutterApi
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     fun getActivity(): Activity? = activity
 
@@ -24,6 +26,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         flutterApi = AdFlutterApi(binding.binaryMessenger)
+        eventFlutterApi = PrebidEventFlutterApi(binding.binaryMessenger)
 
         // Register Pigeon APIs
         PrebidMobileHostApi.setUp(binding.binaryMessenger, this)
@@ -55,6 +58,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         NativeAdHostApi.setUp(binding.binaryMessenger, null)
         MultiformatAdHostApi.setUp(binding.binaryMessenger, null)
         InstreamVideoAdHostApi.setUp(binding.binaryMessenger, null)
+        PrebidMobile.setEventDelegate(null)
+        eventDelegate = null
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -175,6 +180,42 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
     override fun setIncludeBidderKeys(include: Boolean) {
         PrebidMobile.setIncludeBidderKeysFlag(include)
+    }
+
+    override fun setAuctionSettingsId(settingsId: String?) {
+        PrebidMobile.setAuctionSettingsId(settingsId)
+    }
+
+    // Strong reference: Prebid holds the event delegate in a WeakReference.
+    private var eventDelegate: org.prebid.mobile.PrebidEventDelegate? = null
+
+    override fun setEventDelegateEnabled(enabled: Boolean) {
+        eventDelegate = if (!enabled) null else org.prebid.mobile.PrebidEventDelegate { request, response ->
+            // Called on a background thread; Flutter channels need main.
+            val req = request?.toString()
+            val res = response?.toString()
+            mainHandler.post { eventFlutterApi.onBidResponse(req, res) {} }
+        }
+        PrebidMobile.setEventDelegate(eventDelegate)
+    }
+
+    // SharedID
+    override fun setSendSharedId(send: Boolean) {
+        TargetingParams.setSendSharedId(send)
+    }
+
+    override fun getSharedId(): ExternalUserIdData? {
+        val id = TargetingParams.getSharedId() ?: return null
+        val uid = id.uniqueIds?.firstOrNull() ?: return null
+        return ExternalUserIdData(
+            source = id.source ?: "",
+            identifier = uid.id ?: "",
+            atype = uid.atype?.toLong(),
+        )
+    }
+
+    override fun resetSharedId() {
+        TargetingParams.resetSharedId()
     }
 
     // External User IDs
@@ -342,11 +383,21 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
     override fun setDomain(domain: String?) { TargetingParams.setDomain(domain) }
 
+    override fun setOmidPartnerName(name: String?) { TargetingParams.setOmidPartnerName(name) }
+    override fun setOmidPartnerVersion(version: String?) { TargetingParams.setOmidPartnerVersion(version) }
+
+    override fun setUserLatLng(latitude: Double, longitude: Double) {
+        TargetingParams.setUserLatLng(latitude.toFloat(), longitude.toFloat())
+    }
+    override fun setLocationPrecision(precision: Long?) {
+        TargetingParams.setLocationDecimalPrecision(precision?.toInt())
+    }
+
     // =========================================================================
     // InterstitialAdHostApi
     // =========================================================================
 
-    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?) {
+    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
         val act = activity ?: return
 
         // Build EnumSet for ad formats
@@ -368,6 +419,14 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         // duration is configurable.
         videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
+        controls?.let { c ->
+            c.applyTo(adUnit)
+            if (c.minWidthPercentage != null && c.minHeightPercentage != null) {
+                adUnit.setMinSizePercentage(
+                    org.prebid.mobile.AdSize(c.minWidthPercentage.toInt(), c.minHeightPercentage.toInt())
+                )
+            }
+        }
 
         adUnit.setInterstitialAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.InterstitialAdUnit) {
@@ -415,10 +474,11 @@ class RewardedAdHostApiImpl(
 
     private val rewardedAds = mutableMapOf<Long, org.prebid.mobile.api.rendering.RewardedAdUnit>()
 
-    override fun loadAd(adId: Long, configId: String, impOrtbConfig: String?) {
+    override fun loadAd(adId: Long, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
         val act = plugin.getActivity() ?: return
         val adUnit = org.prebid.mobile.api.rendering.RewardedAdUnit(act, configId)
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
+        controls?.applyTo(adUnit)
 
         adUnit.setRewardedAdUnitListener(object : org.prebid.mobile.api.rendering.listeners.RewardedAdUnitListener {
             override fun onAdLoaded(unit: org.prebid.mobile.api.rendering.RewardedAdUnit) {
@@ -443,7 +503,11 @@ class RewardedAdHostApiImpl(
                 flutterApi.onAdEvent(AdEvent(
                     adId = adId,
                     eventName = "onUserEarnedReward",
-                    reward = RewardData(type = reward?.type ?: "reward", count = reward?.count?.toLong() ?: 1)
+                    reward = RewardData(
+                        type = reward?.type ?: "reward",
+                        count = reward?.count?.toLong() ?: 1,
+                        ext = reward?.ext?.toMap(),
+                    )
                 )) {}
             }
         })
@@ -755,3 +819,32 @@ internal fun org.prebid.mobile.api.data.BidInfo.dartResultCode(): String =
     } else {
         resultCode.toDartCode()
     }
+
+/// Applies fullscreen controls to a rendering interstitial / rewarded ad unit.
+internal fun FullscreenControlsConfig.applyTo(adUnit: org.prebid.mobile.api.rendering.BaseInterstitialAdUnit) {
+    closeButtonArea?.let { adUnit.setCloseButtonArea(it) }
+    closeButtonPosition?.toPrebidPosition()?.let { adUnit.setCloseButtonPosition(it) }
+    skipButtonArea?.let { adUnit.setSkipButtonArea(it) }
+    skipButtonPosition?.toPrebidPosition()?.let { adUnit.setSkipButtonPosition(it) }
+    skipDelay?.let { adUnit.setSkipDelay(it.toInt()) }
+    isMuted?.let { adUnit.setIsMuted(it) }
+    isSoundButtonVisible?.let { adUnit.setIsSoundButtonVisible(it) }
+    // isAutoCloseOnCompletionEnabled: iOS only.
+}
+
+internal fun String.toPrebidPosition(): org.prebid.mobile.api.data.Position? = when (this) {
+    "topLeft" -> org.prebid.mobile.api.data.Position.TOP_LEFT
+    "topRight" -> org.prebid.mobile.api.data.Position.TOP_RIGHT
+    else -> null
+}
+
+/// JSONObject -> Map for the Pigeon codec (nested objects / arrays included).
+internal fun org.json.JSONObject.toMap(): Map<String?, Any?> =
+    keys().asSequence().associateWith { key -> opt(key).toPigeonValue() }
+
+private fun Any?.toPigeonValue(): Any? = when (this) {
+    org.json.JSONObject.NULL, null -> null
+    is org.json.JSONObject -> toMap()
+    is org.json.JSONArray -> (0 until length()).map { opt(it).toPigeonValue() }
+    else -> this
+}

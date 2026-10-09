@@ -63,6 +63,8 @@ class GamNativePlatformView(
     private val configId = params["configId"] as? String ?: ""
     private val gamAdUnitId = params["gamAdUnitId"] as? String ?: ""
     private val customFormatId = params["customFormatId"] as? String ?: ""
+    private val customAssets = nativeAssetsFrom(params["assets"])
+    private val customTrackers = nativeTrackersFrom(params["eventTrackers"])
 
     private val methodChannel =
         MethodChannel(messenger, "prebid_mobile_sdk_gam/native_$logicalId")
@@ -89,7 +91,9 @@ class GamNativePlatformView(
             if (prebidImpressionReported.compareAndSet(false, true)) send("onAdImpression")
         }
 
-        override fun onAdExpired() {}
+        override fun onAdExpired() {
+            send("onAdExpired")
+        }
     }
 
     init {
@@ -175,6 +179,11 @@ class GamNativePlatformView(
     }
 
     private fun addNativeAssets(adUnit: NativeAdUnit) {
+        if (customAssets != null) {
+            customAssets.forEach { adUnit.addAsset(it) }
+            (customTrackers ?: defaultTrackers()).forEach { adUnit.addEventTracker(it) }
+            return
+        }
         val title = NativeTitleAsset()
         title.setLength(90)
         title.isRequired = true
@@ -206,18 +215,20 @@ class GamNativePlatformView(
         cta.dataType = NativeDataAsset.DATA_TYPE.CTATEXT
         adUnit.addAsset(cta)
 
-        val methods = arrayListOf(
-            NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
-            NativeEventTracker.EVENT_TRACKING_METHOD.JS,
-        )
-        try {
-            adUnit.addEventTracker(
-                NativeEventTracker(NativeEventTracker.EVENT_TYPE.IMPRESSION, methods),
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        (customTrackers ?: defaultTrackers()).forEach { adUnit.addEventTracker(it) }
     }
+
+    private fun defaultTrackers(): List<NativeEventTracker> = listOfNotNull(
+        runCatching {
+            NativeEventTracker(
+                NativeEventTracker.EVENT_TYPE.IMPRESSION,
+                arrayListOf(
+                    NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
+                    NativeEventTracker.EVENT_TRACKING_METHOD.JS,
+                ),
+            )
+        }.getOrNull(),
+    )
 
     /// Renders the Prebid winning native creative and registers the view so
     /// Prebid tracks impressions/clicks.

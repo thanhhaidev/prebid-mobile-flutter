@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'ad_enums.dart';
 import 'ad_event_router.dart';
 import 'ad_listener.dart';
+import 'fullscreen_controls.dart';
 import 'generated/prebid_api.g.dart';
 import 'video_parameters.dart';
 
@@ -33,6 +34,9 @@ class PrebidInterstitialAd {
   /// `{"ext":{"gpid":"/1111/interstitial"}}`).
   final String? impOrtbConfig;
 
+  /// Close / skip button, sound and minimum-size controls.
+  final PrebidFullscreenControls? controls;
+
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
@@ -42,6 +46,7 @@ class PrebidInterstitialAd {
     this.adFormats,
     this.videoParameters,
     this.impOrtbConfig,
+    this.controls,
     this.listener,
   }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
@@ -83,7 +88,14 @@ class PrebidInterstitialAd {
         api: videoParameters!.api?.map((a) => a.value).toList(),
       );
     }
-    api.loadAd(_adId, configId, formats, videoConfig, impOrtbConfig);
+    api.loadAd(
+      _adId,
+      configId,
+      formats,
+      videoConfig,
+      impOrtbConfig,
+      controls?.toConfig(),
+    );
   }
 
   /// Show the interstitial ad.
@@ -115,12 +127,19 @@ class PrebidRewardedAd {
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
+  /// Close button, sound and (Android) skip controls.
+  final PrebidFullscreenControls? controls;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
   /// Creates a [PrebidRewardedAd].
-  PrebidRewardedAd({required this.configId, this.impOrtbConfig, this.listener})
-    : _adId = _nextId++ {
+  PrebidRewardedAd({
+    required this.configId,
+    this.impOrtbConfig,
+    this.controls,
+    this.listener,
+  }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
   }
 
@@ -155,7 +174,7 @@ class PrebidRewardedAd {
 
   /// Load the rewarded ad.
   Future<void> loadAd() async {
-    api.loadAd(_adId, configId, impOrtbConfig);
+    api.loadAd(_adId, configId, impOrtbConfig, controls?.toConfig());
   }
 
   /// Show the rewarded ad.

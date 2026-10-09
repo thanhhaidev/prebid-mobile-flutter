@@ -729,6 +729,87 @@ data class VideoParametersConfig (
 }
 
 /**
+ * Fullscreen (interstitial / rewarded) rendering controls.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class FullscreenControlsConfig (
+  /** Close button size as a fraction of the screen (0..1). */
+  val closeButtonArea: Double? = null,
+  /** "topLeft" or "topRight". */
+  val closeButtonPosition: String? = null,
+  /** Skip button size as a fraction of the screen (0..1). */
+  val skipButtonArea: Double? = null,
+  /** "topLeft" or "topRight". */
+  val skipButtonPosition: String? = null,
+  /** Seconds before the skip button appears. */
+  val skipDelay: Long? = null,
+  val isMuted: Boolean? = null,
+  val isSoundButtonVisible: Boolean? = null,
+  /** iOS only. */
+  val isAutoCloseOnCompletionEnabled: Boolean? = null,
+  /** Minimum creative size in percent of the screen (interstitial only). */
+  val minWidthPercentage: Long? = null,
+  val minHeightPercentage: Long? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): FullscreenControlsConfig {
+      val closeButtonArea = pigeonVar_list[0] as Double?
+      val closeButtonPosition = pigeonVar_list[1] as String?
+      val skipButtonArea = pigeonVar_list[2] as Double?
+      val skipButtonPosition = pigeonVar_list[3] as String?
+      val skipDelay = pigeonVar_list[4] as Long?
+      val isMuted = pigeonVar_list[5] as Boolean?
+      val isSoundButtonVisible = pigeonVar_list[6] as Boolean?
+      val isAutoCloseOnCompletionEnabled = pigeonVar_list[7] as Boolean?
+      val minWidthPercentage = pigeonVar_list[8] as Long?
+      val minHeightPercentage = pigeonVar_list[9] as Long?
+      return FullscreenControlsConfig(closeButtonArea, closeButtonPosition, skipButtonArea, skipButtonPosition, skipDelay, isMuted, isSoundButtonVisible, isAutoCloseOnCompletionEnabled, minWidthPercentage, minHeightPercentage)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      closeButtonArea,
+      closeButtonPosition,
+      skipButtonArea,
+      skipButtonPosition,
+      skipDelay,
+      isMuted,
+      isSoundButtonVisible,
+      isAutoCloseOnCompletionEnabled,
+      minWidthPercentage,
+      minHeightPercentage,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as FullscreenControlsConfig
+    return PrebidApiPigeonUtils.deepEquals(this.closeButtonArea, other.closeButtonArea) && PrebidApiPigeonUtils.deepEquals(this.closeButtonPosition, other.closeButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipButtonArea, other.skipButtonArea) && PrebidApiPigeonUtils.deepEquals(this.skipButtonPosition, other.skipButtonPosition) && PrebidApiPigeonUtils.deepEquals(this.skipDelay, other.skipDelay) && PrebidApiPigeonUtils.deepEquals(this.isMuted, other.isMuted) && PrebidApiPigeonUtils.deepEquals(this.isSoundButtonVisible, other.isSoundButtonVisible) && PrebidApiPigeonUtils.deepEquals(this.isAutoCloseOnCompletionEnabled, other.isAutoCloseOnCompletionEnabled) && PrebidApiPigeonUtils.deepEquals(this.minWidthPercentage, other.minWidthPercentage) && PrebidApiPigeonUtils.deepEquals(this.minHeightPercentage, other.minHeightPercentage)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.closeButtonArea)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.closeButtonPosition)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.skipButtonArea)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.skipButtonPosition)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.skipDelay)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.isMuted)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.isSoundButtonVisible)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.isAutoCloseOnCompletionEnabled)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minWidthPercentage)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.minHeightPercentage)
+    return result
+  }
+}
+
+/**
  * Configuration for a multiformat ad request.
  *
  * Generated class from Pigeon that represents data sent in messages.
@@ -950,15 +1031,20 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
       }
       138.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatAdRequestConfig.fromList(it)
+          FullscreenControlsConfig.fromList(it)
         }
       }
       139.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatBidResult.fromList(it)
+          MultiformatAdRequestConfig.fromList(it)
         }
       }
       140.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatBidResult.fromList(it)
+        }
+      }
+      141.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           InstreamVideoAdRequestConfig.fromList(it)
         }
@@ -1004,16 +1090,20 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
         stream.write(137)
         writeValue(stream, value.toList())
       }
-      is MultiformatAdRequestConfig -> {
+      is FullscreenControlsConfig -> {
         stream.write(138)
         writeValue(stream, value.toList())
       }
-      is MultiformatBidResult -> {
+      is MultiformatAdRequestConfig -> {
         stream.write(139)
         writeValue(stream, value.toList())
       }
-      is InstreamVideoAdRequestConfig -> {
+      is MultiformatBidResult -> {
         stream.write(140)
+        writeValue(stream, value.toList())
+      }
+      is InstreamVideoAdRequestConfig -> {
+        stream.write(141)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -1046,6 +1136,15 @@ interface PrebidMobileHostApi {
   fun setEidsPlacement(placement: String)
   fun setIncludeWinners(include: Boolean)
   fun setIncludeBidderKeys(include: Boolean)
+  fun setAuctionSettingsId(settingsId: String?)
+  /**
+   * Enables / disables forwarding bid request + response pairs to
+   * [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
+   */
+  fun setEventDelegateEnabled(enabled: Boolean)
+  fun setSendSharedId(send: Boolean)
+  fun getSharedId(): ExternalUserIdData?
+  fun resetSharedId()
   fun setExternalUserIds(userIds: List<ExternalUserIdData>)
   fun getExternalUserIds(): List<ExternalUserIdData>
   fun clearExternalUserIds()
@@ -1385,6 +1484,91 @@ interface PrebidMobileHostApi {
         }
       }
       run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setAuctionSettingsId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val settingsIdArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setAuctionSettingsId(settingsIdArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setEventDelegateEnabled$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val enabledArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setEventDelegateEnabled(enabledArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setSendSharedId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val sendArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setSendSharedId(sendArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getSharedId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getSharedId())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.resetSharedId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.resetSharedId()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setExternalUserIds$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
@@ -1494,6 +1678,10 @@ interface TargetingHostApi {
   fun setPublisherName(name: String?)
   fun setStoreUrl(url: String?)
   fun setDomain(domain: String?)
+  fun setOmidPartnerName(name: String?)
+  fun setOmidPartnerVersion(version: String?)
+  fun setUserLatLng(latitude: Double, longitude: Double)
+  fun setLocationPrecision(precision: Long?)
 
   companion object {
     /** The codec used by TargetingHostApi. */
@@ -2140,6 +2328,79 @@ interface TargetingHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setOmidPartnerName$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val nameArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setOmidPartnerName(nameArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setOmidPartnerVersion$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val versionArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setOmidPartnerVersion(versionArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUserLatLng$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val latitudeArg = args[0] as Double
+            val longitudeArg = args[1] as Double
+            val wrapped: List<Any?> = try {
+              api.setUserLatLng(latitudeArg, longitudeArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setLocationPrecision$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val precisionArg = args[0] as Long?
+            val wrapped: List<Any?> = try {
+              api.setLocationPrecision(precisionArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -2149,7 +2410,7 @@ interface TargetingHostApi {
  * Generated interface from Pigeon that represents a handler of messages from Flutter.
  */
 interface InterstitialAdHostApi {
-  fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?)
+  fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?)
   fun show(adId: Long)
   fun destroy(adId: Long)
 
@@ -2172,8 +2433,9 @@ interface InterstitialAdHostApi {
             val adFormatsArg = args[2] as List<String>?
             val videoConfigArg = args[3] as VideoParametersConfig?
             val impOrtbConfigArg = args[4] as String?
+            val controlsArg = args[5] as FullscreenControlsConfig?
             val wrapped: List<Any?> = try {
-              api.loadAd(adIdArg, configIdArg, adFormatsArg, videoConfigArg, impOrtbConfigArg)
+              api.loadAd(adIdArg, configIdArg, adFormatsArg, videoConfigArg, impOrtbConfigArg, controlsArg)
               listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)
@@ -2229,7 +2491,7 @@ interface InterstitialAdHostApi {
  * Generated interface from Pigeon that represents a handler of messages from Flutter.
  */
 interface RewardedAdHostApi {
-  fun loadAd(adId: Long, configId: String, impOrtbConfig: String?)
+  fun loadAd(adId: Long, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?)
   fun show(adId: Long)
   fun destroy(adId: Long)
 
@@ -2250,8 +2512,9 @@ interface RewardedAdHostApi {
             val adIdArg = args[0] as Long
             val configIdArg = args[1] as String
             val impOrtbConfigArg = args[2] as String?
+            val controlsArg = args[3] as FullscreenControlsConfig?
             val wrapped: List<Any?> = try {
-              api.loadAd(adIdArg, configIdArg, impOrtbConfigArg)
+              api.loadAd(adIdArg, configIdArg, impOrtbConfigArg, controlsArg)
               listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)
@@ -2497,6 +2760,36 @@ class AdFlutterApi(private val binaryMessenger: BinaryMessenger, private val mes
     val channelName = "dev.flutter.pigeon.prebid_mobile_sdk.AdFlutterApi.onAdEvent$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(eventArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(PrebidApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+}
+/**
+ * Bid request / response pairs from `PrebidEventDelegate` (native → Flutter).
+ *
+ * Generated class from Pigeon that represents Flutter messages that can be called from Kotlin.
+ */
+class PrebidEventFlutterApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
+  companion object {
+    /** The codec used by PrebidEventFlutterApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      PrebidApiPigeonCodec()
+    }
+  }
+  fun onBidResponse(requestArg: String?, responseArg: String?, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.prebid_mobile_sdk.PrebidEventFlutterApi.onBidResponse$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(requestArg, responseArg)) {
       if (it is List<*>) {
         if (it.size > 1) {
           callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))

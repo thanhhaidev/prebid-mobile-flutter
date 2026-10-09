@@ -67,6 +67,7 @@ class AdMobRewardedManager(
 
                 val mediationUtils = AdMobMediationRewardedUtils(extras)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
+                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 val holder = Holder(adUnit)
                 ads[adId] = holder
 
@@ -121,6 +122,7 @@ class AdMobRewardedManager(
         override fun onAdShowedFullScreenContent() = send(adId, "onAdDisplayed")
         override fun onAdDismissedFullScreenContent() = send(adId, "onAdClosed")
         override fun onAdClicked() = send(adId, "onAdClicked")
+        override fun onAdImpression() = send(adId, "onAdImpression")
         override fun onAdFailedToShowFullScreenContent(error: AdError) =
             send(adId, "onAdFailed", error.message)
     }

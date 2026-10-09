@@ -226,6 +226,15 @@ Static class for SDK initialization, global configuration, and identity manageme
 | `getExternalUserIds()` | `Future<List<ExternalUserId>>` | Get all currently set external user IDs. |
 | `clearExternalUserIds()` | `Future<void>` | Clear all external user IDs. |
 | `getSdkVersion()` | `Future<String>` | Get the native Prebid SDK version string. |
+| `isSdkInitialized` | `bool` | Whether `initializeSdk` completed with a usable status. |
+| `setShouldAssignNativeAssetId(bool assign)` | `Future<void>` | Assign sequential IDs to native request assets. |
+| `setFilterOutUncachedBids(bool filter)` | `Future<void>` | Drop bids whose Prebid Cache entry failed and promote the next cached bid. |
+| `setEidsPlacement(PrebidEidsPlacement placement)` | `Future<void>` | Send EIDs in `user.eids`, `user.ext.eids` or both. |
+| `setIncludeWinners(bool include)` / `setIncludeBidderKeys(bool include)` | `Future<void>` | Prebid Server targeting flags. |
+| `setAuctionSettingsId(String? id)` | `Future<void>` | Request-level stored auction settings id. |
+| `setEventListener(PrebidBidResponseListener? listener)` | `Future<void>` | Receive every bid request / response as JSON (`PrebidEventDelegate`); `null` stops. |
+| `setSendSharedId(bool send)` | `Future<void>` | Send Prebid's first-party SharedID in `user.eids`. |
+| `getSharedId()` / `resetSharedId()` | `Future<ExternalUserId?>` / `Future<void>` | Read or regenerate the SharedID. |
 
 ---
 
@@ -306,6 +315,9 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `setPublisherName(String? name)` | `Future<void>` | Set publisher name (`app.publisher.name`). |
 | `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
 | `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
+| `setOmidPartnerName(String? name)` / `setOmidPartnerVersion(String? version)` | `Future<void>` | OM SDK partner sent in `source.ext.omidpn` / `omidpv`. |
+| `setUserLatLng(double lat, double lng)` | `Future<void>` | User location (`user.geo`). |
+| `setLocationPrecision(int? precision)` | `Future<void>` | Decimal places kept for coordinates; `null` = full precision. |
 
 ---
 
@@ -321,7 +333,12 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
 | `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
 | `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds. Minimum `30`. `null` to disable. |
-| `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events. |
+| `adFormats` | `Set<AdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
+| `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
+| `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
+| `controller` | `PrebidBannerAdController?` | `null` | `loadAd()` (with `autoLoad: false`) and `stopRefresh()`. |
+| `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events (incl. `onAdExpired`). |
+| `videoListener` | `PrebidBannerVideoListener?` | `null` | Outstream video events: completed, paused, resumed, muted, unmuted. |
 
 ---
 
@@ -334,7 +351,9 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 | `configId` | `String` | **Required.** Prebid Server config ID. |
 | `adFormats` | `Set<AdFormat>?` | Specify `{AdFormat.banner}`, `{AdFormat.video}`, or both. |
 | `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
-| `listener` | `PrebidInterstitialAdListener?` | Callback listener. |
+| `impOrtbConfig` | `String?` | Impression-level OpenRTB JSON. |
+| `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
+| `listener` | `PrebidInterstitialAdListener?` | Callback listener (incl. `onAdExpired`). |
 | `loadAd()` | `Future<void>` | Request an interstitial ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. |
 | `destroy()` | `Future<void>` | Release all resources. |
@@ -348,7 +367,9 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 | Property / Method | Type | Description |
 |---|---|---|
 | `configId` | `String` | **Required.** Prebid Server config ID. |
-| `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`). |
+| `impOrtbConfig` | `String?` | Impression-level OpenRTB JSON. |
+| `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only). |
+| `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`, `onAdExpired`). |
 | `loadAd()` | `Future<void>` | Request a rewarded ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. |
 | `destroy()` | `Future<void>` | Release all resources. |

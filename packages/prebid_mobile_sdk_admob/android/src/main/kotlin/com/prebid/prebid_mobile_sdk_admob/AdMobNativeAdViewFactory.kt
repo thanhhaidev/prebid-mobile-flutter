@@ -72,8 +72,8 @@ class AdMobNativePlatformView(
 
         val extras = Bundle()
         val adUnit = MediationNativeAdUnit(configId, extras)
-        nativeAssets().forEach { adUnit.addAsset(it) }
-        adUnit.addEventTracker(
+        (nativeAssetsFrom(params["assets"]) ?: nativeAssets()).forEach { adUnit.addAsset(it) }
+        val trackers = nativeTrackersFrom(params["eventTrackers"]) ?: listOf(
             NativeEventTracker(
                 NativeEventTracker.EVENT_TYPE.IMPRESSION,
                 arrayListOf(
@@ -82,6 +82,7 @@ class AdMobNativePlatformView(
                 ),
             ),
         )
+        trackers.forEach { adUnit.addEventTracker(it) }
         this.adUnit = adUnit
 
         val adLoader = AdLoader.Builder(context, adMobAdUnitId)

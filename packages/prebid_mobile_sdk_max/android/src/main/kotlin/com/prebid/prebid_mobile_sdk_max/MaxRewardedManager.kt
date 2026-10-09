@@ -80,8 +80,12 @@ class MaxRewardedManager(
                     }
                 })
 
+                // MAX reports revenue when the impression is recorded.
+                rewarded.setRevenueListener { send(adId, "onAdImpression") }
+
                 val mediationUtils = MaxMediationRewardedUtils(rewarded)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
+                FullscreenControls.from(args?.get("controls"))?.applyTo(adUnit)
                 ads[adId] = Holder(adUnit, rewarded)
 
                 adUnit.fetchDemand {

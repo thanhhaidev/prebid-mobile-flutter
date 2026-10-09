@@ -67,6 +67,14 @@ class GamInterstitialManager(
                     }
                 }
                 val adUnit = InterstitialAdUnit(activity, configId, formats, eventHandler)
+                FullscreenControls.from(args?.get("controls"))?.let { controls ->
+                    controls.applyTo(adUnit)
+                    if (controls.minWidthPercentage != null && controls.minHeightPercentage != null) {
+                        adUnit.setMinSizePercentage(
+                            org.prebid.mobile.AdSize(controls.minWidthPercentage, controls.minHeightPercentage)
+                        )
+                    }
+                }
 
                 adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
                     override fun onAdLoaded(unit: InterstitialAdUnit) = send(adId, "onAdLoaded")

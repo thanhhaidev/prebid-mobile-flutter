@@ -21,14 +21,18 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - `setFilterOutUncachedBids()` — drop bids without a Prebid Cache entry (Prebid 3.4; `topBidFiltered` / `prebidDemandNoCachedBids`)
   - `setEidsPlacement()` — send EIDs in `user.eids` (OpenRTB 2.6), `user.ext.eids` (2.5) or both
   - `setIncludeWinners()` / `setIncludeBidderKeys()` — Prebid Server targeting flags
+  - `setAuctionSettingsId()` — request-level stored auction settings
+  - `setEventListener()` — receive every Prebid Server bid request / response as JSON (`PrebidEventDelegate`)
+  - `setSendSharedId()`, `getSharedId()`, `resetSharedId()` — Prebid's first-party SharedID
+  - `isSdkInitialized`
 - **External User IDs** — Third-party identity module support, incl. OpenRTB 2.6 `inserter` / `matcher` / `mm`
   - `ExternalUserId` class with `source`, `identifier`, `atype`, and `ext`
   - `setExternalUserIds()`, `getExternalUserIds()`, `clearExternalUserIds()`
   - Supports UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source
 - **Ad Formats**
-  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support (multiformat via `adFormats`), auto-refresh via `refreshIntervalSeconds`, `PrebidBannerAdController` (`loadAd` / `stopRefresh`), `pbAdSlot`, `impOrtbConfig`
-  - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads with optional `VideoParameters` and `impOrtbConfig`
-  - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with typed `PrebidReward` callbacks and `impOrtbConfig`
+  - **Banner Ads** (`PrebidBannerAd`) — Native PlatformView widget with Display and Video support (multiformat via `adFormats`), auto-refresh via `refreshIntervalSeconds`, `PrebidBannerAdController` (`loadAd` / `stopRefresh`), `pbAdSlot`, `impOrtbConfig`, `videoPlacementType`, and outstream video events via `PrebidBannerVideoListener` (completed / paused / resumed / muted / unmuted)
+  - **Interstitial Ads** (`PrebidInterstitialAd`) — Fullscreen modal ads with optional `VideoParameters`, `impOrtbConfig` and `PrebidFullscreenControls` (close / skip button area and position, skip delay, mute, sound button, auto-close, minimum size)
+  - **Rewarded Ads** (`PrebidRewardedAd`) — Fullscreen ads with typed `PrebidReward` callbacks (incl. `ext`), `impOrtbConfig` and `PrebidFullscreenControls`
   - **Native Ads** (`PrebidNativeAd`) — Load native ads (Title, Image, Icon, Sponsored, Description, CTA); show them with `PrebidNativeAdView`, which renders natively and registers the view so Prebid tracks impressions and clicks (`onAdImpression`, `onAdClicked`, `onAdExpired`); `pbAdSlot`, `gpid`, `impOrtbConfig`
   - **Multiformat Ads** (`PrebidMultiformatAd`) — Fetch demand across banner, video, and native in a single request; `gpid`; result exposes `exp` and `topBidFiltered`
   - **In-Stream Video** (`PrebidInstreamVideoAd`) — Fetch VAST video demand
@@ -46,9 +50,13 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - Access control list for bidder data access
   - Global OpenRTB configuration
   - App info: content URL, publisher name, store URL, domain
+  - OM SDK partner: `setOmidPartnerName()`, `setOmidPartnerVersion()`
+  - Location: `setUserLatLng()`, `setLocationPrecision()`
 - **Error Handling**
   - `PrebidException` with typed `PrebidErrorCode` (`initializationFailed`, `adLoadFailed`, `timeout`, etc.)
 - **Ad expiration** (Prebid 3.4) — `onAdExpired` on banner, interstitial, rewarded and native listeners when the bid's `exp` elapses
+- **Mediation impressions** — `onAdImpression` on the banner / interstitial / rewarded listeners, fired by the AdMob and MAX companion packages
+- **Companion helpers** — `NativeAsset.toMap()`, `NativeEventTracker.toMap()`, `PrebidFullscreenControls.toMap()` and `PrebidBannerAdController.attachChannel()` used by the GAM / AdMob / MAX packages
 - **Infrastructure**
   - **Android** — Prebid Mobile SDK `3.4.0` via Maven
   - **iOS** — PrebidMobile `3.4.1+` via CocoaPods / SPM (iOS 15.0+)
@@ -56,7 +64,8 @@ Initial release of the `prebid_mobile_sdk` plugin.
 - **Testing**
   - Unit tests via Mockito covering SDK, targeting, and all ad format classes
 - **Example App**
-  - Comprehensive demo with 30+ test cases
-  - Console Logger, Settings Manager, and Targeting Data Manager
+  - 90+ test cases mirroring Prebid's internal test app (In-App, GAM rendering, GAM Original API, AdMob, MAX)
+  - Every callback per test case (counters + timestamped event log), fullscreen controls dialog, banner controller
+  - Bid Inspector (request / response JSON via `setEventListener`), app log, SDK settings, targeting data
 - **CI/CD**
   - Automated GitHub Actions pipeline for formatting, analysis, testing, and multi-platform builds

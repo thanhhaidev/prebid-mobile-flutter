@@ -7,7 +7,7 @@ import AppLovinSDK
 /// Handles MAX-mediated rewarded ads over the `prebid_mobile_sdk_max/rewarded`
 /// method channel. Each ad is keyed by an `adId` allocated on the Dart side;
 /// native events (including the reward) are pushed back over the same channel.
-class MaxRewardedManager: NSObject, MARewardedAdDelegate {
+class MaxRewardedManager: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate {
 
     private let channel: FlutterMethodChannel
 
@@ -45,7 +45,9 @@ class MaxRewardedManager: NSObject, MARewardedAdDelegate {
                 configId: configId,
                 mediationDelegate: mediationDelegate
             )
+            FullscreenControls(args?["controls"])?.apply(to: adUnit)
             rewarded.delegate = self
+            rewarded.revenueDelegate = self
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
             rewardedAds[adId] = rewarded
@@ -116,6 +118,13 @@ class MaxRewardedManager: NSObject, MARewardedAdDelegate {
     func didHide(_ ad: MAAd) {
         if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
             send(adId, "onAdClosed")
+        }
+    }
+
+    // MAX reports revenue when the impression is recorded.
+    func didPayRevenue(for ad: MAAd) {
+        if let adId = adId(forAdUnitIdentifier: ad.adUnitIdentifier) {
+            send(adId, "onAdImpression")
         }
     }
 

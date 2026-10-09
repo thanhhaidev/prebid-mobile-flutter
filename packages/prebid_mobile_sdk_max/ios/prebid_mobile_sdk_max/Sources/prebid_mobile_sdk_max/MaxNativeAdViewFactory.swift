@@ -34,7 +34,7 @@ class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate {
+class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, MAAdRevenueDelegate {
 
     private let container = UIView()
     private let methodChannel: FlutterMethodChannel
@@ -58,6 +58,7 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate {
         // 1. MAX native ad loader + Prebid mediation utils + ad unit.
         let loader = MANativeAdLoader(adUnitIdentifier: maxAdUnitId)
         loader.nativeAdDelegate = self
+        loader.revenueDelegate = self
         nativeAdLoader = loader
 
         let mediationDelegate = MAXMediationNativeUtils(nativeAdLoader: loader)
@@ -66,11 +67,11 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate {
             configId: configId,
             mediationDelegate: mediationDelegate
         )
-        adUnit.addNativeAssets(Self.requestAssets)
+        adUnit.addNativeAssets(nativeAssetsFrom(args["assets"]) ?? Self.requestAssets)
         adUnit.setContextType(.Social)
         adUnit.setPlacementType(.FeedContent)
         adUnit.setContextSubType(.Social)
-        adUnit.addEventTracker([
+        adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: .Impression, methods: [.Image, .js])
         ])
         self.adUnit = adUnit
@@ -195,6 +196,11 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate {
 
     func didFailToLoadNativeAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
         methodChannel.invokeMethod("onAdFailed", arguments: error.message)
+    }
+
+    // MAX reports revenue when the impression is recorded.
+    func didPayRevenue(for ad: MAAd) {
+        methodChannel.invokeMethod("onAdImpression", arguments: nil)
     }
 
     func didClickNativeAd(_ ad: MAAd) {

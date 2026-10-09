@@ -85,8 +85,11 @@ class MaxNativePlatformView(
             }
         })
 
+        // MAX reports revenue when the impression is recorded.
+        nativeAdLoader.setRevenueListener { methodChannel.invokeMethod("onAdImpression", null) }
+
         nativeAdUnit = NativeAdUnit(configId)
-        configureNativeAdUnit(nativeAdUnit)
+        configureNativeAdUnit(nativeAdUnit, params)
 
         nativeAdUnit.fetchDemand(nativeAdLoader) {
             nativeAdLoader.loadAd(createNativeAdView())
@@ -104,10 +107,18 @@ class MaxNativePlatformView(
         return MaxNativeAdView(binder, context)
     }
 
-    private fun configureNativeAdUnit(nativeAdUnit: NativeAdUnit) {
+    private fun configureNativeAdUnit(nativeAdUnit: NativeAdUnit, params: Map<*, *>) {
         nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
         nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
         nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
+
+        val customAssets = nativeAssetsFrom(params["assets"])
+        if (customAssets != null) {
+            customAssets.forEach { nativeAdUnit.addAsset(it) }
+            (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))
+                .forEach { nativeAdUnit.addEventTracker(it) }
+            return
+        }
 
         val title = NativeTitleAsset().apply { setLength(90); isRequired = true }
         nativeAdUnit.addAsset(title)
@@ -136,16 +147,17 @@ class MaxNativePlatformView(
         }
         nativeAdUnit.addAsset(cta)
 
-        nativeAdUnit.addEventTracker(
-            NativeEventTracker(
-                NativeEventTracker.EVENT_TYPE.IMPRESSION,
-                arrayListOf(
-                    NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
-                    NativeEventTracker.EVENT_TRACKING_METHOD.JS,
-                ),
-            ),
-        )
+        (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))
+            .forEach { nativeAdUnit.addEventTracker(it) }
     }
+
+    private fun defaultTracker() = NativeEventTracker(
+        NativeEventTracker.EVENT_TYPE.IMPRESSION,
+        arrayListOf(
+            NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
+            NativeEventTracker.EVENT_TRACKING_METHOD.JS,
+        ),
+    )
 
     override fun getView(): View = container
 

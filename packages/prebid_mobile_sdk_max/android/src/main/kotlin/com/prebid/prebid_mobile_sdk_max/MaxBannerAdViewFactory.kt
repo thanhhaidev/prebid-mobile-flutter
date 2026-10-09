@@ -87,6 +87,9 @@ class MaxBannerPlatformView(
             override fun onAdCollapsed(ad: MaxAd) {}
         })
 
+        // MAX reports revenue when the impression is recorded.
+        adView.setRevenueListener { methodChannel.invokeMethod("onAdImpression", null) }
+
         val mediationUtils = MaxMediationBannerUtils(adView)
         adUnit = MediationBannerAdUnit(
             context,

@@ -44,6 +44,7 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
                 }
             }
             let adUnit = RewardedAdUnit(configID: configId, eventHandler: eventHandler)
+            FullscreenControls(args?["controls"])?.apply(to: adUnit)
             adUnit.delegate = self
 
             ads[adId] = adUnit
@@ -105,6 +106,9 @@ class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
         send(rewardedAd, "onUserEarnedReward", payload: [
             "rewardType": reward.type ?? "reward",
             "rewardCount": reward.count?.intValue ?? 1,
+            "rewardExt": reward.ext.flatMap { ext in
+                (try? JSONSerialization.data(withJSONObject: ext)).flatMap { String(data: $0, encoding: .utf8) }
+            } as Any,
         ])
     }
 }

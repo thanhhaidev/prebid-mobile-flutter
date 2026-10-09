@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidRewardedAdListener, PrebidReward;
+    show PrebidFullscreenControls, PrebidReward, PrebidRewardedAdListener;
 
 const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_max/rewarded');
 
@@ -53,6 +53,9 @@ class PrebidMaxRewardedAd {
   /// The AppLovin MAX rewarded ad unit ID.
   final String maxAdUnitId;
 
+  /// Close / skip button, sound and (interstitial) minimum-size controls.
+  final PrebidFullscreenControls? controls;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
@@ -65,6 +68,7 @@ class PrebidMaxRewardedAd {
   PrebidMaxRewardedAd({
     required this.configId,
     required this.maxAdUnitId,
+    this.controls,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -76,6 +80,7 @@ class PrebidMaxRewardedAd {
       'adId': _adId,
       'configId': configId,
       'maxAdUnitId': maxAdUnitId,
+      'controls': ?controls?.toMap(),
     });
   }
 
@@ -101,6 +106,8 @@ class PrebidMaxRewardedAd {
         listener?.onAdClosed?.call();
       case 'onAdClicked':
         listener?.onAdClicked?.call();
+      case 'onAdImpression':
+        listener?.onAdImpression?.call();
       case 'onUserEarnedReward':
         listener?.onUserEarnedReward?.call(
           PrebidReward(

@@ -45,10 +45,13 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             // 1. GMA request + Prebid mediation utils + ad unit.
             let gadRequest = Request()
             let mediationDelegate = AdMobMediationInterstitialUtils(gadRequest: gadRequest)
+            let controls = FullscreenControls(args?["controls"])
             let adUnit = MediationInterstitialAdUnit(
                 configId: configId,
+                minSizePercentage: controls?.minSizePercentage,
                 mediationDelegate: mediationDelegate
             )
+            controls?.apply(to: adUnit)
             adUnit.adFormats = isVideo ? [.video] : [.banner]
 
             adUnits[adId] = adUnit
@@ -116,6 +119,12 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
             send(adId, "onAdClosed")
+        }
+    }
+
+    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
+        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
+            send(adId, "onAdImpression")
         }
     }
 

@@ -72,11 +72,11 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
             configId: configId,
             mediationDelegate: mediationDelegate
         )
-        adUnit.addNativeAssets(Self.requestAssets)
+        adUnit.addNativeAssets(nativeAssetsFrom(args["assets"]) ?? Self.requestAssets)
         adUnit.setContextType(.Social)
         adUnit.setPlacementType(.FeedContent)
         adUnit.setContextSubType(.Social)
-        adUnit.addEventTracker([
+        adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: .Impression, methods: [.Image, .js])
         ])
         self.adUnit = adUnit

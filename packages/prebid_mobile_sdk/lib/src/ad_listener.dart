@@ -86,6 +86,10 @@ class PrebidBannerAdListener {
   /// `PrebidGamBannerAd`); mediated banners don't report it.
   final void Function()? onAdExpired;
 
+  /// Called when the ad server records an impression. Fired by mediated
+  /// banners (`PrebidAdMobBannerAd`, `PrebidMaxBannerAd`).
+  final void Function()? onAdImpression;
+
   /// Creates a [PrebidBannerAdListener].
   const PrebidBannerAdListener({
     this.onAdLoaded,
@@ -94,7 +98,52 @@ class PrebidBannerAdListener {
     this.onAdClicked,
     this.onAdClosed,
     this.onAdExpired,
+    this.onAdImpression,
   });
+}
+
+/// Video playback events of a Prebid-rendered banner showing an outstream
+/// video creative (`PrebidBannerAd`, `PrebidGamBannerAd`), mirroring Prebid's
+/// `BannerVideoListener` / `BannerViewVideoPlaybackDelegate`.
+class PrebidBannerVideoListener {
+  /// The video played to the end.
+  final void Function()? onVideoCompleted;
+
+  /// Playback paused (e.g. the banner scrolled out of view).
+  final void Function()? onVideoPaused;
+
+  /// Playback resumed.
+  final void Function()? onVideoResumed;
+
+  /// The video was muted.
+  final void Function()? onVideoMuted;
+
+  /// The video was unmuted.
+  final void Function()? onVideoUnmuted;
+
+  /// Creates a [PrebidBannerVideoListener].
+  const PrebidBannerVideoListener({
+    this.onVideoCompleted,
+    this.onVideoPaused,
+    this.onVideoResumed,
+    this.onVideoMuted,
+    this.onVideoUnmuted,
+  });
+
+  /// Dispatches a native video event name to the matching callback. Returns
+  /// `false` for names that aren't video events.
+  bool dispatch(String event) {
+    final callback = switch (event) {
+      'onVideoCompleted' => onVideoCompleted,
+      'onVideoPaused' => onVideoPaused,
+      'onVideoResumed' => onVideoResumed,
+      'onVideoMuted' => onVideoMuted,
+      'onVideoUnmuted' => onVideoUnmuted,
+      _ => null,
+    };
+    callback?.call();
+    return event.startsWith('onVideo');
+  }
 }
 
 /// Listener for [PrebidInterstitialAd] lifecycle events.
@@ -134,6 +183,10 @@ class PrebidInterstitialAdListener {
   /// Called when the loaded bid expired (per `bid.exp`) before [show].
   final void Function()? onAdExpired;
 
+  /// Called when the ad server records an impression. Fired by mediated
+  /// interstitials (AdMob, MAX).
+  final void Function()? onAdImpression;
+
   /// Creates a [PrebidInterstitialAdListener].
   const PrebidInterstitialAdListener({
     this.onAdLoaded,
@@ -142,6 +195,7 @@ class PrebidInterstitialAdListener {
     this.onAdClosed,
     this.onAdClicked,
     this.onAdExpired,
+    this.onAdImpression,
   });
 }
 
@@ -185,6 +239,10 @@ class PrebidRewardedAdListener {
   /// Called when the loaded bid expired (per `bid.exp`) before it was shown.
   final void Function()? onAdExpired;
 
+  /// Called when the ad server records an impression. Fired by mediated
+  /// rewarded ads (AdMob, MAX).
+  final void Function()? onAdImpression;
+
   /// Creates a [PrebidRewardedAdListener].
   const PrebidRewardedAdListener({
     this.onAdLoaded,
@@ -194,5 +252,6 @@ class PrebidRewardedAdListener {
     this.onAdClicked,
     this.onUserEarnedReward,
     this.onAdExpired,
+    this.onAdImpression,
   });
 }

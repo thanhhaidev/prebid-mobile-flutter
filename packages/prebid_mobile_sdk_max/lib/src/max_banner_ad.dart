@@ -110,6 +110,8 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
           widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
         case 'onAdClicked':
           widget.listener?.onAdClicked?.call();
+        case 'onAdImpression':
+          widget.listener?.onAdImpression?.call();
         case 'onAdClosed':
           widget.listener?.onAdClosed?.call();
       }

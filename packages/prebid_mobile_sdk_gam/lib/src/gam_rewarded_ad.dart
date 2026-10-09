@@ -1,6 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidReward, PrebidRewardedAdListener;
+    show PrebidFullscreenControls, PrebidReward, PrebidRewardedAdListener;
 
 const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_gam/rewarded');
 
@@ -39,6 +41,9 @@ class PrebidGamRewardedAd {
   /// Prebid's own `hb_*` keys take precedence on conflict.
   final Map<String, String>? customTargeting;
 
+  /// Close button and sound controls (skip controls apply on Android only).
+  final PrebidFullscreenControls? controls;
+
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
@@ -51,6 +56,7 @@ class PrebidGamRewardedAd {
     required this.configId,
     required this.gamAdUnitId,
     this.customTargeting,
+    this.controls,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -61,6 +67,7 @@ class PrebidGamRewardedAd {
       'configId': configId,
       'gamAdUnitId': gamAdUnitId,
       'customTargeting': ?customTargeting,
+      'controls': ?controls?.toMap(),
     });
   }
 
@@ -89,10 +96,17 @@ class PrebidGamRewardedAd {
           PrebidReward(
             type: args?['rewardType'] as String? ?? 'reward',
             count: (args?['rewardCount'] as num?)?.toInt() ?? 1,
+            ext: _decodeExt(args?['rewardExt']),
           ),
         );
       case 'onAdExpired':
         listener?.onAdExpired?.call();
     }
   }
+}
+
+Map<String, dynamic>? _decodeExt(Object? raw) {
+  if (raw is! String || raw.isEmpty) return null;
+  final decoded = jsonDecode(raw);
+  return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidInterstitialAdListener;
+    show PrebidFullscreenControls, PrebidInterstitialAdListener;
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_admob/interstitial',
@@ -61,6 +61,9 @@ class PrebidAdMobInterstitialAd {
   /// mediation ad-unit format to video when true (banner otherwise).
   final bool isVideo;
 
+  /// Close / skip button, sound and (interstitial) minimum-size controls.
+  final PrebidFullscreenControls? controls;
+
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
@@ -74,6 +77,7 @@ class PrebidAdMobInterstitialAd {
     required this.configId,
     required this.adMobAdUnitId,
     this.isVideo = false,
+    this.controls,
     this.listener,
   }) : _adId = _nextId++;
 
@@ -85,6 +89,7 @@ class PrebidAdMobInterstitialAd {
       'adId': _adId,
       'configId': configId,
       'adMobAdUnitId': adMobAdUnitId,
+      'controls': ?controls?.toMap(),
       'isVideo': isVideo,
     });
   }
@@ -111,6 +116,8 @@ class PrebidAdMobInterstitialAd {
         listener?.onAdClosed?.call();
       case 'onAdClicked':
         listener?.onAdClicked?.call();
+      case 'onAdImpression':
+        listener?.onAdImpression?.call();
     }
   }
 }

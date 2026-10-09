@@ -1,71 +1,82 @@
 # Prebid Mobile Flutter Example App
 
-This is a comprehensive showcase of the `prebid_mobile_flutter` plugin, structured to mirror the official [Prebid Android `PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
+A test app for the `prebid_mobile_sdk` plugin and its GAM / AdMob / MAX
+companion packages, structured like Prebid's
+[`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
+Every case runs a live auction against Prebid's public test server
+(`prebid-server-test-j.prebid.org`).
 
-## Overview
+## Layout
 
-The demo app focuses exclusively on the **In-App (Prebid Rendered)** integration, where the Prebid SDK directly handles both the bidding auction and the ad rendering.
+- **Bottom navigation**: an **Examples** tab and a **Utilities** tab. Each tab
+  keeps its own navigation stack, so the bottom bar stays visible.
+- **Examples**: search, integration filter (In-App · GAM · Original · AdMob ·
+  Max), format filter (Banner · Interstitial · MRAID · Video · Native), GDPR /
+  PBS-debug toggles.
+- **Utilities**: IAB consent (GDPR / CCPA), Settings, Bid Inspector, Targeting
+  Data, Logs, Versions.
 
-The UI mirrors the reference test app:
+## Test cases
 
-- **Bottom navigation** — an **Examples** tab and a **Utilities** tab (each keeps its own navigation stack, so the bottom bar stays visible on detail pages).
-- **Examples** — a search bar, a single row of ad-type filter chips (All · Banner · Interstitial · Rewarded · MRAID · Video · Native), GDPR / PBS-Debug toggles, and a settings gear.
-- **Detail pages** — a clean layout with the ad view, the config id, action buttons (Load / Show / Stop refresh / Fetch Demand), and a live callback counter for every listener event (`onAdX called - N ( +1 )`). The app-bar gear opens a **Configure the Ad** dialog to override the config id, size, and refresh delay.
-- **Utilities** — IAB Consent Settings (GDPR / CCPA), App Settings (server / account / debug), Targeting Data, and Versions.
+90+ cases with the reference app's config ids and ad-unit ids:
 
-## Ad Formats Showcased
+| Integration | Formats |
+|---|---|
+| **In-App** (Prebid renders) | Banner (sizes, multisize, deeplink, no-bids), MRAID 2.0 / 3.0, video outstream, display / video interstitial, display / video rewarded, native (styles, links), in-stream, multiformat |
+| **GAM** (Prebid GAM event handlers) | Banner, MRAID, video outstream, display / video interstitial, rewarded, native custom template + unified |
+| **GAM Original API** (keywords to `google_mobile_ads`) | Banner sizes, video banner, filter-uncached-bids banner, display / video / multiformat interstitial, video rewarded |
+| **AdMob** / **MAX** (Prebid mediation adapters) | Banner, display / video interstitial, video rewarded, native |
 
-**50 test cases** mirroring the in-app (Prebid Rendering) section of the Prebid
-Android [`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
-Mediation/ad-server integrations (GAM, AdMob, AppLovin MAX), custom renderers,
-and Android-only view patterns are out of scope — this plugin wraps the
-rendering API only.
+## Test case screen
 
-1. **Display Banner** — `320x50`, `300x250`, `728x90`, Multisize, Deeplink, plus
-   No-Bids and Incorrect-VAST error cases.
-2. **MRAID** — Expand (1/2 part), Resize (+ errors / expandable), Fullscreen,
-   Viewability Compliance, Resize Negative, Load & Events, Test Properties/Methods.
-3. **Video Banner (Outstream)** — Outstream, With End Card, No-Bids.
-4. **Display Interstitial** — `320x480`, No-Bids, MRAID Fullscreen.
-5. **Video Interstitial** — `320x480`, With/MRAID End Card, SkipOffset, Deeplink,
-   Vertical, With Ad Configuration, No-Bids.
-6. **Display Rewarded** — Default, Time+autoclose, Event+close.
-7. **Video Rewarded** — Default/Time/Event, With/Without End Card, End Card
-   variants, With Ad Configuration, No-Bids (with `onUserEarnedReward`).
-8. **Native** — Native Styles and Native Links, rendered with custom Flutter UI
-   from raw assets (Image, Title, CTA, Sponsored, Body).
-9. **In-Stream Video** — `fetchDemand`-only, surfacing the returned targeting keywords.
-10. **Multiformat** — Banner + Video + Native demand on a single ad unit.
+Each case uses the same layout:
 
-Every detail page wires **all** listener callbacks for that ad unit and shows a
-live per-callback counter, so each case can be verified end to end.
+1. **Ad stage**: the inline ad (banner / native).
+2. **Ad unit header**: config id and ad-server ad unit, tap to copy.
+3. **Actions**: Load / Show / Stop refresh / Fetch Demand.
+4. **Callback rows**: one per listener callback for that integration, lit up
+   with its count once it fires. Examples:
+   - In-App / GAM banners: `onAdExpired` and outstream video events
+     (`onVideoCompleted`, paused, resumed, muted, unmuted).
+   - AdMob / MAX: `onAdImpression`.
+   - Rewarded: `onUserEarnedReward` with the reward.
+   - GAM native: the full `fetchDemand` → custom / unified → `onNativeAdLoaded`
+     / `onPrimaryAdWin` flow.
+5. **Last bid response**: bidders and prices from the latest auction. Tap it for
+   the JSON.
+6. **Event log**: every callback with a timestamp and its details (errors,
+   rewards, winning bid, `exp`, `topBidFiltered`).
 
-## Key Features
+The gear icon opens **Configure the Ad**:
 
-- **Test Case Registry:** Built-in list of Prebid-provided test configuration IDs and Stored Response IDs that guarantee fill, ensuring rapid QA and development.
-- **Live Event Logger:** An expandable bottom sheet on every detail page that intercepts all SDK callbacks (e.g. `onAdLoaded`, `onAdFailed`, `onAdClicked`) with timestamps.
-- **Stored Response Management:** Automatically handles setting and clearing `storedAuctionResponse` IDs behind the scenes so test cases don't cross-contaminate.
-- **Settings Page:** Toggle GDPR, COPPA, Geo location sharing, and PBS debug logging. Configurations are persisted locally.
-- **Targeting Data Page:** A comprehensive interface to define First-Party Data:
-  - User and App Keywords
-  - ExtData (key-value pairs)
-  - Global ORTB configuration JSON
-  - Publisher App Info (Content URL, Store URL, Domain)
+- **Banners**: config id, size, auto-refresh.
+- **Interstitial / rewarded**: config id plus `PrebidFullscreenControls`
+  (close / skip button position and area, skip delay, mute, sound button,
+  auto-close, minimum size).
 
-## Running the App
+## Utilities
+
+- **Settings**: server URL and account, bid timeout, auction settings id, PBS
+  debug, geo, log level, creative factory timeouts, filter uncached bids, EIDs
+  placement, include winners / bidder keys, SharedID (send, view, reset),
+  COPPA / GDPR. Settings are persisted and applied at startup.
+- **Bid Inspector**: every Prebid Server request / response pair captured with
+  `PrebidMobile.setEventListener`, as pretty JSON with copy.
+- **Targeting Data**: user / app keywords, ext data, global ORTB config, app
+  info, OMID partner, user location and location precision.
+- **Logs**: SDK setup and every ad callback across all screens.
+
+## Running the app
 
 ```bash
 cd example
-flutter clean
 flutter pub get
-
-# To run on iOS device or simulator
-flutter run -d ios
-
-# To run on Android device or emulator
-flutter run -d android
+flutter run
 ```
 
-### Notes on Dependencies
-- **iOS:** Ensure CocoaPods is updated, and you run `pod install` in the `example/ios` directory before building.
-- **Android:** Requires API Level 24+ and compiles with Kotlin `1.9.0` minimum.
+- **iOS**: iOS 15+. Run `pod install` in `example/ios` after adding native
+  files to a plugin.
+- **Android**: minSdk 24.
+- **AppLovin MAX**: MAX only loads ads after the AppLovin SDK is initialized
+  with an SDK key. This example does not initialize it, so MAX cases may not
+  fill on iOS.

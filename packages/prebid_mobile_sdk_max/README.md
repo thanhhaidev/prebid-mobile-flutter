@@ -1,6 +1,6 @@
 # prebid_mobile_sdk_max
 
-AppLovin **MAX mediation** for the [`prebid_mobile_sdk`](../) Flutter plugin, via
+AppLovin **MAX mediation** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter plugin, via
 Prebid's MAX adapters.
 
 Prebid demand competes inside the **AppLovin MAX mediation waterfall**: Prebid's
@@ -76,16 +76,74 @@ final interstitial = PrebidMaxInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidBannerAdListener` and `PrebidInterstitialAdListener` are re-used from the
-core `prebid_mobile_sdk` package.
+### Rewarded
+
+```dart
+final rewarded = PrebidMaxRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  maxAdUnitId: 'YOUR_MAX_REWARDED_AD_UNIT_ID',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+await rewarded.loadAd();
+```
+
+### Native
+
+```dart
+PrebidMaxNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  maxAdUnitId: 'YOUR_MAX_NATIVE_AD_UNIT_ID',
+  listener: PrebidMaxNativeAdListener(
+    onAdLoaded: () => debugPrint('native loaded'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+);
+```
+
+Rendered through MAX's native ad view so impressions and clicks track. Pass
+`assets` / `eventTrackers` to change the requested native assets.
+
+`onAdImpression` (banner, interstitial, rewarded, native) is reported from
+MAX's revenue callback, which MAX fires when it records the impression.
+
+> **AppLovin SDK initialization:** MAX only loads ads after the AppLovin SDK is
+> initialized with your SDK key. This package does not initialize it; do it at
+> startup (for example with the `applovin_max` package) before loading ads.
+
+`PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
+`PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
+`NativeEventTracker` come from the core
+[`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) package.
+
+### Fullscreen controls
+
+Interstitial and rewarded ads accept Prebid's rendering controls (close / skip
+button area and position, skip delay, mute, sound button, minimum size):
+
+```dart
+controls: const PrebidFullscreenControls(
+  closeButtonPosition: PrebidButtonPosition.topLeft,
+  skipDelay: 5,
+  isMuted: true,
+),
+```
+
+Skip controls apply to interstitials (and to rewarded on Android only);
+`isAutoCloseOnCompletionEnabled` is iOS only.
 
 ## API
 
 | Class | Description |
 |---|---|
 | `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. |
-| `PrebidMaxInterstitialAd` | Interstitial controller with `loadAd()` / `show()` / `destroy()`. |
+| `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`. |
+| `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`. |
+| `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener`. |
 
 ## License
 
-[Apache License 2.0](../LICENSE)
+[Apache License 2.0](LICENSE)

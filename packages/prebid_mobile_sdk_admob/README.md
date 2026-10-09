@@ -1,6 +1,6 @@
 # prebid_mobile_sdk_admob
 
-Google **AdMob mediation** for the [`prebid_mobile_sdk`](../) Flutter plugin, via
+Google **AdMob mediation** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter plugin, via
 Prebid's AdMob adapters.
 
 Prebid demand competes inside the **Google AdMob mediation waterfall**: Prebid's
@@ -85,16 +85,70 @@ final interstitial = PrebidAdMobInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidBannerAdListener` and `PrebidInterstitialAdListener` are re-used from the
-core `prebid_mobile_sdk` package.
+### Rewarded
+
+```dart
+final rewarded = PrebidAdMobRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+await rewarded.loadAd();
+```
+
+### Native
+
+```dart
+PrebidAdMobNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  adMobAdUnitId: 'YOUR_ADMOB_NATIVE_AD_UNIT_ID',
+  listener: PrebidAdMobNativeAdListener(
+    onAdLoaded: () => debugPrint('native loaded'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+);
+```
+
+Rendered through the AdMob `NativeAdView` so impressions and clicks track.
+Pass `assets` / `eventTrackers` to change the requested native assets.
+
+Banner, interstitial and rewarded listeners also receive AdMob's
+`onAdImpression`.
+
+`PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
+`PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
+`NativeEventTracker` come from the core
+[`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) package.
+
+### Fullscreen controls
+
+Interstitial and rewarded ads accept Prebid's rendering controls (close / skip
+button area and position, skip delay, mute, sound button, minimum size):
+
+```dart
+controls: const PrebidFullscreenControls(
+  closeButtonPosition: PrebidButtonPosition.topLeft,
+  skipDelay: 5,
+  isMuted: true,
+),
+```
+
+Skip controls apply to interstitials (and to rewarded on Android only);
+`isAutoCloseOnCompletionEnabled` is iOS only.
 
 ## API
 
 | Class | Description |
 |---|---|
 | `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. |
-| `PrebidAdMobInterstitialAd` | Interstitial controller with `loadAd()` / `show()` / `destroy()`. |
+| `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`. |
+| `PrebidAdMobRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`. |
+| `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`. |
 
 ## License
 
-[Apache License 2.0](../LICENSE)
+[Apache License 2.0](LICENSE)

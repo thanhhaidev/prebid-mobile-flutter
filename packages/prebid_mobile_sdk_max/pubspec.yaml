@@ -21,10 +21,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Core Prebid plugin (sibling workspace package). Switch to a hosted version
-  # constraint (prebid_mobile_sdk: ^x.y.z) before publishing.
-  prebid_mobile_sdk:
-    path: ../prebid_mobile_sdk
+  # Core Prebid plugin. Inside the pub workspace this resolves to the local
+  # packages/prebid_mobile_sdk.
+  prebid_mobile_sdk: ^0.0.1
 
 dev_dependencies:
   flutter_test:

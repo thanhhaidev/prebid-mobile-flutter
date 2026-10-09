@@ -1,5 +1,5 @@
 name: prebid_mobile_sdk
-description: "Flutter plugin for Prebid Mobile SDK. Provides banner, interstitial, and rewarded ad formats with GDPR/COPPA compliance, targeting, and OpenRTB support."
+description: "Flutter plugin for the Prebid Mobile SDK (3.4): banner, interstitial, rewarded, native, multiformat and in-stream ads, plus targeting, privacy and OpenRTB settings."
 version: 0.0.1
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
 repository: https://github.com/thanhhaidev/prebid-mobile-flutter
@@ -21,6 +21,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Imported by the Pigeon-generated lib/src/generated/prebid_api.g.dart.
+  meta: ^1.16.0
 
 dev_dependencies:
   flutter_test:

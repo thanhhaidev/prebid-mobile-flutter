@@ -1,6 +1,6 @@
 # prebid_mobile_sdk_gam
 
-Google Ad Manager (GAM) **rendering** for the [`prebid_mobile_sdk`](../) Flutter
+Google Ad Manager (GAM) **rendering** for the [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) Flutter
 plugin, via Prebid's GAM event handlers.
 
 Prebid runs the auction and lets **Google Ad Manager render** the ad: a winning
@@ -84,16 +84,78 @@ final interstitial = PrebidGamInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidBannerAdListener` and `PrebidInterstitialAdListener` are re-used from the
-core `prebid_mobile_sdk` package.
+### Rewarded
+
+```dart
+final rewarded = PrebidGamRewardedAd(
+  configId: 'prebid-demo-video-rewarded-320-480',
+  gamAdUnitId: '/21808260008/prebid_oxb_rewarded_video',
+  listener: PrebidRewardedAdListener(
+    onAdLoaded: () => rewarded.show(),
+    onUserEarnedReward: (reward) => debugPrint('${reward.count} ${reward.type}'),
+    onAdClosed: () => rewarded.destroy(),
+  ),
+);
+await rewarded.loadAd();
+```
+
+### Native (Original API: custom template + unified)
+
+```dart
+PrebidGamNativeAd(
+  configId: 'prebid-demo-banner-native-styles',
+  gamAdUnitId: '/21808260008/apollo_custom_template_native_ad_unit',
+  customFormatId: '11934135',
+  listener: PrebidGamNativeAdListener(
+    onNativeAdLoaded: () => debugPrint('Prebid native rendered'),
+    onPrimaryAdWinUnified: () => debugPrint('GAM native won'),
+    onAdImpression: () => debugPrint('impression'),
+  ),
+);
+```
+
+Pass `assets` / `eventTrackers` to change the requested native assets (the
+default is title, icon, main image, sponsored, description and call to
+action).
+
+### GAM request targeting and banner controls
+
+Banner, interstitial and rewarded take `customTargeting`, added to the GAM
+request (Prebid's `hb_*` keys win on conflict). `PrebidGamBannerAd` also takes
+a `PrebidBannerAdController` (`loadAd()` with `autoLoad: false`,
+`stopRefresh()`), `videoPlacementType` and a `PrebidBannerVideoListener` for
+outstream video events.
+
+`PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
+`PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
+`NativeEventTracker` come from the core
+[`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) package.
+
+### Fullscreen controls
+
+Interstitial and rewarded ads accept Prebid's rendering controls (close / skip
+button area and position, skip delay, mute, sound button, minimum size):
+
+```dart
+controls: const PrebidFullscreenControls(
+  closeButtonPosition: PrebidButtonPosition.topLeft,
+  skipDelay: 5,
+  isMuted: true,
+),
+```
+
+Skip controls apply to interstitials (and to rewarded on Android only);
+`isAutoCloseOnCompletionEnabled` is iOS only.
 
 ## API
 
 | Class | Description |
 |---|---|
-| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. |
-| `PrebidGamInterstitialAd` | Interstitial controller with `loadAd()` / `show()` / `destroy()`. |
+| `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. Controller, video events, `onAdExpired`. |
+| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`. |
+| `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`. |
+| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; events via `PrebidGamNativeAdListener`. |
 
 ## License
 
-[Apache License 2.0](../LICENSE)
+[Apache License 2.0](LICENSE)

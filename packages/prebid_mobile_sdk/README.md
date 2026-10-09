@@ -709,15 +709,15 @@ GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
 > `AdViewUtils.findPrebidCreativeSize` step) is not bridged to Flutter; request
 > a fixed size that matches your GAM ad unit.
 
-A runnable end-to-end demo lives in the example app under
-**Utilities → Original API (GAM)**
-([`example/lib/pages/original_api_page.dart`](../../example/lib/pages/original_api_page.dart)).
+Runnable end-to-end demos are the **GAM Original** cases in the example app
+([`original_banner_detail_page.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/pages/detail/original_banner_detail_page.dart),
+[`fullscreen_detail_page.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/pages/detail/fullscreen_detail_page.dart)).
 
-### GAM rendering (companion package)
+### GAM rendering, AdMob and MAX (companion packages)
 
 If you want **Google Ad Manager to render** the ad (rather than handing keywords
 off yourself), use the optional companion package
-[`prebid_mobile_sdk_gam`](../prebid_mobile_sdk_gam/). It wraps Prebid's GAM event
+[`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam). It wraps Prebid's GAM event
 handlers so a winning Prebid bid renders through a GAM line item + the Prebid
 Universal Creative:
 
@@ -733,9 +733,12 @@ PrebidGamBannerAd(
 ```
 
 It is a separate package because it bundles the Google Mobile Ads SDK natively —
-In-App-only apps stay lean. See its
-[README](../prebid_mobile_sdk_gam/README.md) and the example app's
-**Utilities → GAM Rendering** page.
+In-App-only apps stay lean. Mediation works the same way through
+[`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob)
+(Google AdMob) and
+[`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max)
+(AppLovin MAX). Each package README covers banner, interstitial, rewarded and
+native usage.
 
 ---
 
@@ -743,10 +746,12 @@ In-App-only apps stay lean. See its
 
 The `example/` directory contains a full-featured demo app including:
 
-- **50 test cases** across Banner, MRAID, Interstitial, Rewarded, Native, In-Stream Video, and Multiformat — mirroring the Prebid Android `PrebidInternalTestApp` in-app cases
-- **Live event logger** with timestamps for every SDK callback
-- **Settings panel** with persistent GDPR/COPPA toggles and server configuration
-- **Targeting data page** for user keywords, app ext data, and OpenRTB config
+- **90+ test cases** across Banner, MRAID, Interstitial, Rewarded, Native, In-Stream Video and Multiformat for In-App, GAM rendering, GAM Original API, AdMob and MAX — mirroring Prebid's `PrebidInternalTestApp`
+- **Every callback per test case**: counters, a timestamped event log and the last bid response
+- **Fullscreen controls dialog** and banner controller (load / stop refresh)
+- **Bid Inspector** showing each bid request / response (`PrebidMobile.setEventListener`)
+- **Settings** for every SDK option (timeouts, bidding flags, EIDs placement, SharedID, privacy), applied at startup
+- **Targeting data page** for keywords, ext data, OpenRTB config, OMID partner and location
 
 ```bash
 cd example
@@ -754,7 +759,7 @@ flutter pub get
 flutter run
 ```
 
-See [example/README.md](../../example/README.md) for detailed documentation.
+See [example/README.md](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/README.md) for detailed documentation.
 
 ---
 

@@ -1,4 +1,4 @@
-## 0.0.1
+## 1.0.0 - 2026-10-10
 
 * Initial release: Google Ad Manager rendering for `prebid_mobile_sdk`.
 * `PrebidGamBannerAd` — GAM-rendered banner (Android + iOS) with dynamic sizing.

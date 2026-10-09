@@ -21,8 +21,8 @@ are not forced to declare a GAM app ID.
 
 ```yaml
 dependencies:
-  prebid_mobile_sdk: ^0.0.1
-  prebid_mobile_sdk_gam: ^0.0.1
+  prebid_mobile_sdk: ^1.0.0
+  prebid_mobile_sdk_gam: ^1.0.0
 ```
 
 ### Native configuration (required)

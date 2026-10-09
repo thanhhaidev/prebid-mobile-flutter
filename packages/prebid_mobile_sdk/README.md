@@ -77,7 +77,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  prebid_mobile_sdk: ^0.0.1
+  prebid_mobile_sdk: ^1.0.0
 ```
 
 ### iOS

@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
-  static const _pluginVersion = '0.0.1';
+  static const _pluginVersion = '1.0.0';
   static const _prebidSdkVersion = '2.x'; // Prebid Mobile SDK version
   static const _repoUrl =
       'https://github.com/thanhhaidev/prebid-mobile-flutter';

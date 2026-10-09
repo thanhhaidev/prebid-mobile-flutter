@@ -2,8 +2,8 @@ name: Release
 
 # Publishes one package to pub.dev per tag, using pub.dev automated publishing
 # (GitHub OIDC; no stored token). Tag format: <package>-v<version>, e.g.
-#   prebid_mobile_sdk-v0.0.2
-#   prebid_mobile_sdk_gam-v0.0.2
+#   prebid_mobile_sdk-v1.0.1
+#   prebid_mobile_sdk_gam-v1.0.1
 # Publish prebid_mobile_sdk first when a companion depends on its new version.
 # See RELEASING.md for the one-time pub.dev setup.
 #

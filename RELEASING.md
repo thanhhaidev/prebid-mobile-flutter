@@ -42,8 +42,8 @@ Then, for each package on pub.dev, open **Admin → Automated publishing**:
 3. After merging, tag the commit on `main` and push the tag:
 
    ```bash
-   git tag prebid_mobile_sdk-v0.0.2
-   git push origin prebid_mobile_sdk-v0.0.2
+   git tag prebid_mobile_sdk-v1.0.1
+   git push origin prebid_mobile_sdk-v1.0.1
    ```
 
 4. The Release workflow checks that the tag matches `pubspec.yaml` and the

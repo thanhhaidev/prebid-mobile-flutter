@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'prebid_mobile_sdk_gam'
-  s.version          = '0.0.1'
+  s.version          = '1.0.0'
   s.summary          = 'Google Ad Manager rendering for the Prebid Mobile Flutter SDK.'
   s.description      = <<-DESC
 Optional companion to prebid_mobile_sdk that renders Prebid demand through

@@ -1,4 +1,4 @@
-## 0.0.1
+## 1.0.0 - 2026-10-10
 
 * Initial release: Google AdMob mediation for `prebid_mobile_sdk`.
 * `PrebidAdMobBannerAd` — AdMob-mediated banner (Android + iOS) with dynamic sizing and

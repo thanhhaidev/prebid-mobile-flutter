@@ -1,6 +1,6 @@
 name: prebid_mobile_sdk_max
 description: "AppLovin MAX mediation for the Prebid Mobile Flutter SDK, via Prebid's MAX adapters. Optional companion to prebid_mobile_sdk."
-version: 0.0.1
+version: 1.0.0
 homepage: https://github.com/thanhhaidev/prebid-mobile-flutter
 repository: https://github.com/thanhhaidev/prebid-mobile-flutter
 issue_tracker: https://github.com/thanhhaidev/prebid-mobile-flutter/issues
@@ -23,7 +23,7 @@ dependencies:
     sdk: flutter
   # Core Prebid plugin. Inside the pub workspace this resolves to the local
   # packages/prebid_mobile_sdk.
-  prebid_mobile_sdk: ^0.0.1
+  prebid_mobile_sdk: ^1.0.0
 
 dev_dependencies:
   flutter_test:

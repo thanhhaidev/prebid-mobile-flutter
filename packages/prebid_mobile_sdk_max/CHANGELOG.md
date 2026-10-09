@@ -1,4 +1,4 @@
-## 0.0.1
+## 1.0.0 - 2026-10-10
 
 * Initial release: AppLovin MAX mediation for `prebid_mobile_sdk`.
 * `PrebidMaxBannerAd` — MAX-mediated banner (Android + iOS) with dynamic sizing and

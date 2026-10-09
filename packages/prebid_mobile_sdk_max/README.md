@@ -21,8 +21,8 @@ Apps that only use Prebid In-App rendering should not depend on it.
 
 ```yaml
 dependencies:
-  prebid_mobile_sdk: ^0.0.1
-  prebid_mobile_sdk_max: ^0.0.1
+  prebid_mobile_sdk: ^1.0.0
+  prebid_mobile_sdk_max: ^1.0.0
 ```
 
 ### Native configuration (required)

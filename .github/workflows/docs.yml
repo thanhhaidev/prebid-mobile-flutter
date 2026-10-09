@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # tags give the changelog its release dates
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -62,7 +62,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:
           path: website/build
@@ -76,4 +76,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

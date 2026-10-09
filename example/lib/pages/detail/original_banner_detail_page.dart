@@ -3,16 +3,24 @@ import 'package:google_mobile_ads/google_mobile_ads.dart' as gma;
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../../models/demo_ad_category.dart';
+import '../../models/demo_ad_format.dart';
 import '../../models/test_case.dart';
-import '../../utils/logger.dart';
+import '../../utils/app_settings.dart';
+import '../../utils/bid_summary.dart';
 import '../../widgets/action_button.dart';
 import '../../widgets/ad_unit_header.dart';
+import '../../widgets/detail_scaffold.dart';
 import '../../widgets/event_counter.dart';
+import '../../widgets/result_panel.dart';
 
-/// Original-API banner detail page: Prebid runs the auction
-/// ([PrebidBannerAdUnit.fetchDemand]) and hands the winning targeting keywords
-/// to Google Ad Manager (`google_mobile_ads`), which renders through a Prebid
-/// line item + the Prebid Universal Creative.
+/// GAM Original API banner (display or outstream video): Prebid runs the
+/// auction and hands the winning targeting keywords to Google Ad Manager
+/// (`google_mobile_ads`), which renders through a Prebid line item + the
+/// Prebid Universal Creative.
+///
+/// Cases flagged [TestCase.filterUncachedBids] turn on
+/// [PrebidMobile.setFilterOutUncachedBids] for the request, as in Prebid's
+/// `GamOriginalApiFilterUncachedBidsBannerActivity`.
 class OriginalBannerDetailPage extends StatefulWidget {
   final TestCase tc;
   const OriginalBannerDetailPage({super.key, required this.tc});
@@ -23,20 +31,36 @@ class OriginalBannerDetailPage extends StatefulWidget {
 }
 
 class _OriginalBannerDetailPageState extends State<OriginalBannerDetailPage> {
-  final EventTracker _tracker = EventTracker();
-  final _log = PrebidDemoLogger.instance;
+  final EventTracker _tracker = EventTracker('Original');
 
-  PrebidBannerAdUnit? _adUnit;
+  PrebidMultiformatAd? _adUnit;
   gma.AdManagerBannerAd? _bannerAd;
   bool _loaded = false;
+  String? _result;
+
+  bool get _isVideo => widget.tc.format == DemoAdFormat.videoBanner;
 
   Size get _size =>
       Size(widget.tc.width.toDouble(), widget.tc.height.toDouble());
+
+  static const _events = [
+    'fetchDemand success',
+    'fetchDemand failed',
+    'onAdLoaded',
+    'onAdFailed',
+    'onAdImpression',
+    'onAdClicked',
+    'onAdOpened',
+    'onAdClosed',
+  ];
 
   @override
   void dispose() {
     _bannerAd?.dispose();
     _adUnit?.destroy();
+    if (widget.tc.filterUncachedBids) {
+      PrebidMobile.setFilterOutUncachedBids(AppSettings.filterOutUncachedBids);
+    }
     super.dispose();
   }
 
@@ -45,29 +69,47 @@ class _OriginalBannerDetailPageState extends State<OriginalBannerDetailPage> {
     _bannerAd = null;
     await _adUnit?.destroy();
     _tracker.reset();
-    setState(() => _loaded = false);
+    setState(() {
+      _loaded = false;
+      _result = null;
+    });
 
     await PrebidMobile.clearStoredAuctionResponse();
-    _log.log('Original', 'fetchDemand: ${widget.tc.configId} ($_size)');
+    if (widget.tc.filterUncachedBids) {
+      await PrebidMobile.setFilterOutUncachedBids(true);
+    }
 
-    final adUnit = PrebidBannerAdUnit(
+    // 1. Prebid auction.
+    final adUnit = PrebidMultiformatAd(
       configId: widget.tc.configId,
-      sizes: [_size],
+      bannerSizes: _isVideo ? null : [_size],
+      videoParameters: _isVideo
+          ? const VideoParameters(
+              mimes: ['video/mp4'],
+              protocols: [VideoProtocol.vast2_0],
+              playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
+              placement: VideoPlacement.inBanner,
+            )
+          : null,
     );
     _adUnit = adUnit;
-
-    final PrebidBidResponse response;
-    try {
-      response = await adUnit.fetchDemand();
-    } catch (e) {
-      _tracker.track('onAdFailed', '$e');
-      _log.log('Original', 'fetchDemand failed: $e', level: LogLevel.error);
-      return;
+    final response = await adUnit.fetchDemand();
+    final keywords = response.targetingKeywords ?? const <String, String>{};
+    if (response.isSuccess) {
+      _tracker.track('fetchDemand success', bidSummary(response));
+    } else {
+      _tracker.track('fetchDemand failed', response.resultCode);
     }
-    _tracker.track('fetchDemand');
-    final keywords = response.targetingKeywords ?? const {};
-    _log.log('Original', 'resultCode=${response.resultCode} kw=$keywords');
+    setState(() {
+      _result = [
+        'resultCode: ${response.resultCode}',
+        if (response.exp != null) 'exp: ${response.exp}s',
+        'topBidFiltered: ${response.topBidFiltered}',
+        for (final e in keywords.entries) '${e.key} = ${e.value}',
+      ].join('\n');
+    });
 
+    // 2. GAM request with Prebid's keywords.
     final bannerAd = gma.AdManagerBannerAd(
       adUnitId: widget.tc.adUnitId ?? '',
       sizes: [gma.AdSize(width: widget.tc.width, height: widget.tc.height)],
@@ -75,21 +117,16 @@ class _OriginalBannerDetailPageState extends State<OriginalBannerDetailPage> {
       listener: gma.AdManagerBannerAdListener(
         onAdLoaded: (ad) {
           _tracker.track('onAdLoaded');
-          _log.log('Original', 'GAM banner loaded');
           if (mounted) setState(() => _loaded = true);
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
           _tracker.track('onAdFailed', error.message);
-          _log.log(
-            'Original',
-            'GAM load failed: ${error.message}',
-            level: LogLevel.error,
-          );
         },
-        onAdClicked: (ad) => _tracker.track('onAdClicked'),
-        onAdOpened: (ad) => _tracker.track('onAdDisplayed'),
-        onAdClosed: (ad) => _tracker.track('onAdClosed'),
+        onAdImpression: (_) => _tracker.track('onAdImpression'),
+        onAdClicked: (_) => _tracker.track('onAdClicked'),
+        onAdOpened: (_) => _tracker.track('onAdOpened'),
+        onAdClosed: (_) => _tracker.track('onAdClosed'),
       ),
     );
     _bannerAd = bannerAd;
@@ -98,67 +135,34 @@ class _OriginalBannerDetailPageState extends State<OriginalBannerDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.tc.title)),
-      body: ListenableBuilder(
-        listenable: _tracker,
-        builder: (context, _) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 120),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.35,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: _loaded && _bannerAd != null
-                    ? SizedBox(
-                        width: _size.width,
-                        height: _size.height,
-                        child: gma.AdWidget(ad: _bannerAd!),
-                      )
-                    : Text(
-                        'Tap Load to run the auction and render via GAM',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: theme.colorScheme.outline),
-                      ),
-              ),
-              const SizedBox(height: 16),
-              AdUnitHeader(
-                configId: widget.tc.configId,
-                category: categoryOf(widget.tc),
-                integration: widget.tc.integration,
-                adUnitId: widget.tc.adUnitId,
-              ),
-              const SizedBox(height: 16),
-              ActionButton(
-                label: 'Fetch & Load',
-                icon: Icons.sync_rounded,
-                onPressed: _load,
-              ),
-              const SizedBox(height: 16),
-              EventCounterList(
-                tracker: _tracker,
-                events: const [
-                  'fetchDemand',
-                  'onAdLoaded',
-                  'onAdDisplayed',
-                  'onAdFailed',
-                  'onAdClicked',
-                  'onAdClosed',
-                ],
-              ),
-            ],
-          ),
-        ),
+    return AdDetailScaffold(
+      title: widget.tc.title,
+      tracker: _tracker,
+      events: _events,
+      stage: AdStage(
+        hint: 'Tap Load to run the auction and render via GAM',
+        child: _loaded && _bannerAd != null
+            ? SizedBox(
+                width: _size.width,
+                height: _size.height,
+                child: gma.AdWidget(ad: _bannerAd!),
+              )
+            : null,
       ),
+      header: AdUnitHeader(
+        configId: widget.tc.configId,
+        category: categoryOf(widget.tc),
+        integration: widget.tc.integration,
+        adUnitId: widget.tc.adUnitId,
+      ),
+      actions: [
+        ActionButton(
+          label: 'Fetch & Load',
+          icon: Icons.sync_rounded,
+          onPressed: _load,
+        ),
+      ],
+      extra: [if (_result != null) ResultPanel(text: _result!)],
     );
   }
 }

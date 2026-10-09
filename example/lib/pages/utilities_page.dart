@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'about_page.dart';
+import 'bid_inspector_page.dart';
 import 'consent_settings_page.dart';
+import 'log_page.dart';
 import 'settings_page.dart';
 import 'targeting_data_page.dart';
 
@@ -29,16 +31,32 @@ class UtilitiesPage extends StatelessWidget {
             icon: Icons.tune_rounded,
             color: const Color(0xFF2563EB),
             title: 'App Settings',
-            subtitle: 'Server, account, log level, debug',
+            subtitle: 'Server, timeouts, bidding, SharedID, privacy',
             page: const SettingsPage(),
+          ),
+          _tile(
+            context,
+            icon: Icons.manage_search_rounded,
+            color: const Color(0xFFEA580C),
+            title: 'Bid Inspector',
+            subtitle: 'Bid requests & responses (PrebidEventDelegate)',
+            page: const BidInspectorPage(),
           ),
           _tile(
             context,
             icon: Icons.data_object_rounded,
             color: const Color(0xFF0D9488),
             title: 'Targeting Data',
-            subtitle: 'Keywords, ext data, ORTB config',
+            subtitle: 'Keywords, ext data, ORTB, OMID, location',
             page: const TargetingDataPage(),
+          ),
+          _tile(
+            context,
+            icon: Icons.receipt_long_rounded,
+            color: const Color(0xFF0891B2),
+            title: 'Logs',
+            subtitle: 'SDK setup and every ad callback',
+            page: const LogPage(),
           ),
           _tile(
             context,

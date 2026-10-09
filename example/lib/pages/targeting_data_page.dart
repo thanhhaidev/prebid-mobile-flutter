@@ -36,6 +36,13 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
   final _storeUrlController = TextEditingController();
   final _domainController = TextEditingController();
 
+  // OM SDK partner & location
+  final _omidNameController = TextEditingController();
+  final _omidVersionController = TextEditingController();
+  final _latController = TextEditingController();
+  final _lngController = TextEditingController();
+  final _precisionController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +69,11 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
     _publisherNameController.dispose();
     _storeUrlController.dispose();
     _domainController.dispose();
+    _omidNameController.dispose();
+    _omidVersionController.dispose();
+    _latController.dispose();
+    _lngController.dispose();
+    _precisionController.dispose();
     super.dispose();
   }
 
@@ -168,6 +180,29 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
   }
 
   // ---- ORTB Config ----
+
+  Future<void> _applyOmidAndLocation() async {
+    String? orNull(TextEditingController c) =>
+        c.text.trim().isEmpty ? null : c.text.trim();
+    await PrebidTargeting.setOmidPartnerName(orNull(_omidNameController));
+    await PrebidTargeting.setOmidPartnerVersion(orNull(_omidVersionController));
+    final lat = double.tryParse(_latController.text);
+    final lng = double.tryParse(_lngController.text);
+    if (lat != null && lng != null) {
+      await PrebidTargeting.setUserLatLng(lat, lng);
+    }
+    await PrebidTargeting.setLocationPrecision(
+      int.tryParse(_precisionController.text),
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('OMID partner & location applied'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
 
   Future<void> _applyOrtbConfig() async {
     final config = _ortbConfigController.text.trim();
@@ -312,6 +347,32 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
             alignment: Alignment.centerRight,
             child: FilledButton.tonal(
               onPressed: _applyAppInfo,
+              child: const Text('Apply', style: TextStyle(fontSize: 12)),
+            ),
+          ),
+          const Divider(height: 24),
+
+          // ---- OM SDK partner & location ----
+          _sectionHeader('OM SDK Partner & Location', primary),
+          const SizedBox(height: 6),
+          _smallField('OMID partner name', _omidNameController),
+          const SizedBox(height: 6),
+          _smallField('OMID partner version', _omidVersionController),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: _smallField('Latitude', _latController)),
+              const SizedBox(width: 8),
+              Expanded(child: _smallField('Longitude', _lngController)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _smallField('Location precision (decimals)', _precisionController),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.tonal(
+              onPressed: _applyOmidAndLocation,
               child: const Text('Apply', style: TextStyle(fontSize: 12)),
             ),
           ),

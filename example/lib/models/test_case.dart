@@ -38,6 +38,10 @@ class TestCase {
   /// references assets by ID, e.g. `prebid-demo-native-links`.
   final bool assignNativeAssetIds;
 
+  /// Turns on `PrebidMobile.setFilterOutUncachedBids` for this case (GAM
+  /// Original API), as in Prebid's filter-uncached-bids demo.
+  final bool filterUncachedBids;
+
   final int width;
   final int height;
 
@@ -51,6 +55,7 @@ class TestCase {
     this.customFormatId,
     this.nativeAssets,
     this.assignNativeAssetIds = false,
+    this.filterUncachedBids = false,
     this.width = 320,
     this.height = 50,
   });

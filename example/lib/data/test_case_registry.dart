@@ -658,6 +658,58 @@ class TestCaseRegistry {
       height: 50,
     ),
 
+    TestCase(
+      title: 'Banner 320x50 [Filter uncached bids] (GAM Original) [OK, PUC]',
+      configId: 'prebid-ita-banner-320-50',
+      format: DemoAdFormat.displayBanner,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid_demo_app_original_api_banner',
+      filterUncachedBids: true,
+      width: 320,
+      height: 50,
+    ),
+    TestCase(
+      title: 'Video Banner 300x250 (GAM Original) [OK, PUC]',
+      configId: 'prebid-demo-video-outstream-original-api',
+      format: DemoAdFormat.videoBanner,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid-demo-original-api-video-banner',
+      width: 300,
+      height: 250,
+    ),
+
+    // =========================================================================
+    // GAM ORIGINAL API — Interstitial / Rewarded
+    // =========================================================================
+    TestCase(
+      title: 'Display Interstitial 320x480 (GAM Original) [OK, PUC]',
+      configId: 'prebid-demo-display-interstitial-320-480',
+      format: DemoAdFormat.displayInterstitial,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid-demo-app-original-api-display-interstitial',
+    ),
+    TestCase(
+      title: 'Multiformat Interstitial (GAM Original) [OK, PUC]',
+      configId: 'prebid-demo-display-interstitial-320-480',
+      format: DemoAdFormat.displayInterstitial,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid-demo-intestitial-multiformat',
+    ),
+    TestCase(
+      title: 'Video Interstitial 320x480 (GAM Original) [OK, PUC]',
+      configId: 'prebid-demo-video-interstitial-320-480-original-api',
+      format: DemoAdFormat.videoInterstitial,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid-demo-app-original-api-video-interstitial',
+    ),
+    TestCase(
+      title: 'Video Rewarded 320x480 (GAM Original) [OK, PUC]',
+      configId: 'prebid-demo-video-rewarded-320-480-original-api',
+      format: DemoAdFormat.videoRewarded,
+      integration: DemoIntegration.original,
+      adUnitId: '${_gam}prebid-demo-app-original-api-video-interstitial',
+    ),
+
     // =========================================================================
     // ADMOB — Banner
     // =========================================================================

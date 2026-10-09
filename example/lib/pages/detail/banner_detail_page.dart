@@ -8,16 +8,19 @@ import '../../models/demo_ad_category.dart';
 import '../../models/demo_ad_format.dart';
 import '../../models/demo_integration.dart';
 import '../../models/test_case.dart';
-import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
 import '../../widgets/ad_unit_header.dart';
 import '../../widgets/configure_ad_dialog.dart';
+import '../../widgets/detail_scaffold.dart';
 import '../../widgets/event_counter.dart';
 
-/// Banner ad detail page — ad stage, config header, Load / Stop refresh, and
-/// callback counters. Works across integrations (In-App / GAM / AdMob / MAX):
-/// the platform-view widget is chosen from [TestCase.integration], all sharing
-/// a [PrebidBannerAdListener]. The app-bar gear opens the "Configure" dialog.
+/// Banner test cases (display, video, MRAID) for In-App, GAM, AdMob and MAX.
+///
+/// Every callback is tracked: the Prebid rendering banners (In-App / GAM)
+/// report expiry and outstream-video playback events; the mediated banners
+/// (AdMob / MAX) report the ad server's impression. "Stop refresh" uses
+/// [PrebidBannerAdController] for In-App / GAM, and recreates the mediated
+/// banners without a refresh interval.
 class BannerDetailPage extends StatefulWidget {
   final TestCase tc;
   const BannerDetailPage({super.key, required this.tc});
@@ -27,8 +30,7 @@ class BannerDetailPage extends StatefulWidget {
 }
 
 class _BannerDetailPageState extends State<BannerDetailPage> {
-  final EventTracker _tracker = EventTracker();
-  final _log = PrebidDemoLogger.instance;
+  final EventTracker _tracker = EventTracker('Banner');
 
   late String _configId = widget.tc.configId;
   late int _width = widget.tc.width;
@@ -38,21 +40,41 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
   bool _showAd = false;
   int _adKey = 0;
 
-  /// In-App banners stop refresh in place via the controller; other
-  /// integrations recreate the widget without a refresh interval.
   final _controller = PrebidBannerAdController();
 
   bool get _isVideo => widget.tc.format == DemoAdFormat.videoBanner;
 
+  DemoIntegration get _integration => widget.tc.integration;
+
+  /// In-App and GAM banners are Prebid-rendered `BannerView`s.
+  bool get _isRendering =>
+      _integration == DemoIntegration.inApp ||
+      _integration == DemoIntegration.gam;
+
+  List<String> get _events => [
+    'onAdLoaded',
+    'onAdDisplayed',
+    'onAdFailed',
+    if (!_isRendering) 'onAdImpression',
+    'onAdClicked',
+    'onAdClosed',
+    if (_isRendering) 'onAdExpired',
+    if (_isRendering && _isVideo) ...[
+      'onVideoCompleted',
+      'onVideoPaused',
+      'onVideoResumed',
+      'onVideoMuted',
+      'onVideoUnmuted',
+    ],
+  ];
+
   Future<void> _load() async {
-    _log.log('Banner', 'Clearing stored response');
     await PrebidMobile.clearStoredAuctionResponse();
     _tracker.reset();
-    _log.log(
-      'Banner',
-      'Loading ${widget.tc.integration.label} '
-          '${_isVideo ? "video" : "display"} banner: '
-          '$_configId (${_width}x$_height, refresh=$_refreshSeconds)',
+    _tracker.track(
+      'load',
+      '${_integration.label} $_configId ${_width}x$_height'
+          '${_refreshSeconds > 0 ? ' refresh=${_refreshSeconds}s' : ''}',
     );
     setState(() {
       _showAd = true;
@@ -61,8 +83,8 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
   }
 
   void _stopRefresh() {
-    _log.log('Banner', 'Stopping auto-refresh');
-    if (widget.tc.integration == DemoIntegration.inApp) {
+    _tracker.track('stopRefresh');
+    if (_isRendering) {
       _controller.stopRefresh();
       return;
     }
@@ -93,26 +115,21 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
   }
 
   PrebidBannerAdListener _listener() => PrebidBannerAdListener(
-    onAdLoaded: () {
-      _tracker.track('onAdLoaded');
-      _log.log('Banner', 'Ad loaded');
-    },
-    onAdDisplayed: () {
-      _tracker.track('onAdDisplayed');
-      _log.log('Banner', 'Ad displayed');
-    },
-    onAdFailed: (e) {
-      _tracker.track('onAdFailed', e);
-      _log.log('Banner', 'Ad failed: $e', level: LogLevel.error);
-    },
-    onAdClicked: () {
-      _tracker.track('onAdClicked');
-      _log.log('Banner', 'Ad clicked');
-    },
-    onAdClosed: () {
-      _tracker.track('onAdClosed');
-      _log.log('Banner', 'Ad closed');
-    },
+    onAdLoaded: () => _tracker.track('onAdLoaded'),
+    onAdDisplayed: () => _tracker.track('onAdDisplayed'),
+    onAdFailed: (e) => _tracker.track('onAdFailed', e),
+    onAdImpression: () => _tracker.track('onAdImpression'),
+    onAdClicked: () => _tracker.track('onAdClicked'),
+    onAdClosed: () => _tracker.track('onAdClosed'),
+    onAdExpired: () => _tracker.track('onAdExpired'),
+  );
+
+  PrebidBannerVideoListener _videoListener() => PrebidBannerVideoListener(
+    onVideoCompleted: () => _tracker.track('onVideoCompleted'),
+    onVideoPaused: () => _tracker.track('onVideoPaused'),
+    onVideoResumed: () => _tracker.track('onVideoResumed'),
+    onVideoMuted: () => _tracker.track('onVideoMuted'),
+    onVideoUnmuted: () => _tracker.track('onVideoUnmuted'),
   );
 
   /// Builds the integration-specific banner platform-view widget.
@@ -120,142 +137,88 @@ class _BannerDetailPageState extends State<BannerDetailPage> {
     final key = ValueKey(_adKey);
     final refresh = _refreshSeconds >= 30 ? _refreshSeconds : null;
     final adUnitId = widget.tc.adUnitId ?? '';
-    switch (widget.tc.integration) {
-      case DemoIntegration.inApp:
-        return PrebidBannerAd(
-          key: key,
-          configId: _configId,
-          width: _width,
-          height: _height,
-          isVideo: _isVideo,
-          refreshIntervalSeconds: refresh,
-          controller: _controller,
-          listener: _listener(),
-        );
-      case DemoIntegration.gam:
-        return PrebidGamBannerAd(
-          key: key,
-          configId: _configId,
-          gamAdUnitId: adUnitId,
-          width: _width,
-          height: _height,
-          isVideo: _isVideo,
-          refreshIntervalSeconds: refresh,
-          listener: _listener(),
-        );
-      case DemoIntegration.admob:
-        return PrebidAdMobBannerAd(
-          key: key,
-          configId: _configId,
-          adMobAdUnitId: adUnitId,
-          width: _width,
-          height: _height,
-          listener: _listener(),
-        );
-      case DemoIntegration.max:
-        return PrebidMaxBannerAd(
-          key: key,
-          configId: _configId,
-          maxAdUnitId: adUnitId,
-          width: _width,
-          height: _height,
-          listener: _listener(),
-        );
-      case DemoIntegration.original:
-        // Original API banners render through google_mobile_ads — handled by a
-        // dedicated page; this widget is not used for that integration.
-        return const SizedBox.shrink();
-    }
+    return switch (_integration) {
+      DemoIntegration.inApp => PrebidBannerAd(
+        key: key,
+        configId: _configId,
+        width: _width,
+        height: _height,
+        isVideo: _isVideo,
+        refreshIntervalSeconds: refresh,
+        controller: _controller,
+        listener: _listener(),
+        videoListener: _videoListener(),
+      ),
+      DemoIntegration.gam => PrebidGamBannerAd(
+        key: key,
+        configId: _configId,
+        gamAdUnitId: adUnitId,
+        width: _width,
+        height: _height,
+        isVideo: _isVideo,
+        refreshIntervalSeconds: refresh,
+        controller: _controller,
+        listener: _listener(),
+        videoListener: _videoListener(),
+      ),
+      DemoIntegration.admob => PrebidAdMobBannerAd(
+        key: key,
+        configId: _configId,
+        adMobAdUnitId: adUnitId,
+        width: _width,
+        height: _height,
+        listener: _listener(),
+      ),
+      DemoIntegration.max => PrebidMaxBannerAd(
+        key: key,
+        configId: _configId,
+        maxAdUnitId: adUnitId,
+        width: _width,
+        height: _height,
+        listener: _listener(),
+      ),
+      // Original API banners have their own page (google_mobile_ads).
+      DemoIntegration.original => const SizedBox.shrink(),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.tc.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            tooltip: 'Configure the Ad',
-            onPressed: _configure,
-          ),
-        ],
-      ),
-      body: ListenableBuilder(
-        listenable: _tracker,
-        builder: (context, _) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Ad stage
-              Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 120),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.35,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+    return AdDetailScaffold(
+      title: widget.tc.title,
+      tracker: _tracker,
+      events: _events,
+      onConfigure: _configure,
+      stage: AdStage(
+        child: _showAd
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _bannerWidget(),
                 ),
-                child: _showAd
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: _bannerWidget(),
-                        ),
-                      )
-                    : Text(
-                        'Tap Load to request an ad',
-                        style: TextStyle(color: theme.colorScheme.outline),
-                      ),
-              ),
-              const SizedBox(height: 16),
-              AdUnitHeader(
-                configId: _configId,
-                category: categoryOf(widget.tc),
-                integration: widget.tc.integration,
-                adUnitId: widget.tc.adUnitId,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ActionButton(
-                      label: 'Load',
-                      icon: Icons.play_arrow_rounded,
-                      onPressed: _load,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ActionButton(
-                      label: 'Stop refresh',
-                      primary: false,
-                      icon: Icons.stop_rounded,
-                      onPressed: _stopRefresh,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              EventCounterList(
-                tracker: _tracker,
-                events: const [
-                  'onAdLoaded',
-                  'onAdDisplayed',
-                  'onAdFailed',
-                  'onAdClicked',
-                  'onAdClosed',
-                ],
-              ),
-            ],
-          ),
-        ),
+              )
+            : null,
       ),
+      header: AdUnitHeader(
+        configId: _configId,
+        category: categoryOf(widget.tc),
+        integration: _integration,
+        adUnitId: widget.tc.adUnitId,
+      ),
+      actions: [
+        ActionButton(
+          label: 'Load',
+          icon: Icons.play_arrow_rounded,
+          onPressed: _load,
+        ),
+        ActionButton(
+          label: 'Stop refresh',
+          primary: false,
+          icon: Icons.stop_rounded,
+          onPressed: _showAd ? _stopRefresh : null,
+        ),
+      ],
     );
   }
 }

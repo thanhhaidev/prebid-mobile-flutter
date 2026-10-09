@@ -9,12 +9,10 @@ import '../models/test_case.dart';
 import '../utils/app_settings.dart';
 import '../utils/category_style.dart';
 import 'detail/banner_detail_page.dart';
-import 'detail/interstitial_detail_page.dart';
-import 'detail/multiformat_detail_page.dart';
+import 'detail/demand_detail_page.dart';
+import 'detail/fullscreen_detail_page.dart';
 import 'detail/native_detail_page.dart';
 import 'detail/original_banner_detail_page.dart';
-import 'detail/rewarded_detail_page.dart';
-import 'detail/video_detail_page.dart';
 import 'settings_page.dart';
 
 /// Main examples list — mirrors the Prebid reference test app: a search field,
@@ -249,28 +247,27 @@ class _ExamplesPageState extends State<ExamplesPage> {
       ),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => _detailPage(tc)),
+        MaterialPageRoute(builder: (_) => detailPageFor(tc)),
       ),
     );
   }
+}
 
-  Widget _detailPage(TestCase tc) {
-    // Original API renders through google_mobile_ads (keyword handoff).
-    if (tc.integration == DemoIntegration.original) {
-      return OriginalBannerDetailPage(tc: tc);
-    }
-    // Banner and interstitial detail pages are integration-aware (In-App / GAM
-    // / AdMob / MAX); rewarded / native / instream / multiformat are In-App.
-    return switch (tc.format) {
-      DemoAdFormat.displayBanner ||
-      DemoAdFormat.videoBanner => BannerDetailPage(tc: tc),
-      DemoAdFormat.displayInterstitial ||
-      DemoAdFormat.videoInterstitial => InterstitialDetailPage(tc: tc),
-      DemoAdFormat.displayRewarded ||
-      DemoAdFormat.videoRewarded => RewardedDetailPage(tc: tc),
-      DemoAdFormat.native => NativeDetailPage(tc: tc),
-      DemoAdFormat.videoInstream => VideoDetailPage(tc: tc),
-      DemoAdFormat.multiformat => MultiformatDetailPage(tc: tc),
-    };
-  }
+/// The detail page for [tc], chosen by format and integration.
+Widget detailPageFor(TestCase tc) {
+  return switch (tc.format) {
+    // Original API banners render through google_mobile_ads.
+    DemoAdFormat.displayBanner || DemoAdFormat.videoBanner
+        when tc.integration == DemoIntegration.original =>
+      OriginalBannerDetailPage(tc: tc),
+    DemoAdFormat.displayBanner ||
+    DemoAdFormat.videoBanner => BannerDetailPage(tc: tc),
+    DemoAdFormat.displayInterstitial ||
+    DemoAdFormat.videoInterstitial ||
+    DemoAdFormat.displayRewarded ||
+    DemoAdFormat.videoRewarded => FullscreenDetailPage(tc: tc),
+    DemoAdFormat.native => NativeDetailPage(tc: tc),
+    DemoAdFormat.videoInstream ||
+    DemoAdFormat.multiformat => DemandDetailPage(tc: tc),
+  };
 }

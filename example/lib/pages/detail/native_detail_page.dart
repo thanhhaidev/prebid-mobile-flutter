@@ -7,9 +7,9 @@ import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 import '../../models/demo_ad_category.dart';
 import '../../models/demo_integration.dart';
 import '../../models/test_case.dart';
-import '../../utils/logger.dart';
 import '../../widgets/action_button.dart';
 import '../../widgets/ad_unit_header.dart';
+import '../../widgets/detail_scaffold.dart';
 import '../../widgets/event_counter.dart';
 
 /// Native ad detail page. In-App renders the loaded ad with
@@ -28,8 +28,7 @@ class NativeDetailPage extends StatefulWidget {
 }
 
 class _NativeDetailPageState extends State<NativeDetailPage> {
-  final EventTracker _tracker = EventTracker();
-  final _log = PrebidDemoLogger.instance;
+  final EventTracker _tracker = EventTracker('Native');
 
   // In-App asset rendering.
   PrebidNativeAd? _ad;
@@ -60,15 +59,9 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
     NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
   ];
 
-  void _track(String event) {
-    _tracker.track(event);
-    _log.log('Native', event);
-  }
+  void _track(String event) => _tracker.track(event);
 
-  void _trackError(String event, String error) {
-    _tracker.track(event, error);
-    _log.log('Native', '$event: $error', level: LogLevel.error);
-  }
+  void _trackError(String event, String error) => _tracker.track(event, error);
 
   // ---- Mediated listeners -------------------------------------------------
 
@@ -83,6 +76,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
     onPrimaryAdWinUnified: () => _track('onPrimaryAdWin called (unified)'),
     onAdImpression: () => _track('onAdImpression'),
     onAdClicked: () => _track('onAdClicked called'),
+    onAdExpired: () => _track('onAdExpired'),
   );
 
   PrebidAdMobNativeAdListener _admobNativeListener() =>
@@ -94,9 +88,10 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
         onAdFailed: (e) => _trackError('onAdFailed', e),
       );
 
-  PrebidBannerAdListener _maxNativeListener() => PrebidBannerAdListener(
+  PrebidMaxNativeAdListener _maxNativeListener() => PrebidMaxNativeAdListener(
     onAdLoaded: () => _track('onAdLoaded'),
     onAdFailed: (e) => _trackError('onAdFailed', e),
+    onAdImpression: () => _track('onAdImpression'),
     onAdClicked: () => _track('onAdClicked'),
   );
 
@@ -116,6 +111,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
           'onPrimaryAdWin called (unified)',
           'onAdClicked called',
           'onAdImpression',
+          'onAdExpired',
         ];
       case DemoIntegration.admob:
         return const [
@@ -126,7 +122,12 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
           'onAdFailed',
         ];
       case DemoIntegration.max:
-        return const ['onAdLoaded', 'onAdFailed', 'onAdClicked'];
+        return const [
+          'onAdLoaded',
+          'onAdImpression',
+          'onAdClicked',
+          'onAdFailed',
+        ];
       case DemoIntegration.inApp:
       case DemoIntegration.original:
         return const [
@@ -134,6 +135,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
           'onAdFailed',
           'onAdImpression',
           'onAdClicked',
+          'onAdExpired',
         ];
     }
   }
@@ -141,9 +143,9 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
   Future<void> _load() async {
     _tracker.reset();
     await PrebidMobile.clearStoredAuctionResponse();
-    _log.log(
-      'Native',
-      'Loading ${widget.tc.integration.label}: ${widget.tc.configId}',
+    _tracker.track(
+      'load',
+      '${widget.tc.integration.label} ${widget.tc.configId}',
     );
 
     if (!_isInApp) {
@@ -174,13 +176,13 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
       ],
       listener: PrebidNativeAdListener(
         onAdLoaded: (response) {
-          _track('onAdLoaded');
-          _log.log('Native', 'title="${response.title}"');
+          _tracker.track('onAdLoaded', 'title="${response.title}"');
           setState(() => _response = response);
         },
         onAdFailed: (e) => _trackError('onAdFailed', e),
         onAdImpression: () => _track('onAdImpression'),
         onAdClicked: () => _track('onAdClicked'),
+        onAdExpired: () => _track('onAdExpired'),
       ),
     );
     _ad!.loadAd();
@@ -222,62 +224,33 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.tc.title)),
-      body: ListenableBuilder(
-        listenable: _tracker,
-        builder: (context, _) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              if (_isInApp && _response != null && _ad != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.35,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  // Rendered natively so Prebid tracks impressions/clicks.
-                  child: PrebidNativeAdView(ad: _ad!),
-                )
-              else if (!_isInApp && _showAd)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.35,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: _mediatedNativeWidget(),
-                ),
-              const SizedBox(height: 16),
-              AdUnitHeader(
-                configId: widget.tc.configId,
-                category: categoryOf(widget.tc),
-                integration: widget.tc.integration,
-                adUnitId: widget.tc.adUnitId,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ActionButton(
-                  label: 'Load',
-                  icon: Icons.download_rounded,
-                  onPressed: _load,
-                ),
-              ),
-              const SizedBox(height: 16),
-              EventCounterList(tracker: _tracker, events: _events()),
-            ],
-          ),
-        ),
+    final Widget? ad;
+    if (_isInApp && _response != null && _ad != null) {
+      // Rendered natively so Prebid tracks impressions/clicks.
+      ad = PrebidNativeAdView(ad: _ad!);
+    } else if (!_isInApp && _showAd) {
+      ad = _mediatedNativeWidget();
+    } else {
+      ad = null;
+    }
+    return AdDetailScaffold(
+      title: widget.tc.title,
+      tracker: _tracker,
+      events: _events(),
+      stage: AdStage(child: ad),
+      header: AdUnitHeader(
+        configId: widget.tc.configId,
+        category: categoryOf(widget.tc),
+        integration: widget.tc.integration,
+        adUnitId: widget.tc.adUnitId,
       ),
+      actions: [
+        ActionButton(
+          label: 'Load',
+          icon: Icons.download_rounded,
+          onPressed: _load,
+        ),
+      ],
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'pages/examples_page.dart';
 import 'pages/utilities_page.dart';
 import 'utils/app_settings.dart';
+import 'utils/bid_inspector.dart';
 import 'utils/logger.dart';
 
 void main() async {
@@ -100,9 +101,10 @@ class _RootShellState extends State<RootShell> {
 
   Future<void> _initSdk() async {
     _log.log('SDK', 'Configuring Prebid Mobile...');
-    await PrebidMobile.setPbsDebug(AppSettings.pbsDebug);
-    await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
-    await PrebidMobile.setShareGeoLocation(AppSettings.shareGeo);
+    await AppSettings.applyToSdk();
+    // Capture bid requests / responses (PrebidEventDelegate) for the Bid
+    // Inspector and the "last bid response" card on every test case.
+    await BidInspector.instance.setEnabled(AppSettings.bidInspector);
 
     final serverUrl = AppSettings.serverUrl;
     final accountId = AppSettings.accountId;

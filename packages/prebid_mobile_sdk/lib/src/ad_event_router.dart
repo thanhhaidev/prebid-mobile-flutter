@@ -33,7 +33,7 @@ class AdEventRouter implements AdFlutterApi {
   }
 
   @override
-  void onAdEvent(AdEvent event) {
+  Future<void> onAdEvent(AdEvent event) async {
     _handlers[event.adId]?.call(event);
   }
 }

@@ -16,7 +16,8 @@ permissions:
   contents: read
 
 env:
-  # melos.yaml points sdkPath at the local FVM SDK; use the Flutter on PATH.
+  # The melos config (root pubspec.yaml) points sdkPath at the local FVM SDK;
+  # use the Flutter on PATH.
   MELOS_SDK_PATH: auto
 
 jobs:

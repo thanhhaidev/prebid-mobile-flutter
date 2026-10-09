@@ -21,8 +21,7 @@ See each package's README for its API. Start with
 
 ```
 .
-├── melos.yaml                 # Melos task runner config
-├── pubspec.yaml               # pub workspace root
+├── pubspec.yaml               # pub workspace root + Melos config (`melos:` key)
 ├── packages/
 │   ├── prebid_mobile_sdk/       # core plugin
 │   ├── prebid_mobile_sdk_gam/   # GAM rendering companion

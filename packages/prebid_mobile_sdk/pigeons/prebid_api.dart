@@ -297,7 +297,7 @@ class FullscreenControlsConfig {
 /// Core SDK initialization and configuration.
 @HostApi()
 abstract class PrebidMobileHostApi {
-  @async
+  @asyncCallback
   InitializationResult initializeSdk(
     String prebidServerUrl,
     String accountId,
@@ -502,7 +502,7 @@ class MultiformatBidResult {
 /// Multiformat ad operations (Dart → Native).
 @HostApi()
 abstract class MultiformatAdHostApi {
-  @async
+  @asyncCallback
   MultiformatBidResult fetchDemand(int adId, MultiformatAdRequestConfig config);
   void destroy(int adId);
 }
@@ -524,7 +524,7 @@ class InstreamVideoAdRequestConfig {
 /// In-stream video ad operations (Dart → Native).
 @HostApi()
 abstract class InstreamVideoAdHostApi {
-  @async
+  @asyncCallback
   MultiformatBidResult fetchDemand(
     int adId,
     InstreamVideoAdRequestConfig config,
@@ -539,11 +539,13 @@ abstract class InstreamVideoAdHostApi {
 /// Callbacks for ad events from native to Flutter.
 @FlutterApi()
 abstract class AdFlutterApi {
+  @asyncCallback
   void onAdEvent(AdEvent event);
 }
 
 /// Bid request / response pairs from `PrebidEventDelegate` (native → Flutter).
 @FlutterApi()
 abstract class PrebidEventFlutterApi {
+  @asyncCallback
   void onBidResponse(String? request, String? response);
 }

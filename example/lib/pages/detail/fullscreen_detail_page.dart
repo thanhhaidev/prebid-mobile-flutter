@@ -298,7 +298,7 @@ class _FullscreenDetailPageState extends State<FullscreenDetailPage> {
     }
   }
 
-  gma.FullScreenContentCallback<T> _gmaCallback<T>() =>
+  gma.FullScreenContentCallback<T> _gmaCallback<T extends gma.Ad>() =>
       gma.FullScreenContentCallback<T>(
         onAdShowedFullScreenContent: (_) => _tracker.track('onAdDisplayed'),
         onAdImpression: (_) => _tracker.track('onAdImpression'),

@@ -341,7 +341,7 @@ class _PrebidEventReceiver implements PrebidEventFlutterApi {
   PrebidBidResponseListener? listener;
 
   @override
-  void onBidResponse(String? request, String? response) {
+  Future<void> onBidResponse(String? request, String? response) async {
     listener?.call(request, response);
   }
 }

@@ -54,7 +54,11 @@ For each package on pub.dev, open **Admin → Automated publishing**:
    `dart run melos run compatibility` to regenerate the README tables. CI
    fails while the newest entry disagrees with the package's
    `pubspec.yaml`, `build.gradle.kts`, podspec or `Package.swift`.
-3. Open a PR; CI runs `pub publish --dry-run` for every package.
+3. Open a PR; CI runs `pub publish --dry-run` for every package and scores
+   them with [pana](https://pub.dev/packages/pana), the tool behind the pub.dev
+   score (`dart run melos run score`, about 5 minutes). Every package must get
+   160/160. Companions are scored against the core in the checkout through a
+   local pub server, so their score is known before the core is published.
 4. After merging, tag the commit on `main` and push the tag:
 
    ```bash

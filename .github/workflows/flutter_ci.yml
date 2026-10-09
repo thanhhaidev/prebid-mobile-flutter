@@ -56,6 +56,19 @@ jobs:
       - name: Validate every publishable package
         run: dart run melos run publish:check
 
+  score:
+    name: pub.dev score
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-flutter
+
+      # pana, the pub.dev scorer; companions are scored against the core in
+      # this checkout through a local pub server (tool/score.sh).
+      - name: Score every package (160/160 required)
+        run: dart run melos run score
+
   android:
     name: Build example (Android)
     needs: check
@@ -75,6 +88,15 @@ jobs:
       - name: Build debug APK
         working-directory: example
         run: flutter build apk --debug
+
+      - name: Plugin unit tests (JVM)
+        working-directory: example/android
+        run: ./gradlew :prebid_mobile_sdk:testDebugUnitTest --console=plain
+
+      # R8 runs only in release builds: catches missing consumer keep rules.
+      - name: Build release APK (R8)
+        working-directory: example
+        run: flutter build apk --release
 
   ios:
     name: Build example (iOS)
@@ -101,7 +123,7 @@ jobs:
   ci:
     name: CI passed
     if: always()
-    needs: [check, publish-check, android, ios]
+    needs: [check, publish-check, score, android, ios]
     runs-on: ubuntu-latest
     steps:
       - name: Every job succeeded

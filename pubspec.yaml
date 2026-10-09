@@ -6,7 +6,7 @@ name: prebid_mobile_flutter_workspace
 publish_to: none
 
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.12.0
 
 workspace:
   - packages/prebid_mobile_sdk
@@ -16,7 +16,10 @@ workspace:
   - example
 
 dev_dependencies:
+  # tool/fake_pub_server.dart (pub.dev score check, tool/score.sh)
+  crypto: ^3.0.7
   melos: ^8.9.0
+  yaml: ^3.1.4
 
 melos:
   # Local development uses the FVM-pinned SDK (.fvmrc). CI sets
@@ -60,6 +63,10 @@ melos:
     publish:check:
       description: pub publish --dry-run for every publishable package.
       run: dart run melos exec --concurrency=1 --no-private -- flutter pub publish --dry-run
+
+    score:
+      description: Score every package with pana (the pub.dev score) before release; fails below 160 points.
+      run: tool/score.sh
 
     compatibility:
       description: Regenerate the README native-version tables from website/src/data/compatibility.json.

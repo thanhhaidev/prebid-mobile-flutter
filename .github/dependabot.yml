@@ -14,6 +14,11 @@ updates:
     directory: /website
     schedule:
       interval: weekly
+    ignore:
+      # TypeScript 7 removed `baseUrl`, which @docusaurus/tsconfig still sets;
+      # take the major once Docusaurus supports it.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
       docusaurus:
         patterns: ['@docusaurus/*']

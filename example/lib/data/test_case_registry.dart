@@ -15,7 +15,20 @@ class TestCaseRegistry {
   // GAM ad unit path prefix (Prebid's public demo network).
   static const _gam = '/21808260008/';
   static const _gamRewarded = '${_gam}prebid_oxb_rewarded_video';
-  static const _gamNative = '${_gam}prebid_oxb_native';
+  // GAM native: custom-template unit (Prebid demand arrives via a GAM custom
+  // format) and unified-native units (GAM's own native demand).
+  static const _gamNativeCustom =
+      '${_gam}apollo_custom_template_native_ad_unit';
+  static const _gamNativeUnified = '${_gam}unified_native_ad_unit';
+  static const _gamNativeUnifiedStatic = '${_gam}unified_native_ad_unit_static';
+  // GAM custom-format (native template) ids that carry Prebid demand.
+  static const _gamCustomFormat1 = '11934135';
+  static const _gamCustomFormat2 = '11982639';
+
+  // Prebid stored request that intentionally returns no bid (for no-fill demos).
+  static const _noBids = 'prebid-demo-no-bids';
+  // The winning-bid native styles config used by all "OK" native cases.
+  static const _nativeStyles = 'prebid-demo-banner-native-styles';
 
   // AdMob demo ad units (Prebid's public account).
   static const _admobBanner = 'ca-app-pub-1875909575462531/3793078260';
@@ -547,18 +560,49 @@ class TestCaseRegistry {
     // GAM RENDERING — Native
     // =========================================================================
     TestCase(
-      title: 'Native Ad (GAM)',
-      configId: 'prebid-demo-banner-native-styles',
+      title: 'Native Ad Custom Templates (GAM) [OK, NativeAd]',
+      configId: _nativeStyles,
       format: DemoAdFormat.native,
       integration: DemoIntegration.gam,
-      adUnitId: _gamNative,
+      adUnitId: _gamNativeCustom,
+      customFormatId: _gamCustomFormat1,
     ),
     TestCase(
-      title: 'Native Ad Links (GAM)',
-      configId: 'prebid-demo-native-links',
+      title: 'Native Ad (GAM) [OK, GADNativeCustomTemplateAd]',
+      configId: _nativeStyles,
       format: DemoAdFormat.native,
       integration: DemoIntegration.gam,
-      adUnitId: _gamNative,
+      adUnitId: _gamNativeCustom,
+      customFormatId: _gamCustomFormat2,
+    ),
+    TestCase(
+      title: 'Native Ad (GAM) [noBids, GADNativeCustomTemplateAd]',
+      configId: _noBids,
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNativeCustom,
+      customFormatId: _gamCustomFormat2,
+    ),
+    TestCase(
+      title: 'Native Ad Unified Ad (GAM) [OK, NativeAd]',
+      configId: _nativeStyles,
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNativeUnified,
+    ),
+    TestCase(
+      title: 'Native Ad (GAM) [OK, GADUnifiedNativeAd]',
+      configId: _nativeStyles,
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNativeUnifiedStatic,
+    ),
+    TestCase(
+      title: 'Native Ad (GAM) [noBids, GADUnifiedNativeAd]',
+      configId: _noBids,
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.gam,
+      adUnitId: _gamNativeUnifiedStatic,
     ),
 
     // =========================================================================
@@ -672,7 +716,14 @@ class TestCaseRegistry {
     // =========================================================================
     TestCase(
       title: 'Native Ad (AdMob) [OK, OXB Adapter]',
-      configId: 'prebid-demo-banner-native-styles',
+      configId: _nativeStyles,
+      format: DemoAdFormat.native,
+      integration: DemoIntegration.admob,
+      adUnitId: _admobNative,
+    ),
+    TestCase(
+      title: 'Native Ad (AdMob) [noBids, AdMob ad]',
+      configId: _noBids,
       format: DemoAdFormat.native,
       integration: DemoIntegration.admob,
       adUnitId: _admobNative,

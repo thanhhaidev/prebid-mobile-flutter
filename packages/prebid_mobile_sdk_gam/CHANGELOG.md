@@ -3,3 +3,8 @@
 * Initial release: Google Ad Manager rendering for `prebid_mobile_sdk`.
 * `PrebidGamBannerAd` — GAM-rendered banner (Android + iOS) with dynamic sizing.
 * `PrebidGamInterstitialAd` — GAM-rendered interstitial (Android + iOS).
+* `PrebidGamRewardedAd` — GAM-rendered rewarded (Android + iOS).
+* `PrebidGamNativeAd` — GAM Original-API native (Android + iOS): custom-template
+  (`customFormatId`) + unified flow, Prebid creative extracted via `findNative`.
+  Events via `PrebidGamNativeAdListener`.
+* Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

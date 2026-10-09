@@ -13,7 +13,9 @@ import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.nativead.MediaView
 import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -55,6 +57,7 @@ class AdMobNativePlatformView(
     private var nativeAd: NativeAd? = null
 
     private val iconView = ImageView(context)
+    private val mediaView = MediaView(context)
     private val headlineView = TextView(context)
     private val bodyView = TextView(context)
     private val ctaView = Button(context)
@@ -86,8 +89,15 @@ class AdMobNativePlatformView(
                 nativeAd = ad
                 bind(ad)
                 methodChannel.invokeMethod("onAdLoaded", null)
+                // Measure the natural content height (the view itself is clamped
+                // to the current Flutter-side size) and report logical pixels.
                 nativeAdView.post {
-                    val h = nativeAdView.height
+                    val content = nativeAdView.getChildAt(0) ?: return@post
+                    content.measure(
+                        View.MeasureSpec.makeMeasureSpec(nativeAdView.width, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    )
+                    val h = content.measuredHeight / nativeAdView.resources.displayMetrics.density
                     if (h > 0) {
                         methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
                     }
@@ -98,10 +108,19 @@ class AdMobNativePlatformView(
                     methodChannel.invokeMethod("onAdFailed", error.message)
                 }
 
+                override fun onAdImpression() {
+                    methodChannel.invokeMethod("onAdImpression", null)
+                }
+
                 override fun onAdClicked() {
                     methodChannel.invokeMethod("onAdClicked", null)
                 }
+
+                override fun onAdOpened() {
+                    methodChannel.invokeMethod("onAdOpened", null)
+                }
             })
+            .withNativeAdOptions(NativeAdOptions.Builder().build())
             .build()
 
         val request = AdRequest.Builder()
@@ -117,6 +136,12 @@ class AdMobNativePlatformView(
         headlineView.textSize = 15f
         bodyView.textSize = 13f
         ctaView.isClickable = false
+        ctaView.isAllCaps = false
+        iconView.scaleType = ImageView.ScaleType.CENTER_CROP
+        mediaView.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            420,
+        )
 
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -135,6 +160,7 @@ class AdMobNativePlatformView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             )
+            addView(mediaView)
             addView(header)
             addView(bodyView)
             addView(ctaView)
@@ -142,6 +168,7 @@ class AdMobNativePlatformView(
 
         nativeAdView.addView(content)
         nativeAdView.iconView = iconView
+        nativeAdView.mediaView = mediaView
         nativeAdView.headlineView = headlineView
         nativeAdView.bodyView = bodyView
         nativeAdView.callToActionView = ctaView
@@ -152,6 +179,7 @@ class AdMobNativePlatformView(
         bodyView.text = ad.body
         ctaView.text = ad.callToAction
         ad.icon?.drawable?.let { iconView.setImageDrawable(it) }
+        ad.mediaContent?.let { mediaView.mediaContent = it }
         nativeAdView.setNativeAd(ad)
     }
 

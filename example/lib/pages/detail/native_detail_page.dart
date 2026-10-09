@@ -16,6 +16,10 @@ import '../../widgets/native_ad_card.dart';
 /// Native ad detail page. In-App renders structured native assets with a custom
 /// Flutter card; GAM / AdMob / MAX render through the ad-server SDK's native
 /// ad view (a PlatformView) so impressions/clicks track correctly.
+///
+/// The callback list mirrors Prebid's reference test app: the GAM Original-API
+/// native flow surfaces the full `fetchDemand` → custom/unified request →
+/// `onPrimaryAdWin` / `onNativeAdLoaded` → impression/click sequence.
 class NativeDetailPage extends StatefulWidget {
   final TestCase tc;
   const NativeDetailPage({super.key, required this.tc});
@@ -38,43 +42,90 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
 
   bool get _isInApp => widget.tc.integration == DemoIntegration.inApp;
 
-  PrebidBannerAdListener _mediatedListener() => PrebidBannerAdListener(
-    onAdLoaded: () {
-      _tracker.track('onAdLoaded');
-      _log.log('Native', 'Ad loaded');
-    },
-    onAdFailed: (e) {
-      _tracker.track('onAdFailed', e);
-      _log.log('Native', 'Ad failed: $e', level: LogLevel.error);
-    },
-    onAdClicked: () {
-      _tracker.track('onAdClicked');
-      _log.log('Native', 'Ad clicked');
-    },
+  void _track(String event) {
+    _tracker.track(event);
+    _log.log('Native', event);
+  }
+
+  void _trackError(String event, String error) {
+    _tracker.track(event, error);
+    _log.log('Native', '$event: $error', level: LogLevel.error);
+  }
+
+  // ---- Mediated listeners -------------------------------------------------
+
+  PrebidGamNativeAdListener _gamNativeListener() => PrebidGamNativeAdListener(
+    onFetchDemandSuccess: () => _track('fetchDemand success'),
+    onFetchDemandFailed: () => _track('fetchDemand failed'),
+    onCustomAdLoaded: () => _track('custom ad request successful'),
+    onUnifiedAdLoaded: () => _track('unified ad request successful'),
+    onPrimaryAdFailed: (e) => _trackError('primary ad request failed', e),
+    onNativeAdLoaded: () => _track('onNativeAdLoaded called'),
+    onPrimaryAdWinCustom: () => _track('onPrimaryAdWin called (custom)'),
+    onPrimaryAdWinUnified: () => _track('onPrimaryAdWin called (unified)'),
+    onAdImpression: () => _track('onAdImpression'),
+    onAdClicked: () => _track('onAdClicked called'),
   );
 
-  PrebidNativeAdListener _gamNativeListener() => PrebidNativeAdListener(
-    onAdLoaded: (_) {
-      _tracker.track('onAdLoaded');
-      _log.log('Native', 'Ad loaded');
-    },
-    onAdFailed: (e) {
-      _tracker.track('onAdFailed', e);
-      _log.log('Native', 'Ad failed: $e', level: LogLevel.error);
-    },
-    onAdClicked: () {
-      _tracker.track('onAdClicked');
-      _log.log('Native', 'Ad clicked');
-    },
+  PrebidAdMobNativeAdListener _admobNativeListener() =>
+      PrebidAdMobNativeAdListener(
+        onAdLoaded: () => _track('onAdLoaded'),
+        onAdImpression: () => _track('onAdImpression'),
+        onAdClicked: () => _track('onAdClicked'),
+        onAdOpened: () => _track('onAdOpened'),
+        onAdFailed: (e) => _trackError('onAdFailed', e),
+      );
+
+  PrebidBannerAdListener _maxNativeListener() => PrebidBannerAdListener(
+    onAdLoaded: () => _track('onAdLoaded'),
+    onAdFailed: (e) => _trackError('onAdFailed', e),
+    onAdClicked: () => _track('onAdClicked'),
   );
+
+  /// The callback rows shown for the current integration, matching the
+  /// reference test app.
+  List<String> _events() {
+    switch (widget.tc.integration) {
+      case DemoIntegration.gam:
+        return const [
+          'fetchDemand success',
+          'fetchDemand failed',
+          'custom ad request successful',
+          'unified ad request successful',
+          'primary ad request failed',
+          'onNativeAdLoaded called',
+          'onPrimaryAdWin called (custom)',
+          'onPrimaryAdWin called (unified)',
+          'onAdClicked called',
+          'onAdImpression',
+        ];
+      case DemoIntegration.admob:
+        return const [
+          'onAdLoaded',
+          'onAdImpression',
+          'onAdClicked',
+          'onAdOpened',
+          'onAdFailed',
+        ];
+      case DemoIntegration.max:
+        return const ['onAdLoaded', 'onAdFailed', 'onAdClicked'];
+      case DemoIntegration.inApp:
+      case DemoIntegration.original:
+        return const [
+          'onAdLoaded',
+          'onAdFailed',
+          'onAdImpression',
+          'onAdClicked',
+        ];
+    }
+  }
 
   Future<void> _load() async {
     _tracker.reset();
     await PrebidMobile.clearStoredAuctionResponse();
     _log.log(
       'Native',
-      'Loading ${widget.tc.integration.label}: '
-          '${widget.tc.configId}',
+      'Loading ${widget.tc.integration.label}: ${widget.tc.configId}',
     );
 
     if (!_isInApp) {
@@ -119,22 +170,13 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
       ],
       listener: PrebidNativeAdListener(
         onAdLoaded: (response) {
-          _tracker.track('onAdLoaded');
-          _log.log('Native', 'Ad loaded: title="${response.title}"');
+          _track('onAdLoaded');
+          _log.log('Native', 'title="${response.title}"');
           setState(() => _response = response);
         },
-        onAdFailed: (e) {
-          _tracker.track('onAdFailed', e);
-          _log.log('Native', 'Ad failed: $e', level: LogLevel.error);
-        },
-        onAdImpression: () {
-          _tracker.track('onAdImpression');
-          _log.log('Native', 'Ad impression tracked');
-        },
-        onAdClicked: () {
-          _tracker.track('onAdClicked');
-          _log.log('Native', 'Ad clicked');
-        },
+        onAdFailed: (e) => _trackError('onAdFailed', e),
+        onAdImpression: () => _track('onAdImpression'),
+        onAdClicked: () => _track('onAdClicked'),
       ),
     );
     _ad!.loadAd();
@@ -148,46 +190,20 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
         key: key,
         configId: widget.tc.configId,
         gamAdUnitId: adUnitId,
-        assets: const [
-          NativeAsset.title(length: 90, required: true),
-          NativeAsset.image(
-            imageType: NativeImageType.icon,
-            widthMin: 20,
-            heightMin: 20,
-            required: true,
-          ),
-          NativeAsset.image(
-            imageType: NativeImageType.main,
-            widthMin: 200,
-            heightMin: 200,
-            required: true,
-          ),
-          NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
-          NativeAsset.data(dataType: NativeDataType.desc, required: true),
-          NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
-        ],
-        eventTrackers: const [
-          NativeEventTracker(
-            eventType: NativeEventType.impression,
-            methods: [
-              NativeEventTrackingMethod.image,
-              NativeEventTrackingMethod.js,
-            ],
-          ),
-        ],
+        customFormatId: widget.tc.customFormatId,
         listener: _gamNativeListener(),
       ),
       DemoIntegration.admob => PrebidAdMobNativeAd(
         key: key,
         configId: widget.tc.configId,
         adMobAdUnitId: adUnitId,
-        listener: _mediatedListener(),
+        listener: _admobNativeListener(),
       ),
       DemoIntegration.max => PrebidMaxNativeAd(
         key: key,
         configId: widget.tc.configId,
         maxAdUnitId: adUnitId,
-        listener: _mediatedListener(),
+        listener: _maxNativeListener(),
       ),
       DemoIntegration.inApp ||
       DemoIntegration.original => const SizedBox.shrink(),
@@ -242,17 +258,7 @@ class _NativeDetailPageState extends State<NativeDetailPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              EventCounterList(
-                tracker: _tracker,
-                events: _isInApp
-                    ? const [
-                        'onAdLoaded',
-                        'onAdFailed',
-                        'onAdImpression',
-                        'onAdClicked',
-                      ]
-                    : const ['onAdLoaded', 'onAdFailed', 'onAdClicked'],
-              ),
+              EventCounterList(tracker: _tracker, events: _events()),
             ],
           ),
         ),

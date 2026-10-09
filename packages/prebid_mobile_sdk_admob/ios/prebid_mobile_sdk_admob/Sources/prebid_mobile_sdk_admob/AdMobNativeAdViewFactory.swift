@@ -35,12 +35,14 @@ class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate {
+class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate,
+    GoogleMobileAds.NativeAdDelegate {
 
     private let nativeAdView = GoogleMobileAds.NativeAdView()
     private let methodChannel: FlutterMethodChannel
 
     private let iconView = UIImageView()
+    private let mediaView = MediaView()
     private let headlineLabel = UILabel()
     private let bodyLabel = UILabel()
     private let ctaButton = UIButton(type: .system)
@@ -100,6 +102,8 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
     private func buildLayout() {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
+        mediaView.translatesAutoresizingMaskIntoConstraints = false
+        mediaView.contentMode = .scaleAspectFill
         headlineLabel.font = .boldSystemFont(ofSize: 15)
         headlineLabel.numberOfLines = 2
         bodyLabel.font = .systemFont(ofSize: 13)
@@ -115,9 +119,10 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
         NSLayoutConstraint.activate([
             iconView.widthAnchor.constraint(equalToConstant: 40),
             iconView.heightAnchor.constraint(equalToConstant: 40),
+            mediaView.heightAnchor.constraint(equalToConstant: 180),
         ])
 
-        let stack = UIStackView(arrangedSubviews: [header, bodyLabel, ctaButton])
+        let stack = UIStackView(arrangedSubviews: [mediaView, header, bodyLabel, ctaButton])
         stack.axis = .vertical
         stack.spacing = 8
         stack.alignment = .fill
@@ -135,6 +140,7 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
 
         // Register asset views with the native ad view so clicks/impressions work.
         nativeAdView.iconView = iconView
+        nativeAdView.mediaView = mediaView
         nativeAdView.headlineView = headlineLabel
         nativeAdView.bodyView = bodyLabel
         nativeAdView.callToActionView = ctaButton
@@ -157,6 +163,8 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
         bodyLabel.text = nativeAd.body
         ctaButton.setTitle(nativeAd.callToAction, for: .normal)
         iconView.image = nativeAd.icon?.image
+        mediaView.mediaContent = nativeAd.mediaContent
+        nativeAd.delegate = self
         nativeAdView.nativeAd = nativeAd
 
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
@@ -170,5 +178,19 @@ class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDele
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
         methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
+    }
+
+    // MARK: - GoogleMobileAds.NativeAdDelegate
+
+    func nativeAdDidRecordImpression(_ nativeAd: GoogleMobileAds.NativeAd) {
+        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+    }
+
+    func nativeAdDidRecordClick(_ nativeAd: GoogleMobileAds.NativeAd) {
+        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+    }
+
+    func nativeAdWillPresentScreen(_ nativeAd: GoogleMobileAds.NativeAd) {
+        methodChannel.invokeMethod("onAdOpened", arguments: nil)
     }
 }

@@ -22,6 +22,11 @@ class TestCase {
   /// unit id. `null` for pure In-App rendering (no primary ad server).
   final String? adUnitId;
 
+  /// GAM custom-format (native template) id that carries Prebid demand for GAM
+  /// native custom-template cases (e.g. `11934135`). `null` for unified GAM
+  /// native and all non-GAM-native cases.
+  final String? customFormatId;
+
   final int width;
   final int height;
 
@@ -32,6 +37,7 @@ class TestCase {
     required this.format,
     this.integration = DemoIntegration.inApp,
     this.adUnitId,
+    this.customFormatId,
     this.width = 320,
     this.height = 50,
   });

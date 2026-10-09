@@ -23,9 +23,12 @@ enum PrebidErrorFormatter {
 /// `UIApplication.keyWindow` is deprecated and nil in multi-scene apps).
 enum PrebidPresenter {
     static func topViewController() -> UIViewController? {
-        let windows = UIApplication.shared.connectedScenes
-            .filter { $0.activationState == .foregroundActive }
-            .compactMap { $0 as? UIWindowScene }
+        // Prefer the active scene, but fall back to an inactive one: the
+        // scene is inactive while a system alert (e.g. ATT) or Notification
+        // Center is over the app, and when returning from the background.
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windows = (scenes.filter { $0.activationState == .foregroundActive }
+            + scenes.filter { $0.activationState == .foregroundInactive })
             .flatMap { $0.windows }
         let window = windows.first { $0.isKeyWindow } ?? windows.first
         var top = window?.rootViewController
@@ -68,7 +71,8 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     private var interstitialAds: [Int64: InterstitialRenderingAdUnit] = [:]
     private var nativeRequests: [Int64: NativeRequest] = [:]
     private var nativeAdResults: [Int64: NativeAd] = [:]
-    
+    private let nativeAdStore = NativeAdStore()
+    private var multiformatHandler: MultiformatAdHostApiHandler?    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PrebidMobileFlutterPlugin()
         instance.registrar = registrar
@@ -90,6 +94,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         let multiformatHandler = MultiformatAdHostApiHandler(
             flutterApi: MultiformatFlutterApi(binaryMessenger: registrar.messenger())
         )
+        instance.multiformatHandler = multiformatHandler
         MultiformatAdHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: multiformatHandler)
         
         // Register in-stream video handler
@@ -101,8 +106,21 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         registrar.register(bannerFactory, withId: "prebid_mobile_flutter/banner_ad")
 
         // Register native ad PlatformView factory (renders + tracks In-App native)
-        let nativeFactory = NativeAdViewFactory(messenger: registrar.messenger(), flutterApi: instance.flutterApi!)
+        let nativeFactory = NativeAdViewFactory(messenger: registrar.messenger(), store: instance.nativeAdStore)
         registrar.register(nativeFactory, withId: "prebid_mobile_flutter/native_ad")
+
+        // Published so the engine calls detachFromEngine(for:) on teardown.
+        registrar.publish(instance)
+    }
+
+    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+        // Stop auto-refresh and viewability timers, which would otherwise
+        // keep running for the rest of the process.
+        multiformatHandler?.destroyAll()
+        nativeRequests.removeAll()
+        nativeAdResults.removeAll()
+        nativeAdStore.removeAll()
+        interstitialAds.removeAll()
     }
     
     // =========================================================================
@@ -163,11 +181,13 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     
     func setStoredAuctionResponse(response: String) throws {
         Prebid.shared.storedAuctionResponse = response
+        StoredAuctionResponseKeeper.remember(response)
     }
     
     func clearStoredAuctionResponse() throws {
         // Must be nil, not "" — the SDK serializes an empty string into the request.
         Prebid.shared.storedAuctionResponse = nil
+        StoredAuctionResponseKeeper.remember(nil)
     }
     
     func addStoredBidResponse(bidder: String, responseId: String) throws {
@@ -469,7 +489,7 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
         interstitialAds.removeValue(forKey: adId)
         nativeRequests.removeValue(forKey: adId)
         nativeAdResults.removeValue(forKey: adId)
-        NativeAdStore.remove(adId)
+        nativeAdStore.remove(adId)
     }
     
     // =========================================================================
@@ -564,7 +584,12 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
                     return
                 }
                 self.nativeAdResults[adId] = nativeAd
-                NativeAdStore.ads[adId] = nativeAd
+                if let flutterApi = self.flutterApi {
+                    self.nativeAdStore.put(
+                        adId, ad: nativeAd,
+                        delegate: NativeAdEventForwarder(adId: adId, flutterApi: flutterApi)
+                    )
+                }
                 let nativeData = NativeAdData(
                     title: nativeAd.title,
                     text: nativeAd.text,
@@ -956,6 +981,8 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
     }
 
     func setAutoRefreshInterval(adId: Int64, seconds: Int64) throws {
+        // Prebid iOS ignores intervals under 30 s; clamp like Android.
+        let seconds = min(max(seconds, 30), 120)
         refreshSeconds[adId] = seconds
         adUnits[adId]?.setAutoRefreshMillis(time: Double(seconds) * 1000)
     }
@@ -987,6 +1014,10 @@ private class MultiformatAdHostApiHandler: MultiformatAdHostApi {
     func destroy(adId: Int64) throws {
         refreshSeconds.removeValue(forKey: adId)
         adUnits.removeValue(forKey: adId)?.stopAutoRefresh()
+    }
+
+    func destroyAll() {
+        adUnits.keys.forEach { try? destroy(adId: $0) }
     }
 }
 

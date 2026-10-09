@@ -23,6 +23,10 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
 
     private val interstitialAds = mutableMapOf<Long, org.prebid.mobile.api.rendering.InterstitialAdUnit>()
     private lateinit var rewardedApi: RewardedAdHostApiImpl
+    private lateinit var nativeApi: NativeAdHostApiImpl
+    private lateinit var multiformatApi: MultiformatAdHostApiImpl
+    private lateinit var instreamApi: InstreamVideoAdHostApiImpl
+    private val nativeAdStore = NativeAdStore()
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -35,14 +39,14 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         InterstitialAdHostApi.setUp(binding.binaryMessenger, this)
         rewardedApi = RewardedAdHostApiImpl(flutterApi, this)
         RewardedAdHostApi.setUp(binding.binaryMessenger, rewardedApi)
-        NativeAdHostApi.setUp(binding.binaryMessenger, NativeAdHostApiImpl(flutterApi))
+        nativeApi = NativeAdHostApiImpl(flutterApi, nativeAdStore)
+        NativeAdHostApi.setUp(binding.binaryMessenger, nativeApi)
 
         // Register multiformat handler as separate class
-        MultiformatAdHostApi.setUp(
-            binding.binaryMessenger,
-            MultiformatAdHostApiImpl(MultiformatFlutterApi(binding.binaryMessenger), this),
-        )
-        InstreamVideoAdHostApi.setUp(binding.binaryMessenger, InstreamVideoAdHostApiImpl())
+        multiformatApi = MultiformatAdHostApiImpl(MultiformatFlutterApi(binding.binaryMessenger), this)
+        MultiformatAdHostApi.setUp(binding.binaryMessenger, multiformatApi)
+        instreamApi = InstreamVideoAdHostApiImpl()
+        InstreamVideoAdHostApi.setUp(binding.binaryMessenger, instreamApi)
 
         // Register the BannerAd PlatformView factory
         binding.platformViewRegistry.registerViewFactory(
@@ -51,7 +55,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         )
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_flutter/native_ad",
-            NativeAdViewFactory(binding.binaryMessenger, flutterApi)
+            NativeAdViewFactory(binding.binaryMessenger, flutterApi, nativeAdStore)
         )
     }
 
@@ -66,6 +70,13 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         PrebidMobile.setEventDelegate(null)
         eventDelegate = null
         destroyFullscreenAds(reason = null)
+        // Stop auto-refresh timers and viewability polls, which would
+        // otherwise keep running (and the engine's objects alive) for the
+        // rest of the process.
+        nativeApi.destroyAll()
+        multiformatApi.destroyAll()
+        instreamApi.destroyAll()
+        nativeAdStore.clear()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -116,6 +127,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
             callback(Result.success(InitializationResult(status = "succeeded")))
             return
         }
+        // Process-wide, like Prebid's init state: an init already running for
+        // another engine also answers this one.
         pendingInitCallbacks += callback
         if (pendingInitCallbacks.size > 1) return
         PrebidMobile.initializeSdk(context, prebidServerUrl) { status ->
@@ -133,8 +146,6 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         }
     }
 
-    private val pendingInitCallbacks =
-        mutableListOf<(Result<InitializationResult>) -> Unit>()
 
     override fun setTimeoutMillis(timeoutMillis: Long) {
         PrebidMobile.setTimeoutMillis(timeoutMillis.toInt())
@@ -455,6 +466,7 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
         // events under this ad id.
         interstitialAds.remove(adId)?.destroy()
         val act = activity ?: return sendAdFailed(adId, NO_ACTIVITY)
+        if (!PrebidMobile.isSdkInitialized()) return sendAdFailed(adId, NOT_INITIALIZED)
 
         // Build EnumSet for ad formats
         val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
@@ -522,6 +534,14 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     internal companion object {
         const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
         const val NOT_READY = "The ad is not loaded"
+        const val NOT_INITIALIZED = "The Prebid SDK is not initialized"
+
+        /// Result code when a fetch runs before the SDK has initialized:
+        /// Prebid Android then drops the request without calling back.
+        const val NOT_INITIALIZED_CODE = "prebidSdkNotInitialized"
+
+        private val pendingInitCallbacks =
+            mutableListOf<(Result<InitializationResult>) -> Unit>()
     }
 }
 
@@ -540,6 +560,9 @@ class RewardedAdHostApiImpl(
         rewardedAds.remove(adId)?.destroy()
         val act = plugin.getActivity()
             ?: return plugin.sendAdFailed(adId, PrebidMobileFlutterPlugin.NO_ACTIVITY)
+        if (!PrebidMobile.isSdkInitialized()) {
+            return plugin.sendAdFailed(adId, PrebidMobileFlutterPlugin.NOT_INITIALIZED)
+        }
         val adUnit = org.prebid.mobile.api.rendering.RewardedAdUnit(act, configId)
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
         controls?.applyTo(adUnit)
@@ -605,13 +628,21 @@ class RewardedAdHostApiImpl(
 // =========================================================================
 
 class NativeAdHostApiImpl(
-    private val flutterApi: AdFlutterApi
+    private val flutterApi: AdFlutterApi,
+    private val store: NativeAdStore,
 ) : NativeAdHostApi {
 
     private val nativeAds = mutableMapOf<Long, org.prebid.mobile.NativeAdUnit>()
 
     override fun loadAd(adId: Long, config: NativeAdRequestConfig) {
         destroy(adId)
+        if (!PrebidMobile.isSdkInitialized()) {
+            flutterApi.onAdEvent(AdEvent(
+                adId = adId, eventName = "onAdFailed",
+                error = PrebidMobileFlutterPlugin.NOT_INITIALIZED,
+            )) {}
+            return
+        }
         val nativeAdUnit = org.prebid.mobile.NativeAdUnit(config.configId)
 
         // Set context
@@ -682,7 +713,7 @@ class NativeAdHostApiImpl(
                 if (cacheId != null) {
                     val nativeAd = org.prebid.mobile.PrebidNativeAd.create(cacheId)
                     if (nativeAd != null) {
-                        NativeAdStore.ads[adId] = nativeAd
+                        store.put(adId, nativeAd)
                         val nativeData = NativeAdData(
                             title = nativeAd.title,
                             text = nativeAd.description,
@@ -721,7 +752,11 @@ class NativeAdHostApiImpl(
 
     override fun destroy(adId: Long) {
         nativeAds.remove(adId)?.destroy()
-        NativeAdStore.remove(adId)
+        store.remove(adId)
+    }
+
+    fun destroyAll() {
+        nativeAds.keys.toList().forEach(::destroy)
     }
 }
 
@@ -742,7 +777,14 @@ class MultiformatAdHostApiImpl(
         callback: (Result<MultiformatBidResult>) -> Unit
     ) {
         cancelRefresh(adId)
-        adUnits.remove(adId)?.destroy()
+        adUnits.remove(adId)?.let(::release)
+        if (!PrebidMobile.isSdkInitialized()) {
+            callback(Result.success(MultiformatBidResult(
+                resultCode = PrebidMobileFlutterPlugin.NOT_INITIALIZED_CODE,
+                targetingKeywords = emptyMap(),
+            )))
+            return
+        }
         val adUnit = org.prebid.mobile.api.original.PrebidAdUnit(config.configId)
         adUnits[adId] = adUnit
         // Must be set before the auction: Prebid starts the tracker when the
@@ -838,13 +880,24 @@ class MultiformatAdHostApiImpl(
         }
 
         requests[adId] = request
+        inFlight += adUnit
         adUnit.fetchDemand(request) { bidInfo ->
             val result = bidInfo.toMultiformatResult()
             mainHandler.post {
+                inFlight -= adUnit
                 callback(Result.success(result))
-                scheduleRefresh(adId)
+                if (adUnits[adId] === adUnit) scheduleRefresh(adId) else adUnit.destroy()
             }
         }
+    }
+
+    // Units with an auction running. Destroying one clears its result
+    // listener, so the pending Dart Future would never complete: such a unit
+    // is destroyed once its auction returns (iOS keeps it alive likewise).
+    private val inFlight = mutableSetOf<org.prebid.mobile.api.original.PrebidAdUnit>()
+
+    private fun release(adUnit: org.prebid.mobile.api.original.PrebidAdUnit) {
+        if (adUnit !in inFlight) adUnit.destroy()
     }
 
     // Auto-refresh. Prebid Android 3.4's PrebidAdUnit can't refresh: it
@@ -862,10 +915,16 @@ class MultiformatAdHostApiImpl(
             override fun run() {
                 val adUnit = adUnits[adId] ?: return
                 val request = requests[adId] ?: return
+                inFlight += adUnit
                 adUnit.fetchDemand(request) { bidInfo ->
                     val result = bidInfo.toMultiformatResult()
                     mainHandler.post {
-                        if (adUnits[adId] === adUnit) flutterApi.onDemandRefreshed(adId, result) {}
+                        inFlight -= adUnit
+                        if (adUnits[adId] === adUnit) {
+                            flutterApi.onDemandRefreshed(adId, result) {}
+                        } else {
+                            adUnit.destroy()
+                        }
                     }
                 }
                 mainHandler.postDelayed(this, seconds * 1000L)
@@ -881,7 +940,7 @@ class MultiformatAdHostApiImpl(
 
     override fun setAutoRefreshInterval(adId: Long, seconds: Long) {
         // Same bounds as Prebid's auto-refresh.
-        refreshSeconds[adId] = seconds.toInt().coerceIn(30, 120)
+        refreshSeconds[adId] = seconds.coerceIn(30, 120).toInt()
         if (refreshTasks.containsKey(adId)) scheduleRefresh(adId)
     }
 
@@ -905,7 +964,11 @@ class MultiformatAdHostApiImpl(
         cancelRefresh(adId)
         refreshSeconds.remove(adId)
         requests.remove(adId)
-        adUnits.remove(adId)?.destroy()
+        adUnits.remove(adId)?.let(::release)
+    }
+
+    fun destroyAll() {
+        adUnits.keys.toList().forEach(::destroy)
     }
 
     private fun org.prebid.mobile.api.data.BidInfo.toMultiformatResult() = MultiformatBidResult(
@@ -940,6 +1003,14 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         config: InstreamVideoAdRequestConfig,
         callback: (Result<MultiformatBidResult>) -> Unit
     ) {
+        adUnits.remove(adId)?.let(::release)
+        if (!PrebidMobile.isSdkInitialized()) {
+            callback(Result.success(MultiformatBidResult(
+                resultCode = PrebidMobileFlutterPlugin.NOT_INITIALIZED_CODE,
+                targetingKeywords = emptyMap(),
+            )))
+            return
+        }
         val adUnit = org.prebid.mobile.InStreamVideoAdUnit(
             config.configId,
             config.width.toInt(),
@@ -948,7 +1019,10 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         config.videoConfig?.let { adUnit.videoParameters = it.toVideoParameters() }
         adUnits[adId] = adUnit
 
+        inFlight += adUnit
         adUnit.fetchDemand { bidInfo ->
+            inFlight -= adUnit
+            if (adUnits[adId] !== adUnit) adUnit.destroy()
             val resultStr = bidInfo.dartResultCode()
             callback(Result.success(MultiformatBidResult(
                 resultCode = resultStr,
@@ -959,8 +1033,20 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         }
     }
 
+    // Units with an auction running are destroyed once it returns, so the
+    // pending Dart Future still completes (see MultiformatAdHostApiImpl).
+    private val inFlight = mutableSetOf<org.prebid.mobile.InStreamVideoAdUnit>()
+
+    private fun release(adUnit: org.prebid.mobile.InStreamVideoAdUnit) {
+        if (adUnit !in inFlight) adUnit.destroy()
+    }
+
     override fun destroy(adId: Long) {
-        adUnits.remove(adId)
+        adUnits.remove(adId)?.let(::release)
+    }
+
+    fun destroyAll() {
+        adUnits.keys.toList().forEach(::destroy)
     }
 }
 

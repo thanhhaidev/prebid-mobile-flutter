@@ -56,9 +56,11 @@ Initial release of the `prebid_mobile_sdk` plugin.
   - OM SDK partner: `setOmidPartnerName()`, `setOmidPartnerVersion()`
   - SKAdNetwork (iOS): `setSourceApp()`, `setItunesId()`
   - Location: `setUserLatLng()`, `setLocationPrecision()`
-- **Error Handling**
-  - `PrebidException` with typed `PrebidErrorCode` (`initializationFailed`, `adLoadFailed`, `timeout`, etc.)
+- **Error Handling** — load, show and render failures arrive through the listeners' `onAdFailed`; host calls return `Future`s that complete once the native side has applied the call
 - **Fullscreen lifecycle** — reloading an interstitial / rewarded replaces the previous ad; `show()` presents from the top-most view controller and reports `onAdFailed` when the ad isn't loaded or can't be presented; native-side errors reach the caller's `Future`
+- **Requests before initialization** — Prebid Android drops a request made before `initializeSdk` completes without calling back; the plugin reports it instead (`onAdFailed`, or the `prebidSdkNotInitialized` result code for `fetchDemand`)
+- **Widget updates** — a banner rebuilt with a different configuration gets a new native view, and a swapped `PrebidBannerAdController` is re-attached; `PrebidNativeAdView` follows a different `ad`, and a reloaded `PrebidNativeAd` re-renders in the view already on screen
+- **Native defaults** — `PrebidNativeAd` requests title, main image, icon, sponsored, description and call to action when `assets` is null (`PrebidNativeAd.defaultAssets`)
 - **Ad expiration** (Prebid 3.4) — `onAdExpired` on banner, interstitial, rewarded and native listeners when the bid's `exp` elapses
 - **Mediation impressions** — `onAdImpression` on the banner / interstitial / rewarded listeners, fired by the AdMob and MAX companion packages
 - **Companion helpers** — `NativeAsset.toMap()`, `NativeEventTracker.toMap()`, `PrebidFullscreenControls.toMap()` and `PrebidBannerAdController.attachChannel()` used by the GAM / AdMob / MAX packages

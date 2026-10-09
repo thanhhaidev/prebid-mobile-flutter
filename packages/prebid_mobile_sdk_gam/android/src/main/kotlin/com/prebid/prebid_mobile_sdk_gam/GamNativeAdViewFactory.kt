@@ -75,6 +75,7 @@ class GamNativePlatformView(
     private var adUnit: NativeAdUnit? = null
     private var adLoader: AdLoader? = null
     private var unifiedNativeAd: NativeAd? = null
+    private var customFormatAd: NativeCustomFormatAd? = null
     private var prebidNativeAd: PrebidNativeAd? = null
 
     // Set once Flutter disposes the view: async SDK callbacks that land later
@@ -154,6 +155,8 @@ class GamNativePlatformView(
                         customAd.destroy()
                         return@forCustomFormatAd
                     }
+                    customFormatAd?.destroy()
+                    customFormatAd = customAd
                     send("customAdLoaded")
                     AdViewUtils.findNative(
                         customAd,
@@ -165,11 +168,13 @@ class GamNativePlatformView(
                             }
 
                             override fun onPrebidNativeNotFound() {
+                                if (disposed) return
                                 send("primaryAdWinCustom")
                                 renderCustomTemplate(customAd)
                             }
 
                             override fun onPrebidNativeNotValid() {
+                                if (disposed) return
                                 send("primaryAdWinCustom")
                                 renderCustomTemplate(customAd)
                             }
@@ -446,5 +451,6 @@ class GamNativePlatformView(
         mainHandler.removeCallbacksAndMessages(null)
         adUnit?.destroy()
         unifiedNativeAd?.destroy()
+        customFormatAd?.destroy()
     }
 }

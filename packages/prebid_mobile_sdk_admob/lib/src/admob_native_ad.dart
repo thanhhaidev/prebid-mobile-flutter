@@ -138,8 +138,8 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
   void _onCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_admob/native_$viewId');
     _channel = channel;
-    final l = widget.listener;
     channel.setMethodCallHandler((call) async {
+      final l = widget.listener;
       switch (call.method) {
         case 'onAdSize':
           final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();

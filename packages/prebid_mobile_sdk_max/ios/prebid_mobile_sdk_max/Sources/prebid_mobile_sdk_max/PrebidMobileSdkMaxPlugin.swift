@@ -6,9 +6,17 @@ import UIKit
 /// the MAX interstitial method channel.
 public class PrebidMobileSdkMaxPlugin: NSObject, FlutterPlugin {
 
-    /// Retains the interstitial and rewarded managers for the plugin's lifetime.
-    private static var interstitialManager: MaxInterstitialManager?
-    private static var rewardedManager: MaxRewardedManager?
+    /// Each engine's managers, kept by its plugin instance (published to the
+    /// registrar): shared statics would be replaced by a second engine and
+    /// the first engine's calls would never be answered.
+    private let interstitialManager: MaxInterstitialManager
+    private let rewardedManager: MaxRewardedManager
+
+    private init(messenger: FlutterBinaryMessenger) {
+        interstitialManager = MaxInterstitialManager(messenger: messenger)
+        rewardedManager = MaxRewardedManager(messenger: messenger)
+        super.init()
+    }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let bannerFactory = MaxBannerAdViewFactory(messenger: registrar.messenger())
@@ -17,7 +25,6 @@ public class PrebidMobileSdkMaxPlugin: NSObject, FlutterPlugin {
         let nativeFactory = MaxNativeAdViewFactory(messenger: registrar.messenger())
         registrar.register(nativeFactory, withId: "prebid_mobile_sdk_max/native")
 
-        interstitialManager = MaxInterstitialManager(messenger: registrar.messenger())
-        rewardedManager = MaxRewardedManager(messenger: registrar.messenger())
+        registrar.publish(PrebidMobileSdkMaxPlugin(messenger: registrar.messenger()))
     }
 }

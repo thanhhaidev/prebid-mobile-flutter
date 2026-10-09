@@ -40,7 +40,7 @@ class PrebidTargeting {
   /// Pass `true` to indicate the user is a child under 13, `false` otherwise,
   /// or `null` to clear the flag (let the SDK/server decide).
   static Future<void> setSubjectToCOPPA(bool? subject) async {
-    api.setSubjectToCOPPA(subject);
+    await api.setSubjectToCOPPA(subject);
   }
 
   /// Get the current COPPA subject status.
@@ -59,7 +59,7 @@ class PrebidTargeting {
   /// Pass `true` for users in the EU/EEA, `false` for users outside,
   /// or `null` to clear the flag.
   static Future<void> setSubjectToGDPR(bool? subject) async {
-    api.setSubjectToGDPR(subject);
+    await api.setSubjectToGDPR(subject);
   }
 
   /// Get the current GDPR subject status.
@@ -72,7 +72,7 @@ class PrebidTargeting {
   /// This is the Base64-encoded consent string obtained from a CMP
   /// (Consent Management Platform).
   static Future<void> setGDPRConsentString(String? consent) async {
-    api.setGDPRConsentString(consent);
+    await api.setGDPRConsentString(consent);
   }
 
   /// Get the current GDPR consent string.
@@ -89,7 +89,7 @@ class PrebidTargeting {
   /// This is a binary string where each character represents consent
   /// for a specific TCFv2 purpose (e.g., `"1"` = consented, `"0"` = not).
   static Future<void> setPurposeConsents(String? consents) async {
-    api.setPurposeConsents(consents);
+    await api.setPurposeConsents(consents);
   }
 
   /// Get the current TCFv2 purpose consents string.
@@ -119,22 +119,22 @@ class PrebidTargeting {
   ///
   /// Keywords are included in the `user.keywords` field of the OpenRTB request.
   static Future<void> addUserKeyword(String keyword) async {
-    api.addUserKeyword(keyword);
+    await api.addUserKeyword(keyword);
   }
 
   /// Add multiple user keywords for targeting.
   static Future<void> addUserKeywords(Set<String> keywords) async {
-    api.addUserKeywords(keywords.toList());
+    await api.addUserKeywords(keywords.toList());
   }
 
   /// Remove a single user keyword.
   static Future<void> removeUserKeyword(String keyword) async {
-    api.removeUserKeyword(keyword);
+    await api.removeUserKeyword(keyword);
   }
 
   /// Clear all user keywords.
   static Future<void> clearUserKeywords() async {
-    api.clearUserKeywords();
+    await api.clearUserKeywords();
   }
 
   /// Retrieve all currently set user keywords.
@@ -154,22 +154,22 @@ class PrebidTargeting {
   /// methods are no-ops there (a warning is logged). For both platforms, set
   /// `app.keywords` via [setGlobalOrtbConfig] instead.
   static Future<void> addAppKeyword(String keyword) async {
-    api.addAppKeyword(keyword);
+    await api.addAppKeyword(keyword);
   }
 
   /// Add multiple app keywords for targeting.
   static Future<void> addAppKeywords(Set<String> keywords) async {
-    api.addAppKeywords(keywords.toList());
+    await api.addAppKeywords(keywords.toList());
   }
 
   /// Remove a single app keyword.
   static Future<void> removeAppKeyword(String keyword) async {
-    api.removeAppKeyword(keyword);
+    await api.removeAppKeyword(keyword);
   }
 
   /// Clear all app keywords.
   static Future<void> clearAppKeywords() async {
-    api.clearAppKeywords();
+    await api.clearAppKeywords();
   }
 
   // ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ class PrebidTargeting {
     required String key,
     required String value,
   }) async {
-    api.addAppExtData(key, value);
+    await api.addAppExtData(key, value);
   }
 
   /// Replace all ext data values for a given key.
@@ -199,17 +199,17 @@ class PrebidTargeting {
     required String key,
     required Set<String> value,
   }) async {
-    api.updateAppExtData(key, value.toList());
+    await api.updateAppExtData(key, value.toList());
   }
 
   /// Remove all app ext data for a given key.
   static Future<void> removeAppExtData(String key) async {
-    api.removeAppExtData(key);
+    await api.removeAppExtData(key);
   }
 
   /// Clear all app ext data entries.
   static Future<void> clearAppExtData() async {
-    api.clearAppExtData();
+    await api.clearAppExtData();
   }
 
   // ---------------------------------------------------------------------------
@@ -221,21 +221,21 @@ class PrebidTargeting {
   /// Only bidders in the access control list will receive the data
   /// from [addAppExtData] in their bid requests.
   static Future<void> addBidderToAccessControlList(String bidderName) async {
-    api.addBidderToAccessControlList(bidderName);
+    await api.addBidderToAccessControlList(bidderName);
   }
 
   /// Revoke a bidder's access to first-party data.
   static Future<void> removeBidderFromAccessControlList(
     String bidderName,
   ) async {
-    api.removeBidderFromAccessControlList(bidderName);
+    await api.removeBidderFromAccessControlList(bidderName);
   }
 
   /// Clear the entire access control list.
   ///
   /// After calling this, no bidders will have explicit access to first-party data.
   static Future<void> clearAccessControlList() async {
-    api.clearAccessControlList();
+    await api.clearAccessControlList();
   }
 
   // ---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ class PrebidTargeting {
   ///
   /// Pass `null` to clear the configuration.
   static Future<void> setGlobalOrtbConfig(String? ortbConfig) async {
-    api.setGlobalOrtbConfig(ortbConfig);
+    await api.setGlobalOrtbConfig(ortbConfig);
   }
 
   /// Get the current global OpenRTB configuration JSON string.
@@ -274,28 +274,28 @@ class PrebidTargeting {
     'Not sent by Prebid 3.4. Use setGlobalOrtbConfig with app.content.url.',
   )
   static Future<void> setContentUrl(String? url) async {
-    api.setContentUrl(url);
+    await api.setContentUrl(url);
   }
 
   /// Set the publisher name.
   ///
   /// Maps to `app.publisher.name` in the OpenRTB request.
   static Future<void> setPublisherName(String? name) async {
-    api.setPublisherName(name);
+    await api.setPublisherName(name);
   }
 
   /// Set the app store URL.
   ///
   /// Maps to `app.storeurl` in the OpenRTB request.
   static Future<void> setStoreUrl(String? url) async {
-    api.setStoreUrl(url);
+    await api.setStoreUrl(url);
   }
 
   /// Set the app domain.
   ///
   /// Maps to `app.domain` in the OpenRTB request.
   static Future<void> setDomain(String? domain) async {
-    api.setDomain(domain);
+    await api.setDomain(domain);
   }
 
   // ---------------------------------------------------------------------------
@@ -307,7 +307,7 @@ class PrebidTargeting {
   /// The string follows the IAB US Privacy String format (e.g., `"1YNN"`).
   /// Pass `null` to clear.
   static Future<void> setUSPrivacyString(String? usPrivacy) async {
-    api.setUSPrivacyString(usPrivacy);
+    await api.setUSPrivacyString(usPrivacy);
   }
 
   /// Get the current US Privacy String.
@@ -327,7 +327,7 @@ class PrebidTargeting {
     required String key,
     required String value,
   }) async {
-    api.addUserExtData(key, value);
+    await api.addUserExtData(key, value);
   }
 
   /// Replace all user ext data values for a given key.
@@ -335,17 +335,17 @@ class PrebidTargeting {
     required String key,
     required Set<String> value,
   }) async {
-    api.updateUserExtData(key, value.toList());
+    await api.updateUserExtData(key, value.toList());
   }
 
   /// Remove all user ext data for a given key.
   static Future<void> removeUserExtData(String key) async {
-    api.removeUserExtData(key);
+    await api.removeUserExtData(key);
   }
 
   /// Clear all user ext data entries.
   static Future<void> clearUserExtData() async {
-    api.clearUserExtData();
+    await api.clearUserExtData();
   }
 
   // ---------------------------------------------------------------------------
@@ -365,12 +365,12 @@ class PrebidTargeting {
 
   /// OM SDK partner name sent in `source.ext.omidpn`.
   static Future<void> setOmidPartnerName(String? name) async {
-    api.setOmidPartnerName(name);
+    await api.setOmidPartnerName(name);
   }
 
   /// OM SDK partner version sent in `source.ext.omidpv`.
   static Future<void> setOmidPartnerVersion(String? version) async {
-    api.setOmidPartnerVersion(version);
+    await api.setOmidPartnerVersion(version);
   }
 
   // ---------------------------------------------------------------------------
@@ -379,12 +379,12 @@ class PrebidTargeting {
 
   /// Sets the user's location (`user.geo`).
   static Future<void> setUserLatLng(double latitude, double longitude) async {
-    api.setUserLatLng(latitude, longitude);
+    await api.setUserLatLng(latitude, longitude);
   }
 
   /// Number of decimal places kept when rounding device / user coordinates.
   /// `null` sends full precision.
   static Future<void> setLocationPrecision(int? precision) async {
-    api.setLocationPrecision(precision);
+    await api.setLocationPrecision(precision);
   }
 }

@@ -637,30 +637,23 @@ await PrebidMobile.setExternalUserIds([
 
 ### Error Handling
 
-All SDK errors are encapsulated in `PrebidException`:
+Ad load, show and render failures are not thrown: they arrive through the
+listener's `onAdFailed` callback with the native SDK's error message.
 
 ```dart
-try {
-  await interstitial.loadAd();
-} on PrebidException catch (e) {
-  debugPrint('Error ${e.code}: ${e.message}');
-  if (e.details != null) debugPrint('Details: ${e.details}');
-}
+PrebidInterstitialAdListener(
+  onAdFailed: (error) => debugPrint('Interstitial failed: $error'),
+)
 ```
 
-#### `PrebidErrorCode`
+Every other call returns a `Future` that completes once the native SDK has
+applied it. It only fails when the platform call itself fails (for example a
+`PlatformException` when the plugin isn't registered).
 
-| Code | Description |
-|---|---|
-| `initializationFailed` | SDK failed to initialize. |
-| `invalidArguments` | Invalid or missing arguments. |
-| `adLoadFailed` | Ad request failed. |
-| `adNotFound` | Attempted to show/destroy a non-existent ad. |
-| `adDisplayFailed` | Ad could not be displayed. |
-| `networkError` | Network request failed. |
-| `serverError` | Prebid Server returned an error. |
-| `timeout` | Operation timed out. |
-| `unknown` | Unclassified error. |
+Await `PrebidMobile.initializeSdk()` before loading ads. Prebid Android
+drops requests made before initialization completes; the plugin reports them
+as `onAdFailed`, or as the `prebidSdkNotInitialized` result code from
+`fetchDemand()`.
 
 ---
 

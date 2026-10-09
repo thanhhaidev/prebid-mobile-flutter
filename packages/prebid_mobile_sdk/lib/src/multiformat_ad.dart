@@ -146,7 +146,9 @@ class PrebidMultiformatAd {
   /// Fetch demand from Prebid Server for all configured formats.
   ///
   /// Returns a [PrebidMultiformatBidResponse] with the result code,
-  /// winning format, targeting keywords, and native cache ID.
+  /// winning format, targeting keywords, and native cache ID. Throws an
+  /// [ArgumentError] when no banner size, video parameters or native asset
+  /// is set.
   Future<PrebidMultiformatBidResponse> fetchDemand() async {
     // Build native config if assets provided
     NativeAdRequestConfig? nativeConfig;
@@ -173,6 +175,12 @@ class PrebidMultiformatAd {
 
     // Build video config if parameters provided
     final videoConfig = videoParameters?.toConfig();
+    if (flatSizes == null && videoConfig == null && nativeConfig == null) {
+      throw ArgumentError(
+        'Set banner sizes, video parameters or native assets: a request '
+        'without any format gets no bids.',
+      );
+    }
 
     final config = MultiformatAdRequestConfig(
       configId: configId,

@@ -171,7 +171,11 @@ void main() {
     });
 
     test('forwards gpid and maps exp / topBidFiltered', () async {
-      final ad = PrebidMultiformatAd(configId: 'config-5', gpid: '/1111/home');
+      final ad = PrebidMultiformatAd(
+        configId: 'config-5',
+        bannerSizes: const [Size(320, 50)],
+        gpid: '/1111/home',
+      );
       when(mockApi.fetchDemand(any, any)).thenAnswer(
         (_) async => MultiformatBidResult(
           resultCode: 'prebidDemandFetchSuccess',

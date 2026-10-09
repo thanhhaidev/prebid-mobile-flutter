@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
@@ -213,6 +213,12 @@ void main() {
       expect(refreshed, hasLength(1));
     });
 
+    test('a request without any format is rejected', () async {
+      final unit = PrebidInterstitialAdUnit(configId: 'inter');
+      await expectLater(unit.fetchDemand(), throwsArgumentError);
+      verifyNever(mockApi.fetchDemand(any, any));
+    });
+
     test('interstitial unit asks for impression tracking', () async {
       final unit = PrebidInterstitialAdUnit(
         configId: 'inter',
@@ -258,5 +264,36 @@ void main() {
         verify(mockApi.loadAd(any, captureAny)).captured.single
             as NativeAdRequestConfig;
     expect(config.contextSubType, 20);
+  });
+
+  group('PrebidBannerAdController', () {
+    late List<String> calls;
+    late MethodChannel channel;
+
+    setUp(() {
+      calls = [];
+      channel = const MethodChannel('test/banner');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call.method);
+            return null;
+          });
+    });
+
+    test('a queued load runs once the view attaches', () async {
+      final controller = PrebidBannerAdController();
+      await controller.loadAd();
+      controller.attachChannel(channel);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['loadAd']);
+    });
+
+    test('a queued load is dropped when the view auto-loads', () async {
+      final controller = PrebidBannerAdController();
+      await controller.loadAd();
+      controller.attachChannel(channel, autoLoaded: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isEmpty);
+    });
   });
 }

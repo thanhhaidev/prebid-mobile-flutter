@@ -88,6 +88,7 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
         bannerView = PrebidMobile.BannerView(configID: configId, eventHandler: eventHandler)
 
         super.init()
+        StoredAuctionResponseKeeper.protect(bannerView)
 
         if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
             bannerView.adPosition = pos
@@ -203,5 +204,30 @@ class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerV
 
     func videoPlaybackDidComplete(_ banner: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onVideoCompleted", arguments: nil)
+    }
+}
+
+/// Prebid's `BannerView` sets the global `storedAuctionResponse` to nil when
+/// it deallocates. The core plugin keeps the app's value on `Prebid.shared`
+/// (see its `StoredAuctionResponseKeeper`); each banner restores it after its
+/// own `deinit`: associated objects are released once the owner's `deinit`
+/// has run.
+enum StoredAuctionResponseKeeper {
+    // Same key as the core plugin: a selector is unique per process.
+    private static let valueKey = unsafeBitCast(
+        sel_registerName("prebidFlutterStoredAuctionResponse"), to: UnsafeRawPointer.self
+    )
+    private static var restorerKey: UInt8 = 0
+
+    static func protect(_ banner: UIView) {
+        objc_setAssociatedObject(banner, &restorerKey, Restorer(), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
+    private final class Restorer {
+        deinit {
+            if let value = objc_getAssociatedObject(Prebid.shared, StoredAuctionResponseKeeper.valueKey) as? String {
+                Prebid.shared.storedAuctionResponse = value
+            }
+        }
     }
 }

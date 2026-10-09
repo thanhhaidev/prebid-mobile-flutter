@@ -245,8 +245,20 @@ class PrebidNativeAd {
   /// The Prebid Server config ID.
   final String configId;
 
-  /// The native assets to request.
+  /// The native assets to request. Defaults to [defaultAssets]: Prebid
+  /// Server rejects a native request without any asset.
   final List<NativeAsset>? assets;
+
+  /// Requested when [assets] is null: title, main image, icon, sponsored,
+  /// description and call to action (the companion packages' default too).
+  static const defaultAssets = [
+    NativeAsset.title(length: 90, required: true),
+    NativeAsset.image(imageType: NativeImageType.main, required: true),
+    NativeAsset.image(imageType: NativeImageType.icon, required: true),
+    NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+    NativeAsset.data(dataType: NativeDataType.desc),
+    NativeAsset.data(dataType: NativeDataType.ctaText),
+  ];
 
   /// The native event trackers.
   final List<NativeEventTracker>? eventTrackers;
@@ -339,7 +351,7 @@ class PrebidNativeAd {
   Future<void> loadAd() async {
     final config = NativeAdRequestConfig(
       configId: configId,
-      assets: assets?.map(_convertAsset).toList(),
+      assets: (assets ?? defaultAssets).map(_convertAsset).toList(),
       eventTrackers: eventTrackers?.map(_convertTracker).toList(),
       context: context?.value,
       contextSubType: contextSubType?.value,
@@ -434,7 +446,15 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   late double _height = widget.height;
   MethodChannel? _channel;
 
+  @override
+  void didUpdateWidget(PrebidNativeAdView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A different ad gets a new native view (keyed by ad id below).
+    if (oldWidget.ad._adId != widget.ad._adId) _height = widget.height;
+  }
+
   void _onPlatformViewCreated(int viewId) {
+    _channel?.setMethodCallHandler(null);
     _channel = MethodChannel('prebid_mobile_flutter/native_ad_$viewId')
       ..setMethodCallHandler((call) async {
         if (call.method == 'onAdSize') {
@@ -453,9 +473,11 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   @override
   Widget build(BuildContext context) {
     final creationParams = <String, Object?>{'adId': widget.ad._adId};
+    final key = ValueKey(widget.ad._adId);
     final Widget view;
     if (!kIsWeb && Platform.isAndroid) {
       view = AndroidView(
+        key: key,
         viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -463,6 +485,7 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
       );
     } else if (!kIsWeb && Platform.isIOS) {
       view = UiKitView(
+        key: key,
         viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),

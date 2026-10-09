@@ -23,9 +23,10 @@ import java.net.URL
 import org.prebid.mobile.PrebidNativeAd
 import org.prebid.mobile.PrebidNativeAdEventListener
 
-/// Loaded In-App native ads, keyed by the Dart ad id, so a
-/// [NativeAdPlatformView] can render and register the ad for tracking.
-object NativeAdStore {
+/// Loaded In-App native ads of one Flutter engine, keyed by the Dart ad id,
+/// so a [NativeAdPlatformView] can render and register the ad for tracking.
+/// One store per engine: every engine numbers its ads from the same start.
+class NativeAdStore {
     val ads = mutableMapOf<Long, PrebidNativeAd>()
 
     /// The rendered, registered view of each ad. `registerView` creates new
@@ -37,10 +38,36 @@ object NativeAdStore {
     /// Held here: Prebid keeps only a WeakReference to the listener.
     val listeners = mutableMapOf<Long, NativeAdEvents>()
 
+    /// Platform views currently showing each ad id, newest last.
+    private val platformViews = mutableMapOf<Long, MutableList<NativeAdPlatformView>>()
+
+    /// Stores a newly loaded ad and shows it in the newest platform view
+    /// already on screen for its id (a reload keeps the same Dart widget).
+    fun put(adId: Long, ad: PrebidNativeAd) {
+        ads[adId] = ad
+        platformViews[adId]?.lastOrNull()?.show()
+    }
+
     fun remove(adId: Long) {
         ads.remove(adId)
         listeners.remove(adId)?.stopWatching()
         views.remove(adId)?.let { (it.parent as? ViewGroup)?.removeView(it) }
+    }
+
+    fun clear() {
+        (ads.keys + views.keys + listeners.keys).toSet().forEach(::remove)
+        platformViews.clear()
+    }
+
+    fun attach(view: NativeAdPlatformView) {
+        platformViews.getOrPut(view.adId) { mutableListOf() } += view
+    }
+
+    fun detach(view: NativeAdPlatformView) {
+        platformViews[view.adId]?.let {
+            it.remove(view)
+            if (it.isEmpty()) platformViews.remove(view.adId)
+        }
     }
 }
 
@@ -50,11 +77,12 @@ object NativeAdStore {
 class NativeAdViewFactory(
     private val messenger: BinaryMessenger,
     private val flutterApi: AdFlutterApi,
+    private val store: NativeAdStore,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
-        return NativeAdPlatformView(context, viewId, messenger, flutterApi, params)
+        return NativeAdPlatformView(context, viewId, messenger, flutterApi, store, params)
     }
 }
 
@@ -63,17 +91,26 @@ class NativeAdPlatformView(
     viewId: Int,
     messenger: BinaryMessenger,
     private val flutterApi: AdFlutterApi,
+    private val store: NativeAdStore,
     params: Map<*, *>,
 ) : PlatformView {
 
-    private val adId = (params["adId"] as? Number)?.toLong() ?: 0L
+    val adId = (params["adId"] as? Number)?.toLong() ?: 0L
     private val methodChannel =
         MethodChannel(messenger, "prebid_mobile_flutter/native_ad_$viewId")
     private val root = FrameLayout(context)
 
     init {
-        val existing = NativeAdStore.views[adId]
-        val ad = NativeAdStore.ads[adId]
+        store.attach(this)
+        show()
+    }
+
+    /// Shows the ad's registered view, or renders and registers the ad the
+    /// first time; also called by the store when the ad is reloaded.
+    fun show() {
+        root.removeAllViews()
+        val existing = store.views[adId]
+        val ad = store.ads[adId]
         if (existing != null) {
             (existing.parent as? ViewGroup)?.removeView(existing)
             root.addView(existing, matchWidth())
@@ -144,15 +181,22 @@ class NativeAdPlatformView(
             addView(ctaView, spaced())
         }
 
-        root.addView(container, matchWidth())
         val events = NativeAdEvents(adId, flutterApi)
-        NativeAdStore.listeners[adId] = events
-        NativeAdStore.views[adId] = container
-        ad.registerView(
+        val registered = ad.registerView(
             container,
             listOf(iconView, titleView, imageView, bodyView, ctaView),
             events,
         )
+        if (!registered) {
+            // The bid expired before the ad was shown: Prebid won't track
+            // it, and its expiry callback needs a registered view.
+            store.ads.remove(adId)
+            events.onAdExpired()
+            return
+        }
+        root.addView(container, matchWidth())
+        store.listeners[adId] = events
+        store.views[adId] = container
         events.watchViewability(container)
         reportHeight(container)
     }
@@ -202,6 +246,7 @@ class NativeAdPlatformView(
     override fun dispose() {
         // Keep the registered view for a re-created platform view; detach it
         // so it doesn't keep this one alive. NativeAdStore.remove drops it.
+        store.detach(this)
         root.removeAllViews()
     }
 }

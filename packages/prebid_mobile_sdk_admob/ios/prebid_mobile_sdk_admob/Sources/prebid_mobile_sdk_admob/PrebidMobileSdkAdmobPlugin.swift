@@ -6,9 +6,17 @@ import UIKit
 /// the AdMob interstitial method channel.
 public class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
 
-    /// Retains the interstitial and rewarded managers for the plugin's lifetime.
-    private static var interstitialManager: AdMobInterstitialManager?
-    private static var rewardedManager: AdMobRewardedManager?
+    /// Each engine's managers, kept by its plugin instance (published to the
+    /// registrar): shared statics would be replaced by a second engine and
+    /// the first engine's calls would never be answered.
+    private let interstitialManager: AdMobInterstitialManager
+    private let rewardedManager: AdMobRewardedManager
+
+    private init(messenger: FlutterBinaryMessenger) {
+        interstitialManager = AdMobInterstitialManager(messenger: messenger)
+        rewardedManager = AdMobRewardedManager(messenger: messenger)
+        super.init()
+    }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let bannerFactory = AdMobBannerAdViewFactory(messenger: registrar.messenger())
@@ -17,7 +25,6 @@ public class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
         let nativeFactory = AdMobNativeAdViewFactory(messenger: registrar.messenger())
         registrar.register(nativeFactory, withId: "prebid_mobile_sdk_admob/native")
 
-        interstitialManager = AdMobInterstitialManager(messenger: registrar.messenger())
-        rewardedManager = AdMobRewardedManager(messenger: registrar.messenger())
+        registrar.publish(PrebidMobileSdkAdmobPlugin(messenger: registrar.messenger()))
     }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -40,11 +41,18 @@ class PrebidBannerAdController {
 
   /// Binds the controller to a banner view's method channel. Called by the
   /// banner widgets (including `PrebidGamBannerAd`); not for app code.
-  void attachChannel(MethodChannel channel) {
+  ///
+  /// [autoLoaded] tells whether the view already loads on its own; a
+  /// [loadAd] queued before the view existed then runs no second auction.
+  void attachChannel(MethodChannel channel, {bool autoLoaded = false}) {
     _channel = channel;
     if (_pendingLoad) {
       _pendingLoad = false;
-      channel.invokeMethod<void>('loadAd');
+      if (!autoLoaded) {
+        unawaited(
+          channel.invokeMethod<void>('loadAd').catchError((Object _) {}),
+        );
+      }
     }
   }
 
@@ -152,8 +160,25 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   late double _height = widget.height.toDouble();
 
   @override
-  Widget build(BuildContext context) {
-    final creationParams = <String, dynamic>{
+  void didUpdateWidget(PrebidBannerAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final channel = _channel;
+    if (channel != null &&
+        !identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detachChannel(channel);
+      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
+    }
+    if (_creationParams(oldWidget).toString() !=
+        _creationParams(widget).toString()) {
+      // The native view reads its configuration once, so a changed config
+      // gets a new view (keyed below) that starts at the requested size.
+      _width = widget.width.toDouble();
+      _height = widget.height.toDouble();
+    }
+  }
+
+  static Map<String, dynamic> _creationParams(PrebidBannerAd widget) {
+    return <String, dynamic>{
       'configId': widget.configId,
       'width': widget.width,
       'height': widget.height,
@@ -178,6 +203,11 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       if (widget.videoPlacementType != null)
         'videoPlacementType': widget.videoPlacementType!.name,
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final creationParams = _creationParams(widget);
 
     // The slot sizes dynamically: it starts at the requested size and adopts
     // the actual rendered creative size once the native SDK reports it.
@@ -189,8 +219,11 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
+    // Recreate the native view when its configuration changes.
+    final key = ValueKey(creationParams.toString());
     if (!kIsWeb && Platform.isAndroid) {
       return AndroidView(
+        key: key,
         viewType: 'prebid_mobile_flutter/banner_ad',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -198,6 +231,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       );
     } else if (!kIsWeb && Platform.isIOS) {
       return UiKitView(
+        key: key,
         viewType: 'prebid_mobile_flutter/banner_ad',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -211,8 +245,13 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     // The channel is set up even without a listener so the slot can still
     // resize to the rendered creative via `onAdSize`.
     final channel = MethodChannel('prebid_mobile_flutter/banner_ad_$viewId');
+    final previous = _channel;
+    if (previous != null) {
+      previous.setMethodCallHandler(null);
+      widget.controller?.detachChannel(previous);
+    }
     _channel = channel;
-    widget.controller?.attachChannel(channel);
+    widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':

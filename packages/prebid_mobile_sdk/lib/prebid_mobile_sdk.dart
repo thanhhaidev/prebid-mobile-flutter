@@ -37,7 +37,8 @@
 ///
 /// ## Error Handling
 ///
-/// All SDK errors are encapsulated in [PrebidException] with a typed [PrebidErrorCode].
+/// Load, show and render failures are reported through each listener's
+/// `onAdFailed` callback rather than thrown.
 library;
 
 export 'src/ad_enums.dart';
@@ -46,7 +47,6 @@ export 'src/external_user_id.dart';
 export 'src/fullscreen_controls.dart';
 export 'src/native_ad.dart';
 export 'src/native_ad_enums.dart';
-export 'src/prebid_exception.dart';
 export 'src/prebid_mobile.dart';
 export 'src/targeting.dart';
 export 'src/banner_ad.dart';

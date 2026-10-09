@@ -76,6 +76,11 @@ class AdMobNativePlatformView(
 
         val extras = Bundle()
         val adUnit = MediationNativeAdUnit(configId, extras)
+        // Defaults as on iOS (and the other companions); Prebid Android sends
+        // no context or placement otherwise.
+        adUnit.setContextType(org.prebid.mobile.NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
+        adUnit.setPlacementType(org.prebid.mobile.NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
+        adUnit.setContextSubType(org.prebid.mobile.NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
         NativeContext.from(params).let { c ->
             c.context?.let { adUnit.setContextType(it) }
             c.subType?.let { adUnit.setContextSubType(it) }

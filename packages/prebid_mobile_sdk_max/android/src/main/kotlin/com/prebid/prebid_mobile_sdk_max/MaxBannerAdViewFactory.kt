@@ -59,7 +59,14 @@ class MaxBannerPlatformView(
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_max/banner_$viewId")
 
-        adView = MaxAdView(maxAdUnitId, context)
+        // MaxAdView defaults to the banner format; an MREC ad unit needs the
+        // MREC format or MAX rejects it.
+        val format = if (width == 300 && height == 250) {
+            com.applovin.mediation.MaxAdFormat.MREC
+        } else {
+            com.applovin.mediation.MaxAdFormat.BANNER
+        }
+        adView = MaxAdView(maxAdUnitId, format, context)
         adView.setListener(object : MaxAdViewAdListener {
             override fun onAdLoaded(ad: MaxAd) {
                 methodChannel.invokeMethod(

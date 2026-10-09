@@ -2,23 +2,71 @@ import Flutter
 import UIKit
 import PrebidMobile
 
-/// Loaded In-App native ads, keyed by the Dart ad id, so a
-/// `NativeAdPlatformView` can render and register the ad for tracking.
-enum NativeAdStore {
-    static var ads: [Int64: NativeAd] = [:]
+/// Loaded In-App native ads of one Flutter engine, keyed by the Dart ad id,
+/// so a `NativeAdPlatformView` can render and register the ad for tracking.
+/// One store per engine: every engine numbers its ads from the same start.
+final class NativeAdStore {
+    private(set) var ads: [Int64: NativeAd] = [:]
 
     /// The rendered, registered view of each ad. `NativeAd.registerView` only
     /// accepts one view per ad, so a platform view re-created for the same ad
     /// (e.g. after scrolling out of a list and back) reuses this one.
-    static var views: [Int64: UIView] = [:]
+    var views: [Int64: UIView] = [:]
 
     /// Event delegates, held strongly: Prebid holds the ad's delegate weakly.
-    static var delegates: [Int64: NativeAdEventForwarder] = [:]
+    private(set) var delegates: [Int64: NativeAdEventForwarder] = [:]
 
-    static func remove(_ adId: Int64) {
+    /// Platform views currently showing each ad id, newest last.
+    private var platformViews: [Int64: [Weak<NativeAdPlatformView>]] = [:]
+
+    /// Stores a newly loaded ad. Its delegate is set now, not when it is
+    /// rendered, so an ad that expires before it is shown still reports
+    /// `onAdExpired`. The newest platform view already on screen for the id
+    /// shows it (a reload keeps the same Dart widget).
+    func put(_ adId: Int64, ad: NativeAd, delegate: NativeAdEventForwarder) {
+        ads[adId] = ad
+        delegates[adId] = delegate
+        ad.delegate = delegate
+        platformViews[adId]?.compactMap(\.value).last?.show()
+    }
+
+    func remove(_ adId: Int64) {
         ads.removeValue(forKey: adId)
         delegates.removeValue(forKey: adId)?.stopWatching()
         views.removeValue(forKey: adId)?.removeFromSuperview()
+    }
+
+    func removeAll() {
+        Set(ads.keys).union(views.keys).union(delegates.keys).forEach(remove)
+        platformViews.removeAll()
+    }
+
+    func attach(_ view: NativeAdPlatformView) {
+        platformViews[view.adId, default: []].append(Weak(view))
+    }
+
+    func detach(_ view: NativeAdPlatformView) {
+        platformViews[view.adId]?.removeAll { $0.value == nil || $0.value === view }
+        if platformViews[view.adId]?.isEmpty == true { platformViews.removeValue(forKey: view.adId) }
+    }
+}
+
+final class Weak<T: AnyObject> {
+    weak var value: T?
+    init(_ value: T) { self.value = value }
+}
+
+/// Re-measures the native content whenever its width changes: Flutter sizes
+/// the platform view after it is created, and again on rotation.
+private final class NativeAdContainer: UIView {
+    var onWidthChange: ((CGFloat) -> Void)?
+    private var lastWidth: CGFloat = 0
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.width > 0, bounds.width != lastWidth else { return }
+        lastWidth = bounds.width
+        onWidthChange?(bounds.width)
     }
 }
 
@@ -28,11 +76,11 @@ enum NativeAdStore {
 class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
-    private let flutterApi: AdFlutterApi
+    private let store: NativeAdStore
 
-    init(messenger: FlutterBinaryMessenger, flutterApi: AdFlutterApi) {
+    init(messenger: FlutterBinaryMessenger, store: NativeAdStore) {
         self.messenger = messenger
-        self.flutterApi = flutterApi
+        self.store = store
         super.init()
     }
 
@@ -44,7 +92,7 @@ class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
         return NativeAdPlatformView(
             viewId: viewId,
             messenger: messenger,
-            flutterApi: flutterApi,
+            store: store,
             args: args as? [String: Any] ?? [:]
         )
     }
@@ -56,34 +104,45 @@ class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
 class NativeAdPlatformView: NSObject, FlutterPlatformView {
 
-    private let container = UIView()
-    private let adId: Int64
+    private let container = NativeAdContainer()
+    let adId: Int64
     private let methodChannel: FlutterMethodChannel
-    private let flutterApi: AdFlutterApi
+    private let store: NativeAdStore
+    private var lastReportedHeight: CGFloat = 0
 
-    init(viewId: Int64, messenger: FlutterBinaryMessenger, flutterApi: AdFlutterApi, args: [String: Any]) {
+    init(viewId: Int64, messenger: FlutterBinaryMessenger, store: NativeAdStore, args: [String: Any]) {
         adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_flutter/native_ad_\(viewId)",
             binaryMessenger: messenger
         )
-        self.flutterApi = flutterApi
+        self.store = store
         super.init()
-        if let content = NativeAdStore.views[adId] {
-            content.removeFromSuperview()
-            embed(content)
-            reportHeight(of: content)
-        } else if let ad = NativeAdStore.ads[adId] {
-            render(ad)
-        }
+        container.onWidthChange = { [weak self] width in self?.reportHeight(width: width) }
+        store.attach(self)
+        show()
     }
 
     deinit {
+        store.detach(self)
         // Keep the registered view for a re-created platform view;
         // NativeAdStore.remove releases it.
         // A newer platform view may already have taken it.
-        if let content = NativeAdStore.views[adId], content.superview === container {
+        if let content = store.views[adId], content.superview === container {
             content.removeFromSuperview()
+        }
+    }
+
+    /// Shows the ad's registered view, or renders and registers the ad the
+    /// first time; also called by the store when the ad is reloaded.
+    func show() {
+        container.subviews.forEach { $0.removeFromSuperview() }
+        if let content = store.views[adId] {
+            content.removeFromSuperview()
+            embed(content)
+            reportHeight()
+        } else if let ad = store.ads[adId], let forwarder = store.delegates[adId] {
+            render(ad, forwarder: forwarder)
         }
     }
 
@@ -104,11 +163,7 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
 
     // MARK: - Rendering
 
-    private func render(_ ad: NativeAd) {
-        let forwarder = NativeAdEventForwarder(adId: adId, flutterApi: flutterApi)
-        NativeAdStore.delegates[adId] = forwarder
-        ad.delegate = forwarder
-
+    private func render(_ ad: NativeAd, forwarder: NativeAdEventForwarder) {
         let iconView = UIImageView()
         let mainImageView = UIImageView()
         let titleLabel = UILabel()
@@ -165,25 +220,34 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
+        guard ad.registerView(view: stack, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton]) else {
+            // The bid expired before the ad was shown: Prebid won't track it.
+            store.remove(adId)
+            forwarder.reportExpired()
+            return
+        }
         embed(stack)
-        NativeAdStore.views[adId] = stack
-        _ = ad.registerView(view: stack, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton])
+        store.views[adId] = stack
         forwarder.watchViewability(of: stack)
-        reportHeight(of: stack)
+        reportHeight()
     }
 
-    private func reportHeight(of view: UIView) {
+    /// Reports the content's height at the container's width (the screen
+    /// width until Flutter has sized the view; re-run when it is).
+    private func reportHeight(width: CGFloat? = nil) {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let width = self.container.bounds.width > 0
+            guard let self = self, let content = self.store.views[self.adId],
+                  content.superview === self.container else { return }
+            let width = width ?? (self.container.bounds.width > 0
                 ? self.container.bounds.width
-                : UIScreen.main.bounds.width
-            let height = view.systemLayoutSizeFitting(
+                : UIScreen.main.bounds.width)
+            let height = content.systemLayoutSizeFitting(
                 CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
                 withHorizontalFittingPriority: .required,
                 verticalFittingPriority: .fittingSizeLevel
             ).height
-            if height > 0 {
+            if height > 0, height != self.lastReportedHeight {
+                self.lastReportedHeight = height
                 self.methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
             }
         }
@@ -286,8 +350,17 @@ class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     }
 
     func adDidExpire(ad: NativeAd) {
-        // Prebid stops tracking an expired ad; so does the watcher.
-        DispatchQueue.main.async { [weak self] in self?.stopWatching() }
+        DispatchQueue.main.async { [weak self] in self?.reportExpired() }
+    }
+
+    private var expiredReported = false
+
+    /// Prebid stops tracking an expired ad; so does the watcher. Reported
+    /// once, whether Prebid's expiry or a refused `registerView` comes first.
+    func reportExpired() {
+        stopWatching()
+        guard !expiredReported else { return }
+        expiredReported = true
         send("onAdExpired")
     }
 

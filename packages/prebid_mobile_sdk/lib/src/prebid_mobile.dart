@@ -84,11 +84,11 @@ class PrebidMobile {
   /// Set the timeout for bid requests in milliseconds.
   ///
   /// If the Prebid Server does not respond within [timeout] ms,
-  /// the bid request will fail with [PrebidErrorCode.timeout].
+  /// the bid request fails and the ad's listener reports `onAdFailed`.
   ///
   /// Default value is determined by the native SDK.
   static Future<void> setTimeoutMillis(int timeout) async {
-    api.setTimeoutMillis(timeout);
+    await api.setTimeoutMillis(timeout);
   }
 
   /// Enable or disable sharing the device's geo location in bid requests.
@@ -96,7 +96,7 @@ class PrebidMobile {
   /// When enabled, the SDK includes `device.geo` fields (latitude, longitude)
   /// in the OpenRTB request, which can improve bid rates.
   static Future<void> setShareGeoLocation(bool share) async {
-    api.setShareGeoLocation(share);
+    await api.setShareGeoLocation(share);
   }
 
   /// Enable or disable PBS debug mode.
@@ -105,7 +105,7 @@ class PrebidMobile {
   /// which tells the Prebid Server to return test bids (useful for
   /// development and QA).
   static Future<void> setPbsDebug(bool enabled) async {
-    api.setPbsDebug(enabled);
+    await api.setPbsDebug(enabled);
   }
 
   /// Set custom HTTP headers to include in every bid request.
@@ -113,7 +113,7 @@ class PrebidMobile {
   /// Use this for authentication tokens, custom tracking headers,
   /// or server-specific configuration.
   static Future<void> setCustomHeaders(Map<String, String> headers) async {
-    api.setCustomHeaders(headers);
+    await api.setCustomHeaders(headers);
   }
 
   /// Set a stored auction response ID for deterministic testing.
@@ -123,7 +123,7 @@ class PrebidMobile {
   ///
   /// Call [clearStoredAuctionResponse] to remove it.
   static Future<void> setStoredAuctionResponse(String response) async {
-    api.setStoredAuctionResponse(response);
+    await api.setStoredAuctionResponse(response);
   }
 
   /// Remove any previously set stored auction response.
@@ -131,7 +131,7 @@ class PrebidMobile {
   /// After calling this, subsequent bid requests will go through
   /// the normal live auction flow.
   static Future<void> clearStoredAuctionResponse() async {
-    api.clearStoredAuctionResponse();
+    await api.clearStoredAuctionResponse();
   }
 
   /// Add a stored bid response for a specific bidder.
@@ -142,12 +142,12 @@ class PrebidMobile {
     String bidder,
     String responseId,
   ) async {
-    api.addStoredBidResponse(bidder, responseId);
+    await api.addStoredBidResponse(bidder, responseId);
   }
 
   /// Remove all stored bid responses.
   static Future<void> clearStoredBidResponses() async {
-    api.clearStoredBidResponses();
+    await api.clearStoredBidResponses();
   }
 
   /// Set the SDK log verbosity level.
@@ -155,7 +155,7 @@ class PrebidMobile {
   /// See [PrebidLogLevel] for available levels.
   /// The default level is platform-specific.
   static Future<void> setLogLevel(PrebidLogLevel level) async {
-    api.setLogLevel(level.index);
+    await api.setLogLevel(level.index);
   }
 
   /// Set the creative factory timeout for banner ads in milliseconds.
@@ -163,7 +163,7 @@ class PrebidMobile {
   /// This controls how long the SDK waits for an HTML creative to
   /// load before considering it failed.
   static Future<void> setCreativeFactoryTimeout(int timeout) async {
-    api.setCreativeFactoryTimeout(timeout);
+    await api.setCreativeFactoryTimeout(timeout);
   }
 
   /// Set the creative factory timeout for pre-render video content in milliseconds.
@@ -173,7 +173,7 @@ class PrebidMobile {
   static Future<void> setCreativeFactoryTimeoutPreRenderContent(
     int timeout,
   ) async {
-    api.setCreativeFactoryTimeoutPreRenderContent(timeout);
+    await api.setCreativeFactoryTimeoutPreRenderContent(timeout);
   }
 
   /// Override the default Prebid Server status endpoint URL.
@@ -181,7 +181,7 @@ class PrebidMobile {
   /// The SDK calls this endpoint during initialization to verify
   /// the server is reachable and configured correctly.
   static Future<void> setCustomStatusEndpoint(String endpoint) async {
-    api.setCustomStatusEndpoint(endpoint);
+    await api.setCustomStatusEndpoint(endpoint);
   }
 
   /// Assign sequential IDs (1, 2, …) to native request assets.
@@ -190,38 +190,38 @@ class PrebidMobile {
   /// drops a bid whose response assets don't match an ID in the request.
   /// Default `false`.
   static Future<void> setShouldAssignNativeAssetId(bool assign) async {
-    api.setShouldAssignNativeAssetId(assign);
+    await api.setShouldAssignNativeAssetId(assign);
   }
 
   /// Drop bids whose Prebid Cache entry failed and promote the next cached
   /// bid (Prebid 3.4). When no cached bid remains the result code is
   /// `prebidDemandNoCachedBids`. Applies to the Original API. Default `false`.
   static Future<void> setFilterOutUncachedBids(bool filter) async {
-    api.setFilterOutUncachedBids(filter);
+    await api.setFilterOutUncachedBids(filter);
   }
 
   /// Where external user IDs are sent: `user.eids` (OpenRTB 2.6),
   /// `user.ext.eids` (2.5) or both (default). Prebid 3.4.
   static Future<void> setEidsPlacement(PrebidEidsPlacement placement) async {
-    api.setEidsPlacement(placement.name);
+    await api.setEidsPlacement(placement.name);
   }
 
   /// Ask Prebid Server to include `hb_*` winner keywords
   /// (`ext.prebid.targeting.includewinners`).
   static Future<void> setIncludeWinners(bool include) async {
-    api.setIncludeWinners(include);
+    await api.setIncludeWinners(include);
   }
 
   /// Ask Prebid Server to include per-bidder `hb_*_<bidder>` keywords
   /// (`ext.prebid.targeting.includebidderkeys`).
   static Future<void> setIncludeBidderKeys(bool include) async {
-    api.setIncludeBidderKeys(include);
+    await api.setIncludeBidderKeys(include);
   }
 
   /// Sets the stored auction-settings id (`ext.prebid.storedrequest.id` at
   /// the request level). `null` clears it.
   static Future<void> setAuctionSettingsId(String? settingsId) async {
-    api.setAuctionSettingsId(settingsId);
+    await api.setAuctionSettingsId(settingsId);
   }
 
   /// Skips the Prebid Server status request during [initializeSdk] (e.g. a
@@ -248,7 +248,7 @@ class PrebidMobile {
   /// Adds Prebid's first-party SharedID (`pubcid.org`) to `user.eids`.
   /// Consult your legal team before enabling. Default `false`.
   static Future<void> setSendSharedId(bool send) async {
-    api.setSendSharedId(send);
+    await api.setSendSharedId(send);
   }
 
   /// The current SharedID. It stays stable across sessions while local
@@ -265,7 +265,7 @@ class PrebidMobile {
 
   /// Clears the stored SharedID; the next one is freshly generated.
   static Future<void> resetSharedId() async {
-    api.resetSharedId();
+    await api.resetSharedId();
   }
 
   // ---------------------------------------------------------------------------
@@ -297,7 +297,7 @@ class PrebidMobile {
           ),
         )
         .toList();
-    api.setExternalUserIds(data);
+    await api.setExternalUserIds(data);
   }
 
   /// Get all currently set external user IDs.
@@ -320,7 +320,7 @@ class PrebidMobile {
 
   /// Clear all external user IDs.
   static Future<void> clearExternalUserIds() async {
-    api.clearExternalUserIds();
+    await api.clearExternalUserIds();
   }
 
   // ---------------------------------------------------------------------------

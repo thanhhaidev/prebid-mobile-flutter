@@ -129,15 +129,28 @@ class BannerAdPlatformView(
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "loadAd" -> { bannerView.loadAd(); result.success(null) }
+                "loadAd" -> { load(); result.success(null) }
                 "stopRefresh" -> { bannerView.stopRefresh(); result.success(null) }
                 else -> result.notImplemented()
             }
         }
 
         if (autoLoad) {
-            bannerView.loadAd()
+            load()
         }
+    }
+
+    private fun load() {
+        // Prebid drops a request made before the SDK has initialized without
+        // calling back; report it instead. Posted: on auto-load the Dart side
+        // sets its channel handler only after this view is created.
+        if (!org.prebid.mobile.PrebidMobile.isSdkInitialized()) {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                methodChannel.invokeMethod("onAdFailed", PrebidMobileFlutterPlugin.NOT_INITIALIZED)
+            }
+            return
+        }
+        bannerView.loadAd()
     }
 
     override fun getView(): View = bannerView

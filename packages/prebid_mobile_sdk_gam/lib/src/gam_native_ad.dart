@@ -206,18 +206,26 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
     return SizedBox(
       width: widget.width,
       height: _height,
-      child: defaultTargetPlatform == TargetPlatform.iOS
-          ? UiKitView(
-              viewType: 'prebid_mobile_sdk_gam/native',
-              creationParams: creationParams,
-              creationParamsCodec: const StandardMessageCodec(),
-            )
-          : AndroidView(
-              viewType: 'prebid_mobile_sdk_gam/native',
-              creationParams: creationParams,
-              creationParamsCodec: const StandardMessageCodec(),
-            ),
+      child: _buildPlatformView(creationParams),
     );
+  }
+
+  Widget _buildPlatformView(Map<String, Object?> creationParams) {
+    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidView(
+        viewType: 'prebid_mobile_sdk_gam/native',
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return UiKitView(
+        viewType: 'prebid_mobile_sdk_gam/native',
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   @override

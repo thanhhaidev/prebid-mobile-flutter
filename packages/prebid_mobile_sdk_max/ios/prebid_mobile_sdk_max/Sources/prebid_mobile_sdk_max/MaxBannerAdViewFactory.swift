@@ -64,7 +64,12 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
         )
 
         // 1. Create and configure the MAX ad view.
-        maxAdBannerView = MAAdView(adUnitIdentifier: maxAdUnitId)
+        // MAAdView defaults to the banner format; an MREC ad unit needs the
+        // MREC format or MAX rejects it.
+        maxAdBannerView = MAAdView(
+            adUnitIdentifier: maxAdUnitId,
+            adFormat: width == 300 && height == 250 ? .mrec : .banner
+        )
         maxAdBannerView.frame = CGRect(origin: .zero, size: adSize)
         maxAdBannerView.isHidden = false
 

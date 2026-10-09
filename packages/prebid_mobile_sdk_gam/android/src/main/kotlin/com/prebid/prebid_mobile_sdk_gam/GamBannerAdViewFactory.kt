@@ -100,13 +100,10 @@ class GamBannerPlatformView(
 
         bannerView.setBannerListener(object : BannerViewListener {
             override fun onAdLoaded(view: BannerView) {
-                view.bidResponse?.winningBid?.let { bid ->
+                renderedSize(view)?.let { (w, h) ->
                     methodChannel.invokeMethod(
                         "onAdSize",
-                        mapOf(
-                            "width" to bid.width.toDouble(),
-                            "height" to bid.height.toDouble(),
-                        ),
+                        mapOf("width" to w.toDouble(), "height" to h.toDouble()),
                     )
                 }
                 methodChannel.invokeMethod("onAdLoaded", null)
@@ -153,6 +150,19 @@ class GamBannerPlatformView(
         if (autoLoad) {
             bannerView.loadAd()
         }
+    }
+
+    /// The size of the creative on screen. When GAM's own ad wins, the
+    /// banner holds GAM's ad view (BannerView clears its children before
+    /// showing either winner) and the Prebid bid, if any, lost.
+    private fun renderedSize(view: BannerView): Pair<Int, Int>? {
+        val gamView = (0 until view.childCount).map { view.getChildAt(it) }
+            .firstOrNull { it is com.google.android.gms.ads.BaseAdView } as com.google.android.gms.ads.BaseAdView?
+        gamView?.adSize?.let { size ->
+            if (size.width > 0 && size.height > 0) return size.width to size.height
+        }
+        val bid = view.bidResponse?.winningBid ?: return null
+        return bid.width to bid.height
     }
 
     override fun getView(): View = bannerView

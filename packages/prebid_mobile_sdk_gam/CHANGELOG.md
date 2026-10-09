@@ -17,4 +17,6 @@
   Events via `PrebidGamNativeAdListener` (incl. `onAdExpired`). Request `assets` /
   `eventTrackers` are configurable.
 * Interstitial / rewarded take `impOrtbConfig`; the banner takes `adPosition`; native takes `context` / `contextSubType` / `placementType`. Set the GPID or Prebid ad slot of fullscreen units through `impOrtbConfig` (`ext.gpid`, `ext.data.pbadslot`).
+* Android: the banner reports the size of the creative on screen when GAM's own ad wins (multisize slots resize correctly); custom-template native ads are destroyed with their view.
+* Banner widgets re-attach a swapped `PrebidBannerAdController` and recreate the native view when their configuration changes.
 * Built on Prebid native SDKs Android `3.4.0` / iOS `3.4.1` (iOS 15.0+).

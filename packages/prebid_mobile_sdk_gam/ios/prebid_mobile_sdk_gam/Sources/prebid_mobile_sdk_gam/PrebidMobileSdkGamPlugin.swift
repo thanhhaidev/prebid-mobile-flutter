@@ -6,9 +6,17 @@ import UIKit
 /// and the GAM interstitial method channel.
 public class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
-    /// Retains the interstitial manager for the lifetime of the plugin.
-    private static var interstitialManager: GamInterstitialManager?
-    private static var rewardedManager: GamRewardedManager?
+    /// Each engine's managers, kept by its plugin instance (published to the
+    /// registrar): shared statics would be replaced by a second engine and
+    /// the first engine's calls would never be answered.
+    private let interstitialManager: GamInterstitialManager
+    private let rewardedManager: GamRewardedManager
+
+    private init(messenger: FlutterBinaryMessenger) {
+        interstitialManager = GamInterstitialManager(messenger: messenger)
+        rewardedManager = GamRewardedManager(messenger: messenger)
+        super.init()
+    }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let factory = GamBannerAdViewFactory(messenger: registrar.messenger())
@@ -17,7 +25,6 @@ public class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
         let nativeFactory = GamNativeAdViewFactory(messenger: registrar.messenger())
         registrar.register(nativeFactory, withId: "prebid_mobile_sdk_gam/native")
 
-        interstitialManager = GamInterstitialManager(messenger: registrar.messenger())
-        rewardedManager = GamRewardedManager(messenger: registrar.messenger())
+        registrar.publish(PrebidMobileSdkGamPlugin(messenger: registrar.messenger()))
     }
 }

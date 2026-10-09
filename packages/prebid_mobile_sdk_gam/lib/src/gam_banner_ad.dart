@@ -120,8 +120,25 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
   late double _height = widget.height.toDouble();
 
   @override
-  Widget build(BuildContext context) {
-    final creationParams = <String, dynamic>{
+  void didUpdateWidget(PrebidGamBannerAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final channel = _channel;
+    if (channel != null &&
+        !identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detachChannel(channel);
+      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
+    }
+    if (_creationParams(oldWidget).toString() !=
+        _creationParams(widget).toString()) {
+      // The native view reads its configuration once, so a changed config
+      // gets a new view (keyed below) that starts at the requested size.
+      _width = widget.width.toDouble();
+      _height = widget.height.toDouble();
+    }
+  }
+
+  static Map<String, dynamic> _creationParams(PrebidGamBannerAd widget) {
+    return <String, dynamic>{
       'configId': widget.configId,
       'gamAdUnitId': widget.gamAdUnitId,
       'width': widget.width,
@@ -149,6 +166,11 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
       if (widget.videoPlacementType != null)
         'videoPlacementType': widget.videoPlacementType!.name,
     };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final creationParams = _creationParams(widget);
 
     return SizedBox(
       width: _width,
@@ -158,9 +180,12 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
+    // Recreate the native view when its configuration changes.
+    final key = ValueKey(creationParams.toString());
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
+        key: key,
         viewType: 'prebid_mobile_sdk_gam/banner',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -168,6 +193,7 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
+        key: key,
         viewType: 'prebid_mobile_sdk_gam/banner',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -179,8 +205,13 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
 
   void _onPlatformViewCreated(int viewId) {
     final channel = MethodChannel('prebid_mobile_sdk_gam/banner_$viewId');
+    final previous = _channel;
+    if (previous != null) {
+      previous.setMethodCallHandler(null);
+      widget.controller?.detachChannel(previous);
+    }
     _channel = channel;
-    widget.controller?.attachChannel(channel);
+    widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onAdSize':

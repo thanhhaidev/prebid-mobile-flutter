@@ -34,6 +34,20 @@ dependencies:
   prebid_mobile_sdk_max: ^1.0.0
 ```
 
+### iOS: Swift Package Manager
+
+[`applovin_max`](https://pub.dev/packages/applovin_max) only supports
+CocoaPods, so it brings its own copy of the AppLovin SDK. With Swift Package
+Manager on, this package adds a second copy and the iOS build fails with
+"Multiple commands produce AppLovinSDK.framework". Turn Swift Package Manager
+off for the app so every plugin uses CocoaPods:
+
+```yaml
+flutter:
+  config:
+    enable-swift-package-manager: false
+```
+
 ### Native configuration (required)
 
 Initialize the AppLovin MAX SDK once at startup with your SDK key **before**
@@ -63,7 +77,7 @@ and wire the Prebid MAX adapter, per the
 
 | prebid_mobile_sdk_max | Prebid Android (`prebid-mobile-sdk-max-adapters`) | Prebid iOS (`PrebidMobileMAXAdapters`) | AppLovin MAX Android | AppLovin MAX iOS | Tested with |
 | --- | --- | --- | --- | --- | --- |
-| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `applovin-sdk 13.1.0` | `AppLovinSDK >= 13.0.0` | `applovin_max 4.6.4` |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `applovin-sdk 13.1.0` | `AppLovinSDK >= 13.0.0` | `applovin_max ^4.6.4` |
 
 Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 

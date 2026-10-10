@@ -33,7 +33,7 @@ Each companion bundles Prebid's adapter (or event handler) for its ad SDK, on th
 
 The ad SDK columns are what Prebid's adapters depend on: Android resolves the listed version unless your app asks for a newer one, iOS accepts any version in the range. If your app also uses [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads) or [`applovin_max`](https://pub.dev/packages/applovin_max), their native SDK must fall in the same range: use `google_mobile_ads` 8.0.0 or later (7.x pins Google Mobile Ads iOS 12) and `applovin_max` 4.0.0 or later (3.x pins AppLovin SDK 11).
 
-**Tested with** is the plugin version the [example app](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example) runs on for that release, on Android and iOS. Newer versions in the same major usually work too, as long as their native SDK stays in the range above.
+**Tested with** is the version constraint the [example app](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example) puts on the plugin for that release. CI builds the example for Android and iOS with the newest version that constraint allows.
 
 ## Native artifacts
 

@@ -21,6 +21,16 @@ await AppLovinMAX.initialize('YOUR_APPLOVIN_SDK_KEY');
 
 Declare the SDK key natively as AppLovin requires: `AppLovinSdkKey` in `ios/Runner/Info.plist` and the `applovin.sdk.key` `<meta-data>` in `AndroidManifest.xml`. In the MAX dashboard, add Prebid as a custom network on your ad units, per Prebid's [MAX integration guide](https://docs.prebid.org/prebid-mobile/modules/rendering/ios-sdk-integration-max.html).
 
+:::warning[iOS: turn Swift Package Manager off with `applovin_max`]
+`applovin_max` only supports CocoaPods, so it brings its own copy of the AppLovin SDK. With Swift Package Manager on, this package adds a second copy through Swift Package Manager and the iOS build fails with "Multiple commands produce AppLovinSDK.framework". Turn Swift Package Manager off for the app so every plugin uses CocoaPods:
+
+```yaml title="pubspec.yaml"
+flutter:
+  config:
+    enable-swift-package-manager: false
+```
+:::
+
 ## Banner
 
 ```dart

@@ -9,8 +9,8 @@
 // (version, Flutter and Dart constraints), android/build.gradle.kts (Prebid
 // artifact, minSdk), the podspec (Prebid pod, iOS platform) and Package.swift
 // (Prebid package), so the docs can't drift from what the package resolves.
-// A companion's `testedWith` (the Flutter ad plugin the example app runs on)
-// is checked against the workspace pubspec.lock.
+// A companion's `testedWith` (the constraint the example app puts on the
+// Flutter ad plugin) is checked against example/pubspec.yaml.
 import {readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -71,13 +71,13 @@ for (const [name, pkg] of packages) {
 
 // ---------- Flutter ad plugins vs. the example app ----------
 
-const lock = read('pubspec.lock');
+const examplePubspec = read('example/pubspec.yaml');
 for (const [name, pkg] of packages) {
   const tested = pkg.releases[0].testedWith;
   if (!tested) continue;
-  const resolved = match(lock, new RegExp(`^  ${tested.package}:\\n(?:    .*\\n)*?    version: "([^"]+)"`, 'm'));
-  if (resolved !== tested.version) {
-    errors.push(`${name}: the example resolves ${tested.package} ${resolved ?? '(missing)'} in pubspec.lock, compatibility.json says ${tested.version}`);
+  const constraint = match(examplePubspec, new RegExp(`^  ${tested.package}:\\s*'?([^'\\n]+?)'?\\s*$`, 'm'));
+  if (constraint !== tested.version) {
+    errors.push(`${name}: example/pubspec.yaml has ${tested.package} ${constraint ?? '(missing)'}, compatibility.json says ${tested.version}`);
   }
 }
 

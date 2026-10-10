@@ -43,7 +43,7 @@ dependencies:
   shared_preferences: ^2.5.6
   url_launcher: ^6.3.3
   google_mobile_ads: ^9.1.0
-  applovin_max: ^4.0.0
+  applovin_max: ^4.6.4
   webview_flutter: ^4.14.1
   interactive_media_ads: ^0.3.0+18
   video_player: ^2.14.1
@@ -67,6 +67,13 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+
+  # applovin_max has no Swift Package Manager support, so it comes through
+  # CocoaPods with its own AppLovinSDK; with SPM on, prebid_mobile_sdk_max
+  # would add a second copy through SPM ("Multiple commands produce
+  # AppLovinSDK.framework"). CocoaPods for every plugin keeps one copy.
+  config:
+    enable-swift-package-manager: false
 
   # The docs website's typefaces, bundled (no runtime font fetching). Both are
   # variable fonts; lib/theme/app_theme.dart maps FontWeight to the `wght` axis.

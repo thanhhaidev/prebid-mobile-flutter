@@ -1,5 +1,5 @@
 {
-  "$comment": "Native SDK versions per package release, newest first. The README tables and the Compatibility docs page are generated from this file; `node website/scripts/sync-compatibility.mjs` rewrites the READMEs and checks the newest entry of each package against its pubspec.yaml, build.gradle.kts, podspec and Package.swift. For companions, `testedWith` is the Flutter ad plugin the example app resolves (checked against pubspec.lock). Add an entry here when a release changes a version.",
+  "$comment": "Native SDK versions per package release, newest first. The README tables and the Compatibility docs page are generated from this file; `node website/scripts/sync-compatibility.mjs` rewrites the READMEs and checks the newest entry of each package against its pubspec.yaml, build.gradle.kts, podspec and Package.swift. For companions, `testedWith` is the constraint the example app puts on the Flutter ad plugin (checked against example/pubspec.yaml); CI builds the example with the newest version it allows. Add an entry here when a release changes a version.",
   "packages": {
     "prebid_mobile_sdk": {
       "title": "Core",
@@ -29,7 +29,7 @@
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "play-services-ads 25.5.0",
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
-          "testedWith": {"package": "google_mobile_ads", "version": "9.1.0"},
+          "testedWith": {"package": "google_mobile_ads", "version": "^9.1.0"},
           "androidMinSdk": 24,
           "iosMin": "15.0",
           "flutter": ">=3.44.0",
@@ -49,7 +49,7 @@
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "play-services-ads 25.5.0",
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
-          "testedWith": {"package": "google_mobile_ads", "version": "9.1.0"},
+          "testedWith": {"package": "google_mobile_ads", "version": "^9.1.0"},
           "androidMinSdk": 24,
           "iosMin": "15.0",
           "flutter": ">=3.44.0",
@@ -69,7 +69,7 @@
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "applovin-sdk 13.1.0",
           "adSdkIos": "AppLovinSDK >= 13.0.0",
-          "testedWith": {"package": "applovin_max", "version": "4.6.4"},
+          "testedWith": {"package": "applovin_max", "version": "^4.6.4"},
           "androidMinSdk": 24,
           "iosMin": "15.0",
           "flutter": ">=3.44.0",

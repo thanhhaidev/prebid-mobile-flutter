@@ -164,7 +164,7 @@ export function CompatibilityTable({name}: {name: string}) {
                   </td>
                   <td>
                     {r.testedWith && (
-                      <a href={`https://pub.dev/packages/${r.testedWith.package}/versions/${r.testedWith.version}`}>
+                      <a href={`https://pub.dev/packages/${r.testedWith.package}`}>
                         <code>
                           {r.testedWith.package} {r.testedWith.version}
                         </code>

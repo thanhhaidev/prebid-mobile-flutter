@@ -1,8 +1,8 @@
+import AppLovinSDK
 import Flutter
-import UIKit
 import PrebidMobile
 import PrebidMobileMAXAdapters
-import AppLovinSDK
+import UIKit
 
 /// PlatformView factory for AppLovin MAX-mediated banners. The rendered view is
 /// the MAX `MAAdView`; Prebid's `MediationBannerAdUnit` runs the auction and
@@ -182,10 +182,12 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
     // MARK: - MAAdViewAdDelegate
 
     func didLoad(_ ad: MAAd) {
-        send("onAdSize", arguments: [
-            "width": Double(viewSize.width),
-            "height": Double(viewSize.height),
-        ])
+        send(
+            "onAdSize",
+            arguments: [
+                "width": Double(viewSize.width),
+                "height": Double(viewSize.height),
+            ])
         send("onAdLoaded", arguments: nil)
         send("onAdDisplayed", arguments: nil)
     }

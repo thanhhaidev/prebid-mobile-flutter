@@ -1,8 +1,8 @@
+import AppLovinSDK
 import Flutter
-import UIKit
 import PrebidMobile
 import PrebidMobileMAXAdapters
-import AppLovinSDK
+import UIKit
 
 /// One rewarded ad: the Prebid ad unit, the shared MAX ad it bids into, and
 /// what keeps the auction and the MAX delegates alive.

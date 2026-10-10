@@ -1,7 +1,7 @@
-import Foundation
 import CoreGraphics
-import UIKit
+import Foundation
 import PrebidMobile
+import UIKit
 
 // Parsing of the values the Dart side sends over method channels
 // (`NativeParameters.toMap()`, `PrebidFullscreenControls.toMap()`,
@@ -20,8 +20,9 @@ enum PrebidErrorFormatter {
         let nsError = error as NSError
         let description = nsError.localizedDescription
         if let reason = nsError.localizedFailureReason,
-           !reason.isEmpty,
-           reason != description {
+            !reason.isEmpty,
+            reason != description
+        {
             return "\(description): \(reason)"
         }
         return description
@@ -38,7 +39,8 @@ enum PrebidPresenter {
         // scene is inactive while a system alert (e.g. ATT) or Notification
         // Center is over the app, and when returning from the background.
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let windows = (scenes.filter { $0.activationState == .foregroundActive }
+        let windows =
+            (scenes.filter { $0.activationState == .foregroundActive }
             + scenes.filter { $0.activationState == .foregroundInactive })
             .flatMap { $0.windows }
         let window = windows.first { $0.isKeyWindow } ?? windows.first

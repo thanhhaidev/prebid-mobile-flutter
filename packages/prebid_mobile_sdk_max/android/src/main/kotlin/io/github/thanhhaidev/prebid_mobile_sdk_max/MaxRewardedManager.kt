@@ -76,8 +76,7 @@ internal class MaxRewardedManager(
                 send(adId, "onAdClosed")
             }
             override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
-            override fun onAdLoadFailed(adUnitId: String, error: MaxError) =
-                send(adId, "onAdFailed", error.message)
+            override fun onAdLoadFailed(adUnitId: String, error: MaxError) = send(adId, "onAdFailed", error.message)
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
                 showingUnits.remove(maxAdUnitId)
                 send(adId, "onAdFailed", error.message)

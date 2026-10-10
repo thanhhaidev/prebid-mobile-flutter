@@ -104,7 +104,7 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
     /// Shows the ad's registered view, or renders and registers the ad the
     /// first time; also called by the store when the ad is reloaded.
     func show() {
-        container.subviews.forEach { $0.removeFromSuperview() }
+        for view in container.subviews { view.removeFromSuperview() }
         if let content = store.views[adId] {
             content.removeFromSuperview()
             customLayout ? fill(content) : embed(content)
@@ -216,7 +216,8 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
-        guard ad.registerView(view: stack, clickableViews: [iconView, titleLabel, mainImageView, bodyLabel, ctaButton]) else {
+        guard ad.registerView(view: stack, clickableViews: [iconView, titleLabel, mainImageView, bodyLabel, ctaButton])
+        else {
             return expire(forwarder)
         }
         embed(stack)
@@ -230,10 +231,13 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
     private func reportHeight(width: CGFloat? = nil) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let content = self.store.views[self.adId],
-                  content.superview === self.container else { return }
-            let width = width ?? (self.container.bounds.width > 0
-                ? self.container.bounds.width
-                : UIScreen.main.bounds.width)
+                content.superview === self.container
+            else { return }
+            let width =
+                width
+                ?? (self.container.bounds.width > 0
+                    ? self.container.bounds.width
+                    : UIScreen.main.bounds.width)
             let height = content.systemLayoutSizeFitting(
                 CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
                 withHorizontalFittingPriority: .required,

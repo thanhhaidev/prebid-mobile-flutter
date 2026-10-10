@@ -56,14 +56,16 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         guard interstitialAds[adId]?.isReady == true else {
             return flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
         }
-        PrebidPresenter.whenReady(fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) }) { [weak self] viewController in
-            // Re-checked: a retry runs later, after a possible destroy.
-            guard let self = self else { return }
-            guard let interstitial = self.interstitialAds[adId], interstitial.isReady else {
-                return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-            }
-            interstitial.show(from: viewController)
-        }
+        PrebidPresenter.whenReady(
+            fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) },
+            present: { [weak self] viewController in
+                // Re-checked: a retry runs later, after a possible destroy.
+                guard let self = self else { return }
+                guard let interstitial = self.interstitialAds[adId], interstitial.isReady else {
+                    return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
+                }
+                interstitial.show(from: viewController)
+            })
     }
 
     func destroy(adId: Int64) throws {
@@ -75,7 +77,7 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
 
     func destroyAll() -> [Int64] {
         let ids = Array(interstitialAds.keys)
-        ids.forEach { try? destroy(adId: $0) }
+        for id in ids { try? destroy(adId: id) }
         return ids
     }
 }
@@ -94,7 +96,9 @@ private final class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     }
 
     func interstitial(_ interstitial: InterstitialRenderingAdUnit, didFailToReceiveAdWithError error: Error?) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))) { _ in }
+        flutterApi.onAdEvent(
+            event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))
+        ) { _ in }
     }
 
     func interstitialWillPresentAd(_ interstitial: InterstitialRenderingAdUnit) {

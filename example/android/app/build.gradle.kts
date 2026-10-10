@@ -16,7 +16,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "io.github.thanhhaidev.prebid_mobile_sdk_example"

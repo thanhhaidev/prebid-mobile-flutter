@@ -46,6 +46,14 @@ melos:
       description: Fail if any Dart file is not formatted.
       run: dart format --output=none --set-exit-if-changed .
 
+    format:native:
+      description: Format the Kotlin (ktlint) and Swift (swift-format, macOS) code of the plugins and the example.
+      run: tool/format_native.sh
+
+    format:native:check:
+      description: Fail if the Kotlin or Swift code is not formatted (Swift is skipped off macOS).
+      run: tool/format_native.sh --check
+
     generate:
       description: Regenerate the Pigeon API (and format it) in prebid_mobile_sdk.
       run: >-

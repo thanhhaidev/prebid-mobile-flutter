@@ -56,8 +56,10 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
         let sizes = (config.bannerSizes ?? []).compactMap { $0 }
         // A banner without sizes is an interstitial's display format (its
         // minimum size and API frameworks still apply).
-        let interstitialBanner = config.isInterstitial && (config.bannerApi != nil
-            || config.interstitialMinWidthPercentage != nil || config.interstitialMinHeightPercentage != nil)
+        let interstitialBanner =
+            config.isInterstitial
+            && (config.bannerApi != nil
+                || config.interstitialMinWidthPercentage != nil || config.interstitialMinHeightPercentage != nil)
         if sizes.count >= 2 || interstitialBanner {
             let parameters = BannerParameters()
             if sizes.count >= 2 {
@@ -110,11 +112,14 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
 
     func findPrebidCreativeSize(adId: Int64, completion: @escaping (Result<[Int64]?, Error>) -> Void) {
         guard let banner = Self.onlyGmaBanner() else { return completion(.success(nil)) }
-        AdViewUtils.findPrebidCreativeSize(banner, success: { size in
-            DispatchQueue.main.async { completion(.success([Int64(size.width), Int64(size.height)])) }
-        }, failure: { _ in
-            DispatchQueue.main.async { completion(.success(nil)) }
-        })
+        AdViewUtils.findPrebidCreativeSize(
+            banner,
+            success: { size in
+                DispatchQueue.main.async { completion(.success([Int64(size.width), Int64(size.height)])) }
+            },
+            failure: { _ in
+                DispatchQueue.main.async { completion(.success(nil)) }
+            })
     }
 
     func activateBannerSKAdNetwork(adId: Int64) throws -> Bool {
@@ -155,6 +160,6 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     func destroyAll() {
-        adUnits.keys.forEach { try? destroy(adId: $0) }
+        for id in adUnits.keys { try? destroy(adId: id) }
     }
 }

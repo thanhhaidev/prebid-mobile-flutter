@@ -1,8 +1,8 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
+import UIKit
 
 /// PlatformView factory for AdMob-mediated native ads. The rendered view is a
 /// Google Mobile Ads `NativeAdView` populated with the winning ad's assets;
@@ -39,7 +39,8 @@ final class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 /// after the Prebid auction, reporting to Dart over
 /// `prebid_mobile_sdk_admob/native_<channelId>`.
 final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate,
-    GoogleMobileAds.NativeAdDelegate {
+    GoogleMobileAds.NativeAdDelegate
+{
 
     private let nativeAdView = GoogleMobileAds.NativeAdView()
     private let methodChannel: FlutterMethodChannel
@@ -89,9 +90,10 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         if let v = jsonDictionary(args["ext"]) { adUnit.setExt(v) }
         if let v = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(v) }
         if let v = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(v) }
-        adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
-            NativeEventTracker(event: .Impression, methods: [.Image, .js])
-        ])
+        adUnit.addEventTracker(
+            nativeTrackersFrom(args["eventTrackers"]) ?? [
+                NativeEventTracker(event: .Impression, methods: [.Image, .js])
+            ])
         self.adUnit = adUnit
 
         adUnit.fetchDemand { [weak self] _ in

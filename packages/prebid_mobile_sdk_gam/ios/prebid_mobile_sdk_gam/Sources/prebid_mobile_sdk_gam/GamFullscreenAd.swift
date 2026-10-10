@@ -1,6 +1,6 @@
 import Foundation
-import UIKit
 import PrebidMobile
+import UIKit
 
 /// What the GAM managers need from a Prebid fullscreen ad unit.
 protocol GamFullscreenAdUnit: AnyObject {
@@ -94,8 +94,9 @@ final class GamFullscreenEvents: NSObject, InterstitialAdUnitDelegate, RewardedA
         ]
         // Omitted rather than NSNull when absent, as on Android.
         if let ext = reward.ext,
-           let data = try? JSONSerialization.data(withJSONObject: ext),
-           let json = String(data: data, encoding: .utf8) {
+            let data = try? JSONSerialization.data(withJSONObject: ext),
+            let json = String(data: data, encoding: .utf8)
+        {
             payload["rewardExt"] = json
         }
         send("onUserEarnedReward", extras: payload)

@@ -1,0 +1,16 @@
+root = true
+
+# ktlint reads its rules from here (tool/format_native.sh).
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+ktlint_code_style = android_studio
+# Trailing commas on multiline lists keep diffs to one line per change.
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+# A class with two or more constructor parameters lists one per line.
+ktlint_class_signature_rule_force_multiline_when_parameter_count_greater_or_equal_than = 2
+# Flutter plugin packages are named after the pub package
+# (io.github.thanhhaidev.prebid_mobile_sdk), underscores included.
+ktlint_standard_package-name = disabled

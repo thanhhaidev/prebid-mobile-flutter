@@ -1,8 +1,8 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
+import UIKit
 
 /// One AdMob-mediated rewarded ad: the Prebid ad unit that runs the auction
 /// and, once loaded, the AdMob ad.
@@ -99,7 +99,8 @@ final class AdMobRewardedManager: FullscreenAdManager<AdMobRewarded> {
         guard let rewarded = ad.rewarded else { return }
         rewarded.present(from: controller) { [weak self, weak ad, weak rewarded] in
             guard let self = self, let ad = ad, self.isCurrent(adId, ad),
-                  let reward = rewarded?.adReward else { return }
+                let reward = rewarded?.adReward
+            else { return }
             // Same reward keys as the GAM / MAX packages.
             self.send(
                 adId,

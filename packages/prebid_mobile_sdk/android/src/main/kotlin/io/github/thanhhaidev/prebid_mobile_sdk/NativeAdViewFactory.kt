@@ -224,8 +224,7 @@ internal class NativeAdPlatformView(
         ViewGroup.LayoutParams.WRAP_CONTENT,
     ).apply { topMargin = dp(8) }
 
-    private fun dp(value: Int): Int =
-        (value * context.resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
     /**
      * Best-effort image load: the ad still renders without it. Skipped once

@@ -1,8 +1,8 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileGAMEventHandlers
+import UIKit
 
 /// PlatformView factory for GAM-rendered banners. Mirrors the core
 /// BannerAdViewFactory but builds the BannerView with a `GAMBannerEventHandler`
@@ -38,7 +38,8 @@ final class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 /// `prebid_mobile_sdk_gam/banner_<channelId>`, named by the Dart widget before
 /// the view exists so no early event is lost.
 final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate,
-    BannerViewVideoPlaybackDelegate {
+    BannerViewVideoPlaybackDelegate
+{
 
     private let bannerView: PrebidMobile.BannerView
     private let methodChannel: FlutterMethodChannel
@@ -87,7 +88,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
             // hb_* keys still take precedence.
             eventHandler.adManagerRequestConfiguration = { request in
                 var merged = request.customTargeting ?? [:]
-                targeting.forEach { merged[$0.key] = $0.value }
+                merged.merge(targeting) { _, app in app }
                 request.customTargeting = merged
             }
         }
@@ -174,10 +175,12 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didReceiveAdWithAdSize adSize: CGSize) {
-        methodChannel.invokeMethod("onAdSize", arguments: [
-            "width": Double(adSize.width),
-            "height": Double(adSize.height),
-        ])
+        methodChannel.invokeMethod(
+            "onAdSize",
+            arguments: [
+                "width": Double(adSize.width),
+                "height": Double(adSize.height),
+            ])
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
     }
 

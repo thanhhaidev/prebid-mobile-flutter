@@ -76,12 +76,16 @@ internal abstract class FullscreenAdManager<A : Any>(
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
                 load(adId, args)
             }
+
             "show" -> {
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
                 show(adId)
             }
+
             "destroy" -> adId?.let { release(it) }
+
             "releaseAll" -> releaseAll()
+
             else -> return result.notImplemented()
         }
         result.success(null)
@@ -128,12 +132,7 @@ internal abstract class FullscreenAdManager<A : Any>(
      * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
      * [error] as its `error` (blank becomes "Unknown error").
      */
-    protected fun send(
-        adId: Long,
-        event: String,
-        error: String? = null,
-        extras: Map<String, Any?> = emptyMap(),
-    ) {
+    protected fun send(adId: Long, event: String, error: String? = null, extras: Map<String, Any?> = emptyMap()) {
         val payload = mutableMapOf<String, Any?>("adId" to adId)
         if (event == "onAdFailed" || error != null) payload["error"] = errorMessage(error)
         payload.putAll(extras)

@@ -69,6 +69,7 @@ CI runs these on every pull request; run them locally first:
 
 ```bash
 dart run melos run format:check    # dart format (`format` to fix)
+dart run melos run format:native:check  # ktlint + swift-format (`format:native` to fix)
 dart run melos run analyze         # flutter analyze + tool/check_copies.sh
 dart run melos run test            # Dart unit tests, every package
 dart run melos run generate:check  # Pigeon output is up to date (stage first)
@@ -150,10 +151,13 @@ example/lib/
   test; the Kotlin copies differ only in their package line) and the
   `PrebidCommon` files of the core and GAM packages: change those in every
   copy at once.
-- **Kotlin:** [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html):
+- **Kotlin:** [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html),
+  formatted by ktlint (Android Studio style, 120 columns; rules in
+  `.editorconfig`):
   imports instead of fully qualified names, KDoc (`/** */`) for declarations,
   `//` inside bodies.
 - **Swift:** [API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/),
+  formatted by Xcode's swift-format (rules in `.swift-format`),
   `///` doc comments, `final` classes unless subclassed.
 - **Comments:** say why, or what the native SDK does that the code works
   around; don't restate the code.

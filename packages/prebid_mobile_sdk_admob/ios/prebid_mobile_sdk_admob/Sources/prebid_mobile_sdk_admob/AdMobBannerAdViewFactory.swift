@@ -1,8 +1,8 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
+import UIKit
 
 /// PlatformView factory for AdMob-mediated banners. The rendered view is the
 /// Google Mobile Ads `BannerView`; Prebid's `MediationBannerAdUnit` runs the
@@ -183,15 +183,18 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         if adaptive {
             // An inline adaptive banner reports its actual size once loaded.
             let intrinsic = bannerView.intrinsicContentSize
-            let loaded = intrinsic.width > 0 && intrinsic.height > 0
+            let loaded =
+                intrinsic.width > 0 && intrinsic.height > 0
                 ? intrinsic
                 : GoogleMobileAds.cgSize(for: bannerView.adSize)
             if loaded.width > 0 && loaded.height > 0 { size = loaded }
         }
-        send("onAdSize", [
-            "width": Double(size.width),
-            "height": Double(size.height),
-        ])
+        send(
+            "onAdSize",
+            [
+                "width": Double(size.width),
+                "height": Double(size.height),
+            ])
         send("onAdLoaded")
         send("onAdDisplayed")
     }

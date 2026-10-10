@@ -1,6 +1,6 @@
 import Foundation
-import UIKit
 import PrebidMobile
+import UIKit
 
 // Shared by the core package and the GAM package; tool/check_copies.sh
 // keeps the copies identical.

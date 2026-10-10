@@ -38,9 +38,8 @@ import org.prebid.mobile.api.mediation.MediationNativeAdUnit
  * adapter. Rendering through the SDK's native view keeps impression/click
  * tracking intact.
  */
-internal class AdMobNativeAdViewFactory(
-    private val messenger: BinaryMessenger,
-) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+internal class AdMobNativeAdViewFactory(private val messenger: BinaryMessenger) :
+    PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
@@ -224,7 +223,10 @@ internal class AdMobNativePlatformView(
     }
 
     private fun nativeAssets() = listOf(
-        NativeTitleAsset().apply { setLength(90); isRequired = true },
+        NativeTitleAsset().apply {
+            setLength(90)
+            isRequired = true
+        },
         NativeImageAsset(20, 20, 20, 20).apply {
             imageType = NativeImageAsset.IMAGE_TYPE.ICON
             isRequired = true

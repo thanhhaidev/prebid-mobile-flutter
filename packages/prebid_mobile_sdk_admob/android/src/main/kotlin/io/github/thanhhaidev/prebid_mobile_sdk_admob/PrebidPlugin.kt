@@ -20,8 +20,7 @@ internal object PluginErrors {
 }
 
 /** An SDK error message for Dart; null or blank becomes [PluginErrors.UNKNOWN]. */
-internal fun errorMessage(message: String?): String =
-    message?.takeIf { it.isNotBlank() } ?: PluginErrors.UNKNOWN
+internal fun errorMessage(message: String?): String = message?.takeIf { it.isNotBlank() } ?: PluginErrors.UNKNOWN
 
 /**
  * The payload of a native view's failure event (`onAdFailed`,
@@ -45,8 +44,7 @@ internal fun debugDropBidProbability(raw: Any?): Double =
     ((raw as? Number)?.toDouble() ?: 0.0).takeIf { !it.isNaN() }?.coerceIn(0.0, 1.0) ?: 0.0
 
 /** Testing hook: whether to withhold this load's Prebid bid, with [probability]. */
-internal fun shouldDropBid(probability: Double): Boolean =
-    probability > 0.0 && Random.nextDouble() < probability
+internal fun shouldDropBid(probability: Double): Boolean = probability > 0.0 && Random.nextDouble() < probability
 
 /** `adFormats` (`PrebidAdFormat` names), or null when it names none. */
 internal fun adUnitFormatsFrom(raw: Any?): EnumSet<AdUnitFormat>? {

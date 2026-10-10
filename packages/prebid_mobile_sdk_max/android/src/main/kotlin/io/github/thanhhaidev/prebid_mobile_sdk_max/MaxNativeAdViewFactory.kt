@@ -176,7 +176,10 @@ internal class MaxNativePlatformView(
 
     /** Prebid's reference request: title, icon, sponsored, body and call to action. */
     private fun defaultAssets(): List<NativeAsset> = listOf(
-        NativeTitleAsset().apply { setLength(90); isRequired = true },
+        NativeTitleAsset().apply {
+            setLength(90)
+            isRequired = true
+        },
         NativeImageAsset(20, 20, 20, 20).apply {
             imageType = NativeImageAsset.IMAGE_TYPE.ICON
             isRequired = true

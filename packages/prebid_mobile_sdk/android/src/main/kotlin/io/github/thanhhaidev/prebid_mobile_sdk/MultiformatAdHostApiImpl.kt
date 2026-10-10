@@ -63,15 +63,19 @@ internal class MultiformatAdHostApiImpl(
     override fun fetchDemand(
         adId: Long,
         config: MultiformatAdRequestConfig,
-        callback: (Result<MultiformatBidResult>) -> Unit
+        callback: (Result<MultiformatBidResult>) -> Unit,
     ) {
         cancelRefresh(adId)
         adUnits.remove(adId)?.let(::release)
         if (!PrebidMobile.isSdkInitialized()) {
-            callback(Result.success(MultiformatBidResult(
-                resultCode = PluginErrors.NOT_INITIALIZED_CODE,
-                targetingKeywords = emptyMap(),
-            )))
+            callback(
+                Result.success(
+                    MultiformatBidResult(
+                        resultCode = PluginErrors.NOT_INITIALIZED_CODE,
+                        targetingKeywords = emptyMap(),
+                    ),
+                ),
+            )
             return
         }
         val adUnit = makeAdUnit(config)
@@ -95,7 +99,9 @@ internal class MultiformatAdHostApiImpl(
         val unit: AdUnit = when {
             native && !banner && !video && !config.isInterstitial && !config.isRewarded ->
                 NativeAdUnit(config.configId).also { NativeRequestSettings(config.nativeConfig!!).applyTo(it) }
+
             native -> return multiformatAdUnit(config)
+
             config.isRewarded && video && !banner ->
                 RewardedVideoAdUnit(config.configId).apply {
                     // Must be set before the auction: Prebid starts the
@@ -103,7 +109,9 @@ internal class MultiformatAdHostApiImpl(
                     if (config.trackInterstitialImpression) activatePrebidImpressionTracker()
                     videoParameters = config.videoConfig!!.toVideoParameters()
                 }
+
             config.isRewarded -> return multiformatAdUnit(config)
+
             config.isInterstitial && (banner || video) ->
                 InterstitialAdUnit(config.configId, formats(banner, video)).apply {
                     if (config.trackInterstitialImpression) activateInterstitialPrebidImpressionTracker()
@@ -113,6 +121,7 @@ internal class MultiformatAdHostApiImpl(
                     if (banner) bannerParameters = bannerParameters(config, sizes)
                     config.videoConfig?.let { videoParameters = it.toVideoParameters() }
                 }
+
             !config.isInterstitial && sizes.isNotEmpty() -> {
                 val (first, rest) = sizes.first() to sizes.drop(1)
                 BannerAdUnit(config.configId, first.width, first.height, formats(true, video)).apply {
@@ -122,6 +131,7 @@ internal class MultiformatAdHostApiImpl(
                     adPosition(config)?.let(::setAdPosition)
                 }
             }
+
             else -> return multiformatAdUnit(config)
         }
         config.gpid?.let(unit::setGpid)
@@ -144,18 +154,19 @@ internal class MultiformatAdHostApiImpl(
 
     // A banner without sizes is an interstitial's display format (its
     // minimum size and API frameworks still apply).
-    private fun interstitialBanner(config: MultiformatAdRequestConfig): Boolean =
-        config.isInterstitial &&
-            (config.bannerApi != null || config.interstitialMinWidthPercentage != null ||
-                config.interstitialMinHeightPercentage != null)
+    private fun interstitialBanner(config: MultiformatAdRequestConfig): Boolean {
+        if (!config.isInterstitial) return false
+        return config.bannerApi != null ||
+            config.interstitialMinWidthPercentage != null ||
+            config.interstitialMinHeightPercentage != null
+    }
 
-    private fun bannerParameters(config: MultiformatAdRequestConfig, sizes: List<AdSize>) =
-        BannerParameters().apply {
-            if (sizes.isNotEmpty()) adSizes = sizes.toSet()
-            config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
-            config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
-            config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
-        }
+    private fun bannerParameters(config: MultiformatAdRequestConfig, sizes: List<AdSize>) = BannerParameters().apply {
+        if (sizes.isNotEmpty()) adSizes = sizes.toSet()
+        config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
+        config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
+        config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
+    }
 
     private fun adPosition(config: MultiformatAdRequestConfig): AdPosition? =
         config.adPosition?.let { pos -> AdPosition.values().firstOrNull { it.value.toLong() == pos } }
@@ -266,15 +277,18 @@ internal class MultiformatAdHostApiImpl(
     override fun findPrebidCreativeSize(adId: Long, callback: (Result<List<Long>?>) -> Unit) {
         val banner = activity()?.window?.decorView?.let { findGmaBannerViews(it).singleOrNull() }
             ?: return callback(Result.success(null))
-        AdViewUtils.findPrebidCreativeSize(banner, object : AdViewUtils.PbFindSizeListener {
-            override fun success(width: Int, height: Int) {
-                mainHandler.post { callback(Result.success(listOf(width.toLong(), height.toLong()))) }
-            }
+        AdViewUtils.findPrebidCreativeSize(
+            banner,
+            object : AdViewUtils.PbFindSizeListener {
+                override fun success(width: Int, height: Int) {
+                    mainHandler.post { callback(Result.success(listOf(width.toLong(), height.toLong()))) }
+                }
 
-            override fun failure(error: PbFindSizeError) {
-                mainHandler.post { callback(Result.success(null)) }
-            }
-        })
+                override fun failure(error: PbFindSizeError) {
+                    mainHandler.post { callback(Result.success(null)) }
+                }
+            },
+        )
     }
 
     // SKAdNetwork: iOS only.

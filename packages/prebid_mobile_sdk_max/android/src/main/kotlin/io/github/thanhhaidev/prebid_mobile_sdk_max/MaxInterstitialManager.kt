@@ -38,11 +38,9 @@ internal class MaxInterstitialManager(
         val interstitial = MaxInterstitialAd(maxAdUnitId, activity)
         interstitial.setListener(object : MaxAdListener {
             override fun onAdLoaded(ad: MaxAd) = send(adId, "onAdLoaded")
-            override fun onAdLoadFailed(adUnitId: String, error: MaxError) =
-                send(adId, "onAdFailed", error.message)
+            override fun onAdLoadFailed(adUnitId: String, error: MaxError) = send(adId, "onAdFailed", error.message)
             override fun onAdDisplayed(ad: MaxAd) = send(adId, "onAdDisplayed")
-            override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) =
-                send(adId, "onAdFailed", error.message)
+            override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) = send(adId, "onAdFailed", error.message)
             override fun onAdHidden(ad: MaxAd) = send(adId, "onAdClosed")
             override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
         })

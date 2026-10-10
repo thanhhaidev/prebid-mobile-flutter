@@ -33,10 +33,12 @@ class MainActivity : FlutterActivity() {
                     PrebidMobile.registerPluginRenderer(customRenderer)
                     result.success(null)
                 }
+
                 "unregister" -> {
                     PrebidMobile.unregisterPluginRenderer(customRenderer)
                     result.success(null)
                 }
+
                 else -> result.notImplemented()
             }
         }
@@ -54,6 +56,7 @@ class MainActivity : FlutterActivity() {
             }
             when (call.method) {
                 "get" -> result.success(prefs.all[key])
+
                 "setInt" -> {
                     val value = call.argument<Number>("value")?.toInt()
                     prefs.edit().apply {
@@ -61,6 +64,7 @@ class MainActivity : FlutterActivity() {
                     }.apply()
                     result.success(null)
                 }
+
                 "setString" -> {
                     val value = call.argument<String>("value")
                     prefs.edit().apply {
@@ -68,6 +72,7 @@ class MainActivity : FlutterActivity() {
                     }.apply()
                     result.success(null)
                 }
+
                 "setBool" -> {
                     val value = call.argument<Boolean>("value")
                     prefs.edit().apply {
@@ -75,10 +80,12 @@ class MainActivity : FlutterActivity() {
                     }.apply()
                     result.success(null)
                 }
+
                 "remove" -> {
                     prefs.edit().remove(key).apply()
                     result.success(null)
                 }
+
                 else -> result.notImplemented()
             }
         }

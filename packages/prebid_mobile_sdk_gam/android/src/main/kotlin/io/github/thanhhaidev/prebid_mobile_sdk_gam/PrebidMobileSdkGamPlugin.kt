@@ -10,7 +10,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
  * core prebid_mobile_sdk plugin. Registers the GAM banner and native platform
  * view factories and the GAM interstitial and rewarded method channels.
  */
-class PrebidMobileSdkGamPlugin : FlutterPlugin, ActivityAware {
+class PrebidMobileSdkGamPlugin :
+    FlutterPlugin,
+    ActivityAware {
 
     private var activity: Activity? = null
     private var interstitialManager: GamInterstitialManager? = null

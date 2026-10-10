@@ -41,8 +41,7 @@ internal class GamRewardedManager(
         FullscreenControls.from(args["controls"])?.applyTo(adUnit)
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
             override fun onAdLoaded(unit: RewardedAdUnit) = send(adId, "onAdLoaded")
-            override fun onAdFailed(unit: RewardedAdUnit, e: AdException?) =
-                send(adId, "onAdFailed", e?.message)
+            override fun onAdFailed(unit: RewardedAdUnit, e: AdException?) = send(adId, "onAdFailed", e?.message)
             override fun onAdDisplayed(unit: RewardedAdUnit) = send(adId, "onAdDisplayed")
             override fun onAdClosed(unit: RewardedAdUnit) = send(adId, "onAdClosed")
             override fun onAdClicked(unit: RewardedAdUnit) = send(adId, "onAdClicked")

@@ -107,7 +107,6 @@ internal class AdMobInterstitialManager(
         override fun onAdDismissedFullScreenContent() = send(adId, "onAdClosed")
         override fun onAdClicked() = send(adId, "onAdClicked")
         override fun onAdImpression() = send(adId, "onAdImpression")
-        override fun onAdFailedToShowFullScreenContent(error: AdError) =
-            send(adId, "onAdFailed", error.message)
+        override fun onAdFailedToShowFullScreenContent(error: AdError) = send(adId, "onAdFailed", error.message)
     }
 }

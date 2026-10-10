@@ -85,6 +85,9 @@ jobs:
 
       - uses: ./.github/actions/setup-flutter
 
+      - name: Verify Kotlin formatting
+        run: tool/format_native.sh --check kotlin
+
       - name: Build debug APK
         working-directory: example
         run: flutter build apk --debug
@@ -119,6 +122,11 @@ jobs:
           path: example/ios/Pods
           key: pods-${{ runner.os }}-${{ hashFiles('example/ios/Podfile.lock') }}
           restore-keys: pods-${{ runner.os }}-
+
+      - name: Verify Swift formatting
+        run: |
+          xcrun swift-format --version
+          tool/format_native.sh --check swift
 
       - name: Build iOS (no codesign)
         working-directory: example

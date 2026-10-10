@@ -51,14 +51,16 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         guard rewardedAds[adId]?.isReady == true else {
             return flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
         }
-        PrebidPresenter.whenReady(fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) }) { [weak self] viewController in
-            // Re-checked: a retry runs later, after a possible destroy.
-            guard let self = self else { return }
-            guard let rewarded = self.rewardedAds[adId], rewarded.isReady else {
-                return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-            }
-            rewarded.show(from: viewController)
-        }
+        PrebidPresenter.whenReady(
+            fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) },
+            present: { [weak self] viewController in
+                // Re-checked: a retry runs later, after a possible destroy.
+                guard let self = self else { return }
+                guard let rewarded = self.rewardedAds[adId], rewarded.isReady else {
+                    return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
+                }
+                rewarded.show(from: viewController)
+            })
     }
 
     func destroy(adId: Int64) throws {
@@ -68,7 +70,7 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
 
     func destroyAll() -> [Int64] {
         let ids = Array(rewardedAds.keys)
-        ids.forEach { try? destroy(adId: $0) }
+        for id in ids { try? destroy(adId: id) }
         return ids
     }
 }
@@ -87,7 +89,9 @@ private final class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     }
 
     func rewardedAd(_ rewardedAd: RewardedAdUnit, didFailToReceiveAdWithError error: Error?) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))) { _ in }
+        flutterApi.onAdEvent(
+            event: AdEvent(adId: adId, eventName: "onAdFailed", error: PrebidErrorFormatter.describe(error))
+        ) { _ in }
     }
 
     func rewardedAdWillPresentAd(_ rewardedAd: RewardedAdUnit) {
@@ -107,14 +111,16 @@ private final class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     }
 
     func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {
-        flutterApi.onAdEvent(event: AdEvent(
-            adId: adId,
-            eventName: "onUserEarnedReward",
-            reward: RewardData(
-                type: reward.type ?? "reward",
-                count: reward.count?.int64Value ?? 1,
-                ext: reward.ext?.reduce(into: [String?: Any?]()) { $0[$1.key] = $1.value }
+        flutterApi.onAdEvent(
+            event: AdEvent(
+                adId: adId,
+                eventName: "onUserEarnedReward",
+                reward: RewardData(
+                    type: reward.type ?? "reward",
+                    count: reward.count?.int64Value ?? 1,
+                    ext: reward.ext?.reduce(into: [String?: Any?]()) { $0[$1.key] = $1.value }
+                )
             )
-        )) { _ in }
+        ) { _ in }
     }
 }

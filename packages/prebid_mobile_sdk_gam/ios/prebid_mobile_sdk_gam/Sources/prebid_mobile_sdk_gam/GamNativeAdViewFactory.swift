@@ -1,7 +1,7 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
+import UIKit
 
 /// PlatformView factory for GAM Original-API native ads (custom-template +
 /// unified). Prebid runs the auction, GAM resolves the line item, and
@@ -38,7 +38,8 @@ final class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 final class GamNativePlatformView: NSObject, FlutterPlatformView,
     AdLoaderDelegate, CustomNativeAdLoaderDelegate, NativeAdLoaderDelegate,
     PrebidMobile.NativeAdDelegate, PrebidMobile.NativeAdEventDelegate,
-    GoogleMobileAds.NativeAdDelegate {
+    GoogleMobileAds.NativeAdDelegate
+{
 
     private let container = UIView()
     private let methodChannel: FlutterMethodChannel
@@ -85,13 +86,15 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         if let v = args["context"] as? Int { unit.context = ContextType(integerLiteral: v) }
         if let v = args["contextSubType"] as? Int { unit.contextSubType = ContextSubType(integerLiteral: v) }
         if let v = args["placementType"] as? Int { unit.placementType = PlacementType(integerLiteral: v) }
-        unit.eventtrackers = nativeTrackersFrom(args["eventTrackers"]) ?? [
-            NativeEventTracker(event: EventType.Impression, methods: [EventTracking.Image, EventTracking.js])
-        ]
+        unit.eventtrackers =
+            nativeTrackersFrom(args["eventTrackers"]) ?? [
+                NativeEventTracker(event: EventType.Impression, methods: [EventTracking.Image, EventTracking.js])
+            ]
         if let gpid = args["gpid"] as? String { unit.setGPID(gpid) }
         if let pbAdSlot = args["pbAdSlot"] as? String { unit.pbAdSlot = pbAdSlot }
         if let config = args["impOrtbConfig"] as? String { unit.setImpORTBConfig(config) }
-        if let config = args["globalOrtbConfig"] as? String { unit.setGlobalOrtbConfig(config) } // AdUnit spells it Ortb.
+        // AdUnit spells it Ortb.
+        if let config = args["globalOrtbConfig"] as? String { unit.setGlobalOrtbConfig(config) }
         if let v = intValue(args["placementCount"]) { unit.placementCount = v }
         if let v = intValue(args["sequence"]) { unit.sequence = v }
         if let v = args["assetUrlSupport"] as? Bool { unit.asseturlsupport = v ? 1 : 0 }
@@ -278,7 +281,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         // on Android are clickable. Labels and images ignore touches unless
         // enabled.
         let clickableViews: [UIView] = [iconView, titleLabel, mainImageView, bodyLabel, ctaButton]
-        clickableViews.forEach { $0.isUserInteractionEnabled = true }
+        for view in clickableViews { view.isUserInteractionEnabled = true }
         if !ad.registerView(view: container, clickableViews: clickableViews) {
             // Prebid refuses an expired ad (the bid outlived `bid.exp` while
             // GAM loaded); nothing would be tracked, so report the expiry.
@@ -346,7 +349,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         nativeAdView.callToActionView = ctaButton
         nativeAdView.nativeAd = nativeAd
 
-        container.subviews.forEach { $0.removeFromSuperview() }
+        for view in container.subviews { view.removeFromSuperview() }
         container.addSubview(nativeAdView)
         NSLayoutConstraint.activate([
             nativeAdView.topAnchor.constraint(equalTo: container.topAnchor),
@@ -379,7 +382,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
-        container.subviews.forEach { $0.removeFromSuperview() }
+        for view in container.subviews { view.removeFromSuperview() }
         container.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: container.topAnchor),

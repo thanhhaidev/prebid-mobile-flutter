@@ -35,7 +35,7 @@ internal class BannerAdPlatformView(
     private val context: Context,
     private val viewId: Int,
     messenger: BinaryMessenger,
-    params: Map<*, *>
+    params: Map<*, *>,
 ) : PlatformView {
 
     private val bannerView: BannerView
@@ -129,18 +129,36 @@ internal class BannerAdPlatformView(
         })
 
         bannerView.setBannerVideoListener(object : BannerVideoListener {
-            override fun onVideoCompleted(view: BannerView) { methodChannel.invokeMethod("onVideoCompleted", null) }
-            override fun onVideoPaused(view: BannerView) { methodChannel.invokeMethod("onVideoPaused", null) }
-            override fun onVideoResumed(view: BannerView) { methodChannel.invokeMethod("onVideoResumed", null) }
-            override fun onVideoUnMuted(view: BannerView) { methodChannel.invokeMethod("onVideoUnmuted", null) }
-            override fun onVideoMuted(view: BannerView) { methodChannel.invokeMethod("onVideoMuted", null) }
+            override fun onVideoCompleted(view: BannerView) {
+                methodChannel.invokeMethod("onVideoCompleted", null)
+            }
+            override fun onVideoPaused(view: BannerView) {
+                methodChannel.invokeMethod("onVideoPaused", null)
+            }
+            override fun onVideoResumed(view: BannerView) {
+                methodChannel.invokeMethod("onVideoResumed", null)
+            }
+            override fun onVideoUnMuted(view: BannerView) {
+                methodChannel.invokeMethod("onVideoUnmuted", null)
+            }
+            override fun onVideoMuted(view: BannerView) {
+                methodChannel.invokeMethod("onVideoMuted", null)
+            }
         })
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "loadAd" -> { load(); result.success(null) }
-                "stopRefresh" -> { bannerView.stopRefresh(); result.success(null) }
+                "loadAd" -> {
+                    load()
+                    result.success(null)
+                }
+
+                "stopRefresh" -> {
+                    bannerView.stopRefresh()
+                    result.success(null)
+                }
+
                 else -> result.notImplemented()
             }
         }

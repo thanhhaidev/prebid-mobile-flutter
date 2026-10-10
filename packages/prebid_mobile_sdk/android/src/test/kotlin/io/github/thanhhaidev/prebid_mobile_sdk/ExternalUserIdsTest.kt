@@ -68,15 +68,21 @@ internal class ExternalUserIdsTest {
 
     @Test
     fun setExternalUserIds_replacesThePreviousIds() {
-        api.setExternalUserIds(listOf(ExternalUserIdData(source = "a.com", uids = listOf(UserUniqueIdData(id = "1", atype = 1)))))
-        api.setExternalUserIds(listOf(ExternalUserIdData(source = "b.com", uids = listOf(UserUniqueIdData(id = "2", atype = 1)))))
+        api.setExternalUserIds(
+            listOf(ExternalUserIdData(source = "a.com", uids = listOf(UserUniqueIdData(id = "1", atype = 1)))),
+        )
+        api.setExternalUserIds(
+            listOf(ExternalUserIdData(source = "b.com", uids = listOf(UserUniqueIdData(id = "2", atype = 1)))),
+        )
 
         assertEquals(listOf("b.com"), api.getExternalUserIds().map { it.source })
     }
 
     @Test
     fun clearExternalUserIds_removesEveryId() {
-        api.setExternalUserIds(listOf(ExternalUserIdData(source = "a.com", uids = listOf(UserUniqueIdData(id = "1", atype = 1)))))
+        api.setExternalUserIds(
+            listOf(ExternalUserIdData(source = "a.com", uids = listOf(UserUniqueIdData(id = "1", atype = 1)))),
+        )
 
         api.clearExternalUserIds()
 

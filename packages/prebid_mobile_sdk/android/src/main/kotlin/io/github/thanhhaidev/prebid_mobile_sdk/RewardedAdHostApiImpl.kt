@@ -10,7 +10,7 @@ import org.prebid.mobile.rendering.interstitial.rewarded.Reward
 /** RewardedAdHostApi: rendering rewarded ads (Prebid renders). */
 internal class RewardedAdHostApiImpl(
     private val flutterApi: AdFlutterApi,
-    private val activity: () -> Activity?
+    private val activity: () -> Activity?,
 ) : RewardedAdHostApi {
 
     private val rewardedAds = mutableMapOf<Long, RewardedAdUnit>()
@@ -62,15 +62,17 @@ internal class RewardedAdHostApiImpl(
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdExpired")) {}
             }
             override fun onUserEarnedReward(unit: RewardedAdUnit, reward: Reward?) {
-                flutterApi.onAdEvent(AdEvent(
-                    adId = adId,
-                    eventName = "onUserEarnedReward",
-                    reward = RewardData(
-                        type = reward?.type ?: "reward",
-                        count = reward?.count?.toLong() ?: 1,
-                        ext = reward?.ext?.toMap(),
-                    )
-                )) {}
+                flutterApi.onAdEvent(
+                    AdEvent(
+                        adId = adId,
+                        eventName = "onUserEarnedReward",
+                        reward = RewardData(
+                            type = reward?.type ?: "reward",
+                            count = reward?.count?.toLong() ?: 1,
+                            ext = reward?.ext?.toMap(),
+                        ),
+                    ),
+                ) {}
             }
         })
 

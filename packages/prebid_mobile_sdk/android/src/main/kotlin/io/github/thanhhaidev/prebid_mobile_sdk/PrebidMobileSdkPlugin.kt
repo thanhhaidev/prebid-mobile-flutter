@@ -9,7 +9,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
  * Entry point of the core plugin: registers the Pigeon host APIs and the
  * banner / native platform views, and ties fullscreen ads to the Activity.
  */
-class PrebidMobileSdkPlugin : FlutterPlugin, ActivityAware {
+class PrebidMobileSdkPlugin :
+    FlutterPlugin,
+    ActivityAware {
 
     private var activity: Activity? = null
     private lateinit var flutterApi: AdFlutterApi

@@ -15,7 +15,7 @@ final class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     private let flutterApi: AdFlutterApi
 
     private static let checkInterval: TimeInterval = 0.25
-    private static let requiredViewableChecks = 5 // 1 s / 0.25 s + 1, as Prebid
+    private static let requiredViewableChecks = 5  // 1 s / 0.25 s + 1, as Prebid
     private weak var watchedView: UIView?
     private var viewabilityTimer: Timer?
     private var viewableChecks = 0

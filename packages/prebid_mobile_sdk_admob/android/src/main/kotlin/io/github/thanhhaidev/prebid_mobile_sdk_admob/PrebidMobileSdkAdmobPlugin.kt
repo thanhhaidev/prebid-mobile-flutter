@@ -10,7 +10,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
  * prebid_mobile_sdk plugin. Registers the AdMob banner and native platform
  * views and the interstitial and rewarded method channels.
  */
-class PrebidMobileSdkAdmobPlugin : FlutterPlugin, ActivityAware {
+class PrebidMobileSdkAdmobPlugin :
+    FlutterPlugin,
+    ActivityAware {
 
     private var activity: Activity? = null
     private var interstitialManager: AdMobInterstitialManager? = null

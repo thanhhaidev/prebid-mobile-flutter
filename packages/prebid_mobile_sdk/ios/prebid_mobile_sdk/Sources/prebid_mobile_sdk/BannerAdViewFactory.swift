@@ -1,16 +1,16 @@
 import Flutter
-import UIKit
 import PrebidMobile
+import UIKit
 
 final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
-    
+
     private let messenger: FlutterBinaryMessenger
-    
+
     init(messenger: FlutterBinaryMessenger) {
         self.messenger = messenger
         super.init()
     }
-    
+
     func create(
         withFrame frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -23,7 +23,7 @@ final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
             args: args as? [String: Any] ?? [:]
         )
     }
-    
+
     func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
         return FlutterStandardMessageCodec.sharedInstance()
     }
@@ -151,10 +151,12 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
     func bannerView(_ bannerView: BannerView, didReceiveAdWithAdSize adSize: CGSize) {
         // Report the rendered creative size so the Flutter widget can size the
         // slot dynamically to whatever the SDK returns (no fixed frame).
-        methodChannel.invokeMethod("onAdSize", arguments: [
-            "width": Double(adSize.width),
-            "height": Double(adSize.height),
-        ])
+        methodChannel.invokeMethod(
+            "onAdSize",
+            arguments: [
+                "width": Double(adSize.width),
+                "height": Double(adSize.height),
+            ])
         methodChannel.invokeMethod("onAdLoaded", arguments: bannerView.lastBidResponse?.winningBidPayload)
     }
 
@@ -163,16 +165,16 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
     func bannerViewDidDisplay(_ bannerView: BannerView) {
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
     }
-    
+
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWith error: Error) {
         methodChannel.invokeMethod("onAdFailed", arguments: ["error": PrebidErrorFormatter.describe(error)])
     }
-    
+
     func bannerViewWillPresentModal(_ bannerView: BannerView) {
         isModalOpen = true
         methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
-    
+
     func bannerViewDidDismissModal(_ bannerView: BannerView) {
         isModalOpen = false
         methodChannel.invokeMethod("onAdClosed", arguments: nil)

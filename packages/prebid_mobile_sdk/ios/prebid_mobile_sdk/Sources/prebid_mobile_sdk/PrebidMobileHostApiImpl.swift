@@ -18,8 +18,10 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         releaseAllAds()
     }
 
-    func initializeSdk(prebidServerUrl: String, accountId: String, nonTrackingUrl: String?,
-                       completion: @escaping (Result<InitializationResult, Error>) -> Void) {
+    func initializeSdk(
+        prebidServerUrl: String, accountId: String, nonTrackingUrl: String?,
+        completion: @escaping (Result<InitializationResult, Error>) -> Void
+    ) {
         Prebid.shared.prebidServerAccountId = accountId
         let callback: PrebidInitializationCallback = { status, error in
             let statusStr: String
@@ -46,18 +48,18 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
             switch (nonTrackingUrl, gmaVersion) {
             // The non-tracking URL is used instead of serverURL when the user
             // hasn't authorized tracking (ATT).
-            case let (nonTrackingUrl?, gmaVersion?):
+            case (let nonTrackingUrl?, let gmaVersion?):
                 try Prebid.initializeSDK(
                     serverURL: prebidServerUrl,
                     nonTrackingURLString: nonTrackingUrl,
                     gadMobileAdsVersion: gmaVersion,
                     callback
                 )
-            case let (nonTrackingUrl?, nil):
+            case (let nonTrackingUrl?, nil):
                 try Prebid.initializeSDK(
                     serverURL: prebidServerUrl, nonTrackingURLString: nonTrackingUrl, callback
                 )
-            case let (nil, gmaVersion?):
+            case (nil, let gmaVersion?):
                 try Prebid.initializeSDK(
                     serverURL: prebidServerUrl, gadMobileAdsVersion: gmaVersion, callback
                 )
@@ -113,8 +115,8 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         case 2: Prebid.shared.logLevel = .info
         case 3: Prebid.shared.logLevel = .warn
         case 4: Prebid.shared.logLevel = .error
-        case 5, 6: Prebid.shared.logLevel = .severe // 6 = none: PluginLogger drops everything.
-        default: Prebid.shared.logLevel = .debug // As Android.
+        case 5, 6: Prebid.shared.logLevel = .severe  // 6 = none: PluginLogger drops everything.
+        default: Prebid.shared.logLevel = .debug  // As Android.
         }
     }
 
@@ -293,7 +295,8 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         // Prebid iOS returns the ids as their JSON dictionaries.
         (Targeting.shared.getExternalUserIds() ?? []).compactMap { dict in
             guard let source = dict["source"] as? String,
-                  let uids = dict["uids"] as? [[String: Any]] else { return nil }
+                let uids = dict["uids"] as? [[String: Any]]
+            else { return nil }
             return ExternalUserIdData(
                 source: source,
                 uids: uids.map { uid in
@@ -388,8 +391,8 @@ final class BidEventForwarder: NSObject, PrebidEventDelegate {
     }
 }
 
-private extension ExternalUserId {
-    var data: ExternalUserIdData {
+extension ExternalUserId {
+    fileprivate var data: ExternalUserIdData {
         ExternalUserIdData(
             source: source,
             uids: uids.map { UserUniqueIdData(id: $0.uniqueId, atype: $0.aType.int64Value, ext: $0.ext?.pigeonKeys) },
@@ -401,18 +404,18 @@ private extension ExternalUserId {
     }
 }
 
-private extension Dictionary where Key == String?, Value == Any? {
+extension Dictionary where Key == String?, Value == Any? {
     /// The map without its null keys and values, as Prebid wants it.
-    var stringKeys: [String: Any] {
+    fileprivate var stringKeys: [String: Any] {
         reduce(into: [:]) { result, entry in
             if let key = entry.key, let value = entry.value { result[key] = value }
         }
     }
 }
 
-private extension Dictionary where Key == String, Value == Any {
+extension Dictionary where Key == String, Value == Any {
     /// The map typed as a Pigeon map.
-    var pigeonKeys: [String?: Any?] { reduce(into: [:]) { $0[$1.key] = $1.value } }
+    fileprivate var pigeonKeys: [String?: Any?] { reduce(into: [:]) { $0[$1.key] = $1.value } }
 }
 
 /// The version of the Google Mobile Ads SDK linked into the app ("12.2.0"),
@@ -420,13 +423,13 @@ private extension Dictionary where Key == String, Value == Any {
 /// nil without it.
 func linkedGmaVersion() -> String? {
     guard let mobileAds = NSClassFromString("GADMobileAds") as AnyObject?,
-          mobileAds.responds(to: NSSelectorFromString("sharedInstance")),
-          let shared = mobileAds.perform(NSSelectorFromString("sharedInstance"))?
-              .takeUnretainedValue() as? NSObject,
-          shared.responds(to: NSSelectorFromString("versionNumber")),
-          let value = shared.value(forKey: "versionNumber") as? NSValue,
-          // GADVersionNumber: major, minor and patch NSIntegers.
-          String(cString: value.objCType).hasSuffix("=qqq}")
+        mobileAds.responds(to: NSSelectorFromString("sharedInstance")),
+        let shared = mobileAds.perform(NSSelectorFromString("sharedInstance"))?
+            .takeUnretainedValue() as? NSObject,
+        shared.responds(to: NSSelectorFromString("versionNumber")),
+        let value = shared.value(forKey: "versionNumber") as? NSValue,
+        // GADVersionNumber: major, minor and patch NSIntegers.
+        String(cString: value.objCType).hasSuffix("=qqq}")
     else { return nil }
     var version = (0, 0, 0)
     value.getValue(&version, size: MemoryLayout<(Int, Int, Int)>.size)

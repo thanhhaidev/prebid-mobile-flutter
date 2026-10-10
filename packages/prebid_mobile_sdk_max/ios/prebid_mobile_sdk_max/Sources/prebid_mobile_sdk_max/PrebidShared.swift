@@ -1,9 +1,9 @@
-import Foundation
+import AppLovinSDK
 import CoreGraphics
 import Flutter
-import UIKit
+import Foundation
 import PrebidMobile
-import AppLovinSDK
+import UIKit
 
 // This package's own helpers; what every companion shares is in
 // PrebidPlugin and PrebidRequests.
@@ -45,4 +45,3 @@ extension FullscreenControls {
         }
     }
 }
-

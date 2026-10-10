@@ -66,7 +66,9 @@ extension VideoParametersConfig {
     func apply(to vp: VideoParameters) {
         vp.mimes = mimes
         if let v = protocols { vp.protocols = v.compactMap { $0 }.map { Signals.Protocols(integerLiteral: Int($0)) } }
-        if let v = playbackMethods { vp.playbackMethod = v.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) } }
+        if let v = playbackMethods {
+            vp.playbackMethod = v.compactMap { $0 }.map { Signals.PlaybackMethod(integerLiteral: Int($0)) }
+        }
         if let v = placement { vp.placement = Signals.Placement(integerLiteral: Int(v)) }
         if let v = plcmt { vp.plcmnt = Signals.Plcmnt(integerLiteral: Int(v)) }
         if let v = api { vp.api = v.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) } }
@@ -90,16 +92,16 @@ private func prebidPosition(_ name: String) -> Position? {
     }
 }
 
-
 /// The ad formats named by Dart ("banner", "video"); nil for none.
 func adFormatSet(_ names: [String]?) -> Set<AdFormat>? {
-    let formats = Set((names ?? []).compactMap { name -> AdFormat? in
-        switch name {
-        case "banner": return .banner
-        case "video": return .video
-        default: return nil
-        }
-    })
+    let formats = Set(
+        (names ?? []).compactMap { name -> AdFormat? in
+            switch name {
+            case "banner": return .banner
+            case "video": return .video
+            default: return nil
+            }
+        })
     return formats.isEmpty ? nil : formats
 }
 
@@ -197,7 +199,7 @@ struct NativeRequestSettings {
         if let v = config.pbAdSlot { request.pbAdSlot = v }
         if let v = config.gpid { request.setGPID(v) }
         if let v = config.impOrtbConfig { request.setImpORTBConfig(v) }
-        if let v = config.globalOrtbConfig { request.setGlobalOrtbConfig(v) } // AdUnit spells it Ortb.
+        if let v = config.globalOrtbConfig { request.setGlobalOrtbConfig(v) }  // AdUnit spells it Ortb.
     }
 
     func makeParameters() -> NativeParameters {

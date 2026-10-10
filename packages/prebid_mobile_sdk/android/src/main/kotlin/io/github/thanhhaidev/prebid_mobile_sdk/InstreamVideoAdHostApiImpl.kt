@@ -13,20 +13,24 @@ internal class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
     override fun fetchDemand(
         adId: Long,
         config: InstreamVideoAdRequestConfig,
-        callback: (Result<MultiformatBidResult>) -> Unit
+        callback: (Result<MultiformatBidResult>) -> Unit,
     ) {
         adUnits.remove(adId)?.let(::release)
         if (!PrebidMobile.isSdkInitialized()) {
-            callback(Result.success(MultiformatBidResult(
-                resultCode = PluginErrors.NOT_INITIALIZED_CODE,
-                targetingKeywords = emptyMap(),
-            )))
+            callback(
+                Result.success(
+                    MultiformatBidResult(
+                        resultCode = PluginErrors.NOT_INITIALIZED_CODE,
+                        targetingKeywords = emptyMap(),
+                    ),
+                ),
+            )
             return
         }
         val adUnit = InStreamVideoAdUnit(
             config.configId,
             config.width.toInt(),
-            config.height.toInt()
+            config.height.toInt(),
         )
         config.videoConfig?.let { adUnit.videoParameters = it.toVideoParameters() }
         config.gpid?.let(adUnit::setGpid)

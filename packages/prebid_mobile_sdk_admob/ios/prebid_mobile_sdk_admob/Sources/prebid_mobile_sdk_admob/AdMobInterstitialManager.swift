@@ -1,8 +1,8 @@
 import Flutter
-import UIKit
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
+import UIKit
 
 /// One AdMob-mediated interstitial: the Prebid ad unit that runs the auction
 /// and, once loaded, the AdMob ad.

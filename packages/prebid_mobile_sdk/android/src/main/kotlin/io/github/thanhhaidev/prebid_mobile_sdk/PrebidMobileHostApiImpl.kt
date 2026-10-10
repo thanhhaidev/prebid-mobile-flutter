@@ -33,7 +33,7 @@ internal class PrebidMobileHostApiImpl(
         prebidServerUrl: String,
         accountId: String,
         nonTrackingUrl: String?, // iOS only (ATT); Prebid Android has no equivalent.
-        callback: (Result<InitializationResult>) -> Unit
+        callback: (Result<InitializationResult>) -> Unit,
     ) {
         PrebidMobile.setPrebidServerAccountId(accountId)
         // Prebid's SdkInitializer returns without calling the listener when the
@@ -82,7 +82,6 @@ internal class PrebidMobileHostApiImpl(
     private fun gmaVersion(mobileAds: String): String? = runCatching {
         Class.forName(mobileAds).getMethod("getVersion").invoke(null)?.toString()
     }.getOrNull()
-
 
     override fun setTimeoutMillis(timeoutMillis: Long) {
         PrebidMobile.setTimeoutMillis(timeoutMillis.toInt())
@@ -139,8 +138,7 @@ internal class PrebidMobileHostApiImpl(
         PrebidMobile.setCreativeFactoryTimeoutPreRenderContent(timeout.toInt())
     }
 
-    override fun getCreativeFactoryTimeout(): Long =
-        PrebidMobile.getCreativeFactoryTimeout().toLong()
+    override fun getCreativeFactoryTimeout(): Long = PrebidMobile.getCreativeFactoryTimeout().toLong()
 
     override fun getCreativeFactoryTimeoutPreRenderContent(): Long =
         PrebidMobile.getCreativeFactoryTimeoutPreRenderContent().toLong()
@@ -149,16 +147,14 @@ internal class PrebidMobileHostApiImpl(
         PrebidMobile.setPrebidServerAccountId(accountId)
     }
 
-    override fun getPrebidServerAccountId(): String =
-        PrebidMobile.getPrebidServerAccountId() ?: ""
+    override fun getPrebidServerAccountId(): String = PrebidMobile.getPrebidServerAccountId() ?: ""
 
     override fun setPrebidServerUrl(url: String) {
         // Updates the CUSTOM host singleton that every auction reads its URL from.
         Host.createCustomHost(url)
     }
 
-    override fun getPrebidServerUrl(): String? =
-        PrebidMobile.getPrebidServerHost()?.hostUrl?.takeIf { it.isNotEmpty() }
+    override fun getPrebidServerUrl(): String? = PrebidMobile.getPrebidServerHost()?.hostUrl?.takeIf { it.isNotEmpty() }
 
     override fun setUseCacheForReportingWithRenderingApi(use: Boolean) {
         PrebidMobile.setUseCacheForReportingWithRenderingApi(use)
@@ -185,7 +181,7 @@ internal class PrebidMobileHostApiImpl(
                 "openRtb26" -> EidsPlacement.OPEN_RTB_2_6
                 "openRtb25" -> EidsPlacement.OPEN_RTB_2_5
                 else -> EidsPlacement.COMPATIBLE
-            }
+            },
         )
     }
 
@@ -281,8 +277,7 @@ internal class PrebidMobileHostApiImpl(
         TargetingParams.setSendSharedId(send)
     }
 
-    override fun getSharedId(): ExternalUserIdData? =
-        TargetingParams.getSharedId()?.toData()
+    override fun getSharedId(): ExternalUserIdData? = TargetingParams.getSharedId()?.toData()
 
     override fun resetSharedId() {
         TargetingParams.resetSharedId()
@@ -352,9 +347,7 @@ internal class PrebidMobileHostApiImpl(
         else -> "compatible"
     }
 
-    override fun getSdkVersion(): String {
-        return PrebidMobile.SDK_VERSION
-    }
+    override fun getSdkVersion(): String = PrebidMobile.SDK_VERSION
 
     override fun getOmsdkVersion(): String = PrebidMobile.OMSDK_VERSION
 

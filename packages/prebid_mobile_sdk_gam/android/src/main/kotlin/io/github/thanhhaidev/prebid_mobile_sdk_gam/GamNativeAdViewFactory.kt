@@ -40,9 +40,9 @@ import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.PrebidNativeAd
 import org.prebid.mobile.PrebidNativeAdEventListener
-import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.PrebidNativeAdListener
 import org.prebid.mobile.ResultCode
 import org.prebid.mobile.addendum.AdViewUtils
@@ -53,9 +53,8 @@ import org.prebid.mobile.addendum.AdViewUtils
  * [AdViewUtils.findNative] extracts the Prebid winning bid for app-side
  * rendering — matching Prebid's reference GAM native integration.
  */
-internal class GamNativeAdViewFactory(
-    private val messenger: BinaryMessenger,
-) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+internal class GamNativeAdViewFactory(private val messenger: BinaryMessenger) :
+    PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()

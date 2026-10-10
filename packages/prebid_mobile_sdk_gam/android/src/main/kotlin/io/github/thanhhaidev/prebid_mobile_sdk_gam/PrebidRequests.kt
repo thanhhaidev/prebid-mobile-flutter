@@ -35,6 +35,7 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
                 m.json("ext")?.let(::setTitleExt)
                 m.json("assetExt")?.let(::setAssetExt)
             }
+
             // Prebid's argument order: w, h, wmin, hmin.
             "image" -> NativeImageAsset(
                 m.int("imageWidth") ?: 0,
@@ -49,6 +50,7 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
                 m.json("ext")?.let(::setImageExt)
                 m.json("assetExt")?.let(::setAssetExt)
             }
+
             "data" -> NativeDataAsset().apply {
                 val type = m.int("dataType")
                 dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { it.id == type }
@@ -57,6 +59,7 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
                 m.json("ext")?.let(::setDataExt)
                 m.json("assetExt")?.let(::setAssetExt)
             }
+
             else -> null
         }
     }

@@ -1,5 +1,5 @@
-import Foundation
 import AppLovinSDK
+import Foundation
 
 /// Per-ad MAX delegate of the interstitial and rewarded managers. `MAAd`
 /// carries only the ad unit identifier, so two ads on the same unit could not

@@ -26,7 +26,10 @@ internal class PigeonConversionsTest {
     fun toPrebidTracker_keepsKnownMethodsAndDropsUnknownTypes() {
         val tracker = NativeEventTrackerConfig(eventType = 1, methods = listOf(1, 99)).toPrebidTracker()
         assertEquals(NativeEventTracker.EVENT_TYPE.IMPRESSION, tracker?.event)
-        assertEquals<List<NativeEventTracker.EVENT_TRACKING_METHOD>?>(listOf(NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE), tracker?.methods?.toList())
+        assertEquals<List<NativeEventTracker.EVENT_TRACKING_METHOD>?>(
+            listOf(NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE),
+            tracker?.methods?.toList(),
+        )
         assertNull(NativeEventTrackerConfig(eventType = 42, methods = listOf(1)).toPrebidTracker())
     }
 
@@ -47,13 +50,21 @@ internal class PigeonConversionsTest {
 
     @Test
     fun toPrebidAsset_ignoresInvalidExt() {
-        val json = NativeAssetConfig(assetType = "title", required_ = false, ext = "not json").toPrebidAsset()!!.getJsonObject(1)
+        val json = NativeAssetConfig(
+            assetType = "title",
+            required_ = false,
+            ext = "not json",
+        ).toPrebidAsset()!!.getJsonObject(1)
         assertNull(json.getJSONObject("title").opt("ext"))
     }
 
     @Test
     fun toPrebidTracker_keepsTheExt() {
-        val tracker = NativeEventTrackerConfig(eventType = 1, methods = listOf(1), ext = """{"t":"x"}""").toPrebidTracker()
+        val tracker = NativeEventTrackerConfig(
+            eventType = 1,
+            methods = listOf(1),
+            ext = """{"t":"x"}""",
+        ).toPrebidTracker()
         assertEquals("x", (tracker?.extObject as JSONObject).getString("t"))
     }
 
@@ -122,7 +133,11 @@ internal class PigeonConversionsTest {
         val title = NativeAssetConfig(assetType = "title", required_ = true).toPrebidAsset() as NativeTitleAsset
         assertEquals(90, title.len)
         assertTrue(title.isRequired)
-        val short = NativeAssetConfig(assetType = "title", required_ = false, titleLength = 25).toPrebidAsset() as NativeTitleAsset
+        val short = NativeAssetConfig(
+            assetType = "title",
+            required_ = false,
+            titleLength = 25,
+        ).toPrebidAsset() as NativeTitleAsset
         assertEquals(25, short.len)
     }
 

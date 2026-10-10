@@ -168,12 +168,17 @@ internal class MaxBannerPlatformView(
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "loadAd" -> { load(); result.success(null) }
+                "loadAd" -> {
+                    load()
+                    result.success(null)
+                }
+
                 "stopRefresh" -> {
                     adUnit?.stopRefresh()
                     adView.stopAutoRefresh()
                     result.success(null)
                 }
+
                 else -> result.notImplemented()
             }
         }

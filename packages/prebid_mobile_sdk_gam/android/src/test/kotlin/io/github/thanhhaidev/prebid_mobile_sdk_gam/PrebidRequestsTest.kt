@@ -282,10 +282,22 @@ internal class PrebidRequestsTest {
     @Test
     fun nativeRequestOptions_keepsTheAdUnitDefaultsForAbsentOptions() {
         val unit = NativeAdUnit("config-id")
-        val defaults = unit.nativeConfiguration.run { listOf(placementCount, seq, aUrlSupport, dUrlSupport, privacy, ext) }
+        val defaults = unit.nativeConfiguration.run {
+            listOf(placementCount, seq, aUrlSupport, dUrlSupport, privacy, ext)
+        }
         NativeRequestOptions(mapOf("ext" to "not json")).applyTo(unit)
         val config = unit.nativeConfiguration
-        assertEquals(defaults, listOf(config.placementCount, config.seq, config.aUrlSupport, config.dUrlSupport, config.privacy, config.ext))
+        assertEquals(
+            defaults,
+            listOf(
+                config.placementCount,
+                config.seq,
+                config.aUrlSupport,
+                config.dUrlSupport,
+                config.privacy,
+                config.ext,
+            ),
+        )
     }
 
     @Test

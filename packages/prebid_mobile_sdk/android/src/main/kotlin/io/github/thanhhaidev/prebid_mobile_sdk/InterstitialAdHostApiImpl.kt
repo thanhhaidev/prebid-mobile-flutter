@@ -59,7 +59,7 @@ internal class InterstitialAdHostApiImpl(
             c.applyTo(adUnit)
             if (c.minWidthPercentage != null && c.minHeightPercentage != null) {
                 adUnit.setMinSizePercentage(
-                    AdSize(c.minWidthPercentage.toInt(), c.minHeightPercentage.toInt())
+                    AdSize(c.minWidthPercentage.toInt(), c.minHeightPercentage.toInt()),
                 )
             }
         }

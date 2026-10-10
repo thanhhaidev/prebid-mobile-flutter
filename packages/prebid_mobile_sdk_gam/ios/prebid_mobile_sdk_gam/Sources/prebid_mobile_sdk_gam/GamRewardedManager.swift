@@ -1,7 +1,7 @@
 import Flutter
-import UIKit
 import PrebidMobile
 import PrebidMobileGAMEventHandlers
+import UIKit
 
 /// GAM-rendered rewarded ads over the `prebid_mobile_sdk_gam/rewarded` method
 /// channel.
@@ -21,7 +21,7 @@ final class GamRewardedManager: GamFullscreenAdManager {
             // hb_* keys still take precedence.
             eventHandler.adManagerRequestConfiguration = { request in
                 var merged = request.customTargeting ?? [:]
-                targeting.forEach { merged[$0.key] = $0.value }
+                merged.merge(targeting) { _, app in app }
                 request.customTargeting = merged
             }
         }

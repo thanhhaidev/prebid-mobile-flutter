@@ -25,7 +25,8 @@ final class NativeAdHostApiImpl: NativeAdHostApi {
         nativeRequest.fetchDemand(completionBidInfo: { [weak self] bidInfo in
             InFlightAdUnits.release(requestId)
             guard let self = self,
-                  self.nativeRequests[adId].map(ObjectIdentifier.init) == requestId else { return }
+                self.nativeRequests[adId].map(ObjectIdentifier.init) == requestId
+            else { return }
             guard bidInfo.resultCode == .prebidDemandFetchSuccess else {
                 return self.flutterApi.sendAdFailed(adId, bidInfo.resultCode.dartCode)
             }
@@ -51,7 +52,9 @@ final class NativeAdHostApiImpl: NativeAdHostApi {
             adId, ad: nativeAd,
             delegate: NativeAdEventForwarder(adId: adId, flutterApi: flutterApi)
         )
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdLoaded", nativeAd: nativeAd.nativeAdData)) { _ in }
+        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdLoaded", nativeAd: nativeAd.nativeAdData)) {
+            _ in
+        }
     }
 
     func destroy(adId: Int64) throws {

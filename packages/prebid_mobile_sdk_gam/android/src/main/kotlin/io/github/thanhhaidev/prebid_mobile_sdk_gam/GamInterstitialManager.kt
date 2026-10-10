@@ -48,14 +48,13 @@ internal class GamInterstitialManager(
             controls.applyTo(adUnit)
             if (controls.minWidthPercentage != null && controls.minHeightPercentage != null) {
                 adUnit.setMinSizePercentage(
-                    AdSize(controls.minWidthPercentage, controls.minHeightPercentage)
+                    AdSize(controls.minWidthPercentage, controls.minHeightPercentage),
                 )
             }
         }
         adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
             override fun onAdLoaded(unit: InterstitialAdUnit) = send(adId, "onAdLoaded")
-            override fun onAdFailed(unit: InterstitialAdUnit, e: AdException?) =
-                send(adId, "onAdFailed", e?.message)
+            override fun onAdFailed(unit: InterstitialAdUnit, e: AdException?) = send(adId, "onAdFailed", e?.message)
             override fun onAdDisplayed(unit: InterstitialAdUnit) = send(adId, "onAdDisplayed")
             override fun onAdClosed(unit: InterstitialAdUnit) = send(adId, "onAdClosed")
             override fun onAdClicked(unit: InterstitialAdUnit) = send(adId, "onAdClicked")

@@ -1,9 +1,9 @@
-import Foundation
 import CoreGraphics
-import UIKit
+import Foundation
 import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
+import UIKit
 
 // This package's own helpers; what every companion shares is in
 // PrebidPlugin and PrebidRequests.
@@ -38,4 +38,3 @@ extension FullscreenControls {
         }
     }
 }
-

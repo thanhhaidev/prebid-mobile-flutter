@@ -1,7 +1,7 @@
-import Foundation
 import CoreGraphics
-import UIKit
+import Foundation
 import PrebidMobile
+import UIKit
 
 // This package's own helpers; what every companion shares is in
 // PrebidPlugin and PrebidRequests.

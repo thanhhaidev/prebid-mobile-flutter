@@ -1,8 +1,8 @@
+import AppLovinSDK
 import Flutter
-import UIKit
 import PrebidMobile
 import PrebidMobileMAXAdapters
-import AppLovinSDK
+import UIKit
 
 /// PlatformView factory for AppLovin MAX-mediated native ads. The rendered view
 /// is a `MANativeAdView` with tag-bound asset views that the MAX SDK populates;
@@ -86,9 +86,10 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
         if let v = jsonDictionary(args["ext"]) { adUnit.setExt(v) }
         if let v = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(v) }
         if let v = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(v) }
-        adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
-            NativeEventTracker(event: .Impression, methods: [.Image, .js])
-        ])
+        adUnit.addEventTracker(
+            nativeTrackersFrom(args["eventTrackers"]) ?? [
+                NativeEventTracker(event: .Impression, methods: [.Image, .js])
+            ])
         self.adUnit = adUnit
 
         let adView = buildNativeAdView()

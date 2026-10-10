@@ -21,8 +21,8 @@ final class TargetingHostApiImpl: TargetingHostApi {
 
     // US Privacy / CCPA
     func setUSPrivacyString(value: String?) throws {
-        if let val_ = value {
-            UserDefaults.standard.set(val_, forKey: "IABUSPrivacy_String")
+        if let value {
+            UserDefaults.standard.set(value, forKey: "IABUSPrivacy_String")
         } else {
             UserDefaults.standard.removeObject(forKey: "IABUSPrivacy_String")
         }
@@ -44,7 +44,9 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func getAppKeywords() throws -> [String] { Targeting.shared.getAppKeywords() }
 
     func addAppExtData(key: String, value: String) throws { Targeting.shared.addAppExtData(key: key, value: value) }
-    func updateAppExtData(key: String, value: [String]) throws { Targeting.shared.updateAppExtData(key: key, value: Set(value)) }
+    func updateAppExtData(key: String, value: [String]) throws {
+        Targeting.shared.updateAppExtData(key: key, value: Set(value))
+    }
     func removeAppExtData(key: String) throws { Targeting.shared.removeAppExtData(for: key) }
     func clearAppExtData() throws { Targeting.shared.clearAppExtData() }
 
@@ -82,7 +84,8 @@ final class TargetingHostApiImpl: TargetingHostApi {
 
     func getUserExt() throws -> String? {
         guard let ext = Targeting.shared.userExt,
-              let data = try? JSONSerialization.data(withJSONObject: ext) else { return nil }
+            let data = try? JSONSerialization.data(withJSONObject: ext)
+        else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
@@ -98,8 +101,12 @@ final class TargetingHostApiImpl: TargetingHostApi {
         Targeting.shared.userExt = ext.isEmpty ? nil : ext
     }
 
-    func addBidderToAccessControlList(bidderName: String) throws { Targeting.shared.addBidderToAccessControlList(bidderName) }
-    func removeBidderFromAccessControlList(bidderName: String) throws { Targeting.shared.removeBidderFromAccessControlList(bidderName) }
+    func addBidderToAccessControlList(bidderName: String) throws {
+        Targeting.shared.addBidderToAccessControlList(bidderName)
+    }
+    func removeBidderFromAccessControlList(bidderName: String) throws {
+        Targeting.shared.removeBidderFromAccessControlList(bidderName)
+    }
     func clearAccessControlList() throws { Targeting.shared.clearAccessControlList() }
 
     func setGlobalOrtbConfig(ortbConfig: String?) throws {
@@ -135,7 +142,8 @@ final class TargetingHostApiImpl: TargetingHostApi {
         // Invalid JSON is ignored by Prebid anyway; the name is still sent.
         var root: [String: Any] = [:]
         if let data = config?.data(using: .utf8),
-           let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+            let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        {
             root = parsed
         }
         var app = root["app"] as? [String: Any] ?? [:]

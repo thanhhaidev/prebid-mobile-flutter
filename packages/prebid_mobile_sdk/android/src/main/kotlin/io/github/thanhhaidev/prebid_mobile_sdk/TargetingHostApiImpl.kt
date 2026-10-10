@@ -47,17 +47,24 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
             prefs.edit().remove("IABUSPrivacy_String").apply()
         }
     }
-    override fun getUSPrivacyString(): String? =
-        defaultPreferences().getString("IABUSPrivacy_String", null)
+    override fun getUSPrivacyString(): String? = defaultPreferences().getString("IABUSPrivacy_String", null)
 
     // Same file as the deprecated PreferenceManager.getDefaultSharedPreferences.
     private fun defaultPreferences() =
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
 
-    override fun addUserKeyword(keyword: String) { TargetingParams.addUserKeyword(keyword) }
-    override fun addUserKeywords(keywords: List<String>) { keywords.forEach { TargetingParams.addUserKeyword(it) } }
-    override fun removeUserKeyword(keyword: String) { TargetingParams.removeUserKeyword(keyword) }
-    override fun clearUserKeywords() { TargetingParams.clearUserKeywords() }
+    override fun addUserKeyword(keyword: String) {
+        TargetingParams.addUserKeyword(keyword)
+    }
+    override fun addUserKeywords(keywords: List<String>) {
+        keywords.forEach { TargetingParams.addUserKeyword(it) }
+    }
+    override fun removeUserKeyword(keyword: String) {
+        TargetingParams.removeUserKeyword(keyword)
+    }
+    override fun clearUserKeywords() {
+        TargetingParams.clearUserKeywords()
+    }
     override fun getUserKeywords(): List<String> {
         val kw = TargetingParams.getUserKeywords()
         return if (kw.isNullOrEmpty()) emptyList() else kw.split(",").map { it.trim() }
@@ -80,16 +87,24 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
     }
 
     override fun addAppExtData(key: String, value: String) {
-        try { TargetingParams.addExtData(key, value) } catch (_: Exception) {}
+        try {
+            TargetingParams.addExtData(key, value)
+        } catch (_: Exception) {}
     }
     override fun updateAppExtData(key: String, value: List<String>) {
-        try { TargetingParams.updateExtData(key, HashSet(value)) } catch (_: Exception) {}
+        try {
+            TargetingParams.updateExtData(key, HashSet(value))
+        } catch (_: Exception) {}
     }
     override fun removeAppExtData(key: String) {
-        try { TargetingParams.removeExtData(key) } catch (_: Exception) {}
+        try {
+            TargetingParams.removeExtData(key)
+        } catch (_: Exception) {}
     }
     override fun clearAppExtData() {
-        try { TargetingParams.clearExtData() } catch (_: Exception) {}
+        try {
+            TargetingParams.clearExtData()
+        } catch (_: Exception) {}
     }
 
     // User Ext Data (user.ext.data). Tracked locally (process-wide, like the
@@ -140,22 +155,36 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
         TargetingParams.setUserExt(if (ext.getJsonObject().length() == 0) null else ext)
     }
 
-    override fun addBidderToAccessControlList(bidderName: String) { TargetingParams.addBidderToAccessControlList(bidderName) }
-    override fun removeBidderFromAccessControlList(bidderName: String) { TargetingParams.removeBidderFromAccessControlList(bidderName) }
-    override fun clearAccessControlList() { TargetingParams.clearAccessControlList() }
+    override fun addBidderToAccessControlList(bidderName: String) {
+        TargetingParams.addBidderToAccessControlList(bidderName)
+    }
+    override fun removeBidderFromAccessControlList(bidderName: String) {
+        TargetingParams.removeBidderFromAccessControlList(bidderName)
+    }
+    override fun clearAccessControlList() {
+        TargetingParams.clearAccessControlList()
+    }
 
-    override fun setGlobalOrtbConfig(ortbConfig: String?) { TargetingParams.setGlobalOrtbConfig(ortbConfig) }
+    override fun setGlobalOrtbConfig(ortbConfig: String?) {
+        TargetingParams.setGlobalOrtbConfig(ortbConfig)
+    }
     override fun getGlobalOrtbConfig(): String? = TargetingParams.getGlobalOrtbConfig()
 
-    override fun setPublisherName(name: String?) { TargetingParams.setPublisherName(name) }
-    override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
-    override fun setDomain(domain: String?) { TargetingParams.setDomain(domain) }
+    override fun setPublisherName(name: String?) {
+        TargetingParams.setPublisherName(name)
+    }
+    override fun setStoreUrl(url: String?) {
+        TargetingParams.setStoreUrl(url)
+    }
+    override fun setDomain(domain: String?) {
+        TargetingParams.setDomain(domain)
+    }
 
     override fun setAppName(name: String?) {
         appNameOverride = name
         // null: back to the application label, as Prebid's AppInfoManager.init reads it.
         AppInfoManager.setAppName(
-            name ?: context.applicationInfo.loadLabel(context.packageManager).toString()
+            name ?: context.applicationInfo.loadLabel(context.packageManager).toString(),
         )
     }
 
@@ -165,11 +194,17 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
     override fun getSourceApp(): String? = null
     override fun getItunesId(): String? = null
 
-    override fun setBundleName(bundleName: String?) { TargetingParams.setBundleName(bundleName) }
+    override fun setBundleName(bundleName: String?) {
+        TargetingParams.setBundleName(bundleName)
+    }
     override fun getBundleName(): String? = TargetingParams.getBundleName()
 
-    override fun setOmidPartnerName(name: String?) { TargetingParams.setOmidPartnerName(name) }
-    override fun setOmidPartnerVersion(version: String?) { TargetingParams.setOmidPartnerVersion(version) }
+    override fun setOmidPartnerName(name: String?) {
+        TargetingParams.setOmidPartnerName(name)
+    }
+    override fun setOmidPartnerVersion(version: String?) {
+        TargetingParams.setOmidPartnerVersion(version)
+    }
 
     override fun setUserLatLng(latitude: Double, longitude: Double) {
         TargetingParams.setUserLatLng(latitude.toFloat(), longitude.toFloat())

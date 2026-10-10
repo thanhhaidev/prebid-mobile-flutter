@@ -141,6 +141,6 @@ class FullscreenAdManager<Ad: AnyObject> {
     /// Frees every ad. Also called from Dart before its first call: after a
     /// hot restart this manager still holds the previous isolate's ads.
     private func releaseAll() {
-        ads.keys.forEach { release($0) }
+        for adId in ads.keys { release(adId) }
     }
 }

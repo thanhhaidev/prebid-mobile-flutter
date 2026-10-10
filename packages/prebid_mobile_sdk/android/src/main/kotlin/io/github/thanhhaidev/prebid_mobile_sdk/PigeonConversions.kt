@@ -116,6 +116,7 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
         jsonObject(this@toPrebidAsset.ext)?.let(::setTitleExt)
         jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
+
     // Prebid's argument order: w, h, wmin, hmin.
     "image" -> NativeImageAsset(
         imageWidth?.toInt() ?: 0,
@@ -129,6 +130,7 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
         jsonObject(this@toPrebidAsset.ext)?.let(::setImageExt)
         jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
+
     "data" -> NativeDataAsset().apply {
         dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.dataType }
         dataLength?.let { setLen(it.toInt()) }
@@ -136,6 +138,7 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
         jsonObject(this@toPrebidAsset.ext)?.let(::setDataExt)
         jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
+
     else -> null
 }
 
@@ -152,8 +155,7 @@ internal fun NativeEventTrackerConfig.toPrebidTracker(): NativeEventTracker? {
 }
 
 /** A JSON object string from Dart as a [JSONObject], or null when invalid. */
-internal fun jsonObject(json: String?): JSONObject? =
-    json?.let { runCatching { JSONObject(it) }.getOrNull() }
+internal fun jsonObject(json: String?): JSONObject? = json?.let { runCatching { JSONObject(it) }.getOrNull() }
 
 /**
  * The native request settings of a [NativeAdRequestConfig], applied to an

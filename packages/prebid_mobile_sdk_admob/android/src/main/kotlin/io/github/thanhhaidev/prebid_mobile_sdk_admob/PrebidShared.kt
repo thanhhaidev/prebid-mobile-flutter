@@ -35,4 +35,3 @@ internal fun FullscreenControls.applyTo(adUnit: MediationBaseFullScreenAdUnit) {
         adUnit.setMinSizePercentage(minWidthPercentage, minHeightPercentage)
     }
 }
-

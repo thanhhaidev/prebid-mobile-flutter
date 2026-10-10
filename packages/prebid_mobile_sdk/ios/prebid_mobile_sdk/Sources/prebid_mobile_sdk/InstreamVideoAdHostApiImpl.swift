@@ -19,7 +19,7 @@ final class InstreamVideoAdHostApiImpl: InstreamVideoAdHostApi {
         if let v = config.gpid { adUnit.setGPID(v) }
         if let v = config.pbAdSlot { adUnit.pbAdSlot = v }
         if let v = config.impOrtbConfig { adUnit.setImpORTBConfig(v) }
-        if let v = config.globalOrtbConfig { adUnit.setGlobalOrtbConfig(v) } // AdUnit spells it Ortb.
+        if let v = config.globalOrtbConfig { adUnit.setGlobalOrtbConfig(v) }  // AdUnit spells it Ortb.
         adUnits[adId] = adUnit
 
         let unitId = ObjectIdentifier(adUnit)
@@ -43,9 +43,10 @@ final class InstreamVideoAdHostApiImpl: InstreamVideoAdHostApi {
             case (640, 480): return .Size640x480
             case (320, 480): return .Size320x480
             default:
-                throw PigeonError(code: "invalidSize",
-                                  message: "Prebid iOS supports 400x300, 640x480 and 320x480 only",
-                                  details: nil)
+                throw PigeonError(
+                    code: "invalidSize",
+                    message: "Prebid iOS supports 400x300, 640x480 and 320x480 only",
+                    details: nil)
             }
         }
         return try IMAUtils.shared.generateInstreamUriForGAM(

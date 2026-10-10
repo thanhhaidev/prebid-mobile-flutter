@@ -157,8 +157,16 @@ internal class AdMobBannerPlatformView(
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "loadAd" -> { load(); result.success(null) }
-                "stopRefresh" -> { adUnit?.stopRefresh(); result.success(null) }
+                "loadAd" -> {
+                    load()
+                    result.success(null)
+                }
+
+                "stopRefresh" -> {
+                    adUnit?.stopRefresh()
+                    result.success(null)
+                }
+
                 else -> result.notImplemented()
             }
         }

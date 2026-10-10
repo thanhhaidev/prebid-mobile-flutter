@@ -12,7 +12,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
  * interstitial and rewarded method channels (`prebid_mobile_sdk_max/interstitial`,
  * `prebid_mobile_sdk_max/rewarded`).
  */
-class PrebidMobileSdkMaxPlugin : FlutterPlugin, ActivityAware {
+class PrebidMobileSdkMaxPlugin :
+    FlutterPlugin,
+    ActivityAware {
 
     private var activity: Activity? = null
     private var interstitialManager: MaxInterstitialManager? = null

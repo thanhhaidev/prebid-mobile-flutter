@@ -24,22 +24,9 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 - [Platform Requirements](#platform-requirements) (native Prebid SDK versions)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [API Reference](#api-reference)
-  - [PrebidMobile — SDK Configuration](#prebidmobile--sdk-configuration)
-  - [PrebidTargeting — Privacy & Targeting](#prebidtargeting--privacy--targeting)
-  - [PrebidBannerAd — Banner Ads](#prebidbannerad--banner-ads)
-  - [PrebidInterstitialAd — Interstitial Ads](#prebidinterstitialad--interstitial-ads)
-  - [PrebidRewardedAd — Rewarded Ads](#prebidrewardedad--rewarded-ads)
-  - [PrebidNativeAd — Native Ads](#prebidnativead--native-ads)
-  - [PrebidNativeAdView — Native Ad View](#prebidnativeadview--native-ad-view)
-  - [PrebidMultiformatAd — Multiformat Ads](#prebidmultiformatad--multiformat-ads)
-  - [PrebidInstreamVideoAd — In-Stream Video](#prebidinstreamvideoad--in-stream-video)
-  - [VideoParameters — Video Configuration](#videoparameters--video-configuration)
-  - [ExternalUserId — Identity Modules](#externaluserid--identity-modules)
-  - [Enums](#enums)
-  - [Listeners & Callbacks](#listeners--callbacks)
-  - [Error Handling](#error-handling)
-- [Ad Server Integration (Original API / GAM)](#ad-server-integration-original-api--gam)
+- [Error Handling](#error-handling)
+- [Documentation](#documentation)
+- [Ad Server Integration](#ad-server-integration)
 - [Example App](#example-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -216,488 +203,7 @@ await PrebidTargeting.setSubjectToCOPPA(false);
 
 ---
 
-## API Reference
-
-### `PrebidMobile` — SDK Configuration
-
-Static class for SDK initialization, global configuration, and identity management.
-
-| Method | Returns | Description |
-|---|---|---|
-| `initializeSdk({prebidServerUrl, accountId, nonTrackingUrl, completion})` | `Future<void>` | Initialize the SDK with your Prebid Server endpoint and account ID. `nonTrackingUrl` (iOS) is used when the user hasn't authorized tracking (ATT). |
-| `setTimeoutMillis(int timeout)` | `Future<void>` | Set the bid request timeout in milliseconds. |
-| `setShareGeoLocation(bool share)` | `Future<void>` | Enable or disable sharing the device's geo location. |
-| `setPbsDebug(bool enabled)` | `Future<void>` | Enable PBS debug mode (`"test": 1` in bid requests). |
-| `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set SDK log verbosity (`none` silences Prebid). |
-| `setLogListener(PrebidLogListener? listener)` | `Future<void>` | Receive Prebid's log messages instead of the console; `null` restores the console. |
-| `setLocationUpdatesEnabled(bool)` / `getLocationUpdatesEnabled()` | `Future<void>` / `Future<bool?>` | iOS only: Prebid's own location updates. |
-| `setDebugLogFileEnabled(bool)` / `getDebugLogFileEnabled()` | `Future<void>` / `Future<bool?>` | iOS only: also write Prebid's log to a file. |
-| `getTimeoutMillisDynamic()` | `Future<int?>` | iOS only: the timeout adopted from Prebid Server's response. |
-| `setCustomHeaders(Map<String, String> headers)` | `Future<void>` | Set custom HTTP headers for bid requests. |
-| `setStoredAuctionResponse(String response)` | `Future<void>` | Set a stored auction response ID for testing. |
-| `clearStoredAuctionResponse()` | `Future<void>` | Clear stored auction response. |
-| `addStoredBidResponse(String bidder, String responseId)` | `Future<void>` | Add a stored bid response for a specific bidder. |
-| `clearStoredBidResponses()` | `Future<void>` | Remove all stored bid responses. |
-| `setCreativeFactoryTimeout(int timeout)` | `Future<void>` | Set the HTML creative factory timeout (ms). |
-| `setCreativeFactoryTimeoutPreRenderContent(int timeout)` | `Future<void>` | Set the video pre-render creative factory timeout (ms). |
-| `getCreativeFactoryTimeout()` / `getCreativeFactoryTimeoutPreRenderContent()` | `Future<int>` | Current creative factory timeouts (ms; defaults 6000 / 30000). |
-| `setPrebidServerAccountId(String accountId)` / `getPrebidServerAccountId()` | `Future<void>` / `Future<String>` | Switch or read the Prebid Server account without re-initializing. |
-| `setPrebidServerUrl(String url)` / `getPrebidServerUrl()` | `Future<void>` / `Future<String?>` | Switch or read the auction endpoint without re-initializing. |
-| `setUseCacheForReportingWithRenderingApi(bool use)` / `getUseCacheForReportingWithRenderingApi()` | `Future<void>` / `Future<bool>` | Ask Prebid Server to cache Rendering API bids for Prebid Cache based reporting. |
-| `setCustomStatusEndpoint(String endpoint)` | `Future<void>` | Override the Prebid Server status endpoint URL. |
-| `setExternalUserIds(List<ExternalUserId> userIds)` | `Future<void>` | Set external user IDs for identity modules. |
-| `getExternalUserIds()` | `Future<List<ExternalUserId>>` | Get all currently set external user IDs. |
-| `clearExternalUserIds()` | `Future<void>` | Clear all external user IDs. |
-| `getSdkVersion()` | `Future<String>` | Get the native Prebid SDK version string. |
-| `getOmsdkVersion()` | `Future<String>` | Get the bundled Open Measurement SDK version. |
-| `isSdkInitialized` | `bool` | Whether `initializeSdk` completed with a usable status. |
-| `setShouldAssignNativeAssetId(bool assign)` | `Future<void>` | Assign sequential IDs to native request assets. |
-| `setFilterOutUncachedBids(bool filter)` | `Future<void>` | Drop bids whose Prebid Cache entry failed and promote the next cached bid. |
-| `setEidsPlacement(PrebidEidsPlacement placement)` | `Future<void>` | Send EIDs in `user.eids`, `user.ext.eids` or both. |
-| `setIncludeWinners(bool include)` / `setIncludeBidderKeys(bool include)` | `Future<void>` | Prebid Server targeting flags. |
-| `setAuctionSettingsId(String? id)` | `Future<void>` | Request-level stored auction settings id. |
-| `setDisableStatusCheck(bool)` | `Future<void>` | Skip the Prebid Server status request during `initializeSdk` (call it first). |
-| `setEventListener(PrebidBidResponseListener? listener)` | `Future<void>` | Receive every bid request / response as JSON (`PrebidEventDelegate`); `null` stops. |
-| `setSendSharedId(bool send)` | `Future<void>` | Send Prebid's first-party SharedID in `user.eids`. |
-| `getSharedId()` / `resetSharedId()` | `Future<ExternalUserId?>` / `Future<void>` | Read or regenerate the SharedID. |
-
----
-
-### `PrebidTargeting` — Privacy & Targeting
-
-Static class for managing privacy consent, first-party data, and targeting parameters.
-
-#### Privacy & Consent
-
-| Method | Returns | Description |
-|---|---|---|
-| `setSubjectToCOPPA(bool? subject)` | `Future<void>` | COPPA flag. Pass `null` to clear. |
-| `getSubjectToCOPPA()` | `Future<bool?>` | Get COPPA status. |
-| `setSubjectToGDPR(bool? subject)` | `Future<void>` | GDPR flag. Pass `null` to clear. |
-| `getSubjectToGDPR()` | `Future<bool?>` | Get GDPR status. |
-| `setGDPRConsentString(String? consent)` | `Future<void>` | Set IAB TCF consent string. |
-| `getGDPRConsentString()` | `Future<String?>` | Get GDPR consent string. |
-| `setPurposeConsents(String? consents)` | `Future<void>` | Set TCFv2 purpose consents (binary string). |
-| `getPurposeConsents()` | `Future<String?>` | Get TCFv2 purpose consents. |
-| `getPurposeConsent(int index)` | `Future<bool?>` | Consent for one TCF purpose (0-based index). |
-| `getDeviceAccessConsent()` | `Future<bool?>` | Get device access consent (TCFv2 Purpose 1). |
-| `isAllowedAccessDeviceData()` | `Future<bool>` | Whether the consent signals let Prebid read device data. |
-| `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). Written to the IAB storage, so it persists across launches until set to `null`. |
-| `getUSPrivacyString()` | `Future<String?>` | Get current US Privacy String. |
-
-> **Note:** GPP consent signals (`IABGPP_HDR_GppString`, `IABGPP_GppSID`) are automatically read by the native SDKs from SharedPreferences (Android) / UserDefaults (iOS). A CMP SDK will populate these values automatically.
-
-#### User Keywords (`user.keywords`)
-
-| Method | Returns | Description |
-|---|---|---|
-| `addUserKeyword(String keyword)` | `Future<void>` | Add a single user keyword. |
-| `addUserKeywords(Set<String> keywords)` | `Future<void>` | Add multiple user keywords. |
-| `removeUserKeyword(String keyword)` | `Future<void>` | Remove a single user keyword. |
-| `clearUserKeywords()` | `Future<void>` | Remove all user keywords. |
-| `getUserKeywords()` | `Future<List<String>>` | Get all user keywords. |
-
-#### App Keywords (`app.keywords`)
-
-| Method | Returns | Description |
-|---|---|---|
-| `addAppKeyword(String keyword)` | `Future<void>` | Add a single app keyword. |
-| `addAppKeywords(Set<String> keywords)` | `Future<void>` | Add multiple app keywords. |
-| `removeAppKeyword(String keyword)` | `Future<void>` | Remove a single app keyword. |
-| `clearAppKeywords()` | `Future<void>` | Remove all app keywords. |
-
-#### App Ext Data — First-Party Data (`app.ext.data`)
-
-| Method | Returns | Description |
-|---|---|---|
-| `addAppExtData({key, value})` | `Future<void>` | Append a value to app ext data for a key. |
-| `updateAppExtData({key, value})` | `Future<void>` | Replace all values for a key with a `Set<String>`. |
-| `removeAppExtData(String key)` | `Future<void>` | Remove app ext data for a key. |
-| `clearAppExtData()` | `Future<void>` | Remove all app ext data. |
-
-#### User Ext Data — First-Party Data (`user.ext.data`)
-
-| Method | Returns | Description |
-|---|---|---|
-| `addUserExtData({key, value})` | `Future<void>` | Append a value to user ext data for a key. |
-| `updateUserExtData({key, value})` | `Future<void>` | Replace all values for a key with a `Set<String>`. |
-| `removeUserExtData(String key)` | `Future<void>` | Remove user ext data for a key. |
-| `clearUserExtData()` | `Future<void>` | Remove all user ext data. |
-| `setUserExt(Map<String, Object?>?)` / `getUserExt()` | `Future<void>` / `Future<Map?>` | The whole `user.ext` object (its `data` entry stays the user ext data's). |
-
-#### Access Control List (`ext.prebid.data`)
-
-| Method | Returns | Description |
-|---|---|---|
-| `addBidderToAccessControlList(String bidderName)` | `Future<void>` | Grant a bidder access to first-party data. |
-| `removeBidderFromAccessControlList(String bidderName)` | `Future<void>` | Revoke a bidder's access. |
-| `clearAccessControlList()` | `Future<void>` | Clear the entire access control list. |
-
-#### OpenRTB Configuration & App Info
-
-| Method | Returns | Description |
-|---|---|---|
-| `setGlobalOrtbConfig(String? ortbConfig)` | `Future<void>` | Set global OpenRTB JSON config merged into every bid request. |
-| `getGlobalOrtbConfig()` | `Future<String?>` | Get current global OpenRTB config. |
-| `setPublisherName(String? name)` | `Future<void>` | Set publisher name (`app.publisher.name`). |
-| `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
-| `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
-| `setAppName(String? name)` | `Future<void>` | Override `app.name`; `null` restores the app's own name (iOS: sent through the global OpenRTB config). |
-| `setOmidPartnerName(String? name)` / `setOmidPartnerVersion(String? version)` | `Future<void>` | OM SDK partner sent in `source.ext.omidpn` / `omidpv`. |
-| `setSourceApp(String?)` / `setItunesId(String?)` | `Future<void>` | iOS only: SKAdNetwork `sourceapp` and your app's iTunes ID (needed for SKAdNetwork bids when Info.plist lists `SKAdNetworkItems`). |
-| `setBundleName(String?)` / `getBundleName()` | `Future<void>` / `Future<String?>` | Android only: overrides `app.bundle`. |
-| `setUserLatLng(double lat, double lng)` / `clearUserLatLng()` | `Future<void>` | User location (`user.geo`). |
-| `setLocationPrecision(int? precision)` | `Future<void>` | Decimal places kept for coordinates; `null` = full precision. |
-
----
-
-### `PrebidBannerAd` — Banner Ads
-
-A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `PlatformView`.
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `configId` | `String` | **required** | Prebid Server stored impression configuration ID. |
-| `width` | `int` | **required** | Banner width in dp. |
-| `height` | `int` | **required** | Banner height in dp. |
-| `additionalSizes` | `List<Size>?` | `null` | Further accepted sizes (multisize banner); the slot resizes to the winner. |
-| `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
-| `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
-| `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds (Prebid clamps to 30–120 on Android, 15–120 on iOS). `null` or `0` disables it. |
-| `adFormats` | `Set<PrebidAdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
-| `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
-| `pbAdSlot` / `gpid` / `impOrtbConfig` | `String?` | `null` | Ad slot, Global Placement ID (added to the impression JSON) and impression-level OpenRTB JSON. |
-| `globalOrtbConfig` | `String?` | `null` | Request-level OpenRTB JSON for this ad unit only. |
-| `adPosition` | `PrebidAdPosition?` | `null` | Ad position on screen (`imp.banner.pos`). |
-| `videoParameters` | `VideoParameters?` | `null` | Video signals for video banners (iOS only: Prebid Android's banner sends the SDK defaults). |
-| `controller` | `PrebidBannerAdController?` | `null` | `loadAd()` (with `autoLoad: false`), `stopRefresh()`, and the last load's `winningBid` (price, bidder, size, keywords). |
-| `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events (incl. `onAdExpired`). |
-| `videoListener` | `PrebidBannerVideoListener?` | `null` | Outstream video events: completed, paused, resumed, muted, unmuted. |
-
----
-
-### `PrebidInterstitialAd` — Interstitial Ads
-
-A fullscreen interstitial ad with a load → show → destroy lifecycle.
-
-| Property / Method | Type | Description |
-|---|---|---|
-| `configId` | `String` | **Required.** Prebid Server config ID. |
-| `adFormats` | `Set<PrebidAdFormat>?` | Specify `{PrebidAdFormat.banner}`, `{PrebidAdFormat.video}`, or both. |
-| `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
-| `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
-| `pbAdSlot` / `gpid` | `String?` | Ad slot and Global Placement ID (sent in the impression JSON where the SDK has no setter). |
-| `adPosition` | `PrebidAdPosition?` | iOS only: ad position (`imp.pos`). |
-| `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
-| `listener` | `PrebidInterstitialAdListener?` | Callback listener (incl. `onAdExpired`). |
-| `isLoaded` | `bool` | Whether the ad is ready to show. |
-| `winningBid` | `PrebidWinningBid?` | Android only: the last load's winning bid (price, bidder, size, keywords). |
-| `loadAd()` | `Future<void>` | Request an interstitial ad. |
-| `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
-| `destroy()` | `Future<void>` | Release all resources. |
-
----
-
-### `PrebidRewardedAd` — Rewarded Ads
-
-A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the ad.
-
-| Property / Method | Type | Description |
-|---|---|---|
-| `configId` | `String` | **Required.** Prebid Server config ID. |
-| `adFormats` | `Set<PrebidAdFormat>?` | Banner, video or both (iOS only). |
-| `videoParameters` | `VideoParameters?` | Video signals (iOS: every field; Android: `maxDuration`). |
-| `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
-| `pbAdSlot` / `gpid` / `adPosition` | | As for `PrebidInterstitialAd`. |
-| `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only, minimum size on iOS only). |
-| `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`, `onAdExpired`). |
-| `isLoaded` | `bool` | Whether the ad is ready to show. |
-| `winningBid` | `PrebidWinningBid?` | Android only, as for `PrebidInterstitialAd`. |
-| `loadAd()` | `Future<void>` | Request a rewarded ad. |
-| `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
-| `destroy()` | `Future<void>` | Release all resources. |
-
-**`PrebidReward`:**
-
-| Field | Type | Description |
-|---|---|---|
-| `type` | `String` | The reward type (e.g., `"coins"`, `"lives"`; `"reward"` when the creative sets none). |
-| `count` | `int` | The reward amount (`1` when the creative sets none). |
-| `ext` | `Map<String, dynamic>?` | Optional extra data. |
-
----
-
-### `PrebidNativeAd` — Native Ads
-
-Loads a native ad. Show it with [`PrebidNativeAdView`](#prebidnativeadview--native-ad-view):
-it renders the ad natively and registers it with Prebid, so impressions
-(viewability-based) and clicks are tracked. The parsed assets are also
-delivered to `onAdLoaded` as a `PrebidNativeAdResponse`: the common fields
-(`title`, `text`, `iconUrl`, `imageUrl`, `sponsoredBy`, `callToAction`,
-`clickUrl`), the AdChoices `privacyUrl`, and every asset (`titles`, `images`,
-`dataAssets`; `dataOf(NativeDataType.rating)` for one type).
-
-| Property / Method | Type | Description |
-|---|---|---|
-| `configId` | `String` | **Required.** Prebid Server config ID. |
-| `nativeParameters` | `NativeParameters` | The native request (see below). Unset assets request `NativeParameters.defaultAssets`. |
-| `pbAdSlot` / `gpid` / `impOrtbConfig` / `globalOrtbConfig` | `String?` | Ad slot, GPID and OpenRTB JSON. |
-| `listener` | `PrebidNativeAdListener?` | Callback listener. |
-| `loadAd()` | `Future<void>` | Request a native ad. |
-| `loadFromCacheId(String)` | `Future<void>` | Load an Original API native win from its cache id. |
-| `performClick()` | `Future<bool>` | Report a click on the ad shown in `PrebidNativeAdView.custom`. |
-| `destroy()` | `Future<void>` | Release all resources. |
-
-### `NativeParameters` — Native Request
-
-The native request every native ad takes as `nativeParameters`
-(`PrebidNativeAd`, `PrebidNativeAdUnit`, `PrebidMultiformatAd` and the GAM,
-AdMob and MAX native ads).
-
-| Property | Type | Description |
-|---|---|---|
-| `assets` | `List<NativeAsset>?` | Native assets to request; `null` uses the ad's default set. |
-| `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression/viewability. |
-| `context` / `contextSubType` / `placementType` | enums | Where the ad appears. |
-| `placementCount` | `int?` | Number of identical placements (`plcmtcnt`). |
-| `sequence` / `assetUrlSupport` / `dUrlSupport` / `privacy` / `ext` | | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy`, `ext`. |
-
-### `PrebidNativeAdView` — Native Ad View
-
-Widget that renders a loaded `PrebidNativeAd` (main image, icon, sponsored,
-title, body, call to action) in a native view and tracks it. Impression and
-click events arrive on the ad's `PrebidNativeAdListener`.
-
-```dart
-final ad = PrebidNativeAd(
-  configId: 'prebid-demo-banner-native-styles',
-  listener: PrebidNativeAdListener(
-    onAdLoaded: (_) => setState(() => _loaded = true),
-    onAdImpression: () => debugPrint('impression'),
-    onAdClicked: () => debugPrint('click'),
-  ),
-)..loadAd();
-
-// build():
-if (_loaded) PrebidNativeAdView(ad: ad);
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `ad` | `PrebidNativeAd` | **Required.** A loaded native ad. |
-| `width` | `double?` | View width. `null` (default) fills a bounded parent; in an unbounded one (a `Row`, a horizontal list) it uses the screen width. |
-| `height` | `double` | Initial height; grows to the rendered content. |
-
-`PrebidNativeAdView.custom(ad: ad, child: yourLayout)` shows your own Flutter
-layout instead and still tracks the impression; a tap on the layout (or
-`ad.performClick()` from your call to action) reports the click.
-
----
-
-### `PrebidMultiformatAd` — Multiformat Ads
-
-Combines banner, video, and native in a single bid request.
-
-| Property / Method | Type | Description |
-|---|---|---|
-| `configId` | `String` | **Required.** Prebid Server config ID. |
-| `bannerSizes` | `List<Size>?` | Banner sizes (e.g., `[Size(300, 250)]`). |
-| `videoParameters` | `VideoParameters?` | Video config. If non-null, video is included. |
-| `nativeParameters` | `NativeParameters?` | Native request. If non-null, native is included. |
-| `isInterstitial` | `bool` | Interstitial multiformat ad. Default: `false`. |
-| `isRewarded` | `bool` | Rewarded multiformat ad. Default: `false`. |
-| `adPosition` | `PrebidAdPosition?` | Ad position (`pos`). |
-| `trackInterstitialImpression` | `bool` | Let Prebid track the impression when your ad server's interstitial shows the Prebid creative. |
-| `onDemandRefreshed` | callback | Each auto-refreshed result. |
-| `fetchDemand()` | `Future<PrebidMultiformatBidResponse>` | Execute the bid request. |
-| `setAutoRefreshInterval(int seconds)` / `stopAutoRefresh()` / `resumeAutoRefresh()` | `Future<void>` | Re-run the auction periodically (at least 30 s) after `fetchDemand`. |
-| `activateBannerImpressionTracker()` | `Future<bool>` | Start Prebid's impression tracker on the ad server's banner view (see below). |
-| `destroy()` | `Future<void>` | Release resources. |
-
----
-
-### `PrebidInstreamVideoAd` — In-Stream Video
-
-Fetches VAST video demand from Prebid Server.
-
-| Property / Method | Type | Description |
-|---|---|---|
-| `configId` | `String` | **Required.** Prebid Server config ID. |
-| `size` | `Size` | **Required.** Video player dimensions. |
-| `videoParameters` | `VideoParameters?` | Video signals (mimes, protocols, `plcmt`, durations, start delay). |
-| `fetchDemand()` | `Future<PrebidVideoAdBidResponse>` | Fetch demand. |
-| `destroy()` | `Future<void>` | Release resources. |
-
----
-
-### `VideoParameters` — Video Configuration
-
-Detailed video ad configuration per the OpenRTB spec.
-
-```dart
-const videoParams = VideoParameters(
-  mimes: ['video/mp4', 'video/x-ms-wmv'],
-  protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0],
-  playbackMethods: [VideoPlaybackMethod.autoPlaySoundOff],
-  plcmt: VideoPlcmt.accompanyingContent,
-  maxDuration: 30,
-  minDuration: 5,
-  api: [VideoApi.vpaid2_0, VideoApi.omid1],
-  battr: [VideoCreativeAttribute.annoying],
-);
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `mimes` | `List<String>` | **Required.** Supported MIME types (`["video/mp4"]`). |
-| `protocols` | `List<VideoProtocol>?` | VAST protocol versions. |
-| `playbackMethods` | `List<VideoPlaybackMethod>?` | How the video should play. |
-| `placement` | `VideoPlacement?` | Legacy `placement` (deprecated in OpenRTB 2.6; prefer `plcmt`). |
-| `plcmt` | `VideoPlcmt?` | OpenRTB 2.6 placement subtype (instream, accompanying content, interstitial, no content). |
-| `maxDuration` | `int?` | Maximum duration in seconds. |
-| `minDuration` | `int?` | Minimum duration in seconds. |
-| `startDelay` | `int?` | Seconds, or `VideoStartDelay.preRoll` / `genericMidRoll` / `genericPostRoll`. |
-| `linearity` | `VideoLinearity?` | Linear (in-stream) or non-linear (overlay). |
-| `skippable` | `bool?` | Whether the player allows skipping. |
-| `battr` | `List<VideoCreativeAttribute>?` | Blocked creative attributes. |
-| `minBitrate` / `maxBitrate` | `int?` | Bitrate bounds in Kbps. |
-| `api` | `List<VideoApi>?` | Supported API frameworks (VPAID, MRAID, OMID). |
-
-Original API / multiformat / in-stream requests send every field on both
-platforms, and so do iOS interstitials. Prebid Android's rendering
-interstitial has no video-parameters setter: the request carries the SDK's
-defaults and `maxDuration` only caps the rendered video's length.
-
----
-
-### `ExternalUserId` — Identity Modules
-
-External user IDs for third-party identity modules.
-
-```dart
-await PrebidMobile.setExternalUserIds([
-  ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc-123', atype: 3),
-  ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
-  ExternalUserId(source: 'liveramp.com', identifier: 'lr-def-456', atype: 3),
-  // Several IDs from one source share one `user.eids` entry:
-  ExternalUserId.withUids(
-    source: 'adserver.org',
-    uids: [
-      UserUniqueId(id: 'tdid-1', atype: 1, ext: {'rtiPartner': 'TDID'}),
-      UserUniqueId(id: 'tdid-2', atype: 3),
-    ],
-  ),
-]);
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `source` | `String` | Identity module source (e.g., `"uidapi.com"`). |
-| `uids` | `List<UserUniqueId>` | The IDs from `source` (`id`, `atype`: `1` = Device, `2` = Person, `3` = User, and a per-ID `ext`). The default constructor takes one as `identifier` and `atype`. |
-| `ext` | `Map<String, Object?>?` | The entry's `ext`. |
-| `inserter`, `matcher`, `mm` | `String?`, `String?`, `int?` | OpenRTB 2.6 EID fields. |
-
-**Supported modules:** UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source.
-
----
-
-### Enums
-
-#### `PrebidAdFormat`
-
-| Value | Description |
-|---|---|
-| `banner` | HTML Display ad format. |
-| `video` | VAST / Outstream video ad format. |
-
-#### `PrebidLogLevel`
-
-| Value | Description |
-|---|---|
-| `debug` | Most verbose — all SDK internal messages. |
-| `verbose` | Detailed debugging information. |
-| `info` | General informational messages. |
-| `warn` | Potential issues and warnings. |
-| `error` | Errors that may impact functionality. |
-| `severe` | Critical errors only. |
-| `none` | No Prebid logs. |
-
-#### `PrebidInitializationStatus`
-
-| Value | Description |
-|---|---|
-| `succeeded` | SDK initialized successfully. |
-| `failed` | Initialization failed. |
-| `serverStatusWarning` | Connected but server returned a warning. |
-
-#### Video Enums
-
-| Enum | Values |
-|---|---|
-| `VideoProtocol` | `vast1_0`, `vast2_0`, `vast3_0`, `vast4_0`, and their Wrapper variants |
-| `VideoPlaybackMethod` | `autoPlaySoundOn`, `autoPlaySoundOff`, `clickToPlay`, `mouseOver`, `enterSoundOn`, `enterSoundOff` |
-| `VideoPlacement` | `inStream`, `inBanner`, `inArticle`, `inFeed`, `interstitial` |
-| `VideoApi` | `vpaid1_0`, `vpaid2_0`, `mraid1`, `ormma`, `mraid2`, `mraid3`, `omid1` |
-
-#### Native Ad Enums
-
-| Enum | Values | Description |
-|---|---|---|
-| `NativeImageType` | `icon(1)`, `main(3)`, `custom(500)` | Image sub-type per OpenRTB. |
-| `NativeDataType` | `sponsored(1)`, `desc(2)`, `ctaText(12)`, + 10 more | Data asset type per OpenRTB. |
-| `NativeEventType` | `impression(1)`, `viewable50(2)`, `viewable100(3)`, `viewableVideo50(4)` | Event types to track. |
-| `NativeEventTrackingMethod` | `image(1)`, `js(2)`, `custom(500)` | Tracking method. |
-| `NativeContextType` | `contentCentric(1)`, `socialCentric(2)`, `product(3)` | Context in which ad appears. |
-| `NativePlacementType` | `inFeed(1)`, `atomicUnit(2)`, `outsideContent(3)`, `recommendation(4)` | Placement within layout. |
-
----
-
-### Listeners & Callbacks
-
-#### `PrebidBannerAdListener`
-
-| Callback | Signature | Triggered When |
-|---|---|---|
-| `onAdLoaded` | `void Function()` | Banner content loaded. |
-| `onAdDisplayed` | `void Function()` | Banner rendered on screen (the SDK's impression), which can be later than `onAdLoaded`. |
-| `onAdFailed` | `void Function(String error)` | Banner failed to load. |
-| `onAdClicked` | `void Function()` | User tapped the banner. |
-| `onAdClosed` | `void Function()` | Banner overlay was dismissed. |
-
-#### `PrebidInterstitialAdListener`
-
-| Callback | Signature | Triggered When |
-|---|---|---|
-| `onAdLoaded` | `void Function()` | Interstitial ready to show. |
-| `onAdFailed` | `void Function(String error)` | Failed to load. |
-| `onAdDisplayed` | `void Function()` | Presented fullscreen. |
-| `onAdClosed` | `void Function()` | User closed the ad. |
-| `onAdClicked` | `void Function()` | User tapped the ad. |
-
-#### `PrebidRewardedAdListener`
-
-| Callback | Signature | Triggered When |
-|---|---|---|
-| `onAdLoaded` | `void Function()` | Rewarded ad ready. |
-| `onAdFailed` | `void Function(String error)` | Failed to load. |
-| `onAdDisplayed` | `void Function()` | Presented fullscreen. |
-| `onAdClosed` | `void Function()` | User closed the ad. |
-| `onAdClicked` | `void Function()` | User tapped the ad. |
-| `onUserEarnedReward` | `void Function(PrebidReward)` | User earned a reward. |
-
-#### `PrebidNativeAdListener`
-
-| Callback | Signature | Triggered When |
-|---|---|---|
-| `onAdLoaded` | `void Function(PrebidNativeAdResponse)` | Native data ready. |
-| `onAdFailed` | `void Function(String error)` | Failed to load. |
-| `onAdImpression` | `void Function()` | Impression tracked (ad shown in a `PrebidNativeAdView`). |
-| `onAdClicked` | `void Function()` | User tapped the ad in a `PrebidNativeAdView`. |
-| `onAdExpired` | `void Function()` | The bid expired (`bid.exp`) before it was shown. |
-
----
-
-### Error Handling
+## Error Handling
 
 Ad load, show and render failures are not thrown: they arrive through the
 listener's `onAdFailed` callback with the native SDK's error message.
@@ -718,126 +224,69 @@ as `onAdFailed`, or as the `prebidSdkNotInitialized` result code from
 `fetchDemand()`.
 
 ---
+---
 
-## Ad Server Integration (Original API / GAM)
+## Documentation
 
-Prebid Mobile supports two integration models. This plugin ships the first out
-of the box and supports the second via targeting-keyword handoff:
+The guides on the [documentation site](https://thanhhaidev.github.io/prebid-mobile-flutter/)
+cover every option; the [API reference](https://pub.dev/documentation/prebid_mobile_sdk/latest/)
+documents every class, listener and enum.
 
-1. **Prebid Rendered (In-App Bidding)** — the Prebid SDK runs the auction **and**
-   renders the winning creative. This is what [`PrebidBannerAd`](#prebidbannerad--banner-ads),
-   [`PrebidInterstitialAd`](#prebidinterstitialad--interstitial-ads),
-   [`PrebidRewardedAd`](#prebidrewardedad--rewarded-ads), and
-   [`PrebidNativeAd`](#prebidnativead--native-ads) do.
-2. **Original API** — the Prebid SDK only runs the auction and returns
-   **targeting keywords**; your primary ad server SDK (Google Ad Manager via
-   [`google_mobile_ads`](https://pub.dev/packages/google_mobile_ads)) renders the
-   ad. A Prebid line item in GAM that targets the `hb_*` keys serves the Prebid
-   Universal Creative when a bid wins.
+| Topic | Guide |
+|---|---|
+| SDK options, timeouts, external user IDs, stored responses | [Configuration](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/configuration) |
+| GDPR, TCF, CCPA / US Privacy, GPP, COPPA | [Privacy](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/privacy) |
+| Keywords, first-party data, OpenRTB config, app info | [Targeting](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/targeting) |
+| `PrebidBannerAd` and its controller | [Banner](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/banner) |
+| `PrebidInterstitialAd`, `PrebidRewardedAd` | [Interstitial & rewarded](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/fullscreen) |
+| `PrebidNativeAd`, `PrebidNativeAdView`, native assets | [Native](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/native) |
+| `VideoParameters`, `PrebidInstreamVideoAd` | [Video](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/video) |
+| Listeners, result codes, failures | [Events & errors](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/events) |
+| Ad server handoff, `PrebidMultiformatAd` | [Original API](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/original-api) |
+| Logs, the bid event listener, test responses | [Debugging](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/debugging) |
+| What differs between Android and iOS | [Platform differences](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/platform-differences) |
 
-Use model 2 when you already monetize through GAM and want Prebid demand to
-compete in the same auction. The plugin does **not** depend on `google_mobile_ads`
-— you add it to *your app* and wire the handoff yourself.
+---
 
-### The handoff
+## Ad Server Integration
 
-Fetch demand with `PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`,
-`PrebidRewardedAdUnit` or `PrebidNativeAdUnit` (or
-[`PrebidMultiformatAd`](#prebidmultiformatad--multiformat-ads) for banner + video
-+ native in one request), then pass `targetingKeywords` to
-`AdManagerAdRequest.customTargeting`:
+The ads above use **Prebid Rendered** (In-App Bidding): Prebid runs the
+auction and renders the winner, with no ad server. To make Prebid demand
+compete in your ad server instead:
+
+- **Original API**: Prebid only runs the auction and returns targeting
+  keywords, which you pass to your ad server request yourself
+  (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`,
+  `PrebidNativeAdUnit`, `PrebidMultiformatAd`). This package doesn't depend
+  on `google_mobile_ads`; see [Original API](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/original-api).
+- **GAM rendering, AdMob and MAX**: the companion packages
+  [`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam),
+  [`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob)
+  and [`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max)
+  wrap Prebid's event handlers and mediation adapters. They are separate
+  packages because they bundle the ad server SDKs natively, so In-App-only
+  apps stay lean. See [Choosing an integration](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/integrations).
 
 ```dart
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
-// 1. Run the Prebid auction (Original API — keywords only, no rendering).
-final adUnit = PrebidBannerAdUnit(
+// 1. Run the Prebid auction (Original API: keywords only, no rendering).
+final response = await PrebidBannerAdUnit(
   configId: 'your-config-id',
   sizes: const [Size(300, 250)],
-);
-final response = await adUnit.fetchDemand();
+).fetchDemand();
 
-// 2. Hand the bid-winning keywords to Google Ad Manager.
-final banner = AdManagerBannerAd(
+// 2. Hand the winning keywords to Google Ad Manager, which renders the winner.
+await AdManagerBannerAd(
   adUnitId: '/1234567/your-gam-ad-unit',
   sizes: [AdSize(width: 300, height: 250)],
   request: AdManagerAdRequest(
     customTargeting: response.targetingKeywords ?? const {},
   ),
-  listener: AdManagerBannerAdListener(
-    onAdLoaded: (ad) => debugPrint('GAM banner loaded'),
-    onAdFailedToLoad: (ad, error) => ad.dispose(),
-  ),
-);
-await banner.load(); // 3. GAM renders the winner (Prebid or direct-sold).
+  listener: AdManagerBannerAdListener(),
+).load();
 ```
-
-Render the loaded ad with `AdWidget(ad: banner)` inside a `SizedBox` of the
-requested size.
-
-**Refresh and impressions.** The Original API units take `onDemandRefreshed`
-and `setAutoRefreshInterval(seconds)` / `stopAutoRefresh()` /
-`resumeAutoRefresh()`: Prebid re-runs the auction and you reload the GAM ad
-with the new keywords. To let Prebid fire its impression (`burl`):
-
-- banner: call `adUnit.activateImpressionTracker()` in GAM's `onAdLoaded`. It
-  needs exactly one Google Mobile Ads banner on screen (the view can't be
-  passed from Flutter, so it's located in the window) and returns `false`
-  otherwise. Prebid counts the impression only if that banner shows this
-  bid's creative. iOS tracks the current bid; Prebid Android attaches the view
-  when an auction starts, so there tracking applies from the next auction
-  (auto-refresh or the next `fetchDemand`).
-- interstitial: create `PrebidInterstitialAdUnit(trackImpression: true)`.
-
-Banner units also take `adPosition`; native units `context`,
-`contextSubType` and `placementType`. For a video winner use `PrebidInstreamVideoAd`; for a
-GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
-`AdManagerInterstitialAd`.
-
-### Requirements
-
-- Add `google_mobile_ads` to your app and initialize it once
-  (`MobileAds.instance.initialize()`).
-- Configure your Ad Manager app ID: `GADApplicationIdentifier` in
-  `ios/Runner/Info.plist` and the `com.google.android.gms.ads.APPLICATION_ID`
-  `<meta-data>` in `AndroidManifest.xml`.
-- In Google Ad Manager, set up Prebid line items/creatives that target the
-  `hb_*` keys so a winning Prebid bid renders.
-
-To resize the GAM banner to a won Prebid creative, call
-`PrebidMultiformatAd.findPrebidCreativeSize()` once GAM has loaded it.
-
-Runnable end-to-end demos are the **GAM Original** cases in the example app
-([`original_banner.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/demo/screens/banner/original_banner.dart),
-[`fullscreen_screen.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/demo/screens/fullscreen/fullscreen_screen.dart)).
-
-### GAM rendering, AdMob and MAX (companion packages)
-
-If you want **Google Ad Manager to render** the ad (rather than handing keywords
-off yourself), use the optional companion package
-[`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam). It wraps Prebid's GAM event
-handlers so a winning Prebid bid renders through a GAM line item + the Prebid
-Universal Creative:
-
-```dart
-import 'package:prebid_mobile_sdk_gam/prebid_mobile_sdk_gam.dart';
-
-PrebidGamBannerAd(
-  configId: 'prebid-demo-banner-320-50',
-  gamAdUnitId: '/1234567/your-ad-unit',
-  width: 320,
-  height: 50,
-);
-```
-
-It is a separate package because it bundles the Google Mobile Ads SDK natively —
-In-App-only apps stay lean. Mediation works the same way through
-[`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob)
-(Google AdMob) and
-[`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max)
-(AppLovin MAX). Each package README covers banner, interstitial, rewarded and
-native usage.
 
 ---
 

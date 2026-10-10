@@ -159,7 +159,7 @@ Prebid re-runs the auction on the interval and `onDemandRefreshed` receives each
 
 Prebid can fire the bid's impression URL (`burl`) when GAM shows the Prebid creative:
 
-- **Banner:** call `unit.activateImpressionTracker()` from GAM's `onAdLoaded`. It looks for the Google Mobile Ads banner in the window (a Flutter widget can't hand over the native view), so it needs exactly one GMA banner on screen and returns `false` otherwise. On iOS the current bid is tracked; Prebid Android attaches the view when an auction starts, so on Android tracking applies from the next auction (auto-refresh or the next `fetchDemand`).
+- **Banner:** call `unit.activateImpressionTracker()` (`activateBannerImpressionTracker()` on a `PrebidMultiformatAd`) from GAM's `onAdLoaded`. It looks for the Google Mobile Ads banner in the window (a Flutter widget can't hand over the native view), so it needs exactly one GMA banner on screen and returns `false` otherwise. On iOS the current bid is tracked; Prebid Android attaches the view when an auction starts, so on Android tracking applies from the next auction (auto-refresh or the next `fetchDemand`).
 - **Interstitial:** create the unit with `trackImpression: true`.
 
 ## Creative size

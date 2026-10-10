@@ -9,6 +9,8 @@
 // (version, Flutter and Dart constraints), android/build.gradle.kts (Prebid
 // artifact, minSdk), the podspec (Prebid pod, iOS platform) and Package.swift
 // (Prebid package), so the docs can't drift from what the package resolves.
+// A companion's `testedWith` (the Flutter ad plugin the example app runs on)
+// is checked against the workspace pubspec.lock.
 import {readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -67,6 +69,18 @@ for (const [name, pkg] of packages) {
   expect('the iOS platform', match(spm, /\.iOS\("([^"]+)"\)/), latest.iosMin, 'Package.swift');
 }
 
+// ---------- Flutter ad plugins vs. the example app ----------
+
+const lock = read('pubspec.lock');
+for (const [name, pkg] of packages) {
+  const tested = pkg.releases[0].testedWith;
+  if (!tested) continue;
+  const resolved = match(lock, new RegExp(`^  ${tested.package}:\\n(?:    .*\\n)*?    version: "([^"]+)"`, 'm'));
+  if (resolved !== tested.version) {
+    errors.push(`${name}: the example resolves ${tested.package} ${resolved ?? '(missing)'} in pubspec.lock, compatibility.json says ${tested.version}`);
+  }
+}
+
 // ---------- Tables ----------
 
 const row = (cells) => `| ${cells.join(' | ')} |`;
@@ -92,8 +106,15 @@ function coreTable() {
 function companionTable(name) {
   const pkg = data.packages[name];
   return table(
-    [name, `Prebid Android (${code(pkg.android.split(':')[1])})`, `Prebid iOS (${code(pkg.ios)})`, `${pkg.adSdk} Android`, `${pkg.adSdk} iOS`],
-    pkg.releases.map((r) => [r.version, code(r.prebidAndroid), code(iosRange(r.prebidIos)), code(r.adSdkAndroid), code(r.adSdkIos)]),
+    [name, `Prebid Android (${code(pkg.android.split(':')[1])})`, `Prebid iOS (${code(pkg.ios)})`, `${pkg.adSdk} Android`, `${pkg.adSdk} iOS`, 'Tested with'],
+    pkg.releases.map((r) => [
+      r.version,
+      code(r.prebidAndroid),
+      code(iosRange(r.prebidIos)),
+      code(r.adSdkAndroid),
+      code(r.adSdkIos),
+      r.testedWith ? code(`${r.testedWith.package} ${r.testedWith.version}`) : '',
+    ]),
   );
 }
 

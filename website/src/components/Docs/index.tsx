@@ -80,6 +80,7 @@ type Release = {
   dart: string;
   adSdkAndroid?: string;
   adSdkIos?: string;
+  testedWith?: {package: string; version: string};
 };
 type Package = {
   title: string;
@@ -130,6 +131,7 @@ export function CompatibilityTable({name}: {name: string}) {
               <>
                 <th>Ad SDK Android</th>
                 <th>Ad SDK iOS</th>
+                <th>Tested with</th>
               </>
             ) : (
               <>
@@ -159,6 +161,15 @@ export function CompatibilityTable({name}: {name: string}) {
                   </td>
                   <td>
                     <code>{r.adSdkIos}</code>
+                  </td>
+                  <td>
+                    {r.testedWith && (
+                      <a href={`https://pub.dev/packages/${r.testedWith.package}/versions/${r.testedWith.version}`}>
+                        <code>
+                          {r.testedWith.package} {r.testedWith.version}
+                        </code>
+                      </a>
+                    )}
                   </td>
                 </>
               ) : (

@@ -70,9 +70,9 @@ In Google Ad Manager, configure Prebid line items/creatives that target the
 <!-- compatibility:start -->
 <!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
 
-| prebid_mobile_sdk_gam | Prebid Android (`prebid-mobile-sdk-gam-event-handlers`) | Prebid iOS (`PrebidMobileGAMEventHandlers`) | Google Mobile Ads Android | Google Mobile Ads iOS |
-| --- | --- | --- | --- | --- |
-| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` |
+| prebid_mobile_sdk_gam | Prebid Android (`prebid-mobile-sdk-gam-event-handlers`) | Prebid iOS (`PrebidMobileGAMEventHandlers`) | Google Mobile Ads Android | Google Mobile Ads iOS | Tested with |
+| --- | --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` | `google_mobile_ads 9.1.0` |
 
 Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 

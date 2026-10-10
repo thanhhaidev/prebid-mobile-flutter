@@ -199,23 +199,25 @@ void main() {
           const PrebidAdMobNativeAd(
             configId: 'c',
             adMobAdUnitId: 'u',
-            assets: [
-              NativeAsset.image(
-                imageType: NativeImageType.icon,
-                widthMin: 20,
-                heightMin: 20,
-                required: true,
-              ),
-            ],
-            eventTrackers: [
-              NativeEventTracker(
-                eventType: NativeEventType.impression,
-                methods: [
-                  NativeEventTrackingMethod.image,
-                  NativeEventTrackingMethod.js,
-                ],
-              ),
-            ],
+            nativeParameters: NativeParameters(
+              assets: [
+                NativeAsset.image(
+                  imageType: NativeImageType.icon,
+                  widthMin: 20,
+                  heightMin: 20,
+                  required: true,
+                ),
+              ],
+              eventTrackers: [
+                NativeEventTracker(
+                  eventType: NativeEventType.impression,
+                  methods: [
+                    NativeEventTrackingMethod.image,
+                    NativeEventTrackingMethod.js,
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );

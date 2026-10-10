@@ -142,10 +142,11 @@ PrebidGamNativeAd(
 );
 ```
 
-Pass `assets` / `eventTrackers` to change the requested native assets (the
-default is title, icon, main image, sponsored, description and call to
+Pass `nativeParameters` (the core's `NativeParameters`) to change the
+requested assets, event trackers, context or request options (the default
+assets are title, icon, main image, sponsored, description and call to
 action). The native ad also takes `customTargeting` (added to the GAM
-request), `gpid`, `pbAdSlot` and `impOrtbConfig`.
+request), `gpid`, `pbAdSlot`, `impOrtbConfig` and `globalOrtbConfig`.
 
 For a Prebid creative, `onAdImpression` is Prebid's own impression-tracker
 callback: it fires once Prebid's impression tracker request succeeds. That
@@ -232,7 +233,7 @@ but isn't sent in the request.
 | `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. `additionalSizes`, `adFormats`, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `videoParameters` (iOS), controller, video events, `onAdExpired`. |
 | `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`, `videoParameters`, `impOrtbConfig`. |
-| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; `context` / `contextSubType` / `placementType`, `customTargeting`, `gpid`, `pbAdSlot`, `impOrtbConfig`; events via `PrebidGamNativeAdListener`. |
+| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; `nativeParameters`, `customTargeting`, `gpid`, `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig`; events via `PrebidGamNativeAdListener`. |
 
 ## License
 

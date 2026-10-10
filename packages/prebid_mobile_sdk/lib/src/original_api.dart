@@ -3,7 +3,7 @@ import 'dart:ui' show Size;
 import 'ad_enums.dart';
 import 'multiformat_ad.dart';
 import 'native_ad.dart';
-import 'native_ad_enums.dart';
+import 'native_parameters.dart';
 import 'video_parameters.dart';
 
 /// Result of an **Original API** bid request.
@@ -264,17 +264,7 @@ class PrebidNativeAdUnit with _AutoRefresh {
   /// Creates a [PrebidNativeAdUnit].
   PrebidNativeAdUnit({
     required this.configId,
-    required this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.placementCount,
-    this.sequence,
-    this.assetUrlSupport,
-    this.dUrlSupport,
-    this.privacy,
-    this.ext,
+    this.nativeParameters = const NativeParameters(),
     this.gpid,
     this.pbAdSlot,
     this.impOrtbConfig,
@@ -282,21 +272,11 @@ class PrebidNativeAdUnit with _AutoRefresh {
     void Function(PrebidNativeBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
+         nativeParameters: nativeParameters,
          gpid: gpid,
          pbAdSlot: pbAdSlot,
          impOrtbConfig: impOrtbConfig,
          globalOrtbConfig: globalOrtbConfig,
-         nativeAssets: assets,
-         nativeEventTrackers: eventTrackers,
-         nativeContext: context,
-         nativeContextSubType: contextSubType,
-         nativePlacementType: placementType,
-         nativePlacementCount: placementCount,
-         nativeSequence: sequence,
-         nativeAssetUrlSupport: assetUrlSupport,
-         nativeDUrlSupport: dUrlSupport,
-         nativePrivacy: privacy,
-         nativeExt: ext,
          onDemandRefreshed: onDemandRefreshed == null
              ? null
              : (r) => onDemandRefreshed(_nativeResponse(r)),
@@ -305,38 +285,9 @@ class PrebidNativeAdUnit with _AutoRefresh {
   /// The Prebid Server stored impression config ID.
   final String configId;
 
-  /// Native assets to request.
-  final List<NativeAsset> assets;
-
-  /// Native event trackers.
-  final List<NativeEventTracker>? eventTrackers;
-
-  /// Native context, context subtype and placement type.
-  final NativeContextType? context;
-
-  /// Native context subtype (`contextsubtype`).
-  final NativeContextSubType? contextSubType;
-
-  /// Native placement type (`plcmttype`).
-  final NativePlacementType? placementType;
-
-  /// Number of identical placements (`plcmtcnt`).
-  final int? placementCount;
-
-  /// Native request `seq` (0 for the first ad of a sequence).
-  final int? sequence;
-
-  /// Native request `aurlsupport`: the app can load assets from a URL.
-  final bool? assetUrlSupport;
-
-  /// Native request `durlsupport`: the app supports DCO URLs.
-  final bool? dUrlSupport;
-
-  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
-  final bool? privacy;
-
-  /// Native request `ext`.
-  final Map<String, Object?>? ext;
+  /// The native request: assets, event trackers, context and options.
+  /// Unset assets request [NativeParameters.defaultAssets].
+  final NativeParameters nativeParameters;
 
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;

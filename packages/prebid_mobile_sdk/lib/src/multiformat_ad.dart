@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -8,8 +6,7 @@ import 'ad_enums.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/multiformat_event_router.dart';
 import 'internal/pigeon_conversions.dart';
-import 'native_ad.dart';
-import 'native_ad_enums.dart';
+import 'native_parameters.dart';
 import 'prebid_mobile.dart';
 import 'video_parameters.dart';
 
@@ -79,12 +76,14 @@ class PrebidMultiformatBidResponse {
 /// final multiformatAd = PrebidMultiformatAd(
 ///   configId: 'your-config-id',
 ///   bannerSizes: [Size(300, 250), Size(728, 90)],
-///   includeVideo: true,
-///   nativeAssets: [
-///     NativeAsset.title(length: 90, required: true),
-///     NativeAsset.image(imageType: NativeImageType.main),
-///     NativeAsset.data(dataType: NativeDataType.sponsored),
-///   ],
+///   videoParameters: VideoParameters(mimes: ['video/mp4']),
+///   nativeParameters: NativeParameters(
+///     assets: [
+///       NativeAsset.title(length: 90, required: true),
+///       NativeAsset.image(imageType: NativeImageType.main),
+///       NativeAsset.data(dataType: NativeDataType.sponsored),
+///     ],
+///   ),
 /// );
 ///
 /// final result = await multiformatAd.fetchDemand();
@@ -107,15 +106,11 @@ class PrebidMultiformatAd {
     required this.configId,
     this.bannerSizes,
     this.videoParameters,
-    this.nativeAssets,
-    this.nativeEventTrackers,
+    this.nativeParameters,
     this.isInterstitial = false,
     this.isRewarded = false,
     this.gpid,
     this.adPosition,
-    this.nativeContext,
-    this.nativeContextSubType,
-    this.nativePlacementType,
     this.trackInterstitialImpression = false,
     this.bannerApi,
     this.interstitialMinSizePercentage,
@@ -123,12 +118,6 @@ class PrebidMultiformatAd {
     this.pbAdSlot,
     this.impOrtbConfig,
     this.globalOrtbConfig,
-    this.nativePlacementCount,
-    this.nativeSequence,
-    this.nativeAssetUrlSupport,
-    this.nativeDUrlSupport,
-    this.nativePrivacy,
-    this.nativeExt,
     this.onDemandRefreshed,
   }) : _adId = _nextId++ {
     _register();
@@ -153,11 +142,9 @@ class PrebidMultiformatAd {
   /// the specified MIME types, protocols, playback methods, etc.
   final VideoParameters? videoParameters;
 
-  /// Native assets to include in the bid request.
-  final List<NativeAsset>? nativeAssets;
-
-  /// Native event trackers.
-  final List<NativeEventTracker>? nativeEventTrackers;
+  /// The native request; non-null requests native demand (unset assets
+  /// request [NativeParameters.defaultAssets]).
+  final NativeParameters? nativeParameters;
 
   /// Whether this is an interstitial ad.
   final bool isInterstitial;
@@ -170,16 +157,6 @@ class PrebidMultiformatAd {
 
   /// Ad position (`imp.banner.pos` / `imp.video.pos`).
   final PrebidAdPosition? adPosition;
-
-  /// Native context, context subtype and placement type, when native is
-  /// requested.
-  final NativeContextType? nativeContext;
-
-  /// Native context subtype (`contextsubtype`) for the native demand.
-  final NativeContextSubType? nativeContextSubType;
-
-  /// Native placement type (`plcmttype`) for the native demand.
-  final NativePlacementType? nativePlacementType;
 
   /// Lets Prebid track the impression when your ad server's interstitial
   /// shows the Prebid creative (Prebid's interstitial impression tracker).
@@ -209,24 +186,6 @@ class PrebidMultiformatAd {
   /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
   final String? globalOrtbConfig;
 
-  /// Number of identical native placements (`plcmtcnt`).
-  final int? nativePlacementCount;
-
-  /// Native request `seq` (0 for the first ad of a sequence).
-  final int? nativeSequence;
-
-  /// Native request `aurlsupport`: the app can load assets from a URL.
-  final bool? nativeAssetUrlSupport;
-
-  /// Native request `durlsupport`: the app supports DCO URLs.
-  final bool? nativeDUrlSupport;
-
-  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
-  final bool? nativePrivacy;
-
-  /// Native request `ext`.
-  final Map<String, Object?>? nativeExt;
-
   /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).
   /// The first auction's result is returned by [fetchDemand].
   final void Function(PrebidMultiformatBidResponse response)? onDemandRefreshed;
@@ -246,27 +205,10 @@ class PrebidMultiformatAd {
   ///
   /// Returns a [PrebidMultiformatBidResponse] with the result code,
   /// winning format, targeting keywords, and native cache ID. Throws an
-  /// [ArgumentError] when no banner size, video parameters or native asset
-  /// is set. Also valid after [destroy].
+  /// [ArgumentError] when no banner size, video parameters or native
+  /// parameters are set. Also valid after [destroy].
   Future<PrebidMultiformatBidResponse> fetchDemand() async {
-    // Build native config if assets provided
-    NativeAdRequestConfig? nativeConfig;
-    if (nativeAssets != null && nativeAssets!.isNotEmpty) {
-      nativeConfig = NativeAdRequestConfig(
-        configId: configId,
-        assets: [for (final a in nativeAssets!) a.toConfig()],
-        eventTrackers: nativeEventTrackers?.map((t) => t.toConfig()).toList(),
-        context: nativeContext?.value,
-        contextSubType: nativeContextSubType?.value,
-        placementType: nativePlacementType?.value,
-        placementCount: nativePlacementCount,
-        sequence: nativeSequence,
-        assetUrlSupport: nativeAssetUrlSupport,
-        dUrlSupport: nativeDUrlSupport,
-        privacy: nativePrivacy,
-        ext: nativeExt == null ? null : jsonEncode(nativeExt),
-      );
-    }
+    final nativeConfig = nativeParameters?.toConfig(configId: configId);
 
     // Flatten banner sizes to [w, h, w, h, ...]
     List<int?>? flatSizes;
@@ -290,7 +232,7 @@ class PrebidMultiformatAd {
         videoConfig == null &&
         nativeConfig == null) {
       throw ArgumentError(
-        'Set banner sizes, video parameters or native assets: a request '
+        'Set banner sizes, video parameters or native parameters: a request '
         'without any format gets no bids.',
       );
     }

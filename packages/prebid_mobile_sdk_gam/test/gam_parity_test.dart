@@ -60,9 +60,11 @@ void main() {
         const PrebidGamNativeAd(
           configId: 'c',
           gamAdUnitId: 'u',
-          context: NativeContextType.contentCentric,
-          contextSubType: NativeContextSubType.article,
-          placementType: NativePlacementType.inFeed,
+          nativeParameters: NativeParameters(
+            context: NativeContextType.contentCentric,
+            contextSubType: NativeContextSubType.article,
+            placementType: NativePlacementType.inFeed,
+          ),
         ),
       ),
     );
@@ -122,16 +124,18 @@ void main() {
         const PrebidGamNativeAd(
           configId: 'c',
           gamAdUnitId: 'u',
-          placementCount: 2,
-          sequence: 1,
-          assetUrlSupport: true,
-          dUrlSupport: false,
-          privacy: true,
-          ext: {'k': 1},
           globalOrtbConfig: '{"app":{}}',
-          assets: [
-            NativeAsset.image(mimes: ['image/png'], ext: {'a': 1}),
-          ],
+          nativeParameters: NativeParameters(
+            placementCount: 2,
+            sequence: 1,
+            assetUrlSupport: true,
+            dUrlSupport: false,
+            privacy: true,
+            ext: {'k': 1},
+            assets: [
+              NativeAsset.image(mimes: ['image/png'], ext: {'a': 1}),
+            ],
+          ),
         ),
       ),
     );

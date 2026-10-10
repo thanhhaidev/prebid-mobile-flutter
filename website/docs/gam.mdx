@@ -112,7 +112,7 @@ PrebidGamNativeAd(
 | `onAdClicked` | The rendered ad was clicked. |
 | `onAdExpired` | The Prebid bid expired before an impression. |
 
-Without `customFormatId`, only unified native ads are requested. `assets` and `eventTrackers` change the requested native assets (default: title, icon, main image, sponsored, description, call to action); `context`, `contextSubType` and `placementType` default to social, general social and in-feed. `placementCount`, `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy` and `ext` set the native request's `plcmtcnt`, `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`.
+Without `customFormatId`, only unified native ads are requested. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests title, icon, main image, sponsored, description and call to action with impression trackers, in the social, general social and in-feed context.
 
 | Parameter | Description |
 | --- | --- |

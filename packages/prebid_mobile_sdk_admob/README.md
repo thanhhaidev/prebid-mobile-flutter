@@ -167,7 +167,8 @@ PrebidAdMobNativeAd(
 ```
 
 Rendered through the AdMob `NativeAdView` so impressions and clicks track.
-Pass `assets` / `eventTrackers` to change the requested native assets.
+Pass `nativeParameters` (the core's `NativeParameters`) to change the
+requested assets, event trackers, context or request options.
 
 Banner, interstitial and rewarded listeners also receive AdMob's
 `onAdImpression`.
@@ -235,7 +236,7 @@ banner has no video setter at all.
 | `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adFormats`, `videoParameters` (iOS), `adPosition`, `impOrtbConfig`. |
 | `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidAdMobRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
-| `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`; `context` / `contextSubType` / `placementType`. |
+| `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`; `nativeParameters`. |
 | `PrebidAdMob` | `debugDropBidProbability`: **testing only**. Drops the Prebid bid before AdMob loads, with the given probability, to exercise the adapter's fallback (Prebid's test app "Random" cases). |
 
 ## License

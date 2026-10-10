@@ -226,16 +226,18 @@ void main() {
             configId: 'c',
             gamAdUnitId: 'u',
             customFormatId: '11934135',
-            assets: [
-              NativeAsset.title(length: 25, required: true),
-              NativeAsset.data(dataType: NativeDataType.ctaText),
-            ],
-            eventTrackers: [
-              NativeEventTracker(
-                eventType: NativeEventType.impression,
-                methods: [NativeEventTrackingMethod.image],
-              ),
-            ],
+            nativeParameters: NativeParameters(
+              assets: [
+                NativeAsset.title(length: 25, required: true),
+                NativeAsset.data(dataType: NativeDataType.ctaText),
+              ],
+              eventTrackers: [
+                NativeEventTracker(
+                  eventType: NativeEventType.impression,
+                  methods: [NativeEventTrackingMethod.image],
+                ),
+              ],
+            ),
           ),
         ),
       );

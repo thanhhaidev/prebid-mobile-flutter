@@ -73,17 +73,19 @@ Pass `sizes` for display, `videoParameters` for video, or both. `minSizePercenta
 ```dart
 final unit = PrebidNativeAdUnit(
   configId: 'your-config-id',
-  assets: const [
-    NativeAsset.title(length: 90, required: true),
-    NativeAsset.image(imageType: NativeImageType.main, required: true),
-  ],
-  context: NativeContextType.contentCentric,
-  placementType: NativePlacementType.inFeed,
+  nativeParameters: const NativeParameters(
+    assets: [
+      NativeAsset.title(length: 90, required: true),
+      NativeAsset.image(imageType: NativeImageType.main, required: true),
+    ],
+    context: NativeContextType.contentCentric,
+    placementType: NativePlacementType.inFeed,
+  ),
 );
 final bid = await unit.fetchDemand(); // also bid.nativeAdCacheId
 ```
 
-It also takes the native request options of [`PrebidNativeAd`](/docs/native#requested-assets): `placementCount`, `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy` and `ext`.
+`nativeParameters` is the same [`NativeParameters`](/docs/native#requested-assets) as `PrebidNativeAd`'s; unset assets request `NativeParameters.defaultAssets`.
 
 For GAM's custom native formats rendered through Prebid, the [GAM native](/docs/gam#native) widget does the whole flow.
 
@@ -96,7 +98,7 @@ final ad = PrebidMultiformatAd(
   configId: 'your-config-id',
   bannerSizes: const [Size(300, 250)],
   videoParameters: const VideoParameters(mimes: ['video/mp4']),
-  nativeAssets: const [NativeAsset.title(length: 90)],
+  nativeParameters: const NativeParameters(assets: [NativeAsset.title(length: 90)]),
 );
 final bid = await ad.fetchDemand();
 debugPrint('${bid.winningFormat}'); // banner, video or native
@@ -104,7 +106,7 @@ debugPrint('${bid.winningFormat}'); // banner, video or native
 
 `PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp`, `topBidFiltered` and `events` (the win and impression URLs, when Prebid Server sends them). A native win shows with [`PrebidNativeAd.loadFromCacheId`](/docs/native#original-api-native).
 
-More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid`, `adPosition`, and the native options prefixed `native` (`nativePlacementCount`, `nativeSequence`, `nativeAssetUrlSupport`, `nativeDUrlSupport`, `nativePrivacy`, `nativeExt`). Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
+More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
 
 <Only platform="ios" /> `pbAdSlot`, `impOrtbConfig` and a per-unit `globalOrtbConfig` are sent on iOS only: Prebid Android's Original API ad unit has no setters for them. Set request-wide OpenRTB with `PrebidTargeting.setGlobalOrtbConfig`, which works on both.
 

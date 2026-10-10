@@ -230,16 +230,18 @@ void main() {
       );
       await PrebidNativeAdUnit(
         configId: 'n',
-        assets: const [NativeAsset.title()],
-        placementCount: 2,
-        sequence: 1,
-        assetUrlSupport: true,
-        dUrlSupport: false,
-        privacy: true,
-        ext: const {'k': 1},
         pbAdSlot: '/slot',
         impOrtbConfig: '{"imp":1}',
         globalOrtbConfig: '{"app":{}}',
+        nativeParameters: const NativeParameters(
+          assets: [NativeAsset.title()],
+          placementCount: 2,
+          sequence: 1,
+          assetUrlSupport: true,
+          dUrlSupport: false,
+          privacy: true,
+          ext: {'k': 1},
+        ),
       ).fetchDemand();
       final config =
           verify(api.fetchDemand(any, captureAny)).captured.single
@@ -255,6 +257,32 @@ void main() {
       expect(native.privacy, isTrue);
       expect(native.ext, '{"k":1}');
     });
+
+    test(
+      'native demand follows nativeParameters, with default assets',
+      () async {
+        when(api.fetchDemand(any, any)).thenAnswer(
+          (_) async => MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+        );
+        await PrebidMultiformatAd(
+          configId: 'm',
+          bannerSizes: const [Size(300, 250)],
+        ).fetchDemand();
+        final banner =
+            verify(api.fetchDemand(any, captureAny)).captured.single
+                as MultiformatAdRequestConfig;
+        expect(banner.nativeConfig, isNull);
+
+        await PrebidNativeAdUnit(configId: 'n').fetchDemand();
+        final native =
+            verify(api.fetchDemand(any, captureAny)).captured.single
+                as MultiformatAdRequestConfig;
+        expect(
+          native.nativeConfig!.assets,
+          hasLength(NativeParameters.defaultAssets.length),
+        );
+      },
+    );
 
     test('an interstitial with a minimum size needs no banner size', () async {
       when(api.fetchDemand(any, any)).thenAnswer(
@@ -307,13 +335,15 @@ void main() {
     test('sends the request extras and image MIME types', () async {
       await PrebidNativeAd(
         configId: 'n',
-        assets: const [
-          NativeAsset.image(mimes: ['image/png']),
-        ],
-        sequence: 2,
-        privacy: true,
-        ext: const {'k': 1},
         globalOrtbConfig: '{}',
+        nativeParameters: const NativeParameters(
+          assets: [
+            NativeAsset.image(mimes: ['image/png']),
+          ],
+          sequence: 2,
+          privacy: true,
+          ext: {'k': 1},
+        ),
       ).loadAd();
       final config =
           verify(api.loadAd(any, captureAny)).captured.single

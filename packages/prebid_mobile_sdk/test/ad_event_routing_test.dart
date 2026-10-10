@@ -366,18 +366,20 @@ void main() {
     test('loadAd sends the default assets when none are set', () async {
       final ad = PrebidNativeAd(
         configId: 'n',
-        eventTrackers: const [
-          NativeEventTracker(
-            eventType: NativeEventType.impression,
-            methods: [NativeEventTrackingMethod.image],
-          ),
-        ],
-        context: NativeContextType.product,
-        placementType: NativePlacementType.atomicUnit,
-        placementCount: 2,
         pbAdSlot: '/slot',
         gpid: '/gpid',
         impOrtbConfig: '{}',
+        nativeParameters: const NativeParameters(
+          eventTrackers: [
+            NativeEventTracker(
+              eventType: NativeEventType.impression,
+              methods: [NativeEventTrackingMethod.image],
+            ),
+          ],
+          context: NativeContextType.product,
+          placementType: NativePlacementType.atomicUnit,
+          placementCount: 2,
+        ),
       );
       await ad.loadAd();
       final c =
@@ -385,7 +387,7 @@ void main() {
               as NativeAdRequestConfig;
       expect(c.configId, 'n');
       final assets = c.assets!;
-      expect(assets, hasLength(PrebidNativeAd.defaultAssets.length));
+      expect(assets, hasLength(NativeParameters.defaultAssets.length));
       expect(assets.first?.assetType, 'title');
       expect(assets.first?.required_, isTrue);
       expect(assets.first?.titleLength, 90);
@@ -516,8 +518,8 @@ void main() {
       );
       final nativeUnit = PrebidNativeAdUnit(
         configId: 'n',
-        assets: const [NativeAsset.title()],
         onDemandRefreshed: native.add,
+        nativeParameters: const NativeParameters(assets: [NativeAsset.title()]),
       );
       final units =
           <(Future<Object?> Function(), Future<void> Function(), List<Object>)>[

@@ -184,7 +184,8 @@ PrebidMaxNativeAd(
 ```
 
 Rendered through MAX's native ad view so impressions and clicks track. Pass
-`assets` / `eventTrackers` to change the requested native assets.
+`nativeParameters` (the core's `NativeParameters`) to change the requested
+assets, event trackers, context or request options.
 
 `onAdImpression` (banner, interstitial, rewarded, native) is reported from
 MAX's revenue callback, which MAX fires when it records the impression.
@@ -255,7 +256,7 @@ the rendered video's length but isn't sent in the request.
 | `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adFormats`, `videoParameters` (iOS), `adPosition`, `impOrtbConfig`. |
 | `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
-| `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener` (with `onAdRevenuePaid`); `context` / `contextSubType` / `placementType`. |
+| `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener` (with `onAdRevenuePaid`); `nativeParameters`. |
 | `PrebidMaxBannerAdListener`, `PrebidMaxInterstitialAdListener`, `PrebidMaxRewardedAdListener` | Core listeners plus MAX events: `onAdRevenuePaid` (`PrebidMaxAdRevenue`), and on banners `onAdExpanded`, `onAdCollapsed`, `onAdDisplayFailed`. |
 | `PrebidMax` | `debugDropBidProbability`: **testing only**. Withholds the Prebid bid from MAX, with the given probability, to exercise the adapter's fallback (Prebid's test app "Random" cases). |
 

@@ -11,6 +11,7 @@ import 'internal/ad_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/visibility.dart';
 import 'native_ad_enums.dart';
+import 'native_parameters.dart';
 
 /// Listener for native ad events.
 class PrebidNativeAdListener {
@@ -300,20 +301,19 @@ class NativeEventTracker {
 /// ```dart
 /// final nativeAd = PrebidNativeAd(
 ///   configId: 'your-config-id',
-///   assets: [
-///     NativeAsset.title(length: 90, required: true),
-///     NativeAsset.image(imageType: NativeImageType.main, required: true),
-///     NativeAsset.image(imageType: NativeImageType.icon, required: true),
-///     NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
-///     NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
-///     NativeAsset.data(dataType: NativeDataType.desc, required: true),
-///   ],
-///   eventTrackers: [
-///     NativeEventTracker(
-///       eventType: NativeEventType.impression,
-///       methods: [NativeEventTrackingMethod.image],
-///     ),
-///   ],
+///   nativeParameters: const NativeParameters(
+///     assets: [
+///       NativeAsset.title(length: 90, required: true),
+///       NativeAsset.image(imageType: NativeImageType.main, required: true),
+///       NativeAsset.data(dataType: NativeDataType.ctaText, required: true),
+///     ],
+///     eventTrackers: [
+///       NativeEventTracker(
+///         eventType: NativeEventType.impression,
+///         methods: [NativeEventTrackingMethod.image],
+///       ),
+///     ],
+///   ),
 ///   listener: PrebidNativeAdListener(
 ///     // Show PrebidNativeAdView(ad: nativeAd), or your layout of
 ///     // `response` inside PrebidNativeAdView.custom.
@@ -332,21 +332,11 @@ class PrebidNativeAd {
   /// Creates a [PrebidNativeAd].
   PrebidNativeAd({
     required this.configId,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.placementCount,
-    this.pbAdSlot,
+    this.nativeParameters = const NativeParameters(),
     this.gpid,
+    this.pbAdSlot,
     this.impOrtbConfig,
     this.globalOrtbConfig,
-    this.sequence,
-    this.assetUrlSupport,
-    this.dUrlSupport,
-    this.privacy,
-    this.ext,
     this.listener,
   }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
@@ -362,41 +352,15 @@ class PrebidNativeAd {
   /// The Prebid Server config ID.
   final String configId;
 
-  /// The native assets to request. Defaults to [defaultAssets]: Prebid
-  /// Server rejects a native request without any asset.
-  final List<NativeAsset>? assets;
-
-  /// Requested when [assets] is null: title, main image, icon, sponsored,
-  /// description and call to action (the companion packages' default too).
-  static const defaultAssets = [
-    NativeAsset.title(required: true),
-    NativeAsset.image(required: true),
-    NativeAsset.image(imageType: NativeImageType.icon, required: true),
-    NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
-    NativeAsset.data(dataType: NativeDataType.desc),
-    NativeAsset.data(dataType: NativeDataType.ctaText),
-  ];
-
-  /// The native event trackers.
-  final List<NativeEventTracker>? eventTrackers;
-
-  /// Context type.
-  final NativeContextType? context;
-
-  /// The native context subtype (`contextsubtype`).
-  final NativeContextSubType? contextSubType;
-
-  /// Placement type.
-  final NativePlacementType? placementType;
-
-  /// Number of placements.
-  final int? placementCount;
-
-  /// Prebid ad slot (`imp.ext.data.pbadslot`).
-  final String? pbAdSlot;
+  /// The native request: assets, event trackers, context and options.
+  /// Unset assets request [NativeParameters.defaultAssets].
+  final NativeParameters nativeParameters;
 
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
@@ -404,23 +368,6 @@ class PrebidNativeAd {
   /// Request-level OpenRTB JSON for this ad unit only (merged over
   /// [PrebidTargeting.setGlobalOrtbConfig]).
   final String? globalOrtbConfig;
-
-  /// Native request `seq`: the ad's position among several from one request.
-  final int? sequence;
-
-  /// Native request `aurlsupport`: whether the app accepts asset URLs
-  /// instead of assets.
-  final bool? assetUrlSupport;
-
-  /// Native request `durlsupport`: whether the app accepts DCO URLs.
-  final bool? dUrlSupport;
-
-  /// Native request `privacy`: whether the app renders the buyer's privacy
-  /// (AdChoices) notice itself.
-  final bool? privacy;
-
-  /// Native request `ext`.
-  final Map<String, Object?>? ext;
 
   /// Listener for native ad events.
   final PrebidNativeAdListener? listener;
@@ -477,23 +424,12 @@ class PrebidNativeAd {
   Future<void> loadAd() async {
     // Re-register: [destroy] unregisters, and the object may be reused.
     AdEventRouter.instance.register(_adId, _handleEvent);
-    final config = NativeAdRequestConfig(
+    final config = nativeParameters.toConfig(
       configId: configId,
-      assets: [for (final a in assets ?? defaultAssets) a.toConfig()],
-      eventTrackers: eventTrackers?.map((t) => t.toConfig()).toList(),
-      context: context?.value,
-      contextSubType: contextSubType?.value,
-      placementType: placementType?.value,
-      placementCount: placementCount,
-      pbAdSlot: pbAdSlot,
       gpid: gpid,
+      pbAdSlot: pbAdSlot,
       impOrtbConfig: impOrtbConfig,
       globalOrtbConfig: globalOrtbConfig,
-      sequence: sequence,
-      assetUrlSupport: assetUrlSupport,
-      dUrlSupport: dUrlSupport,
-      privacy: privacy,
-      ext: ext == null ? null : jsonEncode(ext),
     );
     await api.loadAd(_adId, config);
   }

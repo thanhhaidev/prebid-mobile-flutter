@@ -45,10 +45,22 @@ const kImageOnlyNativeTrackers = <NativeEventTracker>[
   ),
 ];
 
-/// Context SOCIAL_CENTRIC / GENERAL_SOCIAL, placement CONTENT_FEED.
-const kNativeContext = NativeContextType.socialCentric;
-const kNativeContextSubType = NativeContextSubType.social;
-const kNativePlacement = NativePlacementType.inFeed;
+/// The standard request with the image + JS tracker, context
+/// SOCIAL_CENTRIC / GENERAL_SOCIAL and placement CONTENT_FEED (most screens).
+const kStandardNativeParameters = NativeParameters(
+  assets: kStandardNativeAssets,
+  eventTrackers: kStandardNativeTrackers,
+  context: NativeContextType.socialCentric,
+  contextSubType: NativeContextSubType.social,
+  placementType: NativePlacementType.inFeed,
+);
+
+/// The standard assets with the image-only tracker (GAM Original native
+/// banner / multiformat).
+const kOriginalNativeParameters = NativeParameters(
+  assets: kStandardNativeAssets,
+  eventTrackers: kImageOnlyNativeTrackers,
+);
 
 /// The video parameters of the original multiformat requests (mp4 only).
 const kMp4Video = VideoParameters(mimes: ['video/mp4']);

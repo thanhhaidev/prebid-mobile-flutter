@@ -432,19 +432,27 @@ delivered to `onAdLoaded` as a `PrebidNativeAdResponse`: the common fields
 | Property / Method | Type | Description |
 |---|---|---|
 | `configId` | `String` | **Required.** Prebid Server config ID. |
-| `assets` | `List<NativeAsset>?` | Native assets to request. |
-| `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression/viewability. |
-| `context` | `NativeContextType?` | Content context type. |
-| `contextSubType` | `NativeContextSubType?` | Context subtype (`contextsubtype`). |
-| `placementType` | `NativePlacementType?` | Placement type. |
-| `placementCount` | `int?` | Number of placements. |
+| `nativeParameters` | `NativeParameters` | The native request (see below). Unset assets request `NativeParameters.defaultAssets`. |
 | `pbAdSlot` / `gpid` / `impOrtbConfig` / `globalOrtbConfig` | `String?` | Ad slot, GPID and OpenRTB JSON. |
-| `sequence` / `assetUrlSupport` / `dUrlSupport` / `privacy` / `ext` | | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy`, `ext`. |
 | `listener` | `PrebidNativeAdListener?` | Callback listener. |
 | `loadAd()` | `Future<void>` | Request a native ad. |
 | `loadFromCacheId(String)` | `Future<void>` | Load an Original API native win from its cache id. |
 | `performClick()` | `Future<bool>` | Report a click on the ad shown in `PrebidNativeAdView.custom`. |
 | `destroy()` | `Future<void>` | Release all resources. |
+
+### `NativeParameters` — Native Request
+
+The native request every native ad takes as `nativeParameters`
+(`PrebidNativeAd`, `PrebidNativeAdUnit`, `PrebidMultiformatAd` and the GAM,
+AdMob and MAX native ads).
+
+| Property | Type | Description |
+|---|---|---|
+| `assets` | `List<NativeAsset>?` | Native assets to request; `null` uses the ad's default set. |
+| `eventTrackers` | `List<NativeEventTracker>?` | Event trackers for impression/viewability. |
+| `context` / `contextSubType` / `placementType` | enums | Where the ad appears. |
+| `placementCount` | `int?` | Number of identical placements (`plcmtcnt`). |
+| `sequence` / `assetUrlSupport` / `dUrlSupport` / `privacy` / `ext` | | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy`, `ext`. |
 
 ### `PrebidNativeAdView` — Native Ad View
 
@@ -487,12 +495,10 @@ Combines banner, video, and native in a single bid request.
 | `configId` | `String` | **Required.** Prebid Server config ID. |
 | `bannerSizes` | `List<Size>?` | Banner sizes (e.g., `[Size(300, 250)]`). |
 | `videoParameters` | `VideoParameters?` | Video config. If non-null, video is included. |
-| `nativeAssets` | `List<NativeAsset>?` | Native assets to include. |
-| `nativeEventTrackers` | `List<NativeEventTracker>?` | Native event trackers. |
+| `nativeParameters` | `NativeParameters?` | Native request. If non-null, native is included. |
 | `isInterstitial` | `bool` | Interstitial multiformat ad. Default: `false`. |
 | `isRewarded` | `bool` | Rewarded multiformat ad. Default: `false`. |
 | `adPosition` | `PrebidAdPosition?` | Ad position (`pos`). |
-| `nativeContext` / `nativeContextSubType` / `nativePlacementType` | enums | Native request context. |
 | `trackInterstitialImpression` | `bool` | Let Prebid track the impression when your ad server's interstitial shows the Prebid creative. |
 | `onDemandRefreshed` | callback | Each auto-refreshed result. |
 | `fetchDemand()` | `Future<PrebidMultiformatBidResponse>` | Execute the bid request. |

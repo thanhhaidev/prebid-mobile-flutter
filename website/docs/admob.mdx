@@ -97,7 +97,7 @@ PrebidAdMobNativeAd(
 )
 ```
 
-Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `assets` and `eventTrackers` change the requested assets; `context`, `contextSubType` and `placementType` default to social, general social and in-feed on both platforms. `placementCount`, `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy` and `ext` set the native request's `plcmtcnt`, `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`. `impOrtbConfig` and `globalOrtbConfig` apply on iOS only: Prebid Android's mediation native unit has no setters for them.
+Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests Prebid's reference assets and impression trackers, with the social, general social and in-feed context. `impOrtbConfig` and `globalOrtbConfig` apply on iOS only: Prebid Android's mediation native unit has no setters for them.
 
 ## Events
 

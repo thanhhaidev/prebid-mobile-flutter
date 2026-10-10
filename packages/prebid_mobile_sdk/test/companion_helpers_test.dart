@@ -60,6 +60,48 @@ void main() {
       );
     });
 
+    test('NativeParameters.toMap omits unset fields', () {
+      expect(const NativeParameters().toMap(), isEmpty);
+      expect(
+        const NativeParameters(
+          assets: [NativeAsset.title()],
+          eventTrackers: [
+            NativeEventTracker(
+              eventType: NativeEventType.impression,
+              methods: [NativeEventTrackingMethod.image],
+            ),
+          ],
+          context: NativeContextType.contentCentric,
+          contextSubType: NativeContextSubType.article,
+          placementType: NativePlacementType.inFeed,
+          placementCount: 2,
+          sequence: 1,
+          assetUrlSupport: true,
+          dUrlSupport: false,
+          privacy: true,
+          ext: {'k': 1},
+        ).toMap(),
+        {
+          'assets': [const NativeAsset.title().toMap()],
+          'eventTrackers': [
+            {
+              'eventType': NativeEventType.impression.value,
+              'methods': [NativeEventTrackingMethod.image.value],
+            },
+          ],
+          'context': NativeContextType.contentCentric.value,
+          'contextSubType': NativeContextSubType.article.value,
+          'placementType': NativePlacementType.inFeed.value,
+          'placementCount': 2,
+          'sequence': 1,
+          'assetUrlSupport': true,
+          'dUrlSupport': false,
+          'privacy': true,
+          'ext': '{"k":1}',
+        },
+      );
+    });
+
     test('NativeEventTracker.toMap carries ids', () {
       const tracker = NativeEventTracker(
         eventType: NativeEventType.impression,

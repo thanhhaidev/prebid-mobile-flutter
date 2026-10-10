@@ -399,11 +399,6 @@ class _MediationNativeScreenState
         key: key,
         configId: config.configId,
         maxAdUnitId: adUnitId,
-        assets: kStandardNativeAssets,
-        eventTrackers: kStandardNativeTrackers,
-        context: kNativeContext,
-        contextSubType: kNativeContextSubType,
-        placementType: kNativePlacement,
         listener: PrebidMaxNativeAdListener(
           onAdLoaded: () => _result('onNativeAdLoaded called'),
           onAdFailed: (e) => _result('onNativeAdLoadFailed called', e),
@@ -413,17 +408,13 @@ class _MediationNativeScreenState
             '${r.revenue} ${r.networkName}',
           ),
         ),
+        nativeParameters: kStandardNativeParameters,
       );
     }
     return PrebidAdMobNativeAd(
       key: key,
       configId: config.configId,
       adMobAdUnitId: adUnitId,
-      assets: kStandardNativeAssets,
-      eventTrackers: kStandardNativeTrackers,
-      context: kNativeContext,
-      contextSubType: kNativeContextSubType,
-      placementType: kNativePlacement,
       listener: PrebidAdMobNativeAdListener(
         onAdLoaded: () => _result('onAdLoaded'),
         onAdFailed: (e) => _result('onAdFailed', e),
@@ -431,6 +422,7 @@ class _MediationNativeScreenState
         onAdClicked: () => events.fire('onAdClicked'),
         onAdOpened: () => events.fire('onAdOpened'),
       ),
+      nativeParameters: kStandardNativeParameters,
     );
   }
 

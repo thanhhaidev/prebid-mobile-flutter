@@ -61,11 +61,6 @@ class _InAppNativeScreenState extends DemoScreenState<InAppNativeScreen> {
     if (_original) return; // The GAM native widget loads itself.
     final ad = _ad = PrebidNativeAd(
       configId: config.configId,
-      assets: kStandardNativeAssets,
-      eventTrackers: kStandardNativeTrackers,
-      context: kNativeContext,
-      contextSubType: kNativeContextSubType,
-      placementType: kNativePlacement,
       listener: PrebidNativeAdListener(
         onAdLoaded: (response) {
           events.fire(_fetchSuccess);
@@ -77,6 +72,7 @@ class _InAppNativeScreenState extends DemoScreenState<InAppNativeScreen> {
         onAdImpression: () => events.fire(_impression),
         onAdExpired: () => events.fire(_expired),
       ),
+      nativeParameters: kStandardNativeParameters,
     );
     await ad.loadAd();
   }
@@ -91,11 +87,6 @@ class _InAppNativeScreenState extends DemoScreenState<InAppNativeScreen> {
         configId: config.configId,
         gamAdUnitId: item.adUnitId ?? '',
         customFormatId: item.customFormatId ?? '11934135',
-        assets: kStandardNativeAssets,
-        eventTrackers: kStandardNativeTrackers,
-        context: kNativeContext,
-        contextSubType: kNativeContextSubType,
-        placementType: kNativePlacement,
         listener: PrebidGamNativeAdListener(
           onFetchDemandSuccess: () => events.fire(_fetchSuccess),
           onFetchDemandFailed: (r) => events.fire(_fetchFailed, r),
@@ -105,6 +96,7 @@ class _InAppNativeScreenState extends DemoScreenState<InAppNativeScreen> {
           onAdImpression: () => events.fire(_impression),
           onAdExpired: () => events.fire(_expired),
         ),
+        nativeParameters: kStandardNativeParameters,
       );
     }
     final ad = _ad;
@@ -221,11 +213,6 @@ Widget gamNative(DemoItem item, String configId, EventCounters? events) {
     configId: configId,
     gamAdUnitId: item.adUnitId ?? '',
     customFormatId: item.customFormatId,
-    assets: kStandardNativeAssets,
-    eventTrackers: kStandardNativeTrackers,
-    context: kNativeContext,
-    contextSubType: kNativeContextSubType,
-    placementType: kNativePlacement,
     listener: PrebidGamNativeAdListener(
       onFetchDemandSuccess: () => fire('fetchDemand success'),
       onFetchDemandFailed: (r) => fire('fetchDemand failed', r),
@@ -238,6 +225,7 @@ Widget gamNative(DemoItem item, String configId, EventCounters? events) {
       onAdClicked: () => fire('onAdClicked called'),
       onAdImpression: () => fire('onAdImpression'),
     ),
+    nativeParameters: kStandardNativeParameters,
   );
 }
 
@@ -291,16 +279,12 @@ class _FeedNativeAdState extends State<_FeedNativeAd> {
     super.initState();
     _ad = PrebidNativeAd(
       configId: widget.configId,
-      assets: kStandardNativeAssets,
-      eventTrackers: kStandardNativeTrackers,
-      context: kNativeContext,
-      contextSubType: kNativeContextSubType,
-      placementType: kNativePlacement,
       listener: PrebidNativeAdListener(
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
       ),
+      nativeParameters: kStandardNativeParameters,
     )..loadAd();
   }
 

@@ -43,41 +43,43 @@ The view lays out the main image, icon, sponsored line, title, body and call to 
 
 ## Requested assets
 
-Without `assets`, the ad requests title, main image, icon, sponsored, description and call to action (`PrebidNativeAd.defaultAssets`). Pass your own list to change it:
+The native request is a `NativeParameters`, which every native ad takes as `nativeParameters`: this one, the [Original API](/docs/original-api#native) units and the GAM, AdMob and MAX native ads. Without `assets`, the ad requests title, main image, icon, sponsored, description and call to action (`NativeParameters.defaultAssets`):
 
 ```dart
 PrebidNativeAd(
   configId: 'your-config-id',
-  assets: const [
-    NativeAsset.title(length: 90, required: true),
-    NativeAsset.image(imageType: NativeImageType.main, widthMin: 300, heightMin: 150, required: true),
-    NativeAsset.image(imageType: NativeImageType.icon, width: 50, height: 50),
-    NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
-    NativeAsset.data(dataType: NativeDataType.desc),
-    NativeAsset.data(dataType: NativeDataType.ctaText),
-    NativeAsset.data(dataType: NativeDataType.rating),
-  ],
-  eventTrackers: const [
-    NativeEventTracker(
-      eventType: NativeEventType.impression,
-      methods: [NativeEventTrackingMethod.image, NativeEventTrackingMethod.js],
-    ),
-  ],
-  context: NativeContextType.socialCentric,
-  contextSubType: NativeContextSubType.social,
-  placementType: NativePlacementType.inFeed,
+  nativeParameters: const NativeParameters(
+    assets: [
+      NativeAsset.title(length: 90, required: true),
+      NativeAsset.image(imageType: NativeImageType.main, widthMin: 300, heightMin: 150, required: true),
+      NativeAsset.image(imageType: NativeImageType.icon, width: 50, height: 50),
+      NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
+      NativeAsset.data(dataType: NativeDataType.desc),
+      NativeAsset.data(dataType: NativeDataType.ctaText),
+      NativeAsset.data(dataType: NativeDataType.rating),
+    ],
+    eventTrackers: [
+      NativeEventTracker(
+        eventType: NativeEventType.impression,
+        methods: [NativeEventTrackingMethod.image, NativeEventTrackingMethod.js],
+      ),
+    ],
+    context: NativeContextType.socialCentric,
+    contextSubType: NativeContextSubType.social,
+    placementType: NativePlacementType.inFeed,
+  ),
 );
 ```
 
-| Parameter | Description |
+| `NativeParameters` field | Description |
 | --- | --- |
 | `assets` | `NativeAsset.title`, `.image` and `.data` entries. |
 | `eventTrackers` | Impression / viewability trackers to request. |
 | `context`, `contextSubType`, `placementType` | Where the ad appears (OpenRTB Native 1.2). |
-| `placementCount` | Number of identical placements. |
-| `pbAdSlot`, `gpid`, `impOrtbConfig` | Ad slot, GPID and impression-level OpenRTB JSON. |
-| `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
+| `placementCount` | Number of identical placements (`plcmtcnt`). |
 | `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy`, `ext` | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`. |
+
+`PrebidNativeAd` itself also takes `gpid`, `pbAdSlot`, `impOrtbConfig` and `globalOrtbConfig` (impression-level and per-unit request-level OpenRTB JSON).
 
 `NativeAsset.image` also takes `mimes`, the image types your layout can show. Every asset takes an `ext` for its `title`, `img` or `data` object and an `assetExt` for the asset itself, and `NativeEventTracker` takes an `ext`; `assetExt` and the tracker `ext` are sent on Android only, since Prebid iOS has no field for them. The GAM, AdMob and MAX native widgets send the same fields.
 

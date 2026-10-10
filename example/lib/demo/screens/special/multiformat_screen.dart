@@ -79,8 +79,7 @@ class _MultiformatScreenState extends DemoScreenState<MultiformatScreen> {
       configId: configs[Random().nextInt(configs.length)],
       bannerSizes: _banner ? const [Size(320, 50), Size(300, 250)] : null,
       videoParameters: _video ? kMp4Video : null,
-      nativeAssets: _native ? kStandardNativeAssets : null,
-      nativeEventTrackers: _native ? kImageOnlyNativeTrackers : null,
+      nativeParameters: _native ? kOriginalNativeParameters : null,
     );
     final response = await unit.fetchDemand();
     if (!mounted) return;

@@ -1,16 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/companion.dart';
-import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show
-        NativeAsset,
-        NativeContextSubType,
-        NativeContextType,
-        NativeEventTracker,
-        NativePlacementType;
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show NativeParameters;
 
 import 'max_listeners.dart';
 
@@ -55,17 +47,7 @@ class PrebidMaxNativeAd extends StatefulWidget {
     required this.configId,
     required this.maxAdUnitId,
     this.height = 320,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.placementCount,
-    this.sequence,
-    this.assetUrlSupport,
-    this.dUrlSupport,
-    this.privacy,
-    this.ext,
+    this.nativeParameters = const NativeParameters(),
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.listener,
@@ -81,40 +63,11 @@ class PrebidMaxNativeAd extends StatefulWidget {
   /// native layout reports its measured height.
   final double height;
 
-  /// Native assets to request. `null` requests Prebid's reference set
-  /// (title, icon, sponsored, description, call to action).
-  final List<NativeAsset>? assets;
-
-  /// Native event trackers. `null` requests impression trackers (image + JS).
-  final List<NativeEventTracker>? eventTrackers;
-
-  /// Native context, context subtype and placement type. Default: social
-  /// context, general-social subtype, in-feed placement.
-  final NativeContextType? context;
-
-  /// Native context subtype (`contextsubtype`).
-  final NativeContextSubType? contextSubType;
-
-  /// Native placement type (`plcmttype`).
-  final NativePlacementType? placementType;
-
-  /// Number of identical placements (`plcmtcnt`).
-  final int? placementCount;
-
-  /// Native request `seq` (0 for the first ad of a sequence).
-  final int? sequence;
-
-  /// Native request `aurlsupport`: the app can load assets from a URL.
-  final bool? assetUrlSupport;
-
-  /// Native request `durlsupport`: the app supports DCO URLs.
-  final bool? dUrlSupport;
-
-  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
-  final bool? privacy;
-
-  /// Native request `ext`.
-  final Map<String, Object?>? ext;
+  /// The native request: assets, event trackers, context and options.
+  /// Unset assets request Prebid's reference set; unset event trackers request
+  /// impression trackers (image + JS); the context, subtype and placement
+  /// default to social, general social and in-feed.
+  final NativeParameters nativeParameters;
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
@@ -156,23 +109,7 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
     return <String, dynamic>{
       'configId': widget.configId,
       'maxAdUnitId': widget.maxAdUnitId,
-      if (widget.assets != null)
-        'assets': widget.assets!.map((a) => a.toMap()).toList(),
-      if (widget.eventTrackers != null)
-        'eventTrackers': widget.eventTrackers!.map((t) => t.toMap()).toList(),
-      if (widget.context != null) 'context': widget.context!.value,
-      if (widget.contextSubType != null)
-        'contextSubType': widget.contextSubType!.value,
-      if (widget.placementType != null)
-        'placementType': widget.placementType!.value,
-      if (widget.placementCount != null)
-        'placementCount': widget.placementCount,
-      if (widget.sequence != null) 'sequence': widget.sequence,
-      if (widget.assetUrlSupport != null)
-        'assetUrlSupport': widget.assetUrlSupport,
-      if (widget.dUrlSupport != null) 'dUrlSupport': widget.dUrlSupport,
-      if (widget.privacy != null) 'privacy': widget.privacy,
-      if (widget.ext != null) 'ext': jsonEncode(widget.ext),
+      ...widget.nativeParameters.toMap(),
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
       if (widget.globalOrtbConfig != null)
         'globalOrtbConfig': widget.globalOrtbConfig,

@@ -53,6 +53,7 @@ export 'src/interstitial_ad.dart';
 export 'src/multiformat_ad.dart';
 export 'src/native_ad.dart';
 export 'src/native_ad_enums.dart';
+export 'src/native_parameters.dart';
 export 'src/original_api.dart';
 export 'src/prebid_mobile.dart' hide prebidMobileHostApi;
 export 'src/rewarded_ad.dart';

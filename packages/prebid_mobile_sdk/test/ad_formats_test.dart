@@ -140,7 +140,7 @@ void main() {
     test('loadAd and destroy call api', () async {
       final ad = PrebidNativeAd(
         configId: 'config-3',
-        assets: [const NativeAsset.title()],
+        nativeParameters: const NativeParameters(assets: [NativeAsset.title()]),
       );
 
       await ad.loadAd();

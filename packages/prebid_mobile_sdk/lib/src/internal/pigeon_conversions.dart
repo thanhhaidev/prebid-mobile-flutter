@@ -10,6 +10,7 @@ import '../external_user_id.dart';
 import '../fullscreen_controls.dart';
 import '../generated/prebid_api.g.dart';
 import '../native_ad.dart';
+import '../native_parameters.dart';
 import '../video_parameters.dart';
 
 /// Pigeon form of [VideoParameters].
@@ -70,6 +71,38 @@ extension NativeAssetPigeon on NativeAsset {
     imageMimes: imageMimes,
     ext: _json(ext),
     assetExt: _json(assetExt),
+  );
+}
+
+/// Pigeon form of [NativeParameters].
+extension NativeParametersPigeon on NativeParameters {
+  /// The Pigeon config of a native request; unset assets request
+  /// [NativeParameters.defaultAssets].
+  NativeAdRequestConfig toConfig({
+    required String configId,
+    String? gpid,
+    String? pbAdSlot,
+    String? impOrtbConfig,
+    String? globalOrtbConfig,
+  }) => NativeAdRequestConfig(
+    configId: configId,
+    assets: [
+      for (final a in assets ?? NativeParameters.defaultAssets) a.toConfig(),
+    ],
+    eventTrackers: eventTrackers?.map((t) => t.toConfig()).toList(),
+    context: context?.value,
+    contextSubType: contextSubType?.value,
+    placementType: placementType?.value,
+    placementCount: placementCount,
+    sequence: sequence,
+    assetUrlSupport: assetUrlSupport,
+    dUrlSupport: dUrlSupport,
+    privacy: privacy,
+    ext: _json(ext),
+    gpid: gpid,
+    pbAdSlot: pbAdSlot,
+    impOrtbConfig: impOrtbConfig,
+    globalOrtbConfig: globalOrtbConfig,
   );
 }
 

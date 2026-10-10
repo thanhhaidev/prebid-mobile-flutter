@@ -38,6 +38,6 @@ MAX adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
 - Interstitials and rewarded ads left from before a hot restart are released.
 
 - Prebid ad slot (`pbAdSlot`) and per-unit global OpenRTB configuration on
-  banner, interstitial and rewarded ads, and native request options
-  (placement count, sequence, URL support, privacy, `ext`, OpenRTB
-  configuration).
+  banner, interstitial and rewarded ads, and the native request as
+  the core's `NativeParameters` (placement count, sequence, URL support,
+  privacy, `ext`, OpenRTB configuration).

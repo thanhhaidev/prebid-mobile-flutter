@@ -89,7 +89,8 @@ packages/prebid_mobile_sdk/
   android/…/io/github/thanhhaidev/prebid_mobile_sdk/  PrebidMobileSdkPlugin.kt + one <Name>HostApiImpl.kt per host API
   ios/…/Sources/prebid_mobile_sdk/  the same files in Swift
 packages/prebid_mobile_sdk_<gam|admob|max>/
-  lib/src/<prefix>_<format>_ad.dart, android/ and ios/ with one file per format
+  lib/src/<prefix>_<format>_ad.dart, android/ and ios/ with one file per format,
+  PrebidRequests (shared by the three companions) and PrebidShared (their own)
 example/lib/
   data/ demo/ pages/ services/ theme/ widgets/   see example/README.md
 ```
@@ -123,7 +124,10 @@ example/lib/
   its own copy of `analysis_options.yaml`, and `tool/check_copies.sh` (part of
   `melos run analyze`) fails when a copy drifts. Change the rules in every
   copy at once; the same check keeps the companions'
-  `test/channel_harness.dart` copies identical.
+  `test/channel_harness.dart` copies identical, and their `PrebidRequests.kt`
+  / `PrebidRequests.swift` (the native parsing of the channel arguments, the
+  Kotlin copies differing only in their package line): change those in all
+  three packages.
 - **Kotlin:** [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html):
   imports instead of fully qualified names, KDoc (`/** */`) for declarations,
   `//` inside bodies.

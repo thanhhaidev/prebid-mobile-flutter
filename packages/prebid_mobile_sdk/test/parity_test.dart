@@ -238,10 +238,12 @@ void main() {
     test('native unit sends context, subtype and placement', () async {
       final unit = PrebidNativeAdUnit(
         configId: 'native',
-        assets: const [NativeAsset.title()],
-        context: NativeContextType.contentCentric,
-        contextSubType: NativeContextSubType.article,
-        placementType: NativePlacementType.inFeed,
+        nativeParameters: const NativeParameters(
+          assets: [NativeAsset.title()],
+          context: NativeContextType.contentCentric,
+          contextSubType: NativeContextSubType.article,
+          placementType: NativePlacementType.inFeed,
+        ),
       );
       await unit.fetchDemand();
       final native =
@@ -259,7 +261,9 @@ void main() {
     PrebidNativeAd.api = mockApi;
     final ad = PrebidNativeAd(
       configId: 'native',
-      contextSubType: NativeContextSubType.social,
+      nativeParameters: const NativeParameters(
+        contextSubType: NativeContextSubType.social,
+      ),
     );
     await ad.loadAd();
     final config =

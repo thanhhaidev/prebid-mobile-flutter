@@ -72,9 +72,8 @@ class OriginalBannerAdState extends State<OriginalBannerAd> {
       videoParameters: formats.contains(PrebidAdFormat.video)
           ? (_item.videoParameters ?? kMp4Video)
           : null,
-      nativeAssets: _native ? kStandardNativeAssets : null,
-      nativeEventTrackers: _native ? kImageOnlyNativeTrackers : null,
       onDemandRefreshed: (r) => _loadGam(r.targetingKeywords),
+      nativeParameters: _native ? kOriginalNativeParameters : null,
     );
   }
 

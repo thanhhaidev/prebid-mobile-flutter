@@ -42,8 +42,10 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
 - Native ads in your own Flutter layout (`PrebidNativeAdView.custom`) with
   impression and click tracking, and Original API native wins shown from
   their cache id (`PrebidNativeAd.loadFromCacheId`).
-- Native request options: sequence, asset and DCO URL support, privacy,
-  `ext`, image MIME types, and `ext` fields on assets and event trackers.
+- `NativeParameters`, the native request every native ad takes (assets,
+  event trackers, context, placement count, sequence, asset and DCO URL
+  support, privacy, `ext`), with image MIME types and `ext` fields on assets
+  and event trackers.
 - Per-ad-unit global OpenRTB configuration for banner, interstitial,
   rewarded, native and in-stream video.
 - Rewarded ad formats, video parameters and minimum size (iOS), and
@@ -55,7 +57,7 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   (`findPrebidCreativeSize`), bid event URLs, banner API frameworks, the
   interstitial minimum size, GPID on every ad unit, and SKAdNetwork StoreKit
   flows and SKOverlay on iOS.
-- Original API: native request options on native and multiformat units, a
+- Original API: `NativeParameters` on native and multiformat units, a
   display interstitial requested by minimum size alone, and `pbAdSlot` plus
   per-unit OpenRTB configuration (iOS).
 - Prebid ad slot (`pbAdSlot`) on interstitial and rewarded ads.

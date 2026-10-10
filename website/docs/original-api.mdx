@@ -68,6 +68,30 @@ await AdManagerInterstitialAd.load(
 
 Pass `sizes` for display, `videoParameters` for video, or both. `minSizePercentage` requests display with a minimum size, with or without `sizes`. A unit with none of them throws an `ArgumentError`.
 
+## Rewarded
+
+```dart
+final unit = PrebidRewardedAdUnit(
+  configId: 'your-config-id',
+  videoParameters: const VideoParameters(
+    mimes: ['video/mp4'],
+    size: Size(320, 480),
+  ),
+);
+final bid = await unit.fetchDemand();
+
+await RewardedAd.loadWithAdManagerAdRequest(
+  adUnitId: '/1234567/your-rewarded',
+  adManagerRequest: AdManagerAdRequest(customTargeting: bid.targetingKeywords ?? const {}),
+  rewardedAdLoadCallback: RewardedAdLoadCallback(
+    onAdLoaded: (ad) => ad.show(onUserEarnedReward: (_, reward) {}),
+    onAdFailedToLoad: (error) {},
+  ),
+);
+```
+
+A rewarded video interstitial (`instl` and Prebid's rewarded flag). `trackImpression` lets Prebid record the impression when the ad server shows the Prebid creative.
+
 ## Native
 
 ```dart
@@ -106,9 +130,9 @@ debugPrint('${bid.winningFormat}'); // banner, video or native
 
 `PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp`, `topBidFiltered` and `events` (the win and impression URLs, when Prebid Server sends them). A native win shows with [`PrebidNativeAd.loadFromCacheId`](/docs/native#original-api-native).
 
-More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
+More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
 
-<Only platform="ios" /> `pbAdSlot`, `impOrtbConfig` and a per-unit `globalOrtbConfig` are sent on iOS only: Prebid Android's Original API ad unit has no setters for them. Set request-wide OpenRTB with `PrebidTargeting.setGlobalOrtbConfig`, which works on both.
+Every unit also takes `pbAdSlot`, `impOrtbConfig` and a per-unit `globalOrtbConfig`. On Android they apply to a single-format request, which runs on Prebid's matching ad unit (banner, interstitial, rewarded video or native); a `PrebidMultiformatAd` asking for two or more formats runs on Prebid Android's multiformat ad unit, which has no setters for them. Request-wide OpenRTB set with `PrebidTargeting.setGlobalOrtbConfig` applies to every request.
 
 For video, set `VideoParameters.size` (`imp.video.w` / `h`): many bidders reject an Original API video request without a player size.
 

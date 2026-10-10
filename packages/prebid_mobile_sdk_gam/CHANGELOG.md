@@ -7,8 +7,8 @@ All notable changes to this package are documented here. The format follows
 ## [1.0.0] - 2026-10-10
 
 First stable release: Google Ad Manager renders Prebid and direct-sold demand
-through Prebid's GAM event handlers. Built on Prebid Mobile SDK 3.4; requires
-`prebid_mobile_sdk` 1.0.0.
+through Prebid's GAM event handlers. Built on Prebid Mobile SDK 3.4; works with
+`prebid_mobile_sdk` 1.x (`^1.0.0`).
 
 ### Added
 
@@ -29,7 +29,6 @@ through Prebid's GAM event handlers. Built on Prebid Mobile SDK 3.4; requires
   `onAdFailed` ("The Prebid SDK is not initialized"; native:
   `onFetchDemandFailed('prebidSdkNotInitialized')`) instead of never
   answering.
-
 - Prebid ad slot (`pbAdSlot`) on interstitial and rewarded ads, per-unit
   global OpenRTB configuration on every format, and the native request as
   the core's `NativeParameters` (placement count, sequence, URL support,

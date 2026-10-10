@@ -45,7 +45,7 @@ Pass `null` to any setter to clear the value. Explicit values take precedence ov
 | `setUSPrivacyString(String?)` / `getUSPrivacyString()` | The IAB US Privacy string (`regs.us_privacy`). |
 | `setSubjectToCOPPA(bool?)` / `getSubjectToCOPPA()` | COPPA (`regs.coppa`). |
 
-On Android the US Privacy string is written to the default shared preferences, where Prebid reads it, so it also reaches any other SDK that follows the IAB spec.
+Neither Prebid SDK has a US Privacy setter: both read `IABUSPrivacy_String` from the IAB storage. `setUSPrivacyString` writes it there (the default `SharedPreferences` on Android, `UserDefaults` on iOS), so unlike the other targeting values it **persists across launches** until you pass `null`, it is the same value a consent management platform writes (the last writer wins), and it reaches every other SDK that follows the IAB spec.
 
 ## Device data and consent
 

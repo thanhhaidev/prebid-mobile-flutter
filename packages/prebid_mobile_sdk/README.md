@@ -231,6 +231,8 @@ Static class for SDK initialization, global configuration, and identity manageme
 | `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set SDK log verbosity (`none` silences Prebid). |
 | `setLogListener(PrebidLogListener? listener)` | `Future<void>` | Receive Prebid's log messages instead of the console; `null` restores the console. |
 | `setLocationUpdatesEnabled(bool)` / `getLocationUpdatesEnabled()` | `Future<void>` / `Future<bool?>` | iOS only: Prebid's own location updates. |
+| `setDebugLogFileEnabled(bool)` / `getDebugLogFileEnabled()` | `Future<void>` / `Future<bool?>` | iOS only: also write Prebid's log to a file. |
+| `getTimeoutMillisDynamic()` | `Future<int?>` | iOS only: the timeout adopted from Prebid Server's response. |
 | `setCustomHeaders(Map<String, String> headers)` | `Future<void>` | Set custom HTTP headers for bid requests. |
 | `setStoredAuctionResponse(String response)` | `Future<void>` | Set a stored auction response ID for testing. |
 | `clearStoredAuctionResponse()` | `Future<void>` | Clear stored auction response. |
@@ -280,7 +282,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `getPurposeConsent(int index)` | `Future<bool?>` | Consent for one TCF purpose (0-based index). |
 | `getDeviceAccessConsent()` | `Future<bool?>` | Get device access consent (TCFv2 Purpose 1). |
 | `isAllowedAccessDeviceData()` | `Future<bool>` | Whether the consent signals let Prebid read device data. |
-| `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). |
+| `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). Written to the IAB storage, so it persists across launches until set to `null`. |
 | `getUSPrivacyString()` | `Future<String?>` | Get current US Privacy String. |
 
 > **Note:** GPP consent signals (`IABGPP_HDR_GppString`, `IABGPP_GppSID`) are automatically read by the native SDKs from SharedPreferences (Android) / UserDefaults (iOS). A CMP SDK will populate these values automatically.
@@ -321,6 +323,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `updateUserExtData({key, value})` | `Future<void>` | Replace all values for a key with a `Set<String>`. |
 | `removeUserExtData(String key)` | `Future<void>` | Remove user ext data for a key. |
 | `clearUserExtData()` | `Future<void>` | Remove all user ext data. |
+| `setUserExt(Map<String, Object?>?)` / `getUserExt()` | `Future<void>` / `Future<Map?>` | The whole `user.ext` object (its `data` entry stays the user ext data's). |
 
 #### Access Control List (`ext.prebid.data`)
 
@@ -363,7 +366,7 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds (Prebid clamps to 30–120 on Android, 15–120 on iOS). `null` or `0` disables it. |
 | `adFormats` | `Set<PrebidAdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
-| `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
+| `pbAdSlot` / `gpid` / `impOrtbConfig` | `String?` | `null` | Ad slot, Global Placement ID (added to the impression JSON) and impression-level OpenRTB JSON. |
 | `globalOrtbConfig` | `String?` | `null` | Request-level OpenRTB JSON for this ad unit only. |
 | `adPosition` | `PrebidAdPosition?` | `null` | Ad position on screen (`imp.banner.pos`). |
 | `videoParameters` | `VideoParameters?` | `null` | Video signals for video banners (iOS only: Prebid Android's banner sends the SDK defaults). |
@@ -383,9 +386,12 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 | `adFormats` | `Set<PrebidAdFormat>?` | Specify `{PrebidAdFormat.banner}`, `{PrebidAdFormat.video}`, or both. |
 | `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
 | `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
+| `pbAdSlot` / `gpid` | `String?` | Ad slot and Global Placement ID (sent in the impression JSON where the SDK has no setter). |
+| `adPosition` | `PrebidAdPosition?` | iOS only: ad position (`imp.pos`). |
 | `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
 | `listener` | `PrebidInterstitialAdListener?` | Callback listener (incl. `onAdExpired`). |
 | `isLoaded` | `bool` | Whether the ad is ready to show. |
+| `winningBid` | `PrebidWinningBid?` | Android only: the last load's winning bid (price, bidder, size, keywords). |
 | `loadAd()` | `Future<void>` | Request an interstitial ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
@@ -402,9 +408,11 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 | `adFormats` | `Set<PrebidAdFormat>?` | Banner, video or both (iOS only). |
 | `videoParameters` | `VideoParameters?` | Video signals (iOS: every field; Android: `maxDuration`). |
 | `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
+| `pbAdSlot` / `gpid` / `adPosition` | | As for `PrebidInterstitialAd`. |
 | `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only, minimum size on iOS only). |
 | `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`, `onAdExpired`). |
 | `isLoaded` | `bool` | Whether the ad is ready to show. |
+| `winningBid` | `PrebidWinningBid?` | Android only, as for `PrebidInterstitialAd`. |
 | `loadAd()` | `Future<void>` | Request a rewarded ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
@@ -733,7 +741,8 @@ compete in the same auction. The plugin does **not** depend on `google_mobile_ad
 
 ### The handoff
 
-Fetch demand with `PrebidBannerAdUnit` / `PrebidInterstitialAdUnit` (or
+Fetch demand with `PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`,
+`PrebidRewardedAdUnit` or `PrebidNativeAdUnit` (or
 [`PrebidMultiformatAd`](#prebidmultiformatad--multiformat-ads) for banner + video
 + native in one request), then pass `targetingKeywords` to
 `AdManagerAdRequest.customTargeting`:
@@ -796,13 +805,12 @@ GAM-rendered interstitial use `PrebidInterstitialAdUnit` +
 - In Google Ad Manager, set up Prebid line items/creatives that target the
   `hb_*` keys so a winning Prebid bid renders.
 
-> **Note:** dynamic creative resizing for a won Prebid banner (the native
-> `AdViewUtils.findPrebidCreativeSize` step) is not bridged to Flutter; request
-> a fixed size that matches your GAM ad unit.
+To resize the GAM banner to a won Prebid creative, call
+`PrebidMultiformatAd.findPrebidCreativeSize()` once GAM has loaded it.
 
 Runnable end-to-end demos are the **GAM Original** cases in the example app
-([`original_banner_detail_page.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/pages/detail/original_banner_detail_page.dart),
-[`fullscreen_detail_page.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/pages/detail/fullscreen_detail_page.dart)).
+([`original_banner.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/demo/screens/banner/original_banner.dart),
+[`fullscreen_screen.dart`](https://github.com/thanhhaidev/prebid-mobile-flutter/tree/main/example/lib/demo/screens/fullscreen/fullscreen_screen.dart)).
 
 ### GAM rendering, AdMob and MAX (companion packages)
 

@@ -7,8 +7,8 @@ All notable changes to this package are documented here. The format follows
 ## [1.0.0] - 2026-10-10
 
 First stable release: Prebid demand in AppLovin MAX mediation through Prebid's
-MAX adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
-1.0.0 and an initialized AppLovin SDK.
+MAX adapters. Built on Prebid Mobile SDK 3.4; works with `prebid_mobile_sdk`
+1.x (`^1.0.0`) and needs an initialized AppLovin SDK.
 
 ### Added
 

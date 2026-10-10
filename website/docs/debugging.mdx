@@ -62,6 +62,8 @@ await PrebidMobile.setLogListener((level, message) {
 
 `PrebidLogLevel.none` silences Prebid entirely. Android has no `verbose` or `severe` level: those log at `debug` and `error`.
 
+<Only platform="ios" /> `PrebidMobile.setDebugLogFileEnabled(true)` also writes Prebid's log to a file in the app's documents directory, to collect it from a test device.
+
 ## Versions
 
 ```dart

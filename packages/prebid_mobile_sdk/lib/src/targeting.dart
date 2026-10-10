@@ -323,6 +323,13 @@ class PrebidTargeting {
   ///
   /// The string follows the IAB US Privacy String format (e.g., `"1YNN"`).
   /// Pass `null` to clear.
+  ///
+  /// Neither Prebid SDK has a setter for it: Prebid reads
+  /// `IABUSPrivacy_String` from the IAB storage, so the plugin writes it
+  /// there (`SharedPreferences` on Android, `UserDefaults` on iOS). Unlike the
+  /// other targeting values it persists across app launches, and it is the
+  /// same value a consent management platform writes and other IAB-aware
+  /// SDKs read.
   static Future<void> setUSPrivacyString(String? usPrivacy) async {
     await api.setUSPrivacyString(usPrivacy);
   }

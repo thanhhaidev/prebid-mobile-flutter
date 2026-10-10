@@ -17,9 +17,13 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ (interstitials only) |
 | Rewarded skip controls | ✓ | Ignored |
 | Rewarded `adFormats` (core) and minimum size (`PrebidFullscreenControls.minSizePercentage`, core and GAM; AdMob and MAX rewarded have none) | Ignored | ✓ |
-| Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`, `PrebidMultiformatAd`) | Ignored: Prebid Android's `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig` | ✓ |
+| Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` on a request mixing formats (a `PrebidMultiformatAd` with two or more of banner, video and native) | Ignored: Prebid Android's multiformat `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig`. Single-format units send them on both | ✓ |
 | AdMob native `impOrtbConfig`, `globalOrtbConfig` | Ignored: no setter on Prebid's mediation native unit | ✓ |
 | Native response image `width` / `height` (`PrebidNativeImage`) | `null` | ✓ |
+| Interstitial / rewarded `winningBid` (core) | ✓ | `null`: Prebid iOS keeps the bid internal |
+| Interstitial / rewarded `adPosition` (core) | Ignored: no setter on Prebid Android's fullscreen units | ✓ |
+| `PrebidMobile.setDebugLogFileEnabled` | Ignored | ✓ |
+| `PrebidMobile.getTimeoutMillisDynamic` | `null`: Prebid Android writes Prebid Server's timeout into `getTimeoutMillis` | ✓ |
 | `PrebidTargeting.setBundleName` (`app.bundle` override) | ✓ | Ignored: iOS sends the bundle ID or the iTunes ID |
 | `PrebidMobile.setLocationUpdatesEnabled` | Ignored: Android reads the last known location | ✓ |
 | `PrebidTargeting.getAppKeywords`, `getSourceApp`, `getItunesId` | Empty / `null` | ✓ |
@@ -45,6 +49,9 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
 | Creative factory timeouts | iOS stores seconds | Milliseconds on both |
 | `pbAdSlot` on interstitial / rewarded (every package) and on AdMob / MAX banners | Prebid iOS has no setter on these units | Set on both; on iOS through `imp.ext.data.pbadslot` in `impOrtbConfig` (yours wins) |
+| `gpid` on the core banner, interstitial and rewarded ads | Neither SDK has a setter on these units | Set on both through `imp.ext.gpid` in `impOrtbConfig` (yours wins) |
+| `PrebidTargeting.setUSPrivacyString` | Neither SDK has a setter: both read `IABUSPrivacy_String` from the IAB storage | Written to the IAB storage (`SharedPreferences` / `UserDefaults`), so it persists across launches until cleared with `null`, like a CMP's value |
+| Google Mobile Ads version check | Prebid checks the GMA version only when the app passes it | With GMA linked, `initializeSdk` passes it on both (a warning in the log if Prebid doesn't support it) |
 | Log level `none` | Prebid iOS has no such level | Silent on both |
 | `PrebidMobile.setLogListener` | Android filters by level before its logger; iOS's logger replaces the console one | Messages at or above the log level, instead of the console, on both |
 
@@ -59,3 +66,10 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 - **Interstitial and rewarded "leaving the app":** iOS reports it separately from the click; the plugin reports the click (`onAdClicked`) on both and doesn't forward it.
 - **Result codes:** both platforms report the same names for the same outcome. A few exist on one platform only: `prebidInvalidContext`, `prebidInvalidAdObject` and `prebidInvalidNativeRequest` on Android; `prebidUnknownError`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData` and `prebidSDKMisuse` on iOS.
 - **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).
+
+## Not exposed, on purpose
+
+- **`PrebidMobile.setPbsConfig` (Android):** Prebid writes it from Prebid Server's response (`ext.prebid.passthrough`), overwriting any value the app sets. Set the creative timeouts with `setCreativeFactoryTimeout` and `setCreativeFactoryTimeoutPreRenderContent`.
+- **`BannerView.setStoredAuctionResponse` (iOS):** it sets the process-wide stored auction response, not one for the banner. Use `PrebidMobile.setStoredAuctionResponse`.
+- **Native `getWinEvent` / `getImpEvent` (Android):** Prebid fires the win and impression events itself. The Original API returns them in `PrebidBidResponse.events` for apps that report them on their own.
+- **Plugin renderers (`registerPluginRenderer`):** a renderer is a native object, so register it from the app's native code (`MainActivity` / `AppDelegate`) before loading ads; Prebid then uses it for the plugin's ads too. The plugin's views don't forward the renderers' own events (`PluginEventListener`).

@@ -7,8 +7,8 @@ All notable changes to this package are documented here. The format follows
 ## [1.0.0] - 2026-10-10
 
 First stable release: Prebid demand in Google AdMob mediation through Prebid's
-AdMob adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
-1.0.0.
+AdMob adapters. Built on Prebid Mobile SDK 3.4; works with
+`prebid_mobile_sdk` 1.x (`^1.0.0`).
 
 ### Added
 
@@ -32,7 +32,6 @@ AdMob adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
   ran.
 - `PrebidAdMob.debugDropBidProbability`, a testing-only hook that drops the
   Prebid bid before AdMob loads to exercise the adapter fallback.
-
 - Prebid ad slot (`pbAdSlot`) and per-unit global OpenRTB configuration on
   banner, interstitial and rewarded ads, and the native request as
   the core's `NativeParameters` (placement count, sequence, URL support,

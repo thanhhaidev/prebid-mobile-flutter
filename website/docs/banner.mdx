@@ -40,6 +40,7 @@ PrebidBannerAd(
 | `videoParameters` | `VideoParameters?` | Video signals. <Only platform="ios" /> |
 | `adPosition` | `PrebidAdPosition?` | Position on screen (`imp.banner.pos`): `header`, `footer`, `aboveTheFold`, … |
 | `pbAdSlot` | `String?` | Prebid ad slot (`imp.ext.data.pbadslot`). |
+| `gpid` | `String?` | Global Placement ID (`imp.ext.gpid`), added to `impOrtbConfig` (a `gpid` already there wins). |
 | `impOrtbConfig` | `String?` | OpenRTB JSON merged into the impression, e.g. `{"ext":{"gpid":"/1111/home"}}`. |
 | `globalOrtbConfig` | `String?` | Request-level OpenRTB JSON for this ad unit only, merged over `PrebidTargeting.setGlobalOrtbConfig`. |
 | `listener` | `PrebidBannerAdListener?` | Lifecycle callbacks. |

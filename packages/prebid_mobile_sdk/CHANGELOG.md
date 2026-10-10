@@ -14,8 +14,8 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
 - Prebid-rendered ads: banner (display, multisize, outstream video,
   auto-refresh), interstitial, rewarded, and native with built-in rendering
   and impression and click tracking.
-- Original API auctions for banner, interstitial, native, multiformat and
-  in-stream video, returning targeting keywords for Google Ad Manager, with
+- Original API auctions for banner, interstitial, rewarded video, native,
+  multiformat and in-stream video, returning targeting keywords for Google Ad Manager, with
   auto-refresh and Prebid impression tracking.
 - OpenRTB 2.6 video signals: placement, start delay, linearity, skippability,
   blocked creative attributes, bitrates and durations.
@@ -52,14 +52,22 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   `isLoaded` on interstitial and rewarded ads.
 - Video player size in video parameters (`video.w` / `video.h`).
 - The winning bid of a Prebid-rendered banner
-  (`PrebidBannerAdController.winningBid`).
+  (`PrebidBannerAdController.winningBid`), and of interstitial and rewarded
+  ads on Android (`winningBid`).
+- GPID on the Prebid-rendered banner, interstitial and rewarded ads, and the
+  ad position of interstitial and rewarded ads (iOS).
+- The whole `user.ext` object (`PrebidTargeting.setUserExt`), Prebid's log
+  file (`PrebidMobile.setDebugLogFileEnabled`, iOS) and the timeout adopted
+  from Prebid Server (`PrebidMobile.getTimeoutMillisDynamic`, iOS).
+- Prebid's Google Mobile Ads version check, run at initialization when the
+  app links Google Mobile Ads.
 - Original API: the Prebid creative size in a GAM banner
   (`findPrebidCreativeSize`), bid event URLs, banner API frameworks, the
   interstitial minimum size, GPID on every ad unit, and SKAdNetwork StoreKit
   flows and SKOverlay on iOS.
 - Original API: `NativeParameters` on native and multiformat units, a
   display interstitial requested by minimum size alone, and `pbAdSlot` plus
-  per-unit OpenRTB configuration (iOS).
+  per-unit OpenRTB configuration (on Android for single-format units).
 - Prebid ad slot (`pbAdSlot`) on interstitial and rewarded ads.
 - Prebid's log messages delivered to the app (`PrebidMobile.setLogListener`)
   and a `none` log level.

@@ -34,6 +34,8 @@ await interstitial.loadAd();
 | `impOrtbConfig` | OpenRTB JSON merged into the impression. |
 | `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
 | `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter here, so on iOS the plugin adds it to the `imp` JSON (a `pbadslot` in `impOrtbConfig` wins). |
+| `gpid` | Global Placement ID (`imp.ext.gpid`). Neither SDK has a setter on these units, so the plugin adds it to the `imp` JSON (a `gpid` in `impOrtbConfig` wins). |
+| `adPosition` | <Only platform="ios" /> Ad position (`imp.pos`), e.g. `PrebidAdPosition.fullScreen`. Prebid Android's fullscreen units have no setter. |
 | `listener` | `PrebidInterstitialAdListener`. |
 
 ## Rewarded
@@ -53,7 +55,7 @@ rewarded = PrebidRewardedAd(
 await rewarded.loadAd();
 ```
 
-`PrebidRewardedAd` takes the same `videoParameters`, `controls`, `impOrtbConfig`, `globalOrtbConfig` and `pbAdSlot` as the interstitial, plus `adFormats` (iOS only: Prebid Android's rewarded unit always asks for both). On Android only `videoParameters.maxDuration` applies, as for the interstitial.
+`PrebidRewardedAd` takes the same `videoParameters`, `controls`, `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot`, `gpid` and `adPosition` as the interstitial, plus `adFormats` (iOS only: Prebid Android's rewarded unit always asks for both). On Android only `videoParameters.maxDuration` applies, as for the interstitial.
 
 `PrebidReward` carries `type`, `count` and the creative's optional `ext` map. The reward rules (after a playback event, after a time, on completion) come from the bid's `rewarded` configuration on Prebid Server.
 
@@ -64,6 +66,7 @@ await rewarded.loadAd();
 - `show()` before `onAdLoaded`, or with no foreground Activity / view controller, reports `onAdFailed` instead of failing silently.
 - `onAdExpired` fires when the bid's `exp` elapses before `show()`. Load again.
 - Call `destroy()` when you're done, typically in `onAdClosed` or your widget's `dispose`.
+- <Only platform="android" /> `winningBid` holds the bid of the last load (price, bidder, size, targeting keywords), for analytics; `null` before a load, without a bid, and on iOS, where Prebid keeps it internal.
 
 | Callback | When |
 | --- | --- |

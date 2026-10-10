@@ -34,6 +34,7 @@ flutter pub get            # resolves every package in the workspace
 | `packages/prebid_mobile_sdk_{gam,admob,max}` | Companion packages (method channels) |
 | `example/` | Test app with every integration |
 | `website/` | Documentation site; `src/data/compatibility.json` holds the native SDK versions |
+| `GLOSSARY.md`, `docs/adr/` | The domain terms, and the decisions behind the design (read them before reworking an area) |
 
 ## Making a change
 
@@ -41,12 +42,20 @@ flutter pub get            # resolves every package in the workspace
 2. Make the change on **both platforms**. When the native SDKs can't behave
    the same, document the difference in
    `website/docs/platform-differences.mdx`.
-3. Add or update unit tests (`packages/*/test`). The core package mocks the
-   Pigeon host APIs with Mockito: after adding a host API, add it to
-   `test/mock_host_api.dart` and run
-   `dart run build_runner build --delete-conflicting-outputs` in
-   `packages/prebid_mobile_sdk`. Companion tests use the channel harness in
-   `test/channel_harness.dart`.
+3. Add or update tests, written test-first where you can:
+   - **Dart** (`packages/*/test`), one file per public module
+     (`interstitial_ad_test.dart`, `targeting_test.dart`…), never one per
+     change. Test through the public API and mock only the platform: the
+     core mocks the Pigeon host APIs with Mockito and sends native events
+     over the Pigeon channels (`test/platform_events.dart`); the companions
+     use `test/channel_harness.dart`. Expected values are literals (`7`, not
+     `PrebidAdPosition.fullScreen.value`). After adding a host API, add it to
+     `test/mock_host_api.dart` and run
+     `dart run build_runner build --delete-conflicting-outputs` in
+     `packages/prebid_mobile_sdk`.
+   - **Kotlin** (`packages/*/android/src/test`) and **Swift**
+     (`example/ios/RunnerTests`) for the native argument parsing and
+     conversions.
 4. Try it in the example app on an Android device or emulator and an iOS
    simulator: `cd example && flutter run`.
 5. For user-facing changes, add an entry under `## [Unreleased]` in the
@@ -59,11 +68,18 @@ flutter pub get            # resolves every package in the workspace
 CI runs these on every pull request; run them locally first:
 
 ```bash
-dart run melos run format          # dart format
-dart run melos run analyze         # flutter analyze, every package
-dart run melos run test            # unit tests, every package
-dart run melos run generate:check  # Pigeon output is up to date
+dart run melos run format:check    # dart format (`format` to fix)
+dart run melos run analyze         # flutter analyze + tool/check_copies.sh
+dart run melos run test            # Dart unit tests, every package
+dart run melos run generate:check  # Pigeon output is up to date (stage first)
 dart run melos run compatibility:check
+
+# Native unit tests (build the example once so the Gradle and Xcode projects exist)
+cd example/android && ./gradlew :prebid_mobile_sdk:testDebugUnitTest \
+  :prebid_mobile_sdk_gam:testDebugUnitTest :prebid_mobile_sdk_admob:testDebugUnitTest \
+  :prebid_mobile_sdk_max:testDebugUnitTest
+cd example/ios && xcodebuild test -workspace Runner.xcworkspace -scheme Runner \
+  -destination 'platform=iOS Simulator,name=<an iPhone simulator>'
 ```
 
 - Changed `pigeons/prebid_api.dart`? Run `dart run melos run generate` and
@@ -71,8 +87,8 @@ dart run melos run compatibility:check
 - Changed a native Prebid version? Update `website/src/data/compatibility.json`
   and run `dart run melos run compatibility` to refresh the README tables.
 
-CI also builds the example for Android and iOS and runs
-`pub publish --dry-run` for every package. Documentation changes are built by
+CI also builds the example for Android and iOS, runs the native unit tests,
+the pub.dev score and `pub publish --dry-run` for every package. Documentation changes are built by
 the docs workflow (`cd website && npm ci && npm run build` locally).
 
 ## Code style
@@ -83,14 +99,19 @@ the docs workflow (`cd website && npm ci && npm run build` locally).
 packages/prebid_mobile_sdk/
   lib/prebid_mobile_sdk.dart   the public API: exports only
   lib/src/                     one file per public feature (banner_ad.dart, targeting.dart…)
-  lib/src/internal/            not exported: event routers, Pigeon conversions, session
+  lib/src/internal/            not exported: event routers, Pigeon conversions, ad ids, session
+  lib/src/companion/           exported only by lib/companion.dart, for the companion packages
+                               (AdViewState, CompanionFullscreenAd…); semver-covered like the rest
   lib/src/generated/           Pigeon output; never edit
   pigeons/prebid_api.dart      the Pigeon definitions
-  android/…/io/github/thanhhaidev/prebid_mobile_sdk/  PrebidMobileSdkPlugin.kt + one <Name>HostApiImpl.kt per host API
+  android/…/io/github/thanhhaidev/prebid_mobile_sdk/  PrebidMobileSdkPlugin.kt, one <Name>HostApiImpl.kt
+                               per host API, the platform-view factories, PigeonConversions and
+                               PrebidCommon (shared with the GAM package)
   ios/…/Sources/prebid_mobile_sdk/  the same files in Swift
 packages/prebid_mobile_sdk_<gam|admob|max>/
-  lib/src/<prefix>_<format>_ad.dart, android/ and ios/ with one file per format,
-  PrebidRequests (shared by the three companions) and PrebidShared (their own)
+  lib/src/<prefix>_<format>_ad.dart; android/ and ios/ with one file per format,
+  the files every companion shares (PrebidRequests, FullscreenAdManager,
+  PrebidPlugin) and PrebidShared (each package's own helpers)
 example/lib/
   data/ demo/ pages/ services/ theme/ widgets/   see example/README.md
 ```
@@ -123,11 +144,12 @@ example/lib/
   published package can't include a file outside itself, so each one keeps
   its own copy of `analysis_options.yaml`, and `tool/check_copies.sh` (part of
   `melos run analyze`) fails when a copy drifts. Change the rules in every
-  copy at once; the same check keeps the companions'
-  `test/channel_harness.dart` copies identical, and their `PrebidRequests.kt`
-  / `PrebidRequests.swift` (the native parsing of the channel arguments, the
-  Kotlin copies differing only in their package line): change those in all
-  three packages.
+  copy at once. The same check keeps identical the companions'
+  `test/channel_harness.dart`, their shared native files (`PrebidRequests`,
+  `FullscreenAdManager`, `PrebidPlugin` and the `PrebidRequestsTest.kt` unit
+  test; the Kotlin copies differ only in their package line) and the
+  `PrebidCommon` files of the core and GAM packages: change those in every
+  copy at once.
 - **Kotlin:** [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html):
   imports instead of fully qualified names, KDoc (`/** */`) for declarations,
   `//` inside bodies.

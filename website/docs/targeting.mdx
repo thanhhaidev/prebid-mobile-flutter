@@ -37,6 +37,14 @@ await PrebidTargeting.removeAppExtData('section');
 
 `add…` appends a value to a key; `update…` replaces all values of a key.
 
+To send other `user.ext` keys, set the whole object; the `addUserExtData` keys still own its `data` entry when any is set:
+
+```dart
+await PrebidTargeting.setUserExt({'consented_providers_settings': {'consented_providers': [1, 2]}});
+final ext = await PrebidTargeting.getUserExt(); // includes `data`
+await PrebidTargeting.setUserExt(null); // clears it
+```
+
 ## Access control list
 
 Only bidders on the list receive the first-party data above (`ext.prebid.data.bidders`):

@@ -28,6 +28,7 @@ await PrebidMobile.initializeSdk(
 - `nonTrackingUrl` <Only platform="ios" /> is used instead of `prebidServerUrl` while the user hasn't authorized tracking (App Tracking Transparency).
 - `PrebidMobile.isSdkInitialized` tells whether initialization completed with a usable status.
 - Call `setDisableStatusCheck(true)` **before** `initializeSdk` to skip the `/status` request.
+- With Google Mobile Ads in the app (the GAM or AdMob package, or `google_mobile_ads`), `initializeSdk` passes its version to Prebid's compatibility check, which logs a warning for a version Prebid doesn't support.
 
 ### Switching account or server at runtime
 
@@ -48,6 +49,7 @@ On iOS, `setPrebidServerUrl` throws a `PlatformException` for a malformed URL, a
 | Method | Description |
 | --- | --- |
 | `setTimeoutMillis(int)` | Bid request timeout in milliseconds. |
+| `getTimeoutMillisDynamic()` <Only platform="ios" /> | The timeout Prebid adopted from Prebid Server's response, or `null` while it uses `setTimeoutMillis`'s. Prebid Android writes the server's value into `getTimeoutMillis()` instead. |
 | `setCustomHeaders(Map<String, String>)` | Extra HTTP headers on every bid request. |
 | `setShareGeoLocation(bool)` | Send the device location when the app has location permission. |
 | `setPbsDebug(bool)` | Ask Prebid Server for debug output (`test: 1`). |

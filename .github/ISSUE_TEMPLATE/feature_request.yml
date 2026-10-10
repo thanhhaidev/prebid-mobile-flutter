@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest a feature, or a Prebid Mobile SDK API the plugin doesn't expose yet.
 title: '[Feature]: '
-labels: [enhancement, triage]
+labels: [enhancement, needs-triage]
 body:
   - type: textarea
     id: problem

@@ -29,6 +29,20 @@ await PrebidMobile.initializeSdk(
 - `PrebidMobile.isSdkInitialized` tells whether initialization completed with a usable status.
 - Call `setDisableStatusCheck(true)` **before** `initializeSdk` to skip the `/status` request.
 
+### Switching account or server at runtime
+
+`setPrebidServerAccountId` and `setPrebidServerUrl` change the account and auction endpoint for the next auctions without initializing again (no `/status` check runs). Ads that are already loaded or refreshing keep their bids until their next auction.
+
+```dart
+await PrebidMobile.setPrebidServerAccountId('another-account');
+await PrebidMobile.setPrebidServerUrl('https://other-pbs.example.com/openrtb2/auction');
+
+final account = await PrebidMobile.getPrebidServerAccountId();
+final url = await PrebidMobile.getPrebidServerUrl(); // null before one is set
+```
+
+On iOS, `setPrebidServerUrl` throws a `PlatformException` for a malformed URL, and a `nonTrackingUrl` passed to `initializeSdk` stays in effect for users who haven't authorized tracking; `getPrebidServerUrl` returns the URL the current user's auctions use.
+
 ## Requests
 
 | Method | Description |
@@ -39,6 +53,8 @@ await PrebidMobile.initializeSdk(
 | `setPbsDebug(bool)` | Ask Prebid Server for debug output (`test: 1`). |
 | `setCustomStatusEndpoint(String)` | Override the `/status` URL used at initialization. |
 | `setLogLevel(PrebidLogLevel)` | Native SDK log verbosity: `debug`, `verbose`, `info`, `warn`, `error`, `severe`. |
+| `setPrebidServerAccountId(String)`, `getPrebidServerAccountId()` | The Prebid Server account, switchable at runtime. |
+| `setPrebidServerUrl(String)`, `getPrebidServerUrl()` | The auction endpoint, switchable at runtime. |
 
 ## Prebid Server flags
 
@@ -55,8 +71,12 @@ await PrebidMobile.initializeSdk(
 
 | Method | Description |
 | --- | --- |
-| `setCreativeFactoryTimeout(int)` | Milliseconds an HTML creative may take to render. |
-| `setCreativeFactoryTimeoutPreRenderContent(int)` | The same for pre-rendered video content. |
+| `setCreativeFactoryTimeout(int)`, `getCreativeFactoryTimeout()` | Milliseconds an HTML creative may take to render (default 6000). |
+| `setCreativeFactoryTimeoutPreRenderContent(int)`, `getCreativeFactoryTimeoutPreRenderContent()` | The same for pre-rendered video and interstitial content (default 30000). |
+| `setUseCacheForReportingWithRenderingApi(bool)`, `getUseCacheForReportingWithRenderingApi()` | Ask Prebid Server to cache Rendering API bids (`ext.prebid.cache`) for analytics that report through Prebid Cache. Default `false`. |
+| `getOmsdkVersion()` | Version of the Open Measurement SDK bundled with Prebid. |
+
+Prebid Server can override both creative factory timeouts per account in its responses, so the getters may return a different value after an auction. On iOS, creating an Original API ad unit turns `useCacheForReportingWithRenderingApi` on: that is how Prebid iOS asks for caching for the Original API.
 
 ## External user IDs
 

@@ -1668,6 +1668,165 @@ class PrebidMobileHostApi {
     );
   }
 
+  /// Creative factory timeouts in milliseconds (iOS stores seconds).
+  Future<int> getCreativeFactoryTimeout() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeout$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as int;
+  }
+
+  Future<int> getCreativeFactoryTimeoutPreRenderContent() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeoutPreRenderContent$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as int;
+  }
+
+  /// Prebid Server account, switchable without re-initializing.
+  Future<void> setPrebidServerAccountId(String accountId) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerAccountId$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[accountId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String> getPrebidServerAccountId() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerAccountId$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
+  }
+
+  /// Prebid Server auction endpoint, switchable without re-initializing.
+  /// The getter returns null when no endpoint is set.
+  Future<void> setPrebidServerUrl(String url) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerUrl$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[url],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String?> getPrebidServerUrl() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerUrl$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
+  Future<void> setUseCacheForReportingWithRenderingApi(bool use) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setUseCacheForReportingWithRenderingApi$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[use],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<bool> getUseCacheForReportingWithRenderingApi() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getUseCacheForReportingWithRenderingApi$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
   Future<void> setCustomStatusEndpoint(String endpoint) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomStatusEndpoint$pigeonVar_messageChannelSuffix';
@@ -1968,6 +2127,26 @@ class PrebidMobileHostApi {
   Future<String> getSdkVersion() async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getSdkVersion$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
+  }
+
+  /// Version of the Open Measurement SDK bundled with Prebid.
+  Future<String> getOmsdkVersion() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getOmsdkVersion$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -2740,6 +2919,27 @@ class TargetingHostApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[domain],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Overrides `app.name`; null restores the app's own name.
+  Future<void> setAppName(String? name) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setAppName$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[name],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

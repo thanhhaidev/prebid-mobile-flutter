@@ -291,6 +291,18 @@ class PrebidTargeting {
     await api.setDomain(domain);
   }
 
+  /// Overrides the app name sent in `app.name` (by default the app's label
+  /// on Android and its bundle display name on iOS). Pass `null` to restore
+  /// the default.
+  ///
+  /// An `app.name` in [setGlobalOrtbConfig] takes precedence on both
+  /// platforms. iOS: Prebid iOS has no app-name setter, so the plugin merges
+  /// `{"app":{"name": name}}` into the global ORTB config it hands the SDK;
+  /// [getGlobalOrtbConfig] still returns your own JSON.
+  static Future<void> setAppName(String? name) async {
+    await api.setAppName(name);
+  }
+
   // ---------------------------------------------------------------------------
   // US Privacy / CCPA
   // ---------------------------------------------------------------------------

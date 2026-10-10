@@ -64,7 +64,10 @@ For a single ad unit, pass `impOrtbConfig` to the ad instead; it is merged into 
 | `setPublisherName(String?)` | `app.publisher.name` |
 | `setStoreUrl(String?)` | `app.storeurl` |
 | `setDomain(String?)` | `app.domain` |
+| `setAppName(String?)` | `app.name`, by default the app's label (Android) or bundle display name (iOS); `null` restores it |
 | `setOmidPartnerName(String?)`, `setOmidPartnerVersion(String?)` | `source.ext.omidpn`, `source.ext.omidpv` |
+
+Prebid iOS has no app-name setter, so on iOS `setAppName` merges `{"app":{"name":…}}` into the global OpenRTB config the plugin hands the SDK; `getGlobalOrtbConfig()` still returns your own JSON. On both platforms an `app.name` in your global OpenRTB config wins over `setAppName`.
 
 Prebid 3.4 has no setter for `app.content.url`; send it with `setGlobalOrtbConfig('{"app":{"content":{"url":"https://example.com/article"}}}')`.
 | `setSourceApp(String?)` <Only platform="ios" /> | SKAdNetwork `sourceapp` |

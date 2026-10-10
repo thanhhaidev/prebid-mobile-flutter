@@ -268,6 +268,42 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func setCreativeFactoryTimeoutPreRenderContent(timeout: Int64) throws {
         Prebid.shared.creativeFactoryTimeoutPreRenderContent = TimeInterval(timeout) / 1000.0
     }
+
+    // Seconds natively; milliseconds over the channel, like Android.
+    func getCreativeFactoryTimeout() throws -> Int64 {
+        Int64((Prebid.shared.creativeFactoryTimeout * 1000).rounded())
+    }
+
+    func getCreativeFactoryTimeoutPreRenderContent() throws -> Int64 {
+        Int64((Prebid.shared.creativeFactoryTimeoutPreRenderContent * 1000).rounded())
+    }
+
+    func setPrebidServerAccountId(accountId: String) throws {
+        Prebid.shared.prebidServerAccountId = accountId
+    }
+
+    func getPrebidServerAccountId() throws -> String {
+        Prebid.shared.prebidServerAccountId
+    }
+
+    func setPrebidServerUrl(url: String) throws {
+        // Throws prebidServerURLInvalid for a malformed URL. A nil
+        // non-tracking URL leaves the one given to initializeSdk in place.
+        try Host.shared.setHostURL(url, nonTrackingURLString: nil)
+    }
+
+    func getPrebidServerUrl() throws -> String? {
+        // The URL auctions use now: the non-tracking one without ATT consent.
+        try? Host.shared.getHostURL()
+    }
+
+    func setUseCacheForReportingWithRenderingApi(use: Bool) throws {
+        Prebid.shared.useCacheForReportingWithRenderingAPI = use
+    }
+
+    func getUseCacheForReportingWithRenderingApi() throws -> Bool {
+        Prebid.shared.useCacheForReportingWithRenderingAPI
+    }
     
     func setCustomStatusEndpoint(endpoint: String) throws {
         Prebid.shared.customStatusEndpoint = endpoint
@@ -380,6 +416,10 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func getSdkVersion() throws -> String {
         return Prebid.shared.version
     }
+
+    func getOmsdkVersion() throws -> String {
+        Prebid.shared.omsdkVersion
+    }
     
     // =========================================================================
     // TargetingHostApi
@@ -464,8 +504,49 @@ public class PrebidMobileFlutterPlugin: NSObject, FlutterPlugin,
     func removeBidderFromAccessControlList(bidderName: String) throws { Targeting.shared.removeBidderFromAccessControlList(bidderName) }
     func clearAccessControlList() throws { Targeting.shared.clearAccessControlList() }
     
-    func setGlobalOrtbConfig(ortbConfig: String?) throws { Targeting.shared.setGlobalORTBConfig(ortbConfig) }
-    func getGlobalOrtbConfig() throws -> String? { Targeting.shared.getGlobalORTBConfig() }
+    func setGlobalOrtbConfig(ortbConfig: String?) throws {
+        PrebidMobileFlutterPlugin.globalOrtbConfig = ortbConfig
+        applyGlobalOrtbConfig()
+    }
+
+    func getGlobalOrtbConfig() throws -> String? {
+        // The caller's own JSON, without the app.name merged in below.
+        PrebidMobileFlutterPlugin.appNameOverride == nil
+            ? Targeting.shared.getGlobalORTBConfig()
+            : PrebidMobileFlutterPlugin.globalOrtbConfig
+    }
+
+    // app.name override. Prebid iOS always sends the bundle display name and
+    // has no setter (Android: AppInfoManager.setAppName), so the name goes in
+    // through the global ORTB config, which Prebid deep-merges over the
+    // request. An app.name in the caller's own config wins, as on Android.
+    private static var globalOrtbConfig: String?
+    private static var appNameOverride: String?
+
+    func setAppName(name: String?) throws {
+        PrebidMobileFlutterPlugin.appNameOverride = name
+        applyGlobalOrtbConfig()
+    }
+
+    private func applyGlobalOrtbConfig() {
+        let config = PrebidMobileFlutterPlugin.globalOrtbConfig
+        guard let name = PrebidMobileFlutterPlugin.appNameOverride else {
+            Targeting.shared.setGlobalORTBConfig(config)
+            return
+        }
+        // Invalid JSON is ignored by Prebid anyway; the name is still sent.
+        var root: [String: Any] = [:]
+        if let data = config?.data(using: .utf8),
+           let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+            root = parsed
+        }
+        var app = root["app"] as? [String: Any] ?? [:]
+        if app["name"] == nil { app["name"] = name }
+        root["app"] = app
+        let merged = (try? JSONSerialization.data(withJSONObject: root))
+            .flatMap { String(data: $0, encoding: .utf8) }
+        Targeting.shared.setGlobalORTBConfig(merged ?? config)
+    }
     
     func setPublisherName(name: String?) throws { Targeting.shared.publisherName = name }
     func setStoreUrl(url: String?) throws { Targeting.shared.storeURL = url }

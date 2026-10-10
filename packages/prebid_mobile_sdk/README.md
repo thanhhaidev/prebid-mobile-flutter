@@ -236,11 +236,16 @@ Static class for SDK initialization, global configuration, and identity manageme
 | `clearStoredBidResponses()` | `Future<void>` | Remove all stored bid responses. |
 | `setCreativeFactoryTimeout(int timeout)` | `Future<void>` | Set the HTML creative factory timeout (ms). |
 | `setCreativeFactoryTimeoutPreRenderContent(int timeout)` | `Future<void>` | Set the video pre-render creative factory timeout (ms). |
+| `getCreativeFactoryTimeout()` / `getCreativeFactoryTimeoutPreRenderContent()` | `Future<int>` | Current creative factory timeouts (ms; defaults 6000 / 30000). |
+| `setPrebidServerAccountId(String accountId)` / `getPrebidServerAccountId()` | `Future<void>` / `Future<String>` | Switch or read the Prebid Server account without re-initializing. |
+| `setPrebidServerUrl(String url)` / `getPrebidServerUrl()` | `Future<void>` / `Future<String?>` | Switch or read the auction endpoint without re-initializing. |
+| `setUseCacheForReportingWithRenderingApi(bool use)` / `getUseCacheForReportingWithRenderingApi()` | `Future<void>` / `Future<bool>` | Ask Prebid Server to cache Rendering API bids for Prebid Cache based reporting. |
 | `setCustomStatusEndpoint(String endpoint)` | `Future<void>` | Override the Prebid Server status endpoint URL. |
 | `setExternalUserIds(List<ExternalUserId> userIds)` | `Future<void>` | Set external user IDs for identity modules. |
 | `getExternalUserIds()` | `Future<List<ExternalUserId>>` | Get all currently set external user IDs. |
 | `clearExternalUserIds()` | `Future<void>` | Clear all external user IDs. |
 | `getSdkVersion()` | `Future<String>` | Get the native Prebid SDK version string. |
+| `getOmsdkVersion()` | `Future<String>` | Get the bundled Open Measurement SDK version. |
 | `isSdkInitialized` | `bool` | Whether `initializeSdk` completed with a usable status. |
 | `setShouldAssignNativeAssetId(bool assign)` | `Future<void>` | Assign sequential IDs to native request assets. |
 | `setFilterOutUncachedBids(bool filter)` | `Future<void>` | Drop bids whose Prebid Cache entry failed and promote the next cached bid. |
@@ -331,6 +336,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `setPublisherName(String? name)` | `Future<void>` | Set publisher name (`app.publisher.name`). |
 | `setStoreUrl(String? url)` | `Future<void>` | Set app store URL (`app.storeurl`). |
 | `setDomain(String? domain)` | `Future<void>` | Set app domain (`app.domain`). |
+| `setAppName(String? name)` | `Future<void>` | Override `app.name`; `null` restores the app's own name (iOS: sent through the global OpenRTB config). |
 | `setOmidPartnerName(String? name)` / `setOmidPartnerVersion(String? version)` | `Future<void>` | OM SDK partner sent in `source.ext.omidpn` / `omidpv`. |
 | `setSourceApp(String?)` / `setItunesId(String?)` | `Future<void>` | iOS only: SKAdNetwork `sourceapp` and your app's iTunes ID (needed for SKAdNetwork bids when Info.plist lists `SKAdNetworkItems`). |
 | `setUserLatLng(double lat, double lng)` | `Future<void>` | User location (`user.geo`). |

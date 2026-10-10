@@ -185,6 +185,78 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<int> getCreativeFactoryTimeout() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCreativeFactoryTimeout, []),
+            returnValue: _i4.Future<int>.value(0),
+          )
+          as _i4.Future<int>);
+
+  @override
+  _i4.Future<int> getCreativeFactoryTimeoutPreRenderContent() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCreativeFactoryTimeoutPreRenderContent, []),
+            returnValue: _i4.Future<int>.value(0),
+          )
+          as _i4.Future<int>);
+
+  @override
+  _i4.Future<void> setPrebidServerAccountId(String? accountId) =>
+      (super.noSuchMethod(
+            Invocation.method(#setPrebidServerAccountId, [accountId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String> getPrebidServerAccountId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPrebidServerAccountId, []),
+            returnValue: _i4.Future<String>.value(
+              _i3.dummyValue<String>(
+                this,
+                Invocation.method(#getPrebidServerAccountId, []),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
+
+  @override
+  _i4.Future<void> setPrebidServerUrl(String? url) =>
+      (super.noSuchMethod(
+            Invocation.method(#setPrebidServerUrl, [url]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String?> getPrebidServerUrl() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPrebidServerUrl, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<void> setUseCacheForReportingWithRenderingApi(bool? use) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUseCacheForReportingWithRenderingApi, [use]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool> getUseCacheForReportingWithRenderingApi() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUseCacheForReportingWithRenderingApi, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   _i4.Future<void> setCustomStatusEndpoint(String? endpoint) =>
       (super.noSuchMethod(
             Invocation.method(#setCustomStatusEndpoint, [endpoint]),
@@ -327,6 +399,19 @@ class MockPrebidMobileHostApi extends _i1.Mock
               _i3.dummyValue<String>(
                 this,
                 Invocation.method(#getSdkVersion, []),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
+
+  @override
+  _i4.Future<String> getOmsdkVersion() =>
+      (super.noSuchMethod(
+            Invocation.method(#getOmsdkVersion, []),
+            returnValue: _i4.Future<String>.value(
+              _i3.dummyValue<String>(
+                this,
+                Invocation.method(#getOmsdkVersion, []),
               ),
             ),
           )
@@ -680,6 +765,15 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
   _i4.Future<void> setDomain(String? domain) =>
       (super.noSuchMethod(
             Invocation.method(#setDomain, [domain]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setAppName(String? name) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAppName, [name]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

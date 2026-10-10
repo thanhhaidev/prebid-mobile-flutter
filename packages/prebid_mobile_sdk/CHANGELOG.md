@@ -31,6 +31,10 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
 - SDK configuration: timeouts, custom headers, Prebid Server targeting flags,
   stored responses, status check, log level, and a bid request and response
   listener for debugging.
+- Runtime switching of the Prebid Server account and auction endpoint without
+  re-initializing, with getters.
+- Creative factory timeout getters, caching of Rendering API bids for
+  reporting, the bundled OM SDK version, and an `app.name` override.
 - iOS privacy and attribution: a separate Prebid Server URL for users who
   haven't allowed tracking (App Tracking Transparency), and SKAdNetwork
   source app and iTunes ID.

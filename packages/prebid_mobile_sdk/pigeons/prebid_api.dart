@@ -315,6 +315,22 @@ abstract class PrebidMobileHostApi {
   void setLogLevel(int level);
   void setCreativeFactoryTimeout(int timeout);
   void setCreativeFactoryTimeoutPreRenderContent(int timeout);
+
+  /// Creative factory timeouts in milliseconds (iOS stores seconds).
+  int getCreativeFactoryTimeout();
+  int getCreativeFactoryTimeoutPreRenderContent();
+
+  /// Prebid Server account, switchable without re-initializing.
+  void setPrebidServerAccountId(String accountId);
+  String getPrebidServerAccountId();
+
+  /// Prebid Server auction endpoint, switchable without re-initializing.
+  /// The getter returns null when no endpoint is set.
+  void setPrebidServerUrl(String url);
+  String? getPrebidServerUrl();
+
+  void setUseCacheForReportingWithRenderingApi(bool use);
+  bool getUseCacheForReportingWithRenderingApi();
   void setCustomStatusEndpoint(String endpoint);
   void setShouldAssignNativeAssetId(bool assign);
   void setFilterOutUncachedBids(bool filter);
@@ -342,6 +358,9 @@ abstract class PrebidMobileHostApi {
 
   // SDK Version
   String getSdkVersion();
+
+  /// Version of the Open Measurement SDK bundled with Prebid.
+  String getOmsdkVersion();
 
   /// Destroys every ad this engine holds natively (fullscreen, native,
   /// multiformat, in-stream). Called once by a new Dart isolate before its
@@ -414,6 +433,9 @@ abstract class TargetingHostApi {
   void setPublisherName(String? name);
   void setStoreUrl(String? url);
   void setDomain(String? domain);
+
+  /// Overrides `app.name`; null restores the app's own name.
+  void setAppName(String? name);
 
   // OMID partner
   /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the

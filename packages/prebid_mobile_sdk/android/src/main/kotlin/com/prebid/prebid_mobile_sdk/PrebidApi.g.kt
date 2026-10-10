@@ -1356,6 +1356,20 @@ interface PrebidMobileHostApi {
   fun setLogLevel(level: Long)
   fun setCreativeFactoryTimeout(timeout: Long)
   fun setCreativeFactoryTimeoutPreRenderContent(timeout: Long)
+  /** Creative factory timeouts in milliseconds (iOS stores seconds). */
+  fun getCreativeFactoryTimeout(): Long
+  fun getCreativeFactoryTimeoutPreRenderContent(): Long
+  /** Prebid Server account, switchable without re-initializing. */
+  fun setPrebidServerAccountId(accountId: String)
+  fun getPrebidServerAccountId(): String
+  /**
+   * Prebid Server auction endpoint, switchable without re-initializing.
+   * The getter returns null when no endpoint is set.
+   */
+  fun setPrebidServerUrl(url: String)
+  fun getPrebidServerUrl(): String?
+  fun setUseCacheForReportingWithRenderingApi(use: Boolean)
+  fun getUseCacheForReportingWithRenderingApi(): Boolean
   fun setCustomStatusEndpoint(endpoint: String)
   fun setShouldAssignNativeAssetId(assign: Boolean)
   fun setFilterOutUncachedBids(filter: Boolean)
@@ -1377,6 +1391,8 @@ interface PrebidMobileHostApi {
   fun getExternalUserIds(): List<ExternalUserIdData>
   fun clearExternalUserIds()
   fun getSdkVersion(): String
+  /** Version of the Open Measurement SDK bundled with Prebid. */
+  fun getOmsdkVersion(): String
   /**
    * Destroys every ad this engine holds natively (fullscreen, native,
    * multiformat, in-stream). Called once by a new Dart isolate before its
@@ -1602,6 +1618,135 @@ interface PrebidMobileHostApi {
             val wrapped: List<Any?> = try {
               api.setCreativeFactoryTimeoutPreRenderContent(timeoutArg)
               listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeout$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCreativeFactoryTimeout())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeoutPreRenderContent$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCreativeFactoryTimeoutPreRenderContent())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerAccountId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val accountIdArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.setPrebidServerAccountId(accountIdArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerAccountId$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getPrebidServerAccountId())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerUrl$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val urlArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.setPrebidServerUrl(urlArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerUrl$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getPrebidServerUrl())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setUseCacheForReportingWithRenderingApi$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val useArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setUseCacheForReportingWithRenderingApi(useArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getUseCacheForReportingWithRenderingApi$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getUseCacheForReportingWithRenderingApi())
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)
             }
@@ -1887,6 +2032,21 @@ interface PrebidMobileHostApi {
         }
       }
       run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getOmsdkVersion$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getOmsdkVersion())
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.releaseAds$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
@@ -1952,6 +2112,8 @@ interface TargetingHostApi {
   fun setPublisherName(name: String?)
   fun setStoreUrl(url: String?)
   fun setDomain(domain: String?)
+  /** Overrides `app.name`; null restores the app's own name. */
+  fun setAppName(name: String?)
   /**
    * iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
    * `app.storeurl` iTunes ID.
@@ -2597,6 +2759,24 @@ interface TargetingHostApi {
             val domainArg = args[0] as String?
             val wrapped: List<Any?> = try {
               api.setDomain(domainArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setAppName$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val nameArg = args[0] as String?
+            val wrapped: List<Any?> = try {
+              api.setAppName(nameArg)
               listOf(null)
             } catch (exception: Throwable) {
               PrebidApiPigeonUtils.wrapError(exception)

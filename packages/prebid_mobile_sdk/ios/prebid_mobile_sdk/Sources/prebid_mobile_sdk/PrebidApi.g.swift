@@ -1321,6 +1321,18 @@ protocol PrebidMobileHostApi {
   func setLogLevel(level: Int64) throws
   func setCreativeFactoryTimeout(timeout: Int64) throws
   func setCreativeFactoryTimeoutPreRenderContent(timeout: Int64) throws
+  /// Creative factory timeouts in milliseconds (iOS stores seconds).
+  func getCreativeFactoryTimeout() throws -> Int64
+  func getCreativeFactoryTimeoutPreRenderContent() throws -> Int64
+  /// Prebid Server account, switchable without re-initializing.
+  func setPrebidServerAccountId(accountId: String) throws
+  func getPrebidServerAccountId() throws -> String
+  /// Prebid Server auction endpoint, switchable without re-initializing.
+  /// The getter returns null when no endpoint is set.
+  func setPrebidServerUrl(url: String) throws
+  func getPrebidServerUrl() throws -> String?
+  func setUseCacheForReportingWithRenderingApi(use: Bool) throws
+  func getUseCacheForReportingWithRenderingApi() throws -> Bool
   func setCustomStatusEndpoint(endpoint: String) throws
   func setShouldAssignNativeAssetId(assign: Bool) throws
   func setFilterOutUncachedBids(filter: Bool) throws
@@ -1340,6 +1352,8 @@ protocol PrebidMobileHostApi {
   func getExternalUserIds() throws -> [ExternalUserIdData]
   func clearExternalUserIds() throws
   func getSdkVersion() throws -> String
+  /// Version of the Open Measurement SDK bundled with Prebid.
+  func getOmsdkVersion() throws -> String
   /// Destroys every ad this engine holds natively (fullscreen, native,
   /// multiformat, in-stream). Called once by a new Dart isolate before its
   /// first ad: after a hot restart the previous isolate's ads would otherwise
@@ -1533,6 +1547,120 @@ class PrebidMobileHostApiSetup {
       }
     } else {
       setCreativeFactoryTimeoutPreRenderContentChannel.setMessageHandler(nil)
+    }
+    /// Creative factory timeouts in milliseconds (iOS stores seconds).
+    let getCreativeFactoryTimeoutChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeout\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getCreativeFactoryTimeoutChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getCreativeFactoryTimeout()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getCreativeFactoryTimeoutChannel.setMessageHandler(nil)
+    }
+    let getCreativeFactoryTimeoutPreRenderContentChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getCreativeFactoryTimeoutPreRenderContent\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getCreativeFactoryTimeoutPreRenderContentChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getCreativeFactoryTimeoutPreRenderContent()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getCreativeFactoryTimeoutPreRenderContentChannel.setMessageHandler(nil)
+    }
+    /// Prebid Server account, switchable without re-initializing.
+    let setPrebidServerAccountIdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerAccountId\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setPrebidServerAccountIdChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let accountIdArg = args[0] as! String
+        do {
+          try api.setPrebidServerAccountId(accountId: accountIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setPrebidServerAccountIdChannel.setMessageHandler(nil)
+    }
+    let getPrebidServerAccountIdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerAccountId\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getPrebidServerAccountIdChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getPrebidServerAccountId()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getPrebidServerAccountIdChannel.setMessageHandler(nil)
+    }
+    /// Prebid Server auction endpoint, switchable without re-initializing.
+    /// The getter returns null when no endpoint is set.
+    let setPrebidServerUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setPrebidServerUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setPrebidServerUrlChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let urlArg = args[0] as! String
+        do {
+          try api.setPrebidServerUrl(url: urlArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setPrebidServerUrlChannel.setMessageHandler(nil)
+    }
+    let getPrebidServerUrlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getPrebidServerUrl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getPrebidServerUrlChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getPrebidServerUrl()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getPrebidServerUrlChannel.setMessageHandler(nil)
+    }
+    let setUseCacheForReportingWithRenderingApiChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setUseCacheForReportingWithRenderingApi\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setUseCacheForReportingWithRenderingApiChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let useArg = args[0] as! Bool
+        do {
+          try api.setUseCacheForReportingWithRenderingApi(use: useArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setUseCacheForReportingWithRenderingApiChannel.setMessageHandler(nil)
+    }
+    let getUseCacheForReportingWithRenderingApiChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getUseCacheForReportingWithRenderingApi\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getUseCacheForReportingWithRenderingApiChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getUseCacheForReportingWithRenderingApi()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getUseCacheForReportingWithRenderingApiChannel.setMessageHandler(nil)
     }
     let setCustomStatusEndpointChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setCustomStatusEndpoint\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
@@ -1767,6 +1895,20 @@ class PrebidMobileHostApiSetup {
     } else {
       getSdkVersionChannel.setMessageHandler(nil)
     }
+    /// Version of the Open Measurement SDK bundled with Prebid.
+    let getOmsdkVersionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getOmsdkVersion\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getOmsdkVersionChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getOmsdkVersion()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getOmsdkVersionChannel.setMessageHandler(nil)
+    }
     /// Destroys every ad this engine holds natively (fullscreen, native,
     /// multiformat, in-stream). Called once by a new Dart isolate before its
     /// first ad: after a hot restart the previous isolate's ads would otherwise
@@ -1829,6 +1971,8 @@ protocol TargetingHostApi {
   func setPublisherName(name: String?) throws
   func setStoreUrl(url: String?) throws
   func setDomain(domain: String?) throws
+  /// Overrides `app.name`; null restores the app's own name.
+  func setAppName(name: String?) throws
   /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
   /// `app.storeurl` iTunes ID.
   func setSourceApp(sourceApp: String?) throws
@@ -2379,6 +2523,22 @@ class TargetingHostApiSetup {
       }
     } else {
       setDomainChannel.setMessageHandler(nil)
+    }
+    /// Overrides `app.name`; null restores the app's own name.
+    let setAppNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setAppName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setAppNameChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let nameArg: String? = nilOrValue(args[0])
+        do {
+          try api.setAppName(name: nameArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setAppNameChannel.setMessageHandler(nil)
     }
     /// iOS only: SKAdNetwork `sourceapp` (the app's iTunes ID) and the
     /// `app.storeurl` iTunes ID.

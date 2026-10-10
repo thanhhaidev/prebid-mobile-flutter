@@ -222,5 +222,12 @@ void main() {
       verify(mockApi.setOmidPartnerVersion(null)).called(1);
       verify(mockApi.setLocationPrecision(null)).called(1);
     });
+
+    test('setAppName forwards the name and null', () async {
+      await PrebidTargeting.setAppName('天気');
+      await PrebidTargeting.setAppName(null);
+      verify(mockApi.setAppName('天気')).called(1);
+      verify(mockApi.setAppName(null)).called(1);
+    });
   });
 }

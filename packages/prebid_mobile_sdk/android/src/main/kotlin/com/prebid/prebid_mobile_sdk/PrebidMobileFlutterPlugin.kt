@@ -6,9 +6,11 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import org.prebid.mobile.ExternalUserId
+import org.prebid.mobile.Host
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.TargetingParams
 import org.prebid.mobile.api.data.InitializationStatus
+import org.prebid.mobile.rendering.utils.helpers.AppInfoManager
 
 class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     PrebidMobileHostApi, TargetingHostApi, InterstitialAdHostApi {
@@ -153,6 +155,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
                 callbacks.forEach { it(Result.success(result)) }
             }
         }
+        // The first init (synchronously) replaces app.name with the app label.
+        appNameOverride?.let { AppInfoManager.setAppName(it) }
     }
 
 
@@ -209,6 +213,34 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun setCreativeFactoryTimeoutPreRenderContent(timeout: Long) {
         PrebidMobile.setCreativeFactoryTimeoutPreRenderContent(timeout.toInt())
     }
+
+    override fun getCreativeFactoryTimeout(): Long =
+        PrebidMobile.getCreativeFactoryTimeout().toLong()
+
+    override fun getCreativeFactoryTimeoutPreRenderContent(): Long =
+        PrebidMobile.getCreativeFactoryTimeoutPreRenderContent().toLong()
+
+    override fun setPrebidServerAccountId(accountId: String) {
+        PrebidMobile.setPrebidServerAccountId(accountId)
+    }
+
+    override fun getPrebidServerAccountId(): String =
+        PrebidMobile.getPrebidServerAccountId() ?: ""
+
+    override fun setPrebidServerUrl(url: String) {
+        // Updates the CUSTOM host singleton that every auction reads its URL from.
+        Host.createCustomHost(url)
+    }
+
+    override fun getPrebidServerUrl(): String? =
+        PrebidMobile.getPrebidServerHost()?.hostUrl?.takeIf { it.isNotEmpty() }
+
+    override fun setUseCacheForReportingWithRenderingApi(use: Boolean) {
+        PrebidMobile.setUseCacheForReportingWithRenderingApi(use)
+    }
+
+    override fun getUseCacheForReportingWithRenderingApi(): Boolean =
+        PrebidMobile.isUseCacheForReportingWithRenderingApi()
 
     override fun setCustomStatusEndpoint(endpoint: String) {
         PrebidMobile.setCustomStatusEndpoint(endpoint)
@@ -333,6 +365,8 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun getSdkVersion(): String {
         return PrebidMobile.SDK_VERSION
     }
+
+    override fun getOmsdkVersion(): String = PrebidMobile.OMSDK_VERSION
 
     // =========================================================================
     // TargetingHostApi
@@ -459,6 +493,14 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
     override fun setStoreUrl(url: String?) { TargetingParams.setStoreUrl(url) }
     override fun setDomain(domain: String?) { TargetingParams.setDomain(domain) }
 
+    override fun setAppName(name: String?) {
+        appNameOverride = name
+        // null: back to the application label, as Prebid's AppInfoManager.init reads it.
+        AppInfoManager.setAppName(
+            name ?: context.applicationInfo.loadLabel(context.packageManager).toString()
+        )
+    }
+
     // SKAdNetwork / iTunes IDs are iOS concepts; Android reads the package name.
     override fun setSourceApp(sourceApp: String?) {}
     override fun setItunesId(itunesId: String?) {}
@@ -560,6 +602,9 @@ class PrebidMobileFlutterPlugin : FlutterPlugin, ActivityAware,
             mutableListOf<(Result<InitializationResult>) -> Unit>()
 
         private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
+
+        /// Process-wide like AppInfoManager; reapplied after the first init.
+        private var appNameOverride: String? = null
     }
 }
 

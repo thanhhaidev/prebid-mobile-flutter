@@ -165,6 +165,71 @@ class PrebidMobile {
     await api.setCreativeFactoryTimeoutPreRenderContent(timeout);
   }
 
+  /// The creative factory timeout for banner ads in milliseconds (see
+  /// [setCreativeFactoryTimeout]). Default 6000.
+  ///
+  /// Prebid Server can override it per account (the `prebidmobilesdk`
+  /// passthrough in a bid response), so it may change after an auction.
+  static Future<int> getCreativeFactoryTimeout() async {
+    return api.getCreativeFactoryTimeout();
+  }
+
+  /// The creative factory timeout for pre-rendered (video and interstitial)
+  /// content in milliseconds (see
+  /// [setCreativeFactoryTimeoutPreRenderContent]). Default 30000.
+  ///
+  /// Prebid Server can override it per account, like
+  /// [getCreativeFactoryTimeout].
+  static Future<int> getCreativeFactoryTimeoutPreRenderContent() async {
+    return api.getCreativeFactoryTimeoutPreRenderContent();
+  }
+
+  /// Switches the Prebid Server account used by the next auctions, without
+  /// calling [initializeSdk] again (which also sets it).
+  static Future<void> setPrebidServerAccountId(String accountId) async {
+    await api.setPrebidServerAccountId(accountId);
+  }
+
+  /// The current Prebid Server account ID (empty before one is set).
+  static Future<String> getPrebidServerAccountId() async {
+    return api.getPrebidServerAccountId();
+  }
+
+  /// Switches the Prebid Server auction endpoint used by the next auctions,
+  /// without calling [initializeSdk] again (which also sets it, and runs the
+  /// server status check this skips).
+  ///
+  /// iOS: throws a `PlatformException` for a malformed URL, and a
+  /// `nonTrackingUrl` given to [initializeSdk] stays in effect for users who
+  /// haven't authorized tracking.
+  static Future<void> setPrebidServerUrl(String url) async {
+    await api.setPrebidServerUrl(url);
+  }
+
+  /// The Prebid Server auction endpoint, or `null` before one is set.
+  ///
+  /// iOS: the URL auctions use for this user, which is the `nonTrackingUrl`
+  /// given to [initializeSdk] when tracking isn't authorized.
+  static Future<String?> getPrebidServerUrl() async {
+    return api.getPrebidServerUrl();
+  }
+
+  /// Asks Prebid Server to cache bids for Rendering API ad units too
+  /// (`ext.prebid.cache`), so their impressions can be reported through a
+  /// legacy (Prebid Cache based) analytics setup. Default `false`.
+  ///
+  /// iOS: creating an Original API ad unit turns it on, since Prebid iOS
+  /// requests caching for the Original API through this flag.
+  static Future<void> setUseCacheForReportingWithRenderingApi(bool use) async {
+    await api.setUseCacheForReportingWithRenderingApi(use);
+  }
+
+  /// Whether bids are cached for Rendering API reporting (see
+  /// [setUseCacheForReportingWithRenderingApi]).
+  static Future<bool> getUseCacheForReportingWithRenderingApi() async {
+    return api.getUseCacheForReportingWithRenderingApi();
+  }
+
   /// Override the default Prebid Server status endpoint URL.
   ///
   /// The SDK calls this endpoint during initialization to verify
@@ -321,6 +386,12 @@ class PrebidMobile {
   /// Returns the version of the underlying Android or iOS Prebid SDK.
   static Future<String> getSdkVersion() async {
     return api.getSdkVersion();
+  }
+
+  /// Get the version of the Open Measurement SDK bundled with the native
+  /// Prebid SDK (used for viewability measurement), e.g. `1.4.1`.
+  static Future<String> getOmsdkVersion() async {
+    return api.getOmsdkVersion();
   }
 }
 

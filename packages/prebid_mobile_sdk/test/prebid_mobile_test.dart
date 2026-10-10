@@ -154,6 +154,75 @@ void main() {
     });
   });
 
+  group('Runtime server settings', () {
+    test('account id is set and read back', () async {
+      when(
+        mockApi.getPrebidServerAccountId(),
+      ).thenAnswer((_) async => 'acct-2');
+
+      await PrebidMobile.setPrebidServerAccountId('acct-2');
+
+      verify(mockApi.setPrebidServerAccountId('acct-2')).called(1);
+      expect(await PrebidMobile.getPrebidServerAccountId(), 'acct-2');
+    });
+
+    test('server url is set and read back, null when unset', () async {
+      const url = 'https://pbs.example.com/openrtb2/auction';
+      when(mockApi.getPrebidServerUrl()).thenAnswer((_) async => null);
+      expect(await PrebidMobile.getPrebidServerUrl(), isNull);
+
+      await PrebidMobile.setPrebidServerUrl(url);
+      when(mockApi.getPrebidServerUrl()).thenAnswer((_) async => url);
+
+      verify(mockApi.setPrebidServerUrl(url)).called(1);
+      expect(await PrebidMobile.getPrebidServerUrl(), url);
+    });
+
+    test('an invalid server url surfaces the platform error', () async {
+      when(
+        mockApi.setPrebidServerUrl(any),
+      ).thenThrow(PlatformException(code: 'prebidServerURLInvalid'));
+
+      expect(
+        () => PrebidMobile.setPrebidServerUrl('not a url'),
+        throwsA(isA<PlatformException>()),
+      );
+    });
+
+    test('use cache for reporting is set and read back', () async {
+      when(
+        mockApi.getUseCacheForReportingWithRenderingApi(),
+      ).thenAnswer((_) async => true);
+
+      await PrebidMobile.setUseCacheForReportingWithRenderingApi(true);
+
+      verify(mockApi.setUseCacheForReportingWithRenderingApi(true)).called(1);
+      expect(
+        await PrebidMobile.getUseCacheForReportingWithRenderingApi(),
+        true,
+      );
+    });
+
+    test('creative factory timeouts are read in milliseconds', () async {
+      when(mockApi.getCreativeFactoryTimeout()).thenAnswer((_) async => 6000);
+      when(
+        mockApi.getCreativeFactoryTimeoutPreRenderContent(),
+      ).thenAnswer((_) async => 30000);
+
+      expect(await PrebidMobile.getCreativeFactoryTimeout(), 6000);
+      expect(
+        await PrebidMobile.getCreativeFactoryTimeoutPreRenderContent(),
+        30000,
+      );
+    });
+
+    test('getOmsdkVersion returns the native value', () async {
+      when(mockApi.getOmsdkVersion()).thenAnswer((_) async => '1.4.1');
+      expect(await PrebidMobile.getOmsdkVersion(), '1.4.1');
+      verify(mockApi.getOmsdkVersion()).called(1);
+    });
+  });
+
   group('PrebidMobile 3.4 settings', () {
     test('filter / eids placement / targeting flags call api', () async {
       await PrebidMobile.setFilterOutUncachedBids(true);

@@ -31,9 +31,13 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Native impression | Fired when a tracker request succeeds (never without trackers) | Viewability: half the view for 1 s, including Flutter's clipping, once per ad |
 | Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once |
 | Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
+| `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
+| Creative factory timeouts | iOS stores seconds | Milliseconds on both |
 
 ## Remaining differences
 
 - **Banner refresh bounds:** Prebid clamps the banner interval to 30–120 s on Android and 15–120 s on iOS.
 - **Banner impression tracker (Original API):** iOS tracks the current bid; Android attaches the GAM view when the next auction starts. See [impression tracking](/docs/original-api#impression-tracking).
+- **Runtime server switch (iOS):** `setPrebidServerUrl` throws for a malformed URL and leaves the `nonTrackingUrl` from `initializeSdk` in place; `getPrebidServerUrl` returns the URL the current user's auctions use.
+- **Rendering API caching (iOS):** creating an Original API ad unit turns `useCacheForReportingWithRenderingApi` on.
 - **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).

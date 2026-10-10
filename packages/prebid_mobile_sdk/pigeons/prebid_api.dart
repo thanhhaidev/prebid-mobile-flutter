@@ -61,6 +61,8 @@ class NativeAssetConfig {
     this.dataType,
     this.dataLength,
     this.imageMimes,
+    this.ext,
+    this.assetExt,
   });
 
   /// "title", "image", or "data"
@@ -77,13 +79,26 @@ class NativeAssetConfig {
 
   /// Image MIME types the app accepts (image assets only).
   final List<String?>? imageMimes;
+
+  /// JSON object for the `ext` of the title, img or data object.
+  final String? ext;
+
+  /// JSON object for the asset's own `ext` (Android only).
+  final String? assetExt;
 }
 
 /// Configuration for a native event tracker.
 class NativeEventTrackerConfig {
-  NativeEventTrackerConfig({required this.eventType, required this.methods});
+  NativeEventTrackerConfig({
+    required this.eventType,
+    required this.methods,
+    this.ext,
+  });
   final int eventType;
   final List<int> methods;
+
+  /// JSON object for the tracker's `ext` (Android only).
+  final String? ext;
 }
 
 /// Full configuration for a native ad request.
@@ -176,17 +191,40 @@ class NativeAdDataAssetData {
   final String? value;
 }
 
-/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+/// One `uids` entry of an [ExternalUserIdData].
+class UserUniqueIdData {
+  UserUniqueIdData({required this.id, required this.atype, this.ext});
+
+  /// The user ID value.
+  final String id;
+
+  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
+  final int atype;
+
+  /// Optional vendor-specific extensions.
+  final Map<String?, Object?>? ext;
+}
+
+/// External user ID for third-party identity modules (UID2, SharedID, etc.):
+/// one `user.eids` entry.
 class ExternalUserIdData {
   ExternalUserIdData({
     required this.source,
-    required this.identifier,
-    this.atype,
+    required this.uids,
     this.ext,
     this.inserter,
     this.matcher,
     this.mm,
   });
+
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  final String source;
+
+  /// The IDs from this source.
+  final List<UserUniqueIdData?> uids;
+
+  /// The eid-level `ext`.
+  final Map<String?, Object?>? ext;
 
   /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
   final String? inserter;
@@ -196,18 +234,6 @@ class ExternalUserIdData {
 
   /// OpenRTB 2.6 EID `mm` (match method).
   final int? mm;
-
-  /// ID source (e.g., "uidapi.com", "sharedid.org").
-  final String source;
-
-  /// The user ID value.
-  final String identifier;
-
-  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
-  final int? atype;
-
-  /// Optional extra data.
-  final Map<String?, Object?>? ext;
 }
 
 /// Video parameters configuration for OpenRTB video objects.

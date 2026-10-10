@@ -4,6 +4,9 @@
 // generated types are an implementation detail of the platform channel and
 // may change between releases without a breaking change to the public API.
 
+import 'dart:convert';
+
+import '../external_user_id.dart';
 import '../fullscreen_controls.dart';
 import '../generated/prebid_api.g.dart';
 import '../native_ad.dart';
@@ -65,6 +68,8 @@ extension NativeAssetPigeon on NativeAsset {
     dataType: dataType?.value,
     dataLength: dataLength,
     imageMimes: imageMimes,
+    ext: _json(ext),
+    assetExt: _json(assetExt),
   );
 }
 
@@ -74,8 +79,12 @@ extension NativeEventTrackerPigeon on NativeEventTracker {
   NativeEventTrackerConfig toConfig() => NativeEventTrackerConfig(
     eventType: eventType.value,
     methods: methods.map((m) => m.value).toList(),
+    ext: _json(ext),
   );
 }
+
+String? _json(Map<String, Object?>? map) =>
+    map == null ? null : jsonEncode(map);
 
 /// Converts a Pigeon string map with nullable keys / values into a plain
 /// `Map<String, String>`, dropping null entries.
@@ -85,3 +94,37 @@ Map<String, String>? stringMap(Map<String?, String?>? map) => map == null
         for (final e in map.entries)
           if (e.key != null && e.value != null) e.key!: e.value!,
       };
+
+/// Pigeon form of [ExternalUserId].
+ExternalUserIdData externalUserIdToData(ExternalUserId id) =>
+    ExternalUserIdData(
+      source: id.source,
+      uids: [
+        for (final uid in id.uids)
+          UserUniqueIdData(id: uid.id, atype: uid.atype, ext: uid.ext),
+      ],
+      ext: id.ext,
+      inserter: id.inserter,
+      matcher: id.matcher,
+      mm: id.mm,
+    );
+
+/// [ExternalUserId] from its Pigeon form; null when it carries no uid.
+ExternalUserId? externalUserIdFromData(ExternalUserIdData data) {
+  final uids = [
+    for (final uid in data.uids.nonNulls)
+      UserUniqueId(id: uid.id, atype: uid.atype, ext: _stringKeys(uid.ext)),
+  ];
+  if (uids.isEmpty) return null;
+  return ExternalUserId.withUids(
+    source: data.source,
+    uids: uids,
+    ext: _stringKeys(data.ext),
+    inserter: data.inserter,
+    matcher: data.matcher,
+    mm: data.mm,
+  );
+}
+
+Map<String, Object?>? _stringKeys(Map<String?, Object?>? map) =>
+    map?.map((k, v) => MapEntry(k ?? '', v));

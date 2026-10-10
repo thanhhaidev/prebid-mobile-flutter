@@ -287,6 +287,8 @@ class NativeAssetConfig {
     this.dataType,
     this.dataLength,
     this.imageMimes,
+    this.ext,
+    this.assetExt,
   });
 
   /// "title", "image", or "data"
@@ -313,6 +315,12 @@ class NativeAssetConfig {
   /// Image MIME types the app accepts (image assets only).
   List<String?>? imageMimes;
 
+  /// JSON object for the `ext` of the title, img or data object.
+  String? ext;
+
+  /// JSON object for the asset's own `ext` (Android only).
+  String? assetExt;
+
   List<Object?> _toList() {
     return <Object?>[
       assetType,
@@ -326,6 +334,8 @@ class NativeAssetConfig {
       dataType,
       dataLength,
       imageMimes,
+      ext,
+      assetExt,
     ];
   }
 
@@ -347,6 +357,8 @@ class NativeAssetConfig {
       dataType: result[8] as int?,
       dataLength: result[9] as int?,
       imageMimes: (result[10] as List<Object?>?)?.cast<String?>(),
+      ext: result[11] as String?,
+      assetExt: result[12] as String?,
     );
   }
 
@@ -369,7 +381,9 @@ class NativeAssetConfig {
         _deepEquals(imageHeightMin, other.imageHeightMin) &&
         _deepEquals(dataType, other.dataType) &&
         _deepEquals(dataLength, other.dataLength) &&
-        _deepEquals(imageMimes, other.imageMimes);
+        _deepEquals(imageMimes, other.imageMimes) &&
+        _deepEquals(ext, other.ext) &&
+        _deepEquals(assetExt, other.assetExt);
   }
 
   @override
@@ -378,20 +392,27 @@ class NativeAssetConfig {
 
   @override
   String toString() {
-    return 'NativeAssetConfig(assetType: $assetType, required_: $required_, titleLength: $titleLength, imageType: $imageType, imageWidth: $imageWidth, imageHeight: $imageHeight, imageWidthMin: $imageWidthMin, imageHeightMin: $imageHeightMin, dataType: $dataType, dataLength: $dataLength, imageMimes: $imageMimes)';
+    return 'NativeAssetConfig(assetType: $assetType, required_: $required_, titleLength: $titleLength, imageType: $imageType, imageWidth: $imageWidth, imageHeight: $imageHeight, imageWidthMin: $imageWidthMin, imageHeightMin: $imageHeightMin, dataType: $dataType, dataLength: $dataLength, imageMimes: $imageMimes, ext: $ext, assetExt: $assetExt)';
   }
 }
 
 /// Configuration for a native event tracker.
 class NativeEventTrackerConfig {
-  NativeEventTrackerConfig({required this.eventType, required this.methods});
+  NativeEventTrackerConfig({
+    required this.eventType,
+    required this.methods,
+    this.ext,
+  });
 
   int eventType;
 
   List<int> methods;
 
+  /// JSON object for the tracker's `ext` (Android only).
+  String? ext;
+
   List<Object?> _toList() {
-    return <Object?>[eventType, methods];
+    return <Object?>[eventType, methods, ext];
   }
 
   Object encode() {
@@ -403,6 +424,7 @@ class NativeEventTrackerConfig {
     return NativeEventTrackerConfig(
       eventType: result[0]! as int,
       methods: (result[1]! as List<Object?>).cast<int>(),
+      ext: result[2] as String?,
     );
   }
 
@@ -417,7 +439,8 @@ class NativeEventTrackerConfig {
       return true;
     }
     return _deepEquals(eventType, other.eventType) &&
-        _deepEquals(methods, other.methods);
+        _deepEquals(methods, other.methods) &&
+        _deepEquals(ext, other.ext);
   }
 
   @override
@@ -426,7 +449,7 @@ class NativeEventTrackerConfig {
 
   @override
   String toString() {
-    return 'NativeEventTrackerConfig(eventType: $eventType, methods: $methods)';
+    return 'NativeEventTrackerConfig(eventType: $eventType, methods: $methods, ext: $ext)';
   }
 }
 
@@ -773,17 +796,80 @@ class NativeAdDataAssetData {
   }
 }
 
-/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+/// One `uids` entry of an [ExternalUserIdData].
+class UserUniqueIdData {
+  UserUniqueIdData({required this.id, required this.atype, this.ext});
+
+  /// The user ID value.
+  String id;
+
+  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
+  int atype;
+
+  /// Optional vendor-specific extensions.
+  Map<String?, Object?>? ext;
+
+  List<Object?> _toList() {
+    return <Object?>[id, atype, ext];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static UserUniqueIdData decode(Object result) {
+    result as List<Object?>;
+    return UserUniqueIdData(
+      id: result[0]! as String,
+      atype: result[1]! as int,
+      ext: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! UserUniqueIdData || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(id, other.id) &&
+        _deepEquals(atype, other.atype) &&
+        _deepEquals(ext, other.ext);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'UserUniqueIdData(id: $id, atype: $atype, ext: $ext)';
+  }
+}
+
+/// External user ID for third-party identity modules (UID2, SharedID, etc.):
+/// one `user.eids` entry.
 class ExternalUserIdData {
   ExternalUserIdData({
+    required this.source,
+    required this.uids,
+    this.ext,
     this.inserter,
     this.matcher,
     this.mm,
-    required this.source,
-    required this.identifier,
-    this.atype,
-    this.ext,
   });
+
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  String source;
+
+  /// The IDs from this source.
+  List<UserUniqueIdData?> uids;
+
+  /// The eid-level `ext`.
+  Map<String?, Object?>? ext;
 
   /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
   String? inserter;
@@ -794,20 +880,8 @@ class ExternalUserIdData {
   /// OpenRTB 2.6 EID `mm` (match method).
   int? mm;
 
-  /// ID source (e.g., "uidapi.com", "sharedid.org").
-  String source;
-
-  /// The user ID value.
-  String identifier;
-
-  /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
-  int? atype;
-
-  /// Optional extra data.
-  Map<String?, Object?>? ext;
-
   List<Object?> _toList() {
-    return <Object?>[inserter, matcher, mm, source, identifier, atype, ext];
+    return <Object?>[source, uids, ext, inserter, matcher, mm];
   }
 
   Object encode() {
@@ -817,13 +891,12 @@ class ExternalUserIdData {
   static ExternalUserIdData decode(Object result) {
     result as List<Object?>;
     return ExternalUserIdData(
-      inserter: result[0] as String?,
-      matcher: result[1] as String?,
-      mm: result[2] as int?,
-      source: result[3]! as String,
-      identifier: result[4]! as String,
-      atype: result[5] as int?,
-      ext: (result[6] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      source: result[0]! as String,
+      uids: (result[1]! as List<Object?>).cast<UserUniqueIdData?>(),
+      ext: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+      inserter: result[3] as String?,
+      matcher: result[4] as String?,
+      mm: result[5] as int?,
     );
   }
 
@@ -836,13 +909,12 @@ class ExternalUserIdData {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(inserter, other.inserter) &&
+    return _deepEquals(source, other.source) &&
+        _deepEquals(uids, other.uids) &&
+        _deepEquals(ext, other.ext) &&
+        _deepEquals(inserter, other.inserter) &&
         _deepEquals(matcher, other.matcher) &&
-        _deepEquals(mm, other.mm) &&
-        _deepEquals(source, other.source) &&
-        _deepEquals(identifier, other.identifier) &&
-        _deepEquals(atype, other.atype) &&
-        _deepEquals(ext, other.ext);
+        _deepEquals(mm, other.mm);
   }
 
   @override
@@ -851,7 +923,7 @@ class ExternalUserIdData {
 
   @override
   String toString() {
-    return 'ExternalUserIdData(inserter: $inserter, matcher: $matcher, mm: $mm, source: $source, identifier: $identifier, atype: $atype, ext: $ext)';
+    return 'ExternalUserIdData(source: $source, uids: $uids, ext: $ext, inserter: $inserter, matcher: $matcher, mm: $mm)';
   }
 }
 
@@ -1475,23 +1547,26 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is NativeAdDataAssetData) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    } else if (value is ExternalUserIdData) {
+    } else if (value is UserUniqueIdData) {
       buffer.putUint8(138);
       writeValue(buffer, value.encode());
-    } else if (value is VideoParametersConfig) {
+    } else if (value is ExternalUserIdData) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    } else if (value is FullscreenControlsConfig) {
+    } else if (value is VideoParametersConfig) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatAdRequestConfig) {
+    } else if (value is FullscreenControlsConfig) {
       buffer.putUint8(141);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatBidResult) {
+    } else if (value is MultiformatAdRequestConfig) {
       buffer.putUint8(142);
       writeValue(buffer, value.encode());
-    } else if (value is InstreamVideoAdRequestConfig) {
+    } else if (value is MultiformatBidResult) {
       buffer.putUint8(143);
+      writeValue(buffer, value.encode());
+    } else if (value is InstreamVideoAdRequestConfig) {
+      buffer.putUint8(144);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1520,16 +1595,18 @@ class _PigeonCodec extends StandardMessageCodec {
       case 137:
         return NativeAdDataAssetData.decode(readValue(buffer)!);
       case 138:
-        return ExternalUserIdData.decode(readValue(buffer)!);
+        return UserUniqueIdData.decode(readValue(buffer)!);
       case 139:
-        return VideoParametersConfig.decode(readValue(buffer)!);
+        return ExternalUserIdData.decode(readValue(buffer)!);
       case 140:
-        return FullscreenControlsConfig.decode(readValue(buffer)!);
+        return VideoParametersConfig.decode(readValue(buffer)!);
       case 141:
-        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+        return FullscreenControlsConfig.decode(readValue(buffer)!);
       case 142:
-        return MultiformatBidResult.decode(readValue(buffer)!);
+        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
       case 143:
+        return MultiformatBidResult.decode(readValue(buffer)!);
+      case 144:
         return InstreamVideoAdRequestConfig.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);

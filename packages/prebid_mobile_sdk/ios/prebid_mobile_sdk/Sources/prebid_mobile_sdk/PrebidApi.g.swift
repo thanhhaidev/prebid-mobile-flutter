@@ -351,6 +351,10 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
   var dataLength: Int64? = nil
   /// Image MIME types the app accepts (image assets only).
   var imageMimes: [String?]? = nil
+  /// JSON object for the `ext` of the title, img or data object.
+  var ext: String? = nil
+  /// JSON object for the asset's own `ext` (Android only).
+  var assetExt: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -366,6 +370,8 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
     let dataType: Int64? = nilOrValue(pigeonVar_list[8])
     let dataLength: Int64? = nilOrValue(pigeonVar_list[9])
     let imageMimes: [String?]? = nilOrValue(pigeonVar_list[10])
+    let ext: String? = nilOrValue(pigeonVar_list[11])
+    let assetExt: String? = nilOrValue(pigeonVar_list[12])
 
     return NativeAssetConfig(
       assetType: assetType,
@@ -378,7 +384,9 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
       imageHeightMin: imageHeightMin,
       dataType: dataType,
       dataLength: dataLength,
-      imageMimes: imageMimes
+      imageMimes: imageMimes,
+      ext: ext,
+      assetExt: assetExt
     )
   }
   func toList() -> [Any?] {
@@ -394,13 +402,15 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
       dataType,
       dataLength,
       imageMimes,
+      ext,
+      assetExt,
     ]
   }
   static func == (lhs: NativeAssetConfig, rhs: NativeAssetConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrebidApiPigeonInternal.deepEquals(lhs.assetType, rhs.assetType) && PrebidApiPigeonInternal.deepEquals(lhs.required_, rhs.required_) && PrebidApiPigeonInternal.deepEquals(lhs.titleLength, rhs.titleLength) && PrebidApiPigeonInternal.deepEquals(lhs.imageType, rhs.imageType) && PrebidApiPigeonInternal.deepEquals(lhs.imageWidth, rhs.imageWidth) && PrebidApiPigeonInternal.deepEquals(lhs.imageHeight, rhs.imageHeight) && PrebidApiPigeonInternal.deepEquals(lhs.imageWidthMin, rhs.imageWidthMin) && PrebidApiPigeonInternal.deepEquals(lhs.imageHeightMin, rhs.imageHeightMin) && PrebidApiPigeonInternal.deepEquals(lhs.dataType, rhs.dataType) && PrebidApiPigeonInternal.deepEquals(lhs.dataLength, rhs.dataLength) && PrebidApiPigeonInternal.deepEquals(lhs.imageMimes, rhs.imageMimes)
+    return PrebidApiPigeonInternal.deepEquals(lhs.assetType, rhs.assetType) && PrebidApiPigeonInternal.deepEquals(lhs.required_, rhs.required_) && PrebidApiPigeonInternal.deepEquals(lhs.titleLength, rhs.titleLength) && PrebidApiPigeonInternal.deepEquals(lhs.imageType, rhs.imageType) && PrebidApiPigeonInternal.deepEquals(lhs.imageWidth, rhs.imageWidth) && PrebidApiPigeonInternal.deepEquals(lhs.imageHeight, rhs.imageHeight) && PrebidApiPigeonInternal.deepEquals(lhs.imageWidthMin, rhs.imageWidthMin) && PrebidApiPigeonInternal.deepEquals(lhs.imageHeightMin, rhs.imageHeightMin) && PrebidApiPigeonInternal.deepEquals(lhs.dataType, rhs.dataType) && PrebidApiPigeonInternal.deepEquals(lhs.dataLength, rhs.dataLength) && PrebidApiPigeonInternal.deepEquals(lhs.imageMimes, rhs.imageMimes) && PrebidApiPigeonInternal.deepEquals(lhs.ext, rhs.ext) && PrebidApiPigeonInternal.deepEquals(lhs.assetExt, rhs.assetExt)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -416,10 +426,12 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
     PrebidApiPigeonInternal.deepHash(value: dataType, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: dataLength, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: imageMimes, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: ext, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: assetExt, hasher: &hasher)
   }
 
   public var description: String {
-    return "NativeAssetConfig(assetType: \(String(describing: assetType)), required_: \(String(describing: required_)), titleLength: \(String(describing: titleLength)), imageType: \(String(describing: imageType)), imageWidth: \(String(describing: imageWidth)), imageHeight: \(String(describing: imageHeight)), imageWidthMin: \(String(describing: imageWidthMin)), imageHeightMin: \(String(describing: imageHeightMin)), dataType: \(String(describing: dataType)), dataLength: \(String(describing: dataLength)), imageMimes: \(String(describing: imageMimes)))"
+    return "NativeAssetConfig(assetType: \(String(describing: assetType)), required_: \(String(describing: required_)), titleLength: \(String(describing: titleLength)), imageType: \(String(describing: imageType)), imageWidth: \(String(describing: imageWidth)), imageHeight: \(String(describing: imageHeight)), imageWidthMin: \(String(describing: imageWidthMin)), imageHeightMin: \(String(describing: imageHeightMin)), dataType: \(String(describing: dataType)), dataLength: \(String(describing: dataLength)), imageMimes: \(String(describing: imageMimes)), ext: \(String(describing: ext)), assetExt: \(String(describing: assetExt)))"
   }
 }
 
@@ -429,39 +441,45 @@ struct NativeAssetConfig: Hashable, CustomStringConvertible {
 struct NativeEventTrackerConfig: Hashable, CustomStringConvertible {
   var eventType: Int64
   var methods: [Int64]
+  /// JSON object for the tracker's `ext` (Android only).
+  var ext: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> NativeEventTrackerConfig? {
     let eventType = pigeonVar_list[0] as! Int64
     let methods = pigeonVar_list[1] as! [Int64]
+    let ext: String? = nilOrValue(pigeonVar_list[2])
 
     return NativeEventTrackerConfig(
       eventType: eventType,
-      methods: methods
+      methods: methods,
+      ext: ext
     )
   }
   func toList() -> [Any?] {
     return [
       eventType,
       methods,
+      ext,
     ]
   }
   static func == (lhs: NativeEventTrackerConfig, rhs: NativeEventTrackerConfig) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrebidApiPigeonInternal.deepEquals(lhs.eventType, rhs.eventType) && PrebidApiPigeonInternal.deepEquals(lhs.methods, rhs.methods)
+    return PrebidApiPigeonInternal.deepEquals(lhs.eventType, rhs.eventType) && PrebidApiPigeonInternal.deepEquals(lhs.methods, rhs.methods) && PrebidApiPigeonInternal.deepEquals(lhs.ext, rhs.ext)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("NativeEventTrackerConfig")
     PrebidApiPigeonInternal.deepHash(value: eventType, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: methods, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: ext, hasher: &hasher)
   }
 
   public var description: String {
-    return "NativeEventTrackerConfig(eventType: \(String(describing: eventType)), methods: \(String(describing: methods)))"
+    return "NativeEventTrackerConfig(eventType: \(String(describing: eventType)), methods: \(String(describing: methods)), ext: \(String(describing: ext)))"
   }
 }
 
@@ -753,77 +771,122 @@ struct NativeAdDataAssetData: Hashable, CustomStringConvertible {
   }
 }
 
-/// External user ID for third-party identity modules (UID2, SharedID, etc.).
+/// One `uids` entry of an [ExternalUserIdData].
 ///
 /// Generated class from Pigeon that represents data sent in messages.
-struct ExternalUserIdData: Hashable, CustomStringConvertible {
-  /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
-  var inserter: String? = nil
-  /// OpenRTB 2.6 EID `matcher` (who matched the ID).
-  var matcher: String? = nil
-  /// OpenRTB 2.6 EID `mm` (match method).
-  var mm: Int64? = nil
-  /// ID source (e.g., "uidapi.com", "sharedid.org").
-  var source: String
+struct UserUniqueIdData: Hashable, CustomStringConvertible {
   /// The user ID value.
-  var identifier: String
+  var id: String
   /// ID type per OpenRTB: 1=device, 2=person, 3=user, etc.
-  var atype: Int64? = nil
-  /// Optional extra data.
+  var atype: Int64
+  /// Optional vendor-specific extensions.
   var ext: [String?: Any?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> ExternalUserIdData? {
-    let inserter: String? = nilOrValue(pigeonVar_list[0])
-    let matcher: String? = nilOrValue(pigeonVar_list[1])
-    let mm: Int64? = nilOrValue(pigeonVar_list[2])
-    let source = pigeonVar_list[3] as! String
-    let identifier = pigeonVar_list[4] as! String
-    let atype: Int64? = nilOrValue(pigeonVar_list[5])
-    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[6])
+  static func fromList(_ pigeonVar_list: [Any?]) -> UserUniqueIdData? {
+    let id = pigeonVar_list[0] as! String
+    let atype = pigeonVar_list[1] as! Int64
+    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[2])
 
-    return ExternalUserIdData(
-      inserter: inserter,
-      matcher: matcher,
-      mm: mm,
-      source: source,
-      identifier: identifier,
+    return UserUniqueIdData(
+      id: id,
       atype: atype,
       ext: ext
     )
   }
   func toList() -> [Any?] {
     return [
+      id,
+      atype,
+      ext,
+    ]
+  }
+  static func == (lhs: UserUniqueIdData, rhs: UserUniqueIdData) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return PrebidApiPigeonInternal.deepEquals(lhs.id, rhs.id) && PrebidApiPigeonInternal.deepEquals(lhs.atype, rhs.atype) && PrebidApiPigeonInternal.deepEquals(lhs.ext, rhs.ext)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("UserUniqueIdData")
+    PrebidApiPigeonInternal.deepHash(value: id, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: atype, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: ext, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "UserUniqueIdData(id: \(String(describing: id)), atype: \(String(describing: atype)), ext: \(String(describing: ext)))"
+  }
+}
+
+/// External user ID for third-party identity modules (UID2, SharedID, etc.):
+/// one `user.eids` entry.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct ExternalUserIdData: Hashable, CustomStringConvertible {
+  /// ID source (e.g., "uidapi.com", "sharedid.org").
+  var source: String
+  /// The IDs from this source.
+  var uids: [UserUniqueIdData?]
+  /// The eid-level `ext`.
+  var ext: [String?: Any?]? = nil
+  /// OpenRTB 2.6 EID `inserter` (who inserted the ID).
+  var inserter: String? = nil
+  /// OpenRTB 2.6 EID `matcher` (who matched the ID).
+  var matcher: String? = nil
+  /// OpenRTB 2.6 EID `mm` (match method).
+  var mm: Int64? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> ExternalUserIdData? {
+    let source = pigeonVar_list[0] as! String
+    let uids = pigeonVar_list[1] as! [UserUniqueIdData?]
+    let ext: [String?: Any?]? = nilOrValue(pigeonVar_list[2])
+    let inserter: String? = nilOrValue(pigeonVar_list[3])
+    let matcher: String? = nilOrValue(pigeonVar_list[4])
+    let mm: Int64? = nilOrValue(pigeonVar_list[5])
+
+    return ExternalUserIdData(
+      source: source,
+      uids: uids,
+      ext: ext,
+      inserter: inserter,
+      matcher: matcher,
+      mm: mm
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      source,
+      uids,
+      ext,
       inserter,
       matcher,
       mm,
-      source,
-      identifier,
-      atype,
-      ext,
     ]
   }
   static func == (lhs: ExternalUserIdData, rhs: ExternalUserIdData) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrebidApiPigeonInternal.deepEquals(lhs.inserter, rhs.inserter) && PrebidApiPigeonInternal.deepEquals(lhs.matcher, rhs.matcher) && PrebidApiPigeonInternal.deepEquals(lhs.mm, rhs.mm) && PrebidApiPigeonInternal.deepEquals(lhs.source, rhs.source) && PrebidApiPigeonInternal.deepEquals(lhs.identifier, rhs.identifier) && PrebidApiPigeonInternal.deepEquals(lhs.atype, rhs.atype) && PrebidApiPigeonInternal.deepEquals(lhs.ext, rhs.ext)
+    return PrebidApiPigeonInternal.deepEquals(lhs.source, rhs.source) && PrebidApiPigeonInternal.deepEquals(lhs.uids, rhs.uids) && PrebidApiPigeonInternal.deepEquals(lhs.ext, rhs.ext) && PrebidApiPigeonInternal.deepEquals(lhs.inserter, rhs.inserter) && PrebidApiPigeonInternal.deepEquals(lhs.matcher, rhs.matcher) && PrebidApiPigeonInternal.deepEquals(lhs.mm, rhs.mm)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("ExternalUserIdData")
+    PrebidApiPigeonInternal.deepHash(value: source, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: uids, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: ext, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: inserter, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: matcher, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: mm, hasher: &hasher)
-    PrebidApiPigeonInternal.deepHash(value: source, hasher: &hasher)
-    PrebidApiPigeonInternal.deepHash(value: identifier, hasher: &hasher)
-    PrebidApiPigeonInternal.deepHash(value: atype, hasher: &hasher)
-    PrebidApiPigeonInternal.deepHash(value: ext, hasher: &hasher)
   }
 
   public var description: String {
-    return "ExternalUserIdData(inserter: \(String(describing: inserter)), matcher: \(String(describing: matcher)), mm: \(String(describing: mm)), source: \(String(describing: source)), identifier: \(String(describing: identifier)), atype: \(String(describing: atype)), ext: \(String(describing: ext)))"
+    return "ExternalUserIdData(source: \(String(describing: source)), uids: \(String(describing: uids)), ext: \(String(describing: ext)), inserter: \(String(describing: inserter)), matcher: \(String(describing: matcher)), mm: \(String(describing: mm)))"
   }
 }
 
@@ -1319,16 +1382,18 @@ private class PrebidApiPigeonCodecReader: FlutterStandardReader {
     case 137:
       return NativeAdDataAssetData.fromList(self.readValue() as! [Any?])
     case 138:
-      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
+      return UserUniqueIdData.fromList(self.readValue() as! [Any?])
     case 139:
-      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
+      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
     case 140:
-      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
+      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
     case 141:
-      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
     case 142:
-      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
     case 143:
+      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+    case 144:
       return InstreamVideoAdRequestConfig.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1365,23 +1430,26 @@ private class PrebidApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? NativeAdDataAssetData {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? ExternalUserIdData {
+    } else if let value = value as? UserUniqueIdData {
       super.writeByte(138)
       super.writeValue(value.toList())
-    } else if let value = value as? VideoParametersConfig {
+    } else if let value = value as? ExternalUserIdData {
       super.writeByte(139)
       super.writeValue(value.toList())
-    } else if let value = value as? FullscreenControlsConfig {
+    } else if let value = value as? VideoParametersConfig {
       super.writeByte(140)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatAdRequestConfig {
+    } else if let value = value as? FullscreenControlsConfig {
       super.writeByte(141)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatBidResult {
+    } else if let value = value as? MultiformatAdRequestConfig {
       super.writeByte(142)
       super.writeValue(value.toList())
-    } else if let value = value as? InstreamVideoAdRequestConfig {
+    } else if let value = value as? MultiformatBidResult {
       super.writeByte(143)
+      super.writeValue(value.toList())
+    } else if let value = value as? InstreamVideoAdRequestConfig {
+      super.writeByte(144)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

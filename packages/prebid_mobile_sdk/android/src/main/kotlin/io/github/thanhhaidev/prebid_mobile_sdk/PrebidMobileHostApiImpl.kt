@@ -3,6 +3,7 @@ package io.github.thanhhaidev.prebid_mobile_sdk
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import org.json.JSONObject
 import org.prebid.mobile.EidsPlacement
 import org.prebid.mobile.ExternalUserId
 import org.prebid.mobile.Host
@@ -214,15 +215,8 @@ internal class PrebidMobileHostApiImpl(
         TargetingParams.setSendSharedId(send)
     }
 
-    override fun getSharedId(): ExternalUserIdData? {
-        val id = TargetingParams.getSharedId() ?: return null
-        val uid = id.uniqueIds.firstOrNull() ?: return null
-        return ExternalUserIdData(
-            source = id.source,
-            identifier = uid.id,
-            atype = uid.atype.toLong(),
-        )
-    }
+    override fun getSharedId(): ExternalUserIdData? =
+        TargetingParams.getSharedId()?.toData()
 
     override fun resetSharedId() {
         TargetingParams.resetSharedId()
@@ -231,13 +225,13 @@ internal class PrebidMobileHostApiImpl(
     // External User IDs
     override fun setExternalUserIds(userIds: List<ExternalUserIdData>) {
         val ids = userIds.map { data ->
-            val uniqueId = ExternalUserId.UniqueId(data.identifier, data.atype?.toInt() ?: 0)
-            data.ext?.let { ext ->
-                val extMap = HashMap<String, Any>()
-                ext.forEach { (k, v) -> if (k != null && v != null) extMap[k] = v }
-                uniqueId.setExt(extMap)
+            val uniqueIds = data.uids.filterNotNull().map { uid ->
+                ExternalUserId.UniqueId(uid.id, uid.atype.toInt()).apply {
+                    uid.ext?.stringKeys()?.let(::setExt)
+                }
             }
-            ExternalUserId(data.source, listOf(uniqueId)).apply {
+            ExternalUserId(data.source, uniqueIds).apply {
+                data.ext?.stringKeys()?.let(::setExt)
                 setInserter(data.inserter)
                 setMatcher(data.matcher)
                 setMm(data.mm?.toInt())
@@ -246,23 +240,27 @@ internal class PrebidMobileHostApiImpl(
         TargetingParams.setExternalUserIds(ArrayList(ids))
     }
 
-    override fun getExternalUserIds(): List<ExternalUserIdData> {
-        val ids = TargetingParams.getExternalUserIds() ?: return emptyList()
-        return ids.flatMap { uid ->
-            val source = uid.source
-            uid.uniqueIds.map { uniqueId ->
-                ExternalUserIdData(
-                    source = source,
-                    identifier = uniqueId.id,
-                    atype = uniqueId.atype.toLong(),
-                    ext = uniqueId.json?.optJSONObject("ext")?.toMap(),
-                    inserter = uid.inserter,
-                    matcher = uid.matcher,
-                    mm = uid.mm?.toLong(),
-                )
-            }
-        }
-    }
+    override fun getExternalUserIds(): List<ExternalUserIdData> =
+        TargetingParams.getExternalUserIds().orEmpty().map { it.toData() }
+
+    private fun ExternalUserId.toData() = ExternalUserIdData(
+        source = source,
+        uids = uniqueIds.map { uid ->
+            UserUniqueIdData(
+                id = uid.id,
+                atype = uid.atype.toLong(),
+                ext = uid.json?.optJSONObject("ext")?.toMap(),
+            )
+        },
+        ext = ext?.let { JSONObject(it).toMap() },
+        inserter = inserter,
+        matcher = matcher,
+        mm = mm?.toLong(),
+    )
+
+    /** A Pigeon map without its null keys and values, as the Prebid setters want. */
+    private fun Map<String?, Any?>.stringKeys(): Map<String, Any> =
+        entries.mapNotNull { (k, v) -> if (k != null && v != null) k to v else null }.toMap()
 
     override fun clearExternalUserIds() {
         TargetingParams.setExternalUserIds(null)

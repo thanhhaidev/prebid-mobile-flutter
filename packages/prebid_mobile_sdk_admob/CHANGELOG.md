@@ -16,8 +16,8 @@ AdMob adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
   AdMob's impression events.
 - Banners that resize to the rendered creative and can load on demand.
 - Rendering controls and video signals for interstitial and rewarded ads.
-- Native ads rendered in AdMob's native ad view, with configurable assets and
-  context.
+- Native ads rendered in AdMob's native ad view, with configurable assets
+  (including image MIME types and `ext` fields) and context.
 - Ad position and per-impression OpenRTB configuration, including the GPID.
 - Prebid banner auto-refresh (`refreshIntervalSeconds`, off by default on both
   platforms), adaptive banners (`adaptive`) and extra Prebid request sizes

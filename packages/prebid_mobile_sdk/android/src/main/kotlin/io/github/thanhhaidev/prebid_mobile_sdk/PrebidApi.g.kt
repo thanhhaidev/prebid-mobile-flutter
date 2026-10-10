@@ -364,7 +364,11 @@ data class NativeAssetConfig (
   val dataType: Long? = null,
   val dataLength: Long? = null,
   /** Image MIME types the app accepts (image assets only). */
-  val imageMimes: List<String?>? = null
+  val imageMimes: List<String?>? = null,
+  /** JSON object for the `ext` of the title, img or data object. */
+  val ext: String? = null,
+  /** JSON object for the asset's own `ext` (Android only). */
+  val assetExt: String? = null
 )
  {
   companion object {
@@ -380,7 +384,9 @@ data class NativeAssetConfig (
       val dataType = pigeonVar_list[8] as Long?
       val dataLength = pigeonVar_list[9] as Long?
       val imageMimes = pigeonVar_list[10] as List<String?>?
-      return NativeAssetConfig(assetType, required_, titleLength, imageType, imageWidth, imageHeight, imageWidthMin, imageHeightMin, dataType, dataLength, imageMimes)
+      val ext = pigeonVar_list[11] as String?
+      val assetExt = pigeonVar_list[12] as String?
+      return NativeAssetConfig(assetType, required_, titleLength, imageType, imageWidth, imageHeight, imageWidthMin, imageHeightMin, dataType, dataLength, imageMimes, ext, assetExt)
     }
   }
   fun toList(): List<Any?> {
@@ -396,6 +402,8 @@ data class NativeAssetConfig (
       dataType,
       dataLength,
       imageMimes,
+      ext,
+      assetExt,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -406,7 +414,7 @@ data class NativeAssetConfig (
       return true
     }
     val other = other as NativeAssetConfig
-    return PrebidApiPigeonUtils.deepEquals(this.assetType, other.assetType) && PrebidApiPigeonUtils.deepEquals(this.required_, other.required_) && PrebidApiPigeonUtils.deepEquals(this.titleLength, other.titleLength) && PrebidApiPigeonUtils.deepEquals(this.imageType, other.imageType) && PrebidApiPigeonUtils.deepEquals(this.imageWidth, other.imageWidth) && PrebidApiPigeonUtils.deepEquals(this.imageHeight, other.imageHeight) && PrebidApiPigeonUtils.deepEquals(this.imageWidthMin, other.imageWidthMin) && PrebidApiPigeonUtils.deepEquals(this.imageHeightMin, other.imageHeightMin) && PrebidApiPigeonUtils.deepEquals(this.dataType, other.dataType) && PrebidApiPigeonUtils.deepEquals(this.dataLength, other.dataLength) && PrebidApiPigeonUtils.deepEquals(this.imageMimes, other.imageMimes)
+    return PrebidApiPigeonUtils.deepEquals(this.assetType, other.assetType) && PrebidApiPigeonUtils.deepEquals(this.required_, other.required_) && PrebidApiPigeonUtils.deepEquals(this.titleLength, other.titleLength) && PrebidApiPigeonUtils.deepEquals(this.imageType, other.imageType) && PrebidApiPigeonUtils.deepEquals(this.imageWidth, other.imageWidth) && PrebidApiPigeonUtils.deepEquals(this.imageHeight, other.imageHeight) && PrebidApiPigeonUtils.deepEquals(this.imageWidthMin, other.imageWidthMin) && PrebidApiPigeonUtils.deepEquals(this.imageHeightMin, other.imageHeightMin) && PrebidApiPigeonUtils.deepEquals(this.dataType, other.dataType) && PrebidApiPigeonUtils.deepEquals(this.dataLength, other.dataLength) && PrebidApiPigeonUtils.deepEquals(this.imageMimes, other.imageMimes) && PrebidApiPigeonUtils.deepEquals(this.ext, other.ext) && PrebidApiPigeonUtils.deepEquals(this.assetExt, other.assetExt)
   }
 
   override fun hashCode(): Int {
@@ -422,10 +430,12 @@ data class NativeAssetConfig (
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.dataType)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.dataLength)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.imageMimes)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.ext)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.assetExt)
     return result
   }
   override fun toString(): String {
-    return "NativeAssetConfig(assetType=$assetType, required_=$required_, titleLength=$titleLength, imageType=$imageType, imageWidth=$imageWidth, imageHeight=$imageHeight, imageWidthMin=$imageWidthMin, imageHeightMin=$imageHeightMin, dataType=$dataType, dataLength=$dataLength, imageMimes=$imageMimes)"
+    return "NativeAssetConfig(assetType=$assetType, required_=$required_, titleLength=$titleLength, imageType=$imageType, imageWidth=$imageWidth, imageHeight=$imageHeight, imageWidthMin=$imageWidthMin, imageHeightMin=$imageHeightMin, dataType=$dataType, dataLength=$dataLength, imageMimes=$imageMimes, ext=$ext, assetExt=$assetExt)"
   }
 }
 
@@ -436,20 +446,24 @@ data class NativeAssetConfig (
  */
 data class NativeEventTrackerConfig (
   val eventType: Long,
-  val methods: List<Long>
+  val methods: List<Long>,
+  /** JSON object for the tracker's `ext` (Android only). */
+  val ext: String? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): NativeEventTrackerConfig {
       val eventType = pigeonVar_list[0] as Long
       val methods = pigeonVar_list[1] as List<Long>
-      return NativeEventTrackerConfig(eventType, methods)
+      val ext = pigeonVar_list[2] as String?
+      return NativeEventTrackerConfig(eventType, methods, ext)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       eventType,
       methods,
+      ext,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -460,17 +474,18 @@ data class NativeEventTrackerConfig (
       return true
     }
     val other = other as NativeEventTrackerConfig
-    return PrebidApiPigeonUtils.deepEquals(this.eventType, other.eventType) && PrebidApiPigeonUtils.deepEquals(this.methods, other.methods)
+    return PrebidApiPigeonUtils.deepEquals(this.eventType, other.eventType) && PrebidApiPigeonUtils.deepEquals(this.methods, other.methods) && PrebidApiPigeonUtils.deepEquals(this.ext, other.ext)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.eventType)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.methods)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.ext)
     return result
   }
   override fun toString(): String {
-    return "NativeEventTrackerConfig(eventType=$eventType, methods=$methods)"
+    return "NativeEventTrackerConfig(eventType=$eventType, methods=$methods, ext=$ext)"
   }
 }
 
@@ -752,46 +767,30 @@ data class NativeAdDataAssetData (
 }
 
 /**
- * External user ID for third-party identity modules (UID2, SharedID, etc.).
+ * One `uids` entry of an [ExternalUserIdData].
  *
  * Generated class from Pigeon that represents data sent in messages.
  */
-data class ExternalUserIdData (
-  /** OpenRTB 2.6 EID `inserter` (who inserted the ID). */
-  val inserter: String? = null,
-  /** OpenRTB 2.6 EID `matcher` (who matched the ID). */
-  val matcher: String? = null,
-  /** OpenRTB 2.6 EID `mm` (match method). */
-  val mm: Long? = null,
-  /** ID source (e.g., "uidapi.com", "sharedid.org"). */
-  val source: String,
+data class UserUniqueIdData (
   /** The user ID value. */
-  val identifier: String,
+  val id: String,
   /** ID type per OpenRTB: 1=device, 2=person, 3=user, etc. */
-  val atype: Long? = null,
-  /** Optional extra data. */
+  val atype: Long,
+  /** Optional vendor-specific extensions. */
   val ext: Map<String?, Any?>? = null
 )
  {
   companion object {
-    fun fromList(pigeonVar_list: List<Any?>): ExternalUserIdData {
-      val inserter = pigeonVar_list[0] as String?
-      val matcher = pigeonVar_list[1] as String?
-      val mm = pigeonVar_list[2] as Long?
-      val source = pigeonVar_list[3] as String
-      val identifier = pigeonVar_list[4] as String
-      val atype = pigeonVar_list[5] as Long?
-      val ext = pigeonVar_list[6] as Map<String?, Any?>?
-      return ExternalUserIdData(inserter, matcher, mm, source, identifier, atype, ext)
+    fun fromList(pigeonVar_list: List<Any?>): UserUniqueIdData {
+      val id = pigeonVar_list[0] as String
+      val atype = pigeonVar_list[1] as Long
+      val ext = pigeonVar_list[2] as Map<String?, Any?>?
+      return UserUniqueIdData(id, atype, ext)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
-      inserter,
-      matcher,
-      mm,
-      source,
-      identifier,
+      id,
       atype,
       ext,
     )
@@ -803,23 +802,87 @@ data class ExternalUserIdData (
     if (this === other) {
       return true
     }
-    val other = other as ExternalUserIdData
-    return PrebidApiPigeonUtils.deepEquals(this.inserter, other.inserter) && PrebidApiPigeonUtils.deepEquals(this.matcher, other.matcher) && PrebidApiPigeonUtils.deepEquals(this.mm, other.mm) && PrebidApiPigeonUtils.deepEquals(this.source, other.source) && PrebidApiPigeonUtils.deepEquals(this.identifier, other.identifier) && PrebidApiPigeonUtils.deepEquals(this.atype, other.atype) && PrebidApiPigeonUtils.deepEquals(this.ext, other.ext)
+    val other = other as UserUniqueIdData
+    return PrebidApiPigeonUtils.deepEquals(this.id, other.id) && PrebidApiPigeonUtils.deepEquals(this.atype, other.atype) && PrebidApiPigeonUtils.deepEquals(this.ext, other.ext)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
-    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.inserter)
-    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.matcher)
-    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.mm)
-    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.source)
-    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.identifier)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.id)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.atype)
     result = 31 * result + PrebidApiPigeonUtils.deepHash(this.ext)
     return result
   }
   override fun toString(): String {
-    return "ExternalUserIdData(inserter=$inserter, matcher=$matcher, mm=$mm, source=$source, identifier=$identifier, atype=$atype, ext=$ext)"
+    return "UserUniqueIdData(id=$id, atype=$atype, ext=$ext)"
+  }
+}
+
+/**
+ * External user ID for third-party identity modules (UID2, SharedID, etc.):
+ * one `user.eids` entry.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class ExternalUserIdData (
+  /** ID source (e.g., "uidapi.com", "sharedid.org"). */
+  val source: String,
+  /** The IDs from this source. */
+  val uids: List<UserUniqueIdData?>,
+  /** The eid-level `ext`. */
+  val ext: Map<String?, Any?>? = null,
+  /** OpenRTB 2.6 EID `inserter` (who inserted the ID). */
+  val inserter: String? = null,
+  /** OpenRTB 2.6 EID `matcher` (who matched the ID). */
+  val matcher: String? = null,
+  /** OpenRTB 2.6 EID `mm` (match method). */
+  val mm: Long? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): ExternalUserIdData {
+      val source = pigeonVar_list[0] as String
+      val uids = pigeonVar_list[1] as List<UserUniqueIdData?>
+      val ext = pigeonVar_list[2] as Map<String?, Any?>?
+      val inserter = pigeonVar_list[3] as String?
+      val matcher = pigeonVar_list[4] as String?
+      val mm = pigeonVar_list[5] as Long?
+      return ExternalUserIdData(source, uids, ext, inserter, matcher, mm)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      source,
+      uids,
+      ext,
+      inserter,
+      matcher,
+      mm,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as ExternalUserIdData
+    return PrebidApiPigeonUtils.deepEquals(this.source, other.source) && PrebidApiPigeonUtils.deepEquals(this.uids, other.uids) && PrebidApiPigeonUtils.deepEquals(this.ext, other.ext) && PrebidApiPigeonUtils.deepEquals(this.inserter, other.inserter) && PrebidApiPigeonUtils.deepEquals(this.matcher, other.matcher) && PrebidApiPigeonUtils.deepEquals(this.mm, other.mm)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.source)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.uids)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.ext)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.inserter)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.matcher)
+    result = 31 * result + PrebidApiPigeonUtils.deepHash(this.mm)
+    return result
+  }
+  override fun toString(): String {
+    return "ExternalUserIdData(source=$source, uids=$uids, ext=$ext, inserter=$inserter, matcher=$matcher, mm=$mm)"
   }
 }
 
@@ -1320,30 +1383,35 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
       }
       138.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          ExternalUserIdData.fromList(it)
+          UserUniqueIdData.fromList(it)
         }
       }
       139.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          VideoParametersConfig.fromList(it)
+          ExternalUserIdData.fromList(it)
         }
       }
       140.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          FullscreenControlsConfig.fromList(it)
+          VideoParametersConfig.fromList(it)
         }
       }
       141.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatAdRequestConfig.fromList(it)
+          FullscreenControlsConfig.fromList(it)
         }
       }
       142.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          MultiformatBidResult.fromList(it)
+          MultiformatAdRequestConfig.fromList(it)
         }
       }
       143.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MultiformatBidResult.fromList(it)
+        }
+      }
+      144.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           InstreamVideoAdRequestConfig.fromList(it)
         }
@@ -1389,28 +1457,32 @@ private open class PrebidApiPigeonCodec : StandardMessageCodec() {
         stream.write(137)
         writeValue(stream, value.toList())
       }
-      is ExternalUserIdData -> {
+      is UserUniqueIdData -> {
         stream.write(138)
         writeValue(stream, value.toList())
       }
-      is VideoParametersConfig -> {
+      is ExternalUserIdData -> {
         stream.write(139)
         writeValue(stream, value.toList())
       }
-      is FullscreenControlsConfig -> {
+      is VideoParametersConfig -> {
         stream.write(140)
         writeValue(stream, value.toList())
       }
-      is MultiformatAdRequestConfig -> {
+      is FullscreenControlsConfig -> {
         stream.write(141)
         writeValue(stream, value.toList())
       }
-      is MultiformatBidResult -> {
+      is MultiformatAdRequestConfig -> {
         stream.write(142)
         writeValue(stream, value.toList())
       }
-      is InstreamVideoAdRequestConfig -> {
+      is MultiformatBidResult -> {
         stream.write(143)
+        writeValue(stream, value.toList())
+      }
+      is InstreamVideoAdRequestConfig -> {
+        stream.write(144)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

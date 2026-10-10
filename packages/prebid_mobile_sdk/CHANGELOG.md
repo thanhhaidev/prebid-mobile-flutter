@@ -27,7 +27,8 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
 - First-party data: user and app keywords and data, bidder access control,
   global and per-impression OpenRTB configuration, app information and
   location.
-- Identity: external user IDs (OpenRTB 2.6 EIDs) and Prebid SharedID.
+- Identity: external user IDs (OpenRTB 2.6 EIDs, several IDs per source,
+  with entry- and ID-level `ext`) and Prebid SharedID.
 - SDK configuration: timeouts, custom headers, Prebid Server targeting flags,
   stored responses, status check, log level, and a bid request and response
   listener for debugging.
@@ -42,7 +43,7 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   impression and click tracking, and Original API native wins shown from
   their cache id (`PrebidNativeAd.loadFromCacheId`).
 - Native request options: sequence, asset and DCO URL support, privacy,
-  `ext`, and image MIME types.
+  `ext`, image MIME types, and `ext` fields on assets and event trackers.
 - Per-ad-unit global OpenRTB configuration for banner, interstitial,
   rewarded, native and in-stream video.
 - Rewarded ad formats, video parameters and minimum size (iOS), and

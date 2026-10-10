@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'ad_enums.dart';
 import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/pigeon_conversions.dart';
 
 /// Receives each Prebid Server bid request and response (JSON strings)
 /// while registered with [PrebidMobile.setEventListener].
@@ -309,12 +310,7 @@ class PrebidMobile {
   /// storage access is allowed, until [resetSharedId].
   static Future<ExternalUserId?> getSharedId() async {
     final d = await api.getSharedId();
-    if (d == null) return null;
-    return ExternalUserId(
-      source: d.source,
-      identifier: d.identifier,
-      atype: d.atype,
-    );
+    return d == null ? null : externalUserIdFromData(d);
   }
 
   /// Clears the stored SharedID; the next one is freshly generated.
@@ -337,39 +333,17 @@ class PrebidMobile {
   ///   ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
   /// ]);
   /// ```
+  ///
+  /// Each [ExternalUserId] becomes its own `user.eids` entry: put several IDs
+  /// from one source in one [ExternalUserId.withUids].
   static Future<void> setExternalUserIds(List<ExternalUserId> userIds) async {
-    final data = userIds
-        .map(
-          (u) => ExternalUserIdData(
-            source: u.source,
-            identifier: u.identifier,
-            atype: u.atype,
-            ext: u.ext?.map(MapEntry.new),
-            inserter: u.inserter,
-            matcher: u.matcher,
-            mm: u.mm,
-          ),
-        )
-        .toList();
-    await api.setExternalUserIds(data);
+    await api.setExternalUserIds(userIds.map(externalUserIdToData).toList());
   }
 
   /// Get all currently set external user IDs.
   static Future<List<ExternalUserId>> getExternalUserIds() async {
     final data = await api.getExternalUserIds();
-    return data
-        .map(
-          (d) => ExternalUserId(
-            source: d.source,
-            identifier: d.identifier,
-            atype: d.atype,
-            ext: d.ext?.map((k, v) => MapEntry(k ?? '', v)),
-            inserter: d.inserter,
-            matcher: d.matcher,
-            mm: d.mm,
-          ),
-        )
-        .toList();
+    return data.map(externalUserIdFromData).nonNulls.toList();
   }
 
   /// Clear all external user IDs.

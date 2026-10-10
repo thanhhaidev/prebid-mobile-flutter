@@ -79,4 +79,6 @@ dependencies {
     implementation("org.prebid:prebid-mobile-sdk:3.4.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
+    // The real org.json: android.jar only has stubs that throw in unit tests.
+    testImplementation("org.json:json:20240303")
 }

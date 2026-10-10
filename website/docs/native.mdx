@@ -79,7 +79,15 @@ PrebidNativeAd(
 | `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
 | `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy`, `ext` | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`. |
 
-`NativeAsset.image` also takes `mimes`, the image types your layout can show.
+`NativeAsset.image` also takes `mimes`, the image types your layout can show. Every asset takes an `ext` for its `title`, `img` or `data` object and an `assetExt` for the asset itself, and `NativeEventTracker` takes an `ext`; `assetExt` and the tracker `ext` are sent on Android only, since Prebid iOS has no field for them. The GAM, AdMob and MAX native widgets send the same fields.
+
+```dart
+NativeAsset.image(
+  imageType: NativeImageType.main,
+  mimes: ['image/jpeg', 'image/png'],
+  ext: {'aspectratios': ['1.91:1']},
+)
+```
 
 If a creative references assets by ID, call `PrebidMobile.setShouldAssignNativeAssetId(true)` so the request numbers them sequentially.
 

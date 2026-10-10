@@ -30,6 +30,36 @@ void main() {
       });
     });
 
+    test('NativeAsset / NativeEventTracker toMap carry ext as JSON', () {
+      expect(
+        const NativeAsset.image(
+          mimes: ['image/png'],
+          ext: {'k': 1},
+          assetExt: {'a': true},
+        ).toMap(),
+        containsPair('ext', '{"k":1}'),
+      );
+      expect(
+        const NativeAsset.data(
+          dataType: NativeDataType.desc,
+          assetExt: {'a': true},
+        ).toMap(),
+        allOf(containsPair('assetExt', '{"a":true}'), isNot(contains('ext'))),
+      );
+      expect(
+        const NativeAsset.image(mimes: ['image/png']).toMap(),
+        containsPair('imageMimes', ['image/png']),
+      );
+      expect(
+        const NativeEventTracker(
+          eventType: NativeEventType.impression,
+          methods: [NativeEventTrackingMethod.image],
+          ext: {'t': 'x'},
+        ).toMap(),
+        containsPair('ext', '{"t":"x"}'),
+      );
+    });
+
     test('NativeEventTracker.toMap carries ids', () {
       const tracker = NativeEventTracker(
         eventType: NativeEventType.impression,

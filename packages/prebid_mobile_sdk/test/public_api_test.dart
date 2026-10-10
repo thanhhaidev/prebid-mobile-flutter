@@ -182,6 +182,23 @@ void main() {
       expect(tracker.toConfig().methods, [500]);
     });
 
+    test('NativeAsset / NativeEventTracker toConfig carry ext as JSON', () {
+      final asset = const NativeAsset.title(
+        ext: {'k': 1},
+        assetExt: {'a': 'b'},
+      ).toConfig();
+      expect(asset.ext, '{"k":1}');
+      expect(asset.assetExt, '{"a":"b"}');
+      expect(const NativeAsset.title().toConfig().ext, isNull);
+
+      const tracker = NativeEventTracker(
+        eventType: NativeEventType.impression,
+        methods: [NativeEventTrackingMethod.image],
+        ext: {'t': 1},
+      );
+      expect(tracker.toConfig().ext, '{"t":1}');
+    });
+
     test('stringMap drops null keys and values', () {
       expect(stringMap(null), isNull);
       expect(stringMap({'a': '1', 'b': null, null: '2'}), {'a': '1'});
@@ -328,20 +345,22 @@ void main() {
     });
 
     test('external user ids carry ext both ways', () async {
-      await PrebidMobile.setExternalUserIds(const [
-        ExternalUserId(source: 's', identifier: 'i', ext: {'k': 1}),
+      await PrebidMobile.setExternalUserIds([
+        ExternalUserId(source: 's', identifier: 'i', atype: 1, ext: {'k': 1}),
       ]);
       final sent =
           verify(api.setExternalUserIds(captureAny)).captured.single
               as List<ExternalUserIdData>;
       expect(sent.single.ext, {'k': 1});
+      expect(sent.single.uids.single!.ext, isNull);
 
       when(api.getExternalUserIds()).thenAnswer(
         (_) async => [
           ExternalUserIdData(
             source: 's',
-            identifier: 'i',
-            atype: 2,
+            uids: [
+              UserUniqueIdData(id: 'i', atype: 2, ext: {'u': 2}),
+            ],
             ext: {'k': 1, null: 'x'},
           ),
         ],
@@ -351,6 +370,40 @@ void main() {
       expect(ids.single.identifier, 'i');
       expect(ids.single.atype, 2);
       expect(ids.single.ext, {'k': 1, '': 'x'});
+      expect(ids.single.uids.single.ext, {'u': 2});
+    });
+
+    test('several ids from one source make one eid entry', () async {
+      await PrebidMobile.setExternalUserIds([
+        ExternalUserId.withUids(
+          source: 'adserver.org',
+          uids: const [
+            UserUniqueId(id: 'a', atype: 1, ext: {'rtiPartner': 'TDID'}),
+            UserUniqueId(id: 'b', atype: 3),
+          ],
+          ext: const {'stype': 'ppuid'},
+          mm: 3,
+        ),
+      ]);
+      final sent =
+          verify(api.setExternalUserIds(captureAny)).captured.single
+              as List<ExternalUserIdData>;
+      final eid = sent.single;
+      expect(eid.source, 'adserver.org');
+      expect(eid.ext, {'stype': 'ppuid'});
+      expect(eid.mm, 3);
+      expect(eid.uids.map((u) => (u!.id, u.atype)), [('a', 1), ('b', 3)]);
+      expect(eid.uids.first!.ext, {'rtiPartner': 'TDID'});
+      expect(eid.uids.last!.ext, isNull);
+    });
+
+    test('an eid entry without uids is dropped', () async {
+      when(api.getExternalUserIds()).thenAnswer(
+        (_) async => [
+          ExternalUserIdData(source: 's', uids: [null]),
+        ],
+      );
+      expect(await PrebidMobile.getExternalUserIds(), isEmpty);
     });
   });
 

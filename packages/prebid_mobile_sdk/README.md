@@ -561,15 +561,23 @@ await PrebidMobile.setExternalUserIds([
   ExternalUserId(source: 'uidapi.com', identifier: 'uid2-abc-123', atype: 3),
   ExternalUserId(source: 'sharedid.org', identifier: 'shared-xyz', atype: 1),
   ExternalUserId(source: 'liveramp.com', identifier: 'lr-def-456', atype: 3),
+  // Several IDs from one source share one `user.eids` entry:
+  ExternalUserId.withUids(
+    source: 'adserver.org',
+    uids: [
+      UserUniqueId(id: 'tdid-1', atype: 1, ext: {'rtiPartner': 'TDID'}),
+      UserUniqueId(id: 'tdid-2', atype: 3),
+    ],
+  ),
 ]);
 ```
 
 | Property | Type | Description |
 |---|---|---|
 | `source` | `String` | Identity module source (e.g., `"uidapi.com"`). |
-| `identifier` | `String` | The user ID value. |
-| `atype` | `int?` | ID type: `1` = Device, `2` = Person, `3` = User. |
-| `ext` | `Map<String, dynamic>?` | Optional extra data. |
+| `uids` | `List<UserUniqueId>` | The IDs from `source` (`id`, `atype`: `1` = Device, `2` = Person, `3` = User, and a per-ID `ext`). The default constructor takes one as `identifier` and `atype`. |
+| `ext` | `Map<String, Object?>?` | The entry's `ext`. |
+| `inserter`, `matcher`, `mm` | `String?`, `String?`, `int?` | OpenRTB 2.6 EID fields. |
 
 **Supported modules:** UID2, SharedID, LiveRamp, Criteo, NetID, and any OpenRTB-compliant source.
 

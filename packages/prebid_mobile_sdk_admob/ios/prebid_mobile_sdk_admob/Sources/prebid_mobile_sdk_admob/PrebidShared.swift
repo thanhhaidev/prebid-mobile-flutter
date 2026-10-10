@@ -108,9 +108,13 @@ func nativeAssetsFrom(_ raw: Any?) -> [NativeAsset]? {
     guard let list = raw as? [[String: Any]] else { return nil }
     return list.compactMap { m -> NativeAsset? in
         let required = m["required"] as? Bool ?? false
+        // Prebid iOS has no asset-level ext: `assetExt` is Android only.
+        let ext = jsonValue(m["ext"])
         switch m["assetType"] as? String {
         case "title":
-            return NativeAssetTitle(length: intValue(m["titleLength"]) ?? 90, required: required)
+            let title = NativeAssetTitle(length: intValue(m["titleLength"]) ?? 90, required: required)
+            title.ext = ext
+            return title
         case "image":
             let image = NativeAssetImage(isRequired: required)
             if let t = intValue(m["imageType"]) { image.type = ImageAsset(integerLiteral: t) }
@@ -118,11 +122,14 @@ func nativeAssetsFrom(_ raw: Any?) -> [NativeAsset]? {
             if let h = intValue(m["imageHeight"]) { image.height = h }
             if let w = intValue(m["imageWidthMin"]) { image.widthMin = w }
             if let h = intValue(m["imageHeightMin"]) { image.heightMin = h }
+            if let mimes = m["imageMimes"] as? [String] { image.mimes = mimes }
+            image.ext = ext
             return image
         case "data":
             guard let t = intValue(m["dataType"]), let type = DataAsset(rawValue: t) else { return nil }
             let data = NativeAssetData(type: type, required: required)
             if let len = intValue(m["dataLength"]) { data.length = len }
+            data.ext = ext
             return data
         default:
             return nil
@@ -130,7 +137,14 @@ func nativeAssetsFrom(_ raw: Any?) -> [NativeAsset]? {
     }
 }
 
-/// Native event trackers, or nil when the widget uses the defaults.
+/// A JSON object string (`jsonEncode` in Dart) as a dictionary, or nil.
+private func jsonValue(_ raw: Any?) -> AnyObject? {
+    guard let data = (raw as? String)?.data(using: .utf8) else { return nil }
+    return (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
+}
+
+/// Native event trackers, or nil when the widget uses the defaults. Their
+/// `ext` is dropped: Prebid iOS doesn't send it.
 func nativeTrackersFrom(_ raw: Any?) -> [NativeEventTracker]? {
     guard let list = raw as? [[String: Any]] else { return nil }
     return list.compactMap { m -> NativeEventTracker? in

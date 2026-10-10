@@ -208,12 +208,7 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
 
     func getSharedId() throws -> ExternalUserIdData? {
         let id = Targeting.shared.sharedId
-        guard let uid = id.uids.first else { return nil }
-        return ExternalUserIdData(
-            source: id.source,
-            identifier: uid.uniqueId,
-            atype: uid.aType.int64Value
-        )
+        return id.uids.isEmpty ? nil : id.data
     }
 
     func resetSharedId() throws {
@@ -223,16 +218,14 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
     // External User IDs
     func setExternalUserIds(userIds: [ExternalUserIdData]) throws {
         let externalIds = userIds.map { data -> ExternalUserId in
-            // ext goes on the uid, matching the Android mapping.
-            let ext = data.ext?.reduce(into: [String: Any]()) { result, entry in
-                if let key = entry.key, let value = entry.value { result[key] = value }
+            let uids = data.uids.compactMap { $0 }.map { uid in
+                UserUniqueID(
+                    uniqueId: uid.id,
+                    aType: NSNumber(value: uid.atype),
+                    ext: uid.ext?.stringKeys
+                )
             }
-            let uid = UserUniqueID(
-                uniqueId: data.identifier,
-                aType: NSNumber(value: data.atype ?? 0),
-                ext: ext
-            )
-            let eid = ExternalUserId(source: data.source, uids: [uid])
+            let eid = ExternalUserId(source: data.source, uids: uids, ext: data.ext?.stringKeys)
             eid.inserter = data.inserter
             eid.matcher = data.matcher
             eid.mm = data.mm.map { NSNumber(value: $0) }
@@ -242,22 +235,24 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
     }
 
     func getExternalUserIds() throws -> [ExternalUserIdData] {
-        guard let ids = Targeting.shared.getExternalUserIds() else { return [] }
-        // One entry per uid (like Android), carrying the uid's ext.
-        return ids.flatMap { dict -> [ExternalUserIdData] in
+        // Prebid iOS returns the ids as their JSON dictionaries.
+        (Targeting.shared.getExternalUserIds() ?? []).compactMap { dict in
             guard let source = dict["source"] as? String,
-                  let uids = dict["uids"] as? [[String: Any]] else { return [] }
-            return uids.map { uid in
-                ExternalUserIdData(
-                    inserter: dict["inserter"] as? String,
-                    matcher: dict["matcher"] as? String,
-                    mm: (dict["mm"] as? NSNumber)?.int64Value,
-                    source: source,
-                    identifier: uid["id"] as? String ?? "",
-                    atype: (uid["atype"] as? NSNumber)?.int64Value,
-                    ext: (uid["ext"] as? [String: Any])?.reduce(into: [String?: Any?]()) { $0[$1.key] = $1.value }
-                )
-            }
+                  let uids = dict["uids"] as? [[String: Any]] else { return nil }
+            return ExternalUserIdData(
+                source: source,
+                uids: uids.map { uid in
+                    UserUniqueIdData(
+                        id: uid["id"] as? String ?? "",
+                        atype: (uid["atype"] as? NSNumber)?.int64Value ?? 0,
+                        ext: (uid["ext"] as? [String: Any])?.pigeonKeys
+                    )
+                },
+                ext: (dict["ext"] as? [String: Any])?.pigeonKeys,
+                inserter: dict["inserter"] as? String,
+                matcher: dict["matcher"] as? String,
+                mm: (dict["mm"] as? NSNumber)?.int64Value
+            )
         }
     }
 
@@ -311,4 +306,31 @@ final class BidEventForwarder: NSObject, PrebidEventDelegate {
             api.onBidResponse(request: request, response: response) { _ in }
         }
     }
+}
+
+private extension ExternalUserId {
+    var data: ExternalUserIdData {
+        ExternalUserIdData(
+            source: source,
+            uids: uids.map { UserUniqueIdData(id: $0.uniqueId, atype: $0.aType.int64Value, ext: $0.ext?.pigeonKeys) },
+            ext: ext?.pigeonKeys,
+            inserter: inserter,
+            matcher: matcher,
+            mm: mm?.int64Value
+        )
+    }
+}
+
+private extension Dictionary where Key == String?, Value == Any? {
+    /// The map without its null keys and values, as Prebid wants it.
+    var stringKeys: [String: Any] {
+        reduce(into: [:]) { result, entry in
+            if let key = entry.key, let value = entry.value { result[key] = value }
+        }
+    }
+}
+
+private extension Dictionary where Key == String, Value == Any {
+    /// The map typed as a Pigeon map.
+    var pigeonKeys: [String?: Any?] { reduce(into: [:]) { $0[$1.key] = $1.value } }
 }

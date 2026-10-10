@@ -134,6 +134,8 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
     "title" -> NativeTitleAsset().apply {
         setLength(titleLength?.toInt() ?: 90)
         isRequired = required_
+        jsonObject(this@toPrebidAsset.ext)?.let(::setTitleExt)
+        jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
     "image" -> NativeImageAsset(
         imageWidthMin?.toInt() ?: 0,
@@ -144,11 +146,15 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
         imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.imageType }
         imageMimes?.filterNotNull()?.forEach(::addMime)
         isRequired = required_
+        jsonObject(this@toPrebidAsset.ext)?.let(::setImageExt)
+        jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
     "data" -> NativeDataAsset().apply {
         dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.dataType }
         dataLength?.let { setLen(it.toInt()) }
         isRequired = required_
+        jsonObject(this@toPrebidAsset.ext)?.let(::setDataExt)
+        jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
     else -> null
 }
@@ -160,8 +166,14 @@ internal fun NativeEventTrackerConfig.toPrebidTracker(): NativeEventTracker? {
     val trackingMethods = methods.mapNotNull { id ->
         NativeEventTracker.EVENT_TRACKING_METHOD.values().firstOrNull { it.id.toLong() == id }
     }
-    return NativeEventTracker(type, ArrayList(trackingMethods))
+    return NativeEventTracker(type, ArrayList(trackingMethods)).apply {
+        jsonObject(this@toPrebidTracker.ext)?.let(::setExt)
+    }
 }
+
+/** A JSON object string from Dart as a [JSONObject], or null when invalid. */
+internal fun jsonObject(json: String?): JSONObject? =
+    json?.let { runCatching { JSONObject(it) }.getOrNull() }
 
 /**
  * The native request settings of a [NativeAdRequestConfig], applied to an
@@ -176,7 +188,7 @@ internal class NativeRequestSettings(private val config: NativeAdRequestConfig) 
         NativeAdUnit.CONTEXTSUBTYPE.values().firstOrNull { it.id.toLong() == config.contextSubType }
     private val placementType =
         NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { it.id.toLong() == config.placementType }
-    private val ext = config.ext?.let { runCatching { JSONObject(it) }.getOrNull() }
+    private val ext = jsonObject(config.ext)
 
     fun applyTo(unit: NativeAdUnit) {
         assets.forEach(unit::addAsset)

@@ -95,13 +95,21 @@ await PrebidMobile.setExternalUserIds([
     atype: 3,
     inserter: 'your-company.com',
   ),
+  // Several IDs from one source share one entry.
+  ExternalUserId.withUids(
+    source: 'adserver.org',
+    uids: [
+      UserUniqueId(id: 'tdid-1', atype: 1, ext: {'rtiPartner': 'TDID'}),
+      UserUniqueId(id: 'tdid-2', atype: 3),
+    ],
+  ),
 ]);
 
 final ids = await PrebidMobile.getExternalUserIds();
 await PrebidMobile.clearExternalUserIds();
 ```
 
-`ExternalUserId` carries `source`, `identifier`, `atype` (1 device, 2 person-based, 3 user) and the OpenRTB 2.6 `inserter`, `matcher` and `mm` fields, plus a free-form `ext`.
+Each `ExternalUserId` is one `user.eids` entry: a `source`, its `uids` and the OpenRTB 2.6 `inserter`, `matcher` and `mm` fields, plus the entry's `ext`. The default constructor makes an entry with one ID (`identifier`, `atype`: 1 device, 2 person-based, 3 user); `ExternalUserId.withUids` takes several `UserUniqueId`s, each with its own `ext`. `getExternalUserIds` returns the entries the same way.
 
 ### SharedID
 

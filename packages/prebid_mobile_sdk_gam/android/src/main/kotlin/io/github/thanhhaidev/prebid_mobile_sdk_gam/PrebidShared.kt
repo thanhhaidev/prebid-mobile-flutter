@@ -1,6 +1,7 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
 import java.util.EnumSet
+import org.json.JSONObject
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeAsset
 import org.prebid.mobile.NativeDataAsset
@@ -18,6 +19,10 @@ import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
 // prebid_mobile_sdk.
 
 private fun Map<*, *>.int(key: String): Int? = (this[key] as? Number)?.toInt()
+
+/** A JSON object string (`jsonEncode` in Dart) as a [JSONObject], or null. */
+private fun Map<*, *>.json(key: String): JSONObject? =
+    (this[key] as? String)?.let { runCatching { JSONObject(it) }.getOrNull() }
 
 /** The error messages and codes this plugin reports to Dart. */
 internal object PluginErrors {
@@ -54,6 +59,8 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
             "title" -> NativeTitleAsset().apply {
                 setLength(m.int("titleLength") ?: 90)
                 isRequired = required
+                m.json("ext")?.let(::setTitleExt)
+                m.json("assetExt")?.let(::setAssetExt)
             }
             "image" -> NativeImageAsset(
                 m.int("imageWidthMin") ?: 0,
@@ -63,13 +70,18 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
             ).apply {
                 val type = m.int("imageType")
                 imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { it.id == type }
+                (m["imageMimes"] as? List<*>)?.filterIsInstance<String>()?.forEach(::addMime)
                 isRequired = required
+                m.json("ext")?.let(::setImageExt)
+                m.json("assetExt")?.let(::setAssetExt)
             }
             "data" -> NativeDataAsset().apply {
                 val type = m.int("dataType")
                 dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { it.id == type }
                 m.int("dataLength")?.let { len = it }
                 isRequired = required
+                m.json("ext")?.let(::setDataExt)
+                m.json("assetExt")?.let(::setAssetExt)
             }
             else -> null
         }
@@ -89,6 +101,7 @@ internal fun nativeTrackersFrom(raw: Any?): List<NativeEventTracker>? {
             NativeEventTracker.EVENT_TRACKING_METHOD.values().firstOrNull { it.id == id }
         }
         runCatching { NativeEventTracker(type, ArrayList(methods)) }.getOrNull()
+            ?.apply { m.json("ext")?.let(::setExt) }
     }
 }
 

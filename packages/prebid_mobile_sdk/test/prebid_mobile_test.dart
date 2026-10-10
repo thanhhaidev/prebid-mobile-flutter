@@ -106,12 +106,12 @@ void main() {
   group('External User IDs', () {
     test('setExternalUserIds converts and calls api', () async {
       await PrebidMobile.setExternalUserIds([
-        const ExternalUserId(
+        ExternalUserId(
           source: 'uidapi.com',
           identifier: 'uid2-abc-123',
           atype: 3,
         ),
-        const ExternalUserId(
+        ExternalUserId(
           source: 'sharedid.org',
           identifier: 'shared-xyz',
           atype: 1,
@@ -126,8 +126,7 @@ void main() {
         (_) async => [
           ExternalUserIdData(
             source: 'uidapi.com',
-            identifier: 'uid2-abc-123',
-            atype: 3,
+            uids: [UserUniqueIdData(id: 'uid2-abc-123', atype: 3)],
           ),
         ],
       );
@@ -241,7 +240,7 @@ void main() {
 
     test('external user ids carry OpenRTB 2.6 fields both ways', () async {
       await PrebidMobile.setExternalUserIds([
-        const ExternalUserId(
+        ExternalUserId(
           source: 'uidapi.com',
           identifier: 'uid2',
           atype: 3,
@@ -261,7 +260,7 @@ void main() {
         (_) async => [
           ExternalUserIdData(
             source: 'uidapi.com',
-            identifier: 'uid2',
+            uids: [UserUniqueIdData(id: 'uid2', atype: 3)],
             inserter: 'inserter.com',
             matcher: 'matcher.com',
             mm: 3,
@@ -294,8 +293,7 @@ void main() {
       when(mockApi.getSharedId()).thenAnswer(
         (_) async => ExternalUserIdData(
           source: 'pubcid.org',
-          identifier: 'abc',
-          atype: 1,
+          uids: [UserUniqueIdData(id: 'abc', atype: 1)],
         ),
       );
       await PrebidMobile.setSendSharedId(true);

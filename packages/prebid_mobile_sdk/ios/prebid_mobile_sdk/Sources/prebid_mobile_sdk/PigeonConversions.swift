@@ -131,12 +131,22 @@ func adFormatSet(_ names: [String]?) -> Set<AdFormat>? {
 
 // MARK: - Native
 
+/// A JSON object string from Dart as a dictionary; nil when invalid.
+func jsonObject(_ json: String?) -> [String: Any]? {
+    json.flatMap { $0.data(using: .utf8) }
+        .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+}
+
 extension NativeAssetConfig {
-    /// The Prebid asset for the request; nil for an unknown type.
+    /// The Prebid asset for the request; nil for an unknown type. Prebid iOS
+    /// has no asset-level `ext`, so `assetExt` is dropped.
     func makePrebidAsset() -> NativeAsset? {
+        let ext = jsonObject(self.ext) as AnyObject?
         switch assetType {
         case "title":
-            return NativeAssetTitle(length: titleLength.map { Int($0) } ?? 90, required: required_)
+            let title = NativeAssetTitle(length: titleLength.map { Int($0) } ?? 90, required: required_)
+            title.ext = ext
+            return title
         case "image":
             let image = NativeAssetImage(isRequired: required_)
             if let v = imageType { image.type = ImageAsset(integerLiteral: Int(v)) }
@@ -145,11 +155,13 @@ extension NativeAssetConfig {
             if let v = imageWidthMin { image.widthMin = Int(v) }
             if let v = imageHeightMin { image.heightMin = Int(v) }
             if let v = imageMimes { image.mimes = v.compactMap { $0 } }
+            image.ext = ext
             return image
         case "data":
             guard let type = dataType.flatMap({ DataAsset(rawValue: Int($0)) }) else { return nil }
             let data = NativeAssetData(type: type, required: required_)
             if let v = dataLength { data.length = Int(v) }
+            data.ext = ext
             return data
         default:
             return nil
@@ -158,6 +170,7 @@ extension NativeAssetConfig {
 }
 
 extension NativeEventTrackerConfig {
+    /// The Prebid tracker; `ext` is dropped (Prebid iOS doesn't send it).
     func makePrebidTracker() -> NativeEventTracker {
         NativeEventTracker(
             event: EventType(integerLiteral: Int(eventType)),
@@ -179,9 +192,7 @@ struct NativeRequestSettings {
         self.config = config
         assets = (config.assets ?? []).compactMap { $0?.makePrebidAsset() }
         trackers = (config.eventTrackers ?? []).compactMap { $0?.makePrebidTracker() }
-        ext = config.ext
-            .flatMap { $0.data(using: .utf8) }
-            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+        ext = jsonObject(config.ext)
     }
 
     func apply(to request: NativeRequest) {

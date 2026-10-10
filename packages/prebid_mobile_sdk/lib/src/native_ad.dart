@@ -136,15 +136,23 @@ class NativeAsset {
     this.dataType,
     this.dataLength,
     this.imageMimes,
+    this.ext,
+    this.assetExt,
   });
 
   /// Creates a title asset.
-  const NativeAsset.title({int length = 90, bool required = false})
-    : this._(
-        type: NativeAssetType.title,
-        titleLength: length,
-        required: required,
-      );
+  const NativeAsset.title({
+    int length = 90,
+    bool required = false,
+    Map<String, Object?>? ext,
+    Map<String, Object?>? assetExt,
+  }) : this._(
+         type: NativeAssetType.title,
+         titleLength: length,
+         required: required,
+         ext: ext,
+         assetExt: assetExt,
+       );
 
   /// Creates an image asset.
   const NativeAsset.image({
@@ -155,6 +163,8 @@ class NativeAsset {
     int? heightMin,
     List<String>? mimes,
     bool required = false,
+    Map<String, Object?>? ext,
+    Map<String, Object?>? assetExt,
   }) : this._(
          type: NativeAssetType.image,
          imageMimes: mimes,
@@ -164,6 +174,8 @@ class NativeAsset {
          imageWidthMin: widthMin,
          imageHeightMin: heightMin,
          required: required,
+         ext: ext,
+         assetExt: assetExt,
        );
 
   /// Creates a data asset.
@@ -171,11 +183,15 @@ class NativeAsset {
     required NativeDataType dataType,
     int? length,
     bool required = false,
+    Map<String, Object?>? ext,
+    Map<String, Object?>? assetExt,
   }) : this._(
          type: NativeAssetType.data,
          dataType: dataType,
          dataLength: length,
          required: required,
+         ext: ext,
+         assetExt: assetExt,
        );
 
   /// The kind of asset: title, image or data.
@@ -211,6 +227,13 @@ class NativeAsset {
   /// Image MIME types the app accepts, e.g. `['image/png']` (image assets).
   final List<String>? imageMimes;
 
+  /// The `ext` of the asset's `title`, `img` or `data` object.
+  final Map<String, Object?>? ext;
+
+  /// The asset's own `ext` (`assets[].ext`). Android only: Prebid iOS has
+  /// no field for it.
+  final Map<String, Object?>? assetExt;
+
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
   /// Keys match the Pigeon `NativeAssetConfig` fields.
   Map<String, Object?> toMap() => {
@@ -225,13 +248,19 @@ class NativeAsset {
     'dataType': ?dataType?.value,
     'dataLength': ?dataLength,
     'imageMimes': ?imageMimes,
+    if (ext != null) 'ext': jsonEncode(ext),
+    if (assetExt != null) 'assetExt': jsonEncode(assetExt),
   };
 }
 
 /// Defines a native event tracker for the ad request.
 class NativeEventTracker {
   /// Creates a [NativeEventTracker].
-  const NativeEventTracker({required this.eventType, required this.methods});
+  const NativeEventTracker({
+    required this.eventType,
+    required this.methods,
+    this.ext,
+  });
 
   /// The event to track, e.g. an impression.
   final NativeEventType eventType;
@@ -239,10 +268,14 @@ class NativeEventTracker {
   /// How the event is tracked: image pixel, JavaScript or custom.
   final List<NativeEventTrackingMethod> methods;
 
+  /// The tracker's `ext`. Android only: Prebid iOS doesn't send it.
+  final Map<String, Object?>? ext;
+
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
   Map<String, Object?> toMap() => {
     'eventType': eventType.value,
     'methods': methods.map((m) => m.value).toList(),
+    if (ext != null) 'ext': jsonEncode(ext),
   };
 }
 

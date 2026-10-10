@@ -7,7 +7,8 @@
 # - the native code every companion package shares (the request parsing,
 #   the fullscreen ad manager, the plugin helpers), which each plugin
 #   compiles on its own (the Kotlin copies differ only in their package line),
-#   and PrebidCommon, the native code the core and GAM packages share.
+#   with PrebidRequestsTest.kt, its JVM unit test (same rule), and
+#   PrebidCommon, the native code the core and GAM packages share.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -36,10 +37,14 @@ done
 kotlin=android/src/main/kotlin/io/github/thanhhaidev
 swift=ios/prebid_mobile_sdk_PKG/Sources/prebid_mobile_sdk_PKG
 unpackaged() { sed '/^package /d' "$1"; }
-for name in PrebidRequests.kt FullscreenAdManager.kt PrebidPlugin.kt; do
-  reference=packages/prebid_mobile_sdk_gam/$kotlin/prebid_mobile_sdk_gam/$name
+for name in main/PrebidRequests.kt main/FullscreenAdManager.kt main/PrebidPlugin.kt \
+  test/PrebidRequestsTest.kt; do
+  set_dir=${name%%/*}
+  name=${name#*/}
+  dir=android/src/$set_dir/kotlin/io/github/thanhhaidev
+  reference=packages/prebid_mobile_sdk_gam/$dir/prebid_mobile_sdk_gam/$name
   for pkg in admob max; do
-    file=packages/prebid_mobile_sdk_$pkg/$kotlin/prebid_mobile_sdk_$pkg/$name
+    file=packages/prebid_mobile_sdk_$pkg/$dir/prebid_mobile_sdk_$pkg/$name
     if ! diff -q <(unpackaged "$reference") <(unpackaged "$file") >/dev/null; then
       echo "copies: $file differs from $reference; keep the three identical" >&2
       diff -u <(unpackaged "$reference") <(unpackaged "$file") >&2 || true

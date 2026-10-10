@@ -61,6 +61,10 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            // android.jar stubs return defaults instead of throwing: the
+            // Prebid ad units and the host APIs touch Android classes when
+            // constructed.
+            isReturnDefaultValues = true
             all {
                 it.useJUnitPlatform()
 

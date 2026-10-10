@@ -50,10 +50,31 @@ android {
         getByName("main") {
             java.srcDirs("src/main/kotlin")
         }
+        getByName("test") {
+            java.srcDirs("src/test/kotlin")
+        }
     }
 
     defaultConfig {
         minSdk = 24
+    }
+
+    testOptions {
+        unitTests {
+            // android.jar stubs return defaults instead of throwing: the
+            // Prebid ad units touch Android classes when constructed.
+            isReturnDefaultValues = true
+            all {
+                it.useJUnitPlatform()
+
+                it.outputs.upToDateWhen { false }
+
+                it.testLogging {
+                    events("passed", "skipped", "failed", "standardOut", "standardError")
+                    showStandardStreams = true
+                }
+            }
+        }
     }
 }
 
@@ -61,4 +82,8 @@ dependencies {
     // Prebid MAX adapters. Pulls in the AppLovin MAX SDK (applovin-sdk)
     // transitively — the reason this is a separate package.
     implementation("org.prebid:prebid-mobile-sdk-max-adapters:3.4.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.mockito:mockito-core:5.0.0")
+    // The real org.json: android.jar only has stubs that throw in unit tests.
+    testImplementation("org.json:json:20240303")
 }

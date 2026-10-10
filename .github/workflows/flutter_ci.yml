@@ -89,9 +89,15 @@ jobs:
         working-directory: example
         run: flutter build apk --debug
 
+      # The example includes every plugin as a Gradle subproject.
       - name: Plugin unit tests (JVM)
         working-directory: example/android
-        run: ./gradlew :prebid_mobile_sdk:testDebugUnitTest --console=plain
+        run: >-
+          ./gradlew --console=plain
+          :prebid_mobile_sdk:testDebugUnitTest
+          :prebid_mobile_sdk_gam:testDebugUnitTest
+          :prebid_mobile_sdk_admob:testDebugUnitTest
+          :prebid_mobile_sdk_max:testDebugUnitTest
 
       # R8 runs only in release builds: catches missing consumer keep rules.
       - name: Build release APK (R8)
@@ -117,6 +123,21 @@ jobs:
       - name: Build iOS (no codesign)
         working-directory: example
         run: flutter build ios --no-codesign --debug
+
+      # example/ios/RunnerTests: the native conversions of the core plugin and
+      # the companions, through `@testable import` of the plugin pods (the
+      # example builds with CocoaPods; see its pubspec). On the first iPhone
+      # simulator the runner image has.
+      - name: Plugin unit tests (iOS simulator)
+        working-directory: example/ios
+        shell: bash
+        run: |
+          udid=$(xcrun simctl list devices available --json | jq -r '
+            [.devices | to_entries[] | select(.key | contains(".iOS-"))
+              | .value[] | select(.name | startswith("iPhone"))][0].udid // empty')
+          [ -n "$udid" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          xcodebuild test -quiet -workspace Runner.xcworkspace -scheme Runner \
+            -destination "platform=iOS Simulator,id=$udid"
 
   # One check to require in branch protection: green only when every job
   # above passed.

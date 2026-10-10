@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/ad_ids.dart';
 import 'internal/multiformat_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'native_parameters.dart';
@@ -119,14 +120,13 @@ class PrebidMultiformatAd {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.onDemandRefreshed,
-  }) : _adId = _nextId++ {
+  }) : _adId = nextAdId() {
     _register();
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static MultiformatAdHostApi api = MultiformatAdHostApi();
-  static int _nextId = 3000000;
 
   final int _adId;
 

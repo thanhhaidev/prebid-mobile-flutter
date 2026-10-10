@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
 import 'ad_listener.dart';
+import 'companion/companion_fullscreen_ad.dart';
 import 'fullscreen_controls.dart';
 import 'generated/prebid_api.g.dart';
-import 'internal/ad_event_router.dart';
+import 'internal/fullscreen_ad.dart';
 import 'internal/pigeon_conversions.dart';
 import 'video_parameters.dart';
 
@@ -27,16 +28,17 @@ class PrebidRewardedAd {
     this.pbAdSlot,
     this.controls,
     this.listener,
-  }) : _adId = _nextId++ {
-    AdEventRouter.instance.register(_adId, _handleEvent);
+  }) {
+    _ad = FullscreenAdLifecycle((event, args) {
+      dispatchRewardedEvent(listener, event, args);
+    });
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static RewardedAdHostApi api = RewardedAdHostApi();
-  static int _nextId = 1000000; // offset to avoid conflicts with interstitials
 
-  final int _adId;
+  late final FullscreenAdLifecycle _ad;
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
@@ -68,53 +70,14 @@ class PrebidRewardedAd {
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
-  bool _loaded = false;
-
   /// Whether the ad has loaded and is ready to [show].
-  bool get isLoaded => _loaded;
-
-  void _handleEvent(AdEvent event) {
-    _loaded = switch (event.eventName) {
-      'onAdLoaded' => true,
-      'onAdFailed' || 'onAdClosed' || 'onAdExpired' => false,
-      _ => _loaded,
-    };
-    final l = listener;
-    if (l == null) return;
-    switch (event.eventName) {
-      case 'onAdLoaded':
-        l.onAdLoaded?.call();
-      case 'onAdFailed':
-        l.onAdFailed?.call(event.error ?? 'Unknown error');
-      case 'onAdDisplayed':
-        l.onAdDisplayed?.call();
-      case 'onAdClosed':
-        l.onAdClosed?.call();
-      case 'onAdClicked':
-        l.onAdClicked?.call();
-      case 'onUserEarnedReward':
-        // The platforms always attach a reward, defaulting to 'reward' x 1
-        // (the companion packages' default too); mirror that if it's absent.
-        final reward = event.reward;
-        l.onUserEarnedReward?.call(
-          PrebidReward(
-            type: reward?.type ?? 'reward',
-            count: reward?.count ?? 1,
-            ext: reward?.ext?.map((k, v) => MapEntry(k ?? '', v)),
-          ),
-        );
-      case 'onAdExpired':
-        l.onAdExpired?.call();
-    }
-  }
+  bool get isLoaded => _ad.isLoaded;
 
   /// Load the rewarded ad. Also valid after [destroy].
   Future<void> loadAd() async {
-    _loaded = false;
-    // Re-register: [destroy] unregisters, and the object may be reused.
-    AdEventRouter.instance.register(_adId, _handleEvent);
+    _ad.loading();
     await api.loadAd(
-      _adId,
+      _ad.adId,
       configId,
       adFormats?.map((f) => f.name).toList(),
       videoParameters?.toConfig(),
@@ -128,15 +91,14 @@ class PrebidRewardedAd {
   /// Shows the loaded ad. An ad shows once, so [isLoaded] turns false; if it
   /// can't be shown the listener's `onAdFailed` fires.
   Future<void> show() async {
-    _loaded = false;
-    await api.show(_adId);
+    _ad.showing();
+    await api.show(_ad.adId);
   }
 
   /// Releases the native rewarded ad and stops event delivery to [listener]
   /// until the next [loadAd].
   Future<void> destroy() async {
-    _loaded = false;
-    AdEventRouter.instance.unregister(_adId);
-    await api.destroy(_adId);
+    _ad.destroyed();
+    await api.destroy(_ad.adId);
   }
 }

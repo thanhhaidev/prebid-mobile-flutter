@@ -11,8 +11,8 @@ import 'session.dart';
 /// type's events (including `onAdLoaded`).
 ///
 /// This router owns that single handler and dispatches each [AdEvent] to the
-/// ad registered under its [AdEvent.adId]. Ad-id ranges are allocated so they
-/// never overlap across ad types.
+/// ad registered under its [AdEvent.adId]. Every ad kind takes its id from
+/// the same counter (`nextAdId`), so ids never collide across kinds.
 class AdEventRouter implements AdFlutterApi {
   AdEventRouter._() {
     // Created with this isolate's first interstitial, rewarded or native ad.

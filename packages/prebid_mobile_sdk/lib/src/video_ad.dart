@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
+import 'internal/ad_ids.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/session.dart';
 import 'video_parameters.dart';
@@ -61,14 +62,13 @@ class PrebidInstreamVideoAd {
     this.pbAdSlot,
     this.impOrtbConfig,
     this.globalOrtbConfig,
-  }) : _adId = _nextId++ {
+  }) : _adId = nextAdId() {
     releasePreviousIsolateAds();
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static InstreamVideoAdHostApi api = InstreamVideoAdHostApi();
-  static int _nextId = 4000000;
 
   final int _adId;
 

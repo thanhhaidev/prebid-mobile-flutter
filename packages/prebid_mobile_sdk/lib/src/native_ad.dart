@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'companion/ad_view_channel.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/ad_event_router.dart';
+import 'internal/ad_ids.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/visibility.dart';
 import 'native_ad_enums.dart';
@@ -338,14 +339,13 @@ class PrebidNativeAd {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.listener,
-  }) : _adId = _nextId++ {
+  }) : _adId = nextAdId() {
     AdEventRouter.instance.register(_adId, _handleEvent);
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static NativeAdHostApi api = NativeAdHostApi();
-  static int _nextId = 2000000;
 
   final int _adId;
 

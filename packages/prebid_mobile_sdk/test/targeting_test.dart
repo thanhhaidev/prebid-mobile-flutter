@@ -5,251 +5,373 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'mock_host_api.mocks.dart';
 
 void main() {
-  late MockTargetingHostApi mockApi;
+  late MockTargetingHostApi api;
 
   setUp(() {
-    mockApi = MockTargetingHostApi();
-    PrebidTargeting.api = mockApi;
+    api = MockTargetingHostApi();
+    PrebidTargeting.api = api;
   });
 
-  group('PrebidTargeting Privacy API', () {
-    test('setSubjectToCOPPA calls api', () async {
-      await PrebidTargeting.setSubjectToCOPPA(true);
-      verify(mockApi.setSubjectToCOPPA(true)).called(1);
-    });
+  group('each setting reaches the platform', () {
+    final settings = <String, (Future<void> Function(), void Function())>{
+      'setSubjectToCOPPA': (
+        () => PrebidTargeting.setSubjectToCOPPA(true),
+        () => api.setSubjectToCOPPA(true),
+      ),
+      'setSubjectToCOPPA(null)': (
+        () => PrebidTargeting.setSubjectToCOPPA(null),
+        () => api.setSubjectToCOPPA(null),
+      ),
+      'setSubjectToGDPR': (
+        () => PrebidTargeting.setSubjectToGDPR(false),
+        () => api.setSubjectToGDPR(false),
+      ),
+      'setSubjectToGDPR(null)': (
+        () => PrebidTargeting.setSubjectToGDPR(null),
+        () => api.setSubjectToGDPR(null),
+      ),
+      'setGDPRConsentString': (
+        () => PrebidTargeting.setGDPRConsentString('tcf'),
+        () => api.setGDPRConsentString('tcf'),
+      ),
+      'setGDPRConsentString(null)': (
+        () => PrebidTargeting.setGDPRConsentString(null),
+        () => api.setGDPRConsentString(null),
+      ),
+      'setPurposeConsents': (
+        () => PrebidTargeting.setPurposeConsents('101'),
+        () => api.setPurposeConsents('101'),
+      ),
+      'setPurposeConsents(null)': (
+        () => PrebidTargeting.setPurposeConsents(null),
+        () => api.setPurposeConsents(null),
+      ),
+      'setUSPrivacyString': (
+        () => PrebidTargeting.setUSPrivacyString('1YNN'),
+        () => api.setUSPrivacyString('1YNN'),
+      ),
+      'setUSPrivacyString(null)': (
+        () => PrebidTargeting.setUSPrivacyString(null),
+        () => api.setUSPrivacyString(null),
+      ),
+      'addUserKeyword': (
+        () => PrebidTargeting.addUserKeyword('sports'),
+        () => api.addUserKeyword('sports'),
+      ),
+      'removeUserKeyword': (
+        () => PrebidTargeting.removeUserKeyword('sports'),
+        () => api.removeUserKeyword('sports'),
+      ),
+      'clearUserKeywords': (
+        PrebidTargeting.clearUserKeywords,
+        () => api.clearUserKeywords(),
+      ),
+      'addAppKeyword': (
+        () => PrebidTargeting.addAppKeyword('news'),
+        () => api.addAppKeyword('news'),
+      ),
+      'removeAppKeyword': (
+        () => PrebidTargeting.removeAppKeyword('news'),
+        () => api.removeAppKeyword('news'),
+      ),
+      'clearAppKeywords': (
+        PrebidTargeting.clearAppKeywords,
+        () => api.clearAppKeywords(),
+      ),
+      'addAppExtData': (
+        () => PrebidTargeting.addAppExtData(key: 'segment', value: 'premium'),
+        () => api.addAppExtData('segment', 'premium'),
+      ),
+      'removeAppExtData': (
+        () => PrebidTargeting.removeAppExtData('segment'),
+        () => api.removeAppExtData('segment'),
+      ),
+      'clearAppExtData': (
+        PrebidTargeting.clearAppExtData,
+        () => api.clearAppExtData(),
+      ),
+      'addUserExtData': (
+        () => PrebidTargeting.addUserExtData(key: 'segment', value: 'premium'),
+        () => api.addUserExtData('segment', 'premium'),
+      ),
+      'removeUserExtData': (
+        () => PrebidTargeting.removeUserExtData('segment'),
+        () => api.removeUserExtData('segment'),
+      ),
+      'clearUserExtData': (
+        PrebidTargeting.clearUserExtData,
+        () => api.clearUserExtData(),
+      ),
+      'addBidderToAccessControlList': (
+        () => PrebidTargeting.addBidderToAccessControlList('appnexus'),
+        () => api.addBidderToAccessControlList('appnexus'),
+      ),
+      'removeBidderFromAccessControlList': (
+        () => PrebidTargeting.removeBidderFromAccessControlList('appnexus'),
+        () => api.removeBidderFromAccessControlList('appnexus'),
+      ),
+      'clearAccessControlList': (
+        PrebidTargeting.clearAccessControlList,
+        () => api.clearAccessControlList(),
+      ),
+      'setGlobalOrtbConfig': (
+        () => PrebidTargeting.setGlobalOrtbConfig('{"bcat":["IAB1"]}'),
+        () => api.setGlobalOrtbConfig('{"bcat":["IAB1"]}'),
+      ),
+      'setGlobalOrtbConfig(null)': (
+        () => PrebidTargeting.setGlobalOrtbConfig(null),
+        () => api.setGlobalOrtbConfig(null),
+      ),
+      'setPublisherName': (
+        () => PrebidTargeting.setPublisherName('CoolApp'),
+        () => api.setPublisherName('CoolApp'),
+      ),
+      'setStoreUrl': (
+        () => PrebidTargeting.setStoreUrl('https://store'),
+        () => api.setStoreUrl('https://store'),
+      ),
+      'setDomain': (
+        () => PrebidTargeting.setDomain('example.com'),
+        () => api.setDomain('example.com'),
+      ),
+      'setAppName': (
+        () => PrebidTargeting.setAppName('天気'),
+        () => api.setAppName('天気'),
+      ),
+      'setAppName(null)': (
+        () => PrebidTargeting.setAppName(null),
+        () => api.setAppName(null),
+      ),
+      'setSourceApp': (
+        () => PrebidTargeting.setSourceApp('123456789'),
+        () => api.setSourceApp('123456789'),
+      ),
+      'setItunesId': (
+        () => PrebidTargeting.setItunesId('123456789'),
+        () => api.setItunesId('123456789'),
+      ),
+      'setBundleName': (
+        () => PrebidTargeting.setBundleName('com.prod'),
+        () => api.setBundleName('com.prod'),
+      ),
+      'setOmidPartnerName': (
+        () => PrebidTargeting.setOmidPartnerName('Prebid'),
+        () => api.setOmidPartnerName('Prebid'),
+      ),
+      'setOmidPartnerVersion': (
+        () => PrebidTargeting.setOmidPartnerVersion('1.0'),
+        () => api.setOmidPartnerVersion('1.0'),
+      ),
+      'setUserLatLng': (
+        () => PrebidTargeting.setUserLatLng(10.5, 106.7),
+        () => api.setUserLatLng(10.5, 106.7),
+      ),
+      'clearUserLatLng': (
+        PrebidTargeting.clearUserLatLng,
+        () => api.clearUserLatLng(),
+      ),
+      'setLocationPrecision': (
+        () => PrebidTargeting.setLocationPrecision(2),
+        () => api.setLocationPrecision(2),
+      ),
+      'setLocationPrecision(null)': (
+        () => PrebidTargeting.setLocationPrecision(null),
+        () => api.setLocationPrecision(null),
+      ),
+    };
+    for (final MapEntry(key: name, value: (set, expected))
+        in settings.entries) {
+      test(name, () async {
+        await set();
+        verify(expected()).called(1);
+      });
+    }
 
-    test('getSubjectToCOPPA calls api', () async {
-      when(mockApi.getSubjectToCOPPA()).thenAnswer((_) async => true);
-      final val = await PrebidTargeting.getSubjectToCOPPA();
-      expect(val, isTrue);
-    });
-
-    test('setSubjectToGDPR calls api', () async {
-      await PrebidTargeting.setSubjectToGDPR(false);
-      verify(mockApi.setSubjectToGDPR(false)).called(1);
-    });
-
-    test('setGDPRConsentString calls api', () async {
-      await PrebidTargeting.setGDPRConsentString('abc-123');
-      verify(mockApi.setGDPRConsentString('abc-123')).called(1);
-    });
-  });
-
-  group('PrebidTargeting Data API', () {
-    test('addUserKeyword calls api', () async {
-      await PrebidTargeting.addUserKeyword('sports');
-      verify(mockApi.addUserKeyword('sports')).called(1);
-    });
-
-    test('addAppExtData calls api', () async {
-      await PrebidTargeting.addAppExtData(key: 'userSegment', value: 'premium');
-      verify(mockApi.addAppExtData('userSegment', 'premium')).called(1);
-    });
-
-    test('setGlobalOrtbConfig calls api', () async {
-      await PrebidTargeting.setGlobalOrtbConfig('{"bcat": ["IAB1"]}');
-      verify(mockApi.setGlobalOrtbConfig('{"bcat": ["IAB1"]}')).called(1);
-    });
-
-    test('setPublisherName calls api', () async {
-      await PrebidTargeting.setPublisherName('CoolApp');
-      verify(mockApi.setPublisherName('CoolApp')).called(1);
-    });
-  });
-
-  group('PrebidTargeting US Privacy / CCPA', () {
-    test('setUSPrivacyString calls api', () async {
-      await PrebidTargeting.setUSPrivacyString('1YNN');
-      verify(mockApi.setUSPrivacyString('1YNN')).called(1);
-    });
-
-    test('setUSPrivacyString with null clears value', () async {
-      await PrebidTargeting.setUSPrivacyString(null);
-      verify(mockApi.setUSPrivacyString(null)).called(1);
-    });
-
-    test('getUSPrivacyString returns stored value', () async {
-      when(mockApi.getUSPrivacyString()).thenAnswer((_) async => '1YNN');
-      final result = await PrebidTargeting.getUSPrivacyString();
-      expect(result, '1YNN');
-    });
-
-    test('getUSPrivacyString returns null when not set', () async {
-      when(mockApi.getUSPrivacyString()).thenAnswer((_) async => null);
-      final result = await PrebidTargeting.getUSPrivacyString();
-      expect(result, isNull);
-    });
-  });
-
-  group('PrebidTargeting User Ext Data', () {
-    test('addUserExtData calls api with key and value', () async {
-      await PrebidTargeting.addUserExtData(key: 'segment', value: 'premium');
-      verify(mockApi.addUserExtData('segment', 'premium')).called(1);
-    });
-
-    test('updateUserExtData calls api with key and set of values', () async {
+    test('sets of keywords and values travel as lists', () async {
+      await PrebidTargeting.addUserKeywords({'a', 'b'});
+      await PrebidTargeting.addAppKeywords({'x', 'y'});
+      await PrebidTargeting.updateAppExtData(key: 'k', value: {'v1', 'v2'});
       await PrebidTargeting.updateUserExtData(
         key: 'interests',
         value: {'sports', 'tech'},
       );
-      verify(mockApi.updateUserExtData('interests', any)).called(1);
+      verify(api.addUserKeywords(['a', 'b'])).called(1);
+      verify(api.addAppKeywords(['x', 'y'])).called(1);
+      verify(api.updateAppExtData('k', ['v1', 'v2'])).called(1);
+      verify(api.updateUserExtData('interests', ['sports', 'tech'])).called(1);
     });
 
-    test('removeUserExtData calls api', () async {
-      await PrebidTargeting.removeUserExtData('segment');
-      verify(mockApi.removeUserExtData('segment')).called(1);
-    });
-
-    test('clearUserExtData calls api', () async {
-      await PrebidTargeting.clearUserExtData();
-      verify(mockApi.clearUserExtData()).called(1);
-    });
-  });
-
-  group('PrebidTargeting OMID and location', () {
-    test('OMID partner name / version call api', () async {
-      await PrebidTargeting.setOmidPartnerName('Prebid');
-      await PrebidTargeting.setOmidPartnerVersion('1.0');
-      verify(mockApi.setOmidPartnerName('Prebid')).called(1);
-      verify(mockApi.setOmidPartnerVersion('1.0')).called(1);
-    });
-
-    test('user location and precision call api', () async {
-      await PrebidTargeting.setUserLatLng(10.5, 106.7);
-      await PrebidTargeting.setLocationPrecision(2);
-      verify(mockApi.setUserLatLng(10.5, 106.7)).called(1);
-      verify(mockApi.setLocationPrecision(2)).called(1);
-    });
-  });
-
-  group('PrebidTargeting getters', () {
-    test('privacy getters return the api values', () async {
-      when(mockApi.getSubjectToGDPR()).thenAnswer((_) async => true);
-      when(mockApi.getGDPRConsentString()).thenAnswer((_) async => 'tcf');
-      when(mockApi.getPurposeConsents()).thenAnswer((_) async => '101');
-      when(mockApi.getDeviceAccessConsent()).thenAnswer((_) async => false);
-      when(mockApi.getSubjectToCOPPA()).thenAnswer((_) async => null);
-
-      expect(await PrebidTargeting.getSubjectToGDPR(), isTrue);
-      expect(await PrebidTargeting.getGDPRConsentString(), 'tcf');
-      expect(await PrebidTargeting.getPurposeConsents(), '101');
-      expect(await PrebidTargeting.getDeviceAccessConsent(), isFalse);
-      expect(await PrebidTargeting.getSubjectToCOPPA(), isNull);
-    });
-
-    test('purpose consents setter and null clears', () async {
-      await PrebidTargeting.setPurposeConsents('11');
-      await PrebidTargeting.setPurposeConsents(null);
-      await PrebidTargeting.setSubjectToGDPR(null);
-      await PrebidTargeting.setGDPRConsentString(null);
-      verify(mockApi.setPurposeConsents('11')).called(1);
-      verify(mockApi.setPurposeConsents(null)).called(1);
-      verify(mockApi.setSubjectToGDPR(null)).called(1);
-      verify(mockApi.setGDPRConsentString(null)).called(1);
-    });
-
-    test('getGlobalOrtbConfig returns the api value', () async {
-      when(mockApi.getGlobalOrtbConfig()).thenAnswer((_) async => '{}');
-      expect(await PrebidTargeting.getGlobalOrtbConfig(), '{}');
-      await PrebidTargeting.setGlobalOrtbConfig(null);
-      verify(mockApi.setGlobalOrtbConfig(null)).called(1);
-    });
-  });
-
-  group('PrebidTargeting keywords', () {
-    test('user keywords call api', () async {
-      when(mockApi.getUserKeywords()).thenAnswer((_) async => ['a', 'b']);
-      await PrebidTargeting.addUserKeywords({'a', 'b'});
-      await PrebidTargeting.removeUserKeyword('a');
-      await PrebidTargeting.clearUserKeywords();
-      verify(mockApi.addUserKeywords(['a', 'b'])).called(1);
-      verify(mockApi.removeUserKeyword('a')).called(1);
-      verify(mockApi.clearUserKeywords()).called(1);
-      expect(await PrebidTargeting.getUserKeywords(), ['a', 'b']);
-    });
-
-    test('app keywords call api', () async {
-      await PrebidTargeting.addAppKeyword('news');
-      await PrebidTargeting.addAppKeywords({'x', 'y'});
-      await PrebidTargeting.removeAppKeyword('x');
-      await PrebidTargeting.clearAppKeywords();
-      verify(mockApi.addAppKeyword('news')).called(1);
-      verify(mockApi.addAppKeywords(['x', 'y'])).called(1);
-      verify(mockApi.removeAppKeyword('x')).called(1);
-      verify(mockApi.clearAppKeywords()).called(1);
-    });
-  });
-
-  group('PrebidTargeting app ext data and access control', () {
-    test('app ext data calls api', () async {
-      await PrebidTargeting.updateAppExtData(key: 'k', value: {'v1', 'v2'});
-      await PrebidTargeting.removeAppExtData('k');
-      await PrebidTargeting.clearAppExtData();
-      verify(mockApi.updateAppExtData('k', ['v1', 'v2'])).called(1);
-      verify(mockApi.removeAppExtData('k')).called(1);
-      verify(mockApi.clearAppExtData()).called(1);
-    });
-
-    test('access control list calls api', () async {
-      await PrebidTargeting.addBidderToAccessControlList('appnexus');
-      await PrebidTargeting.removeBidderFromAccessControlList('appnexus');
-      await PrebidTargeting.clearAccessControlList();
-      verify(mockApi.addBidderToAccessControlList('appnexus')).called(1);
-      verify(mockApi.removeBidderFromAccessControlList('appnexus')).called(1);
-      verify(mockApi.clearAccessControlList()).called(1);
-    });
-  });
-
-  group('PrebidTargeting app information', () {
-    test('store URL and domain call api', () async {
-      await PrebidTargeting.setStoreUrl('https://store');
-      await PrebidTargeting.setDomain('example.com');
-      await PrebidTargeting.setPublisherName(null);
-      verify(mockApi.setStoreUrl('https://store')).called(1);
-      verify(mockApi.setDomain('example.com')).called(1);
-      verify(mockApi.setPublisherName(null)).called(1);
-    });
-
-    test('nullable setters forward null', () async {
-      await PrebidTargeting.setSourceApp(null);
-      await PrebidTargeting.setItunesId(null);
-      await PrebidTargeting.setOmidPartnerName(null);
-      await PrebidTargeting.setOmidPartnerVersion(null);
-      await PrebidTargeting.setLocationPrecision(null);
-      verify(mockApi.setSourceApp(null)).called(1);
-      verify(mockApi.setItunesId(null)).called(1);
-      verify(mockApi.setOmidPartnerName(null)).called(1);
-      verify(mockApi.setOmidPartnerVersion(null)).called(1);
-      verify(mockApi.setLocationPrecision(null)).called(1);
-    });
-
-    test('setAppName forwards the name and null', () async {
-      await PrebidTargeting.setAppName('天気');
-      await PrebidTargeting.setAppName(null);
-      verify(mockApi.setAppName('天気')).called(1);
-      verify(mockApi.setAppName(null)).called(1);
-    });
-  });
-
-  group('user ext', () {
-    test('is sent to the platform as JSON', () async {
+    test('user ext travels as JSON, null clears it', () async {
       await PrebidTargeting.setUserExt({
         'consented_providers': [1, 2],
         'segment': 'a',
       });
-      verify(
-        mockApi.setUserExt('{"consented_providers":[1,2],"segment":"a"}'),
-      ).called(1);
-    });
-
-    test('null clears it', () async {
       await PrebidTargeting.setUserExt(null);
-      verify(mockApi.setUserExt(null)).called(1);
+      verify(
+        api.setUserExt('{"consented_providers":[1,2],"segment":"a"}'),
+      ).called(1);
+      verify(api.setUserExt(null)).called(1);
+    });
+  });
+
+  group('each getter returns the platform value', () {
+    final getters =
+        <String, (void Function(), Future<Object?> Function(), Object?)>{
+          'getSubjectToCOPPA': (
+            () => when(api.getSubjectToCOPPA()).thenAnswer((_) async => true),
+            PrebidTargeting.getSubjectToCOPPA,
+            true,
+          ),
+          'getSubjectToGDPR, unset': (
+            () => when(api.getSubjectToGDPR()).thenAnswer((_) async => null),
+            PrebidTargeting.getSubjectToGDPR,
+            null,
+          ),
+          'getGDPRConsentString': (
+            () =>
+                when(api.getGDPRConsentString()).thenAnswer((_) async => 'tcf'),
+            PrebidTargeting.getGDPRConsentString,
+            'tcf',
+          ),
+          'getPurposeConsents': (
+            () => when(api.getPurposeConsents()).thenAnswer((_) async => '101'),
+            PrebidTargeting.getPurposeConsents,
+            '101',
+          ),
+          'getPurposeConsent(0)': (
+            () => when(api.getPurposeConsent(0)).thenAnswer((_) async => true),
+            () => PrebidTargeting.getPurposeConsent(0),
+            true,
+          ),
+          'getDeviceAccessConsent': (
+            () => when(
+              api.getDeviceAccessConsent(),
+            ).thenAnswer((_) async => false),
+            PrebidTargeting.getDeviceAccessConsent,
+            false,
+          ),
+          'isAllowedAccessDeviceData': (
+            () => when(
+              api.isAllowedAccessDeviceData(),
+            ).thenAnswer((_) async => true),
+            PrebidTargeting.isAllowedAccessDeviceData,
+            true,
+          ),
+          'getUSPrivacyString': (
+            () =>
+                when(api.getUSPrivacyString()).thenAnswer((_) async => '1YNN'),
+            PrebidTargeting.getUSPrivacyString,
+            '1YNN',
+          ),
+          'getUserKeywords': (
+            () => when(api.getUserKeywords()).thenAnswer((_) async => ['a']),
+            PrebidTargeting.getUserKeywords,
+            ['a'],
+          ),
+          'getAppKeywords': (
+            () => when(api.getAppKeywords()).thenAnswer((_) async => ['news']),
+            PrebidTargeting.getAppKeywords,
+            ['news'],
+          ),
+          'getAppExtData': (
+            () => when(api.getAppExtData()).thenAnswer(
+              (_) async => {
+                'k': ['v'],
+              },
+            ),
+            PrebidTargeting.getAppExtData,
+            {
+              'k': ['v'],
+            },
+          ),
+          'getAccessControlList': (
+            () => when(
+              api.getAccessControlList(),
+            ).thenAnswer((_) async => ['appnexus']),
+            PrebidTargeting.getAccessControlList,
+            ['appnexus'],
+          ),
+          'getGlobalOrtbConfig': (
+            () => when(api.getGlobalOrtbConfig()).thenAnswer((_) async => '{}'),
+            PrebidTargeting.getGlobalOrtbConfig,
+            '{}',
+          ),
+          'getPublisherName': (
+            () =>
+                when(api.getPublisherName()).thenAnswer((_) async => 'CoolApp'),
+            PrebidTargeting.getPublisherName,
+            'CoolApp',
+          ),
+          'getStoreUrl': (
+            () => when(
+              api.getStoreUrl(),
+            ).thenAnswer((_) async => 'https://store'),
+            PrebidTargeting.getStoreUrl,
+            'https://store',
+          ),
+          'getDomain': (
+            () => when(api.getDomain()).thenAnswer((_) async => 'example.com'),
+            PrebidTargeting.getDomain,
+            'example.com',
+          ),
+          'getSourceApp': (
+            () => when(api.getSourceApp()).thenAnswer((_) async => '123'),
+            PrebidTargeting.getSourceApp,
+            '123',
+          ),
+          'getItunesId': (
+            () => when(api.getItunesId()).thenAnswer((_) async => '456'),
+            PrebidTargeting.getItunesId,
+            '456',
+          ),
+          'getBundleName': (
+            () => when(api.getBundleName()).thenAnswer((_) async => 'com.prod'),
+            PrebidTargeting.getBundleName,
+            'com.prod',
+          ),
+          'getOmidPartnerName': (
+            () => when(
+              api.getOmidPartnerName(),
+            ).thenAnswer((_) async => 'Prebid'),
+            PrebidTargeting.getOmidPartnerName,
+            'Prebid',
+          ),
+          'getOmidPartnerVersion': (
+            () => when(
+              api.getOmidPartnerVersion(),
+            ).thenAnswer((_) async => '1.0'),
+            PrebidTargeting.getOmidPartnerVersion,
+            '1.0',
+          ),
+          'getSendSharedId': (
+            () => when(api.getSendSharedId()).thenAnswer((_) async => true),
+            PrebidTargeting.getSendSharedId,
+            true,
+          ),
+          'getLocationPrecision': (
+            () => when(api.getLocationPrecision()).thenAnswer((_) async => 2),
+            PrebidTargeting.getLocationPrecision,
+            2,
+          ),
+        };
+    for (final MapEntry(key: name, value: (stub, get, expected))
+        in getters.entries) {
+      test(name, () async {
+        stub();
+        expect(await get(), expected);
+      });
+    }
+
+    test('the user location is a (latitude, longitude) pair', () async {
+      when(api.getUserLatLng()).thenAnswer((_) async => [1.5, 2.5]);
+      expect(await PrebidTargeting.getUserLatLng(), (1.5, 2.5));
+      when(api.getUserLatLng()).thenAnswer((_) async => null);
+      expect(await PrebidTargeting.getUserLatLng(), isNull);
     });
 
-    test('is read back as a map, null when empty', () async {
+    test('user ext is read back as a map, null when empty', () async {
       when(
-        mockApi.getUserExt(),
+        api.getUserExt(),
       ).thenAnswer((_) async => '{"data":{"k":["v"]},"segment":"a"}');
       expect(await PrebidTargeting.getUserExt(), {
         'data': {
@@ -257,7 +379,7 @@ void main() {
         },
         'segment': 'a',
       });
-      when(mockApi.getUserExt()).thenAnswer((_) async => null);
+      when(api.getUserExt()).thenAnswer((_) async => null);
       expect(await PrebidTargeting.getUserExt(), isNull);
     });
   });

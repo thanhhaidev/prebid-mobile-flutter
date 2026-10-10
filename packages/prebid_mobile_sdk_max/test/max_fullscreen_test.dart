@@ -5,147 +5,280 @@ import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import 'channel_harness.dart';
 
+const _interstitialChannel = 'prebid_mobile_sdk_max/interstitial';
+const _rewardedChannel = 'prebid_mobile_sdk_max/rewarded';
+
+PrebidInterstitialAdListener _interstitialListener(List<String> fired) =>
+    PrebidInterstitialAdListener(
+      onAdLoaded: () => fired.add('loaded'),
+      onAdFailed: (e) => fired.add('failed:$e'),
+      onAdDisplayed: () => fired.add('displayed'),
+      onAdClosed: () => fired.add('closed'),
+      onAdClicked: () => fired.add('clicked'),
+      onAdExpired: () => fired.add('expired'),
+      onAdImpression: () => fired.add('impression'),
+    );
+
+PrebidRewardedAdListener _rewardedListener(
+  List<String> fired, [
+  List<PrebidReward>? rewards,
+]) => PrebidRewardedAdListener(
+  onAdLoaded: () => fired.add('loaded'),
+  onAdFailed: (e) => fired.add('failed:$e'),
+  onAdDisplayed: () => fired.add('displayed'),
+  onAdClosed: () => fired.add('closed'),
+  onAdClicked: () => fired.add('clicked'),
+  onAdExpired: () => fired.add('expired'),
+  onAdImpression: () => fired.add('impression'),
+  onUserEarnedReward: (r) {
+    fired.add('reward');
+    rewards?.add(r);
+  },
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('PrebidMaxInterstitialAd', () {
-    test('load sends video flag and controls; routes events', () async {
-      final h = ChannelHarness('prebid_mobile_sdk_max/interstitial');
-      final fired = <String>[];
-      final ad = PrebidMaxInterstitialAd(
-        configId: 'config-i',
-        maxAdUnitId: 'unit-i',
+    test('minimal load sends exactly adId, ids and the video flag', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      await PrebidMaxInterstitialAd(configId: 'c', maxAdUnitId: 'u').loadAd();
+
+      final call = h.calls.single;
+      expect(call.method, 'load');
+      final args = call.arguments as Map;
+      expect(
+        args.keys,
+        unorderedEquals(['adId', 'configId', 'maxAdUnitId', 'isVideo']),
+      );
+      expect(args['adId'], isA<int>());
+      expect(args['configId'], 'c');
+      expect(args['maxAdUnitId'], 'u');
+      expect(args['isVideo'], isFalse);
+    });
+
+    test('full load sends controls, ORTB, slot and video', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      await PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
         isVideo: true,
         controls: const PrebidFullscreenControls(
+          isMuted: false,
           minSizePercentage: Size(50, 70),
         ),
+        impOrtbConfig: '{}',
+        globalOrtbConfig: '{"app":{}}',
+        pbAdSlot: '/slot',
         videoParameters: const VideoParameters(
           mimes: ['video/mp4'],
           protocols: [VideoProtocol.vast4_0],
           plcmt: VideoPlcmt.interstitial,
           skippable: false,
-          maxDuration: 30,
+          maxDuration: 15,
         ),
-        listener: PrebidInterstitialAdListener(
-          onAdLoaded: () => fired.add('loaded'),
-          onAdDisplayed: () => fired.add('displayed'),
-          onAdImpression: () => fired.add('impression'),
-          onAdClicked: () => fired.add('clicked'),
-          onAdClosed: () => fired.add('closed'),
-        ),
-      );
+      ).loadAd();
+      expect(h.argsOf('load')..remove('adId'), {
+        'configId': 'c',
+        'maxAdUnitId': 'u',
+        'isVideo': true,
+        'controls': {
+          'isMuted': false,
+          'minWidthPercentage': 50,
+          'minHeightPercentage': 70,
+        },
+        'impOrtbConfig': '{}',
+        'globalOrtbConfig': '{"app":{}}',
+        'pbAdSlot': '/slot',
+        'videoParameters': {
+          'mimes': ['video/mp4'],
+          'protocols': [7],
+          'maxDuration': 15,
+          'plcmt': 3,
+          'skippable': false,
+        },
+      });
+    });
+
+    test('show and destroy send only the adId', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final ad = PrebidMaxInterstitialAd(configId: 'c', maxAdUnitId: 'u');
       await ad.loadAd();
+      final adId = h.argsOf('load')['adId'];
 
-      final args = h.argsOf('load');
-      expect(args['configId'], 'config-i');
-      expect(args['maxAdUnitId'], 'unit-i');
-      expect(args['isVideo'], isTrue);
-      expect(args['controls'], {
-        'minWidthPercentage': 50,
-        'minHeightPercentage': 70,
-      });
-      expect(args['videoParameters'], {
-        'mimes': ['video/mp4'],
-        'protocols': [7],
-        'maxDuration': 30,
-        'plcmt': 3,
-        'skippable': false,
-      });
-
-      final adId = args['adId'] as int;
-      for (final e in [
-        'onAdLoaded',
-        'onAdDisplayed',
-        'onAdImpression',
-        'onAdClicked',
-        'onAdClosed',
-      ]) {
-        await h.emit(e, adId);
-      }
-      expect(fired, ['loaded', 'displayed', 'impression', 'clicked', 'closed']);
-      expect(ad.isLoaded, isFalse); // closed
-
-      await h.emit('onAdLoaded', adId);
       await ad.show();
       expect(h.calls.last.method, 'show');
-      expect(ad.isLoaded, isFalse);
-      await h.emit('onAdLoaded', adId);
-      await h.emit('onAdFailed', adId, {'error': 'x'});
-      expect(ad.isLoaded, isFalse);
+      expect(h.calls.last.arguments, {'adId': adId});
       await ad.destroy();
       expect(h.calls.last.method, 'destroy');
+      expect(h.calls.last.arguments, {'adId': adId});
+    });
+
+    test('every event reaches its callback', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      await h.emit('onAdLoaded', adId);
+      expect(ad.isLoaded, isTrue);
+      await h.emit('onAdDisplayed', adId);
+      await h.emit('onAdImpression', adId);
+      await h.emit('onAdClicked', adId);
+      await h.emit('onAdClosed', adId);
+      expect(ad.isLoaded, isFalse);
+      await h.emit('onAdFailed', adId, {'error': 'no fill'});
+      await h.emit('onAdFailed', adId); // no error key
+      await h.emit('onSomethingElse', adId); // unknown: ignored
+
+      expect(fired, [
+        'loaded',
+        'displayed',
+        'impression',
+        'clicked',
+        'closed',
+        'failed:no fill',
+        'failed:Unknown error',
+      ]);
+    });
+
+    test('a load without an Activity fails through the listener', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      // The native side answers the call and reports the failure as an event
+      // (no PlatformException), as on iOS.
+      await expectLater(ad.loadAd(), completes);
+      await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
+        'error': 'No Activity is attached to the Flutter engine',
+      });
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
+      expect(ad.isLoaded, isFalse);
+    });
+
+    test('a load before Prebid init fails through the listener', () async {
+      // Android: Prebid drops requests made before init without calling
+      // back, so the plugin fails the load instead of letting it hang.
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      await ad.loadAd();
+      await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
+        'error': 'The Prebid SDK is not initialized',
+      });
+      expect(fired, ['failed:The Prebid SDK is not initialized']);
+      expect(ad.isLoaded, isFalse);
+    });
+
+    test('events without an adId or for other ads are ignored', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final a = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      final b = PrebidMaxInterstitialAd(configId: 'c', maxAdUnitId: 'u');
+      await a.loadAd();
+      final aId = h.argsOf('load')['adId'] as int;
+      await b.loadAd();
+      final bId = h.argsOf('load')['adId'] as int;
+      expect(aId, isNot(bId));
+
+      await h.emit('onAdLoaded', bId);
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(
+            _interstitialChannel,
+            const StandardMethodCodec().encodeMethodCall(
+              const MethodCall('onAdLoaded'),
+            ),
+            (_) {},
+          );
+      expect(fired, isEmpty);
+      expect(b.isLoaded, isTrue);
+      expect(a.isLoaded, isFalse);
+    });
+
+    test('destroy stops events; a reload routes them again', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+      await h.emit('onAdLoaded', adId);
+      await ad.destroy();
+      expect(ad.isLoaded, isFalse);
+      await h.emit('onAdClosed', adId);
+      expect(fired, ['loaded']);
+
+      await ad.loadAd();
+      expect(h.calls.map((c) => c.method), ['load', 'destroy', 'load']);
+      expect(h.argsOf('load')['adId'], adId);
+      await h.emit('onAdLoaded', adId);
+      expect(fired, ['loaded', 'loaded']);
+      expect(ad.isLoaded, isTrue);
     });
   });
 
   group('PrebidMaxRewardedAd', () {
-    test('forwards controls and maps the reward', () async {
-      final h = ChannelHarness('prebid_mobile_sdk_max/rewarded');
-      PrebidReward? reward;
-      var impressions = 0;
-      final ad = PrebidMaxRewardedAd(
-        configId: 'config-r',
-        maxAdUnitId: 'unit-r',
-        controls: const PrebidFullscreenControls(isSoundButtonVisible: true),
+    test('minimal load sends exactly adId and ids', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      await PrebidMaxRewardedAd(configId: 'c', maxAdUnitId: 'u').loadAd();
+      final args = h.argsOf('load');
+      expect(args.keys, unorderedEquals(['adId', 'configId', 'maxAdUnitId']));
+      expect(args['configId'], 'c');
+      expect(args['maxAdUnitId'], 'u');
+    });
+
+    test('full load sends controls, ORTB, slot and video', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      await PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        controls: const PrebidFullscreenControls(skipDelay: 3),
+        impOrtbConfig: '{}',
+        globalOrtbConfig: '{"app":{}}',
+        pbAdSlot: '/slot',
         videoParameters: const VideoParameters(
           mimes: ['video/mp4'],
           battr: [VideoCreativeAttribute.adCanBeSkipped],
           maxBitrate: 2000,
         ),
-        listener: PrebidRewardedAdListener(
-          onUserEarnedReward: (r) => reward = r,
-          onAdImpression: () => impressions++,
-        ),
-      );
-      await ad.loadAd();
-      final args = h.argsOf('load');
-      expect(args['controls'], {'isSoundButtonVisible': true});
-      expect(args['videoParameters'], {
-        'mimes': ['video/mp4'],
-        'battr': [16],
-        'maxBitrate': 2000,
+      ).loadAd();
+      expect(h.argsOf('load')..remove('adId'), {
+        'configId': 'c',
+        'maxAdUnitId': 'u',
+        'controls': {'skipDelay': 3},
+        'impOrtbConfig': '{}',
+        'globalOrtbConfig': '{"app":{}}',
+        'pbAdSlot': '/slot',
+        'videoParameters': {
+          'mimes': ['video/mp4'],
+          'battr': [16],
+          'maxBitrate': 2000,
+        },
       });
-
-      final adId = args['adId'] as int;
-      await h.emit('onAdImpression', adId);
-      await h.emit('onUserEarnedReward', adId, {
-        'rewardType': 'coins',
-        'rewardCount': 3,
-      });
-      expect(impressions, 1);
-      expect(reward?.type, 'coins');
-      expect(reward?.count, 3);
-      expect(reward?.ext, isNull);
     });
 
-    test('reward parsing matches the GAM package (defaults + ext)', () async {
-      final h = ChannelHarness('prebid_mobile_sdk_max/rewarded');
-      final rewards = <PrebidReward>[];
-      final ad = PrebidMaxRewardedAd(
-        configId: 'config-r',
-        maxAdUnitId: 'unit-r',
-        listener: PrebidRewardedAdListener(onUserEarnedReward: rewards.add),
-      );
-      await ad.loadAd();
-      final adId = h.argsOf('load')['adId'] as int;
-
-      await h.emit('onUserEarnedReward', adId);
-      await h.emit('onUserEarnedReward', adId, {
-        'rewardType': 'gems',
-        'rewardCount': 2,
-        'rewardExt': '{"tier":1}',
-      });
-      expect(rewards.map((r) => [r.type, r.count, r.ext]), [
-        ['reward', 1, null],
-        [
-          'gems',
-          2,
-          {'tier': 1},
-        ],
-      ]);
-    });
-
-    test('isLoaded resets on show, close and failure', () async {
-      final h = ChannelHarness('prebid_mobile_sdk_max/rewarded');
+    test('isLoaded resets on show, close, failure and destroy', () async {
+      final h = ChannelHarness(_rewardedChannel);
       final ad = PrebidMaxRewardedAd(configId: 'c', maxAdUnitId: 'u');
       await ad.loadAd();
       final adId = h.argsOf('load')['adId'] as int;
@@ -153,20 +286,196 @@ void main() {
       await h.emit('onAdLoaded', adId);
       expect(ad.isLoaded, isTrue);
       await ad.show();
-      expect(h.calls.last.method, 'show');
       expect(ad.isLoaded, isFalse);
-
-      await h.emit('onAdLoaded', adId);
-      await h.emit('onAdClosed', adId);
-      expect(ad.isLoaded, isFalse);
-
-      await h.emit('onAdLoaded', adId);
-      await h.emit('onAdFailed', adId, {'error': 'not ready'});
-      expect(ad.isLoaded, isFalse);
-
+      for (final end in ['onAdClosed', 'onAdFailed']) {
+        await h.emit('onAdLoaded', adId);
+        await h.emit(end, adId);
+        expect(ad.isLoaded, isFalse, reason: end);
+      }
       await h.emit('onAdLoaded', adId);
       await ad.destroy();
       expect(ad.isLoaded, isFalse);
+    });
+
+    test('show and destroy send only the adId', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final ad = PrebidMaxRewardedAd(configId: 'c', maxAdUnitId: 'u');
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'];
+      await ad.show();
+      expect(h.calls.last.method, 'show');
+      expect(h.calls.last.arguments, {'adId': adId});
+      await ad.destroy();
+      expect(h.calls.last.method, 'destroy');
+      expect(h.calls.last.arguments, {'adId': adId});
+    });
+
+    test('every event reaches its callback', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _rewardedListener(fired),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      for (final e in [
+        'onAdLoaded',
+        'onAdDisplayed',
+        'onAdImpression',
+        'onAdClicked',
+        'onUserEarnedReward',
+        'onAdClosed',
+        'onUnknown',
+      ]) {
+        await h.emit(e, adId);
+      }
+      await h.emit('onAdFailed', adId, {'error': 'boom'});
+      expect(fired, [
+        'loaded',
+        'displayed',
+        'impression',
+        'clicked',
+        'reward',
+        'closed',
+        'failed:boom',
+      ]);
+    });
+
+    test('rewards keep type, count and ext; bad ext is dropped', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final rewards = <PrebidReward>[];
+      final ad = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _rewardedListener([], rewards),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+
+      await h.emit('onUserEarnedReward', adId, {
+        'rewardType': 'gems',
+        'rewardCount': 2.0,
+        'rewardExt': {'tier': 1},
+      });
+      await h.emit('onUserEarnedReward', adId, {
+        'rewardType': 'coins',
+        'rewardCount': 5,
+        'rewardExt': 'not json',
+      });
+      await h.emit('onUserEarnedReward', adId, {'rewardExt': '[1, 2]'});
+      expect(rewards.map((r) => [r.type, r.count, r.ext]), [
+        [
+          'gems',
+          2,
+          {'tier': 1},
+        ],
+        ['coins', 5, null],
+        ['reward', 1, null],
+      ]);
+    });
+
+    test('a load without an Activity fails through the listener', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _rewardedListener(fired),
+      );
+      await expectLater(ad.loadAd(), completes);
+      await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
+        'error': 'No Activity is attached to the Flutter engine',
+      });
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
+      expect(ad.isLoaded, isFalse);
+    });
+
+    test('destroy stops events; a reload routes them again', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _rewardedListener(fired),
+      );
+      await ad.loadAd();
+      final adId = h.argsOf('load')['adId'] as int;
+      await ad.destroy();
+      await h.emit('onUserEarnedReward', adId);
+      await h.emit('onAdLoaded', adId);
+      expect(fired, isEmpty);
+
+      await ad.loadAd();
+      await h.emit('onAdLoaded', adId);
+      expect(fired, ['loaded']);
+      expect(ad.isLoaded, isTrue);
+    });
+
+    test('a load while another ad on the MAX unit shows fails alone', () async {
+      // MAX shares one rewarded instance per ad unit: while ad A is on
+      // screen, a load of ad B on the same unit is refused natively and only
+      // B hears about it; A keeps its reward and close.
+      final h = ChannelHarness(_rewardedChannel);
+      final firedA = <String>[];
+      final firedB = <String>[];
+      final a = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'unit',
+        listener: _rewardedListener(firedA),
+      );
+      final b = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'unit',
+        listener: _rewardedListener(firedB),
+      );
+      await a.loadAd();
+      final aId = h.argsOf('load')['adId'] as int;
+      await h.emit('onAdLoaded', aId);
+      await a.show();
+      await h.emit('onAdDisplayed', aId);
+
+      await b.loadAd();
+      final bId = h.argsOf('load')['adId'] as int;
+      expect(h.argsOf('load')['maxAdUnitId'], 'unit');
+      const showing =
+          'Another ad for this MAX ad unit is showing; load the next one '
+          'after onAdClosed';
+      await h.emit('onAdFailed', bId, {'error': showing});
+      await h.emit('onUserEarnedReward', aId, {
+        'rewardType': 'coins',
+        'rewardCount': 1,
+      });
+      await h.emit('onAdClosed', aId);
+
+      expect(firedB, ['failed:$showing']);
+      expect(b.isLoaded, isFalse);
+      expect(firedA, ['loaded', 'displayed', 'reward', 'closed']);
+
+      // After the close, B loads normally.
+      await b.loadAd();
+      await h.emit('onAdLoaded', bId);
+      expect(firedB, ['failed:$showing', 'loaded']);
+      expect(b.isLoaded, isTrue);
+    });
+
+    test('a replaced owner is told so and stops getting events', () async {
+      final h = ChannelHarness(_rewardedChannel);
+      final firedA = <String>[];
+      final a = PrebidMaxRewardedAd(
+        configId: 'c',
+        maxAdUnitId: 'unit',
+        listener: _rewardedListener(firedA),
+      );
+      await a.loadAd();
+      final aId = h.argsOf('load')['adId'] as int;
+      await h.emit('onAdFailed', aId, {
+        'error': 'Replaced by another ad on the same MAX ad unit',
+      });
+      expect(firedA, ['failed:Replaced by another ad on the same MAX ad unit']);
+      expect(a.isLoaded, isFalse);
     });
   });
 }

@@ -44,7 +44,7 @@ void main() {
       });
     }, variant: android);
 
-    testWidgets('optional creation params', (tester) async {
+    testWidgets('every optional creation param', (tester) async {
       final views = PlatformViewHarness('prebid_mobile_sdk_gam/banner');
       addTearDown(views.dispose);
       await tester.pumpWidget(
@@ -54,21 +54,101 @@ void main() {
             gamAdUnitId: 'u',
             width: 320,
             height: 50,
+            additionalSizes: [Size(300, 250), Size(728, 90)],
             isVideo: true,
+            adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
+            pbAdSlot: '/slot',
+            impOrtbConfig: '{"ext":{"gpid":"/1/banner"}}',
+            globalOrtbConfig: '{"app":{}}',
+            videoParameters: VideoParameters(
+              mimes: ['video/mp4'],
+              plcmt: VideoPlcmt.accompanyingContent,
+              maxDuration: 30,
+            ),
             autoLoad: false,
             refreshIntervalSeconds: 30,
             customTargeting: {'k': 'v'},
             videoPlacementType: VideoPlacementType.inFeed,
+            adPosition: PrebidAdPosition.footer,
           ),
         ),
       );
       await tester.pumpAndSettle();
-      final p = views.creationParams!;
-      expect(p['isVideo'], isTrue);
-      expect(p['autoLoad'], isFalse);
-      expect(p['refreshIntervalSeconds'], 30);
-      expect(p['customTargeting'], {'k': 'v'});
-      expect(p['videoPlacementType'], 'inFeed');
+      expect(views.creationParams, {
+        'configId': 'c',
+        'gamAdUnitId': 'u',
+        'width': 320,
+        'height': 50,
+        'isVideo': true,
+        'autoLoad': false,
+        'adPosition': 5,
+        'additionalSizes': [300, 250, 728, 90],
+        'adFormats': ['banner', 'video'],
+        'pbAdSlot': '/slot',
+        'impOrtbConfig': '{"ext":{"gpid":"/1/banner"}}',
+        'globalOrtbConfig': '{"app":{}}',
+        'videoParameters': {
+          'mimes': ['video/mp4'],
+          'maxDuration': 30,
+          'plcmt': 2,
+        },
+        'refreshIntervalSeconds': 30,
+        'customTargeting': {'k': 'v'},
+        'videoPlacementType': 'inFeed',
+      });
+    }, variant: android);
+
+    testWidgets('a controller loads on demand; dispose detaches it', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/banner');
+      addTearDown(views.dispose);
+      final controller = PrebidBannerAdController();
+      var loaded = 0;
+
+      await controller.loadAd();
+      await tester.pumpWidget(
+        _host(
+          PrebidGamBannerAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            width: 320,
+            height: 50,
+            autoLoad: false,
+            controller: controller,
+            listener: PrebidBannerAdListener(onAdLoaded: () => loaded++),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(views.calls.map((c) => c.method), ['loadAd']);
+      await views.emit('onAdLoaded');
+      expect(loaded, 1);
+
+      await tester.pumpWidget(_host(const SizedBox()));
+      await views.emit('onAdLoaded');
+      expect(loaded, 1);
+    }, variant: android);
+
+    testWidgets('a failure reports the error of its payload', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/banner');
+      addTearDown(views.dispose);
+      final errors = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidGamBannerAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            width: 320,
+            height: 50,
+            listener: PrebidBannerAdListener(onAdFailed: errors.add),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await views.emit('onAdFailed', {'error': 'No fill'});
+      expect(errors, ['No fill']);
     }, variant: android);
 
     testWidgets('every event reaches its callback; onAdSize resizes', (
@@ -277,6 +357,76 @@ void main() {
       expect(p['gpid'], '/1111/home');
       expect(p['pbAdSlot'], '/1111/home-slot');
       expect(p['impOrtbConfig'], '{"ext":{"data":{"k":"v"}}}');
+    }, variant: android);
+
+    testWidgets('sends the native request options', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidGamNativeAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            globalOrtbConfig: '{"app":{}}',
+            nativeParameters: NativeParameters(
+              assets: [
+                NativeAsset.image(mimes: ['image/png'], ext: {'a': 1}),
+              ],
+              context: NativeContextType.contentCentric,
+              contextSubType: NativeContextSubType.article,
+              placementType: NativePlacementType.inFeed,
+              placementCount: 2,
+              sequence: 1,
+              assetUrlSupport: true,
+              dUrlSupport: false,
+              privacy: true,
+              ext: {'k': 1},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final p = views.creationParams!;
+      expect(p['assets'], [
+        {
+          'assetType': 'image',
+          'required': false,
+          'imageType': 3,
+          'imageMimes': ['image/png'],
+          'ext': '{"a":1}',
+        },
+      ]);
+      expect(
+        [p['context'], p['contextSubType'], p['placementType']],
+        [1, 11, 1],
+      );
+      expect([p['placementCount'], p['sequence']], [2, 1]);
+      expect(
+        [p['assetUrlSupport'], p['dUrlSupport'], p['privacy']],
+        [true, false, true],
+      );
+      expect(p['ext'], '{"k":1}');
+      expect(p['globalOrtbConfig'], '{"app":{}}');
+    }, variant: android);
+
+    testWidgets('a primary ad failure reports the error of its payload', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      final errors = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidGamNativeAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            listener: PrebidGamNativeAdListener(onPrimaryAdFailed: errors.add),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await views.emit('primaryAdFailed', {'error': 'No fill'});
+      expect(errors, ['No fill']);
     }, variant: android);
 
     testWidgets('an event sent while the view is created is delivered', (

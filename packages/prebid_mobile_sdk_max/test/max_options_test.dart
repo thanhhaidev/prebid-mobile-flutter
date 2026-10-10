@@ -315,4 +315,17 @@ void main() {
       expect(i.argsOf('load')['debugDropBidProbability'], 1.0);
     });
   });
+
+  test('a revenue reads well in logs', () {
+    expect(
+      const PrebidMaxAdRevenue(
+        revenue: 0.012,
+        revenuePrecision: 'exact',
+        networkName: 'Prebid',
+        placement: 'home',
+      ).toString(),
+      'PrebidMaxAdRevenue(revenue: 0.012, precision: exact, network: Prebid, '
+      'placement: home)',
+    );
+  });
 }

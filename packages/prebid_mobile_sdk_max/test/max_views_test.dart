@@ -40,6 +40,107 @@ void main() {
       });
     }, variant: android);
 
+    testWidgets('every optional creation param', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/banner');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidMaxBannerAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            width: 300,
+            height: 250,
+            adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
+            videoParameters: VideoParameters(
+              mimes: ['video/mp4'],
+              plcmt: VideoPlcmt.instream,
+              maxDuration: 30,
+            ),
+            adPosition: PrebidAdPosition.footer,
+            pbAdSlot: '/slot',
+            impOrtbConfig: '{"ext":{"gpid":"/1111/home"}}',
+            globalOrtbConfig: '{"app":{}}',
+            autoLoad: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(views.creationParams, {
+        'configId': 'c',
+        'maxAdUnitId': 'u',
+        'width': 300,
+        'height': 250,
+        'autoLoad': false,
+        'adPosition': 5,
+        'impOrtbConfig': '{"ext":{"gpid":"/1111/home"}}',
+        'globalOrtbConfig': '{"app":{}}',
+        'pbAdSlot': '/slot',
+        'adFormats': ['banner', 'video'],
+        'videoParameters': {
+          'mimes': ['video/mp4'],
+          'maxDuration': 30,
+          'plcmt': 1,
+        },
+      });
+    }, variant: android);
+
+    testWidgets('a controller loads on demand and stops refresh; dispose '
+        'detaches it', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/banner');
+      addTearDown(views.dispose);
+      final controller = PrebidBannerAdController();
+      var loaded = 0;
+
+      // Requested before the native view exists: runs once it is created.
+      await controller.loadAd();
+      await tester.pumpWidget(
+        _host(
+          PrebidMaxBannerAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            width: 320,
+            height: 50,
+            autoLoad: false,
+            controller: controller,
+            listener: PrebidBannerAdListener(onAdLoaded: () => loaded++),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(views.calls.map((c) => c.method), ['loadAd']);
+      await controller.stopRefresh();
+      expect(views.calls.last.method, 'stopRefresh');
+      await views.emit('onAdLoaded');
+      expect(loaded, 1);
+
+      await tester.pumpWidget(_host(const SizedBox()));
+      await views.emit('onAdLoaded'); // handler cleared: ignored
+      expect(loaded, 1);
+      await controller.loadAd(); // detached: queued, nothing sent
+      expect(views.calls, hasLength(2));
+    }, variant: android);
+
+    testWidgets('a failure reports the error of its payload', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/banner');
+      addTearDown(views.dispose);
+      final errors = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidMaxBannerAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            width: 320,
+            height: 50,
+            listener: PrebidBannerAdListener(onAdFailed: errors.add),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await views.emit('onAdFailed', {'error': 'No fill'});
+      expect(errors, ['No fill']);
+    }, variant: android);
+
     testWidgets('every event reaches its callback; onAdSize resizes', (
       tester,
     ) async {
@@ -261,6 +362,68 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(fired, ['failed:The Prebid SDK is not initialized']);
+    }, variant: android);
+
+    testWidgets('sends the native request options and ORTB', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/native');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidMaxNativeAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            impOrtbConfig: '{"ext":{"gpid":"/1111/home"}}',
+            globalOrtbConfig: '{"app":{}}',
+            nativeParameters: NativeParameters(
+              context: NativeContextType.contentCentric,
+              contextSubType: NativeContextSubType.article,
+              placementType: NativePlacementType.inFeed,
+              placementCount: 2,
+              sequence: 1,
+              assetUrlSupport: true,
+              dUrlSupport: false,
+              privacy: true,
+              ext: {'k': 1},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final p = views.creationParams!;
+      expect(
+        [p['context'], p['contextSubType'], p['placementType']],
+        [1, 11, 1],
+      );
+      expect([p['placementCount'], p['sequence']], [2, 1]);
+      expect(
+        [p['assetUrlSupport'], p['dUrlSupport'], p['privacy']],
+        [true, false, true],
+      );
+      expect(p['ext'], '{"k":1}');
+      expect(p['impOrtbConfig'], '{"ext":{"gpid":"/1111/home"}}');
+      expect(p['globalOrtbConfig'], '{"app":{}}');
+    }, variant: android);
+
+    testWidgets('a failure reports the error of its payload', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/native');
+      addTearDown(views.dispose);
+      final errors = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidMaxNativeAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            listener: PrebidMaxNativeAdListener(onAdFailed: errors.add),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await views.emit('onAdFailed', {'error': 'No fill'});
+      expect(errors, ['No fill']);
+
+      await tester.pumpWidget(_host(const SizedBox()));
+      await views.emit('onAdFailed', {'error': 'late'}); // disposed: ignored
+      expect(errors, ['No fill']);
     }, variant: android);
 
     testWidgets('every event reaches its callback; onAdSize resizes', (

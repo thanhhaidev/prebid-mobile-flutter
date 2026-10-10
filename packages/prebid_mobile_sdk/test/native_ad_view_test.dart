@@ -62,6 +62,29 @@ void main() {
     expect(viewSize(tester), const Size(300, 320));
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
+  testWidgets('a custom layout draws the child over the tracking view and '
+      'a tap clicks the ad', (tester) async {
+    when(api.performClick(any)).thenAnswer((_) async => true);
+    final ad = PrebidNativeAd(configId: 'n');
+    final adId = await adIdOf(ad);
+    await tester.pumpWidget(
+      _host(
+        Center(
+          child: PrebidNativeAdView.custom(
+            ad: ad,
+            child: const SizedBox(width: 200, height: 100),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(platform.views.single.params, {'adId': adId, 'layout': 'custom'});
+    expect(viewSize(tester), const Size(200, 100));
+
+    await tester.tap(find.byType(SizedBox).last);
+    verify(api.performClick(adId)).called(1);
+  }, variant: _ios);
+
   group('width', () {
     testWidgets('an explicit width is used', (tester) async {
       final ad = PrebidNativeAd(configId: 'n');

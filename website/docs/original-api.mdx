@@ -100,7 +100,11 @@ final bid = await ad.fetchDemand();
 debugPrint('${bid.winningFormat}'); // banner, video or native
 ```
 
-`PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp` and `topBidFiltered`.
+`PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp`, `topBidFiltered` and `events` (the win and impression URLs, when Prebid Server sends them). A native win shows with [`PrebidNativeAd.loadFromCacheId`](/docs/native#original-api-native).
+
+More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request, `gpid` and `adPosition`. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
+
+For video, set `VideoParameters.size` (`imp.video.w` / `h`): many bidders reject an Original API video request without a player size.
 
 ## Auto-refresh
 
@@ -128,6 +132,19 @@ Prebid can fire the bid's impression URL (`burl`) when GAM shows the Prebid crea
 - **Banner:** call `unit.activateImpressionTracker()` from GAM's `onAdLoaded`. It looks for the Google Mobile Ads banner in the window (a Flutter widget can't hand over the native view), so it needs exactly one GMA banner on screen and returns `false` otherwise. On iOS the current bid is tracked; Prebid Android attaches the view when an auction starts, so on Android tracking applies from the next auction (auto-refresh or the next `fetchDemand`).
 - **Interstitial:** create the unit with `trackImpression: true`.
 
+## Creative size
+
+A multisize GAM banner renders at the size of the GAM line item, not of the Prebid creative inside it. Once GAM's `onAdLoaded` fires, `findPrebidCreativeSize()` reads the creative's size from the rendered ad so you can resize the banner; it returns `null` when the creative isn't a Prebid one. Like the impression tracker, it needs exactly one Google Mobile Ads banner on screen.
+
+```dart
+final size = await ad.findPrebidCreativeSize();
+if (size != null) setState(() => _bannerSize = size);
+```
+
+## SKAdNetwork <Only platform="ios" />
+
+For SKAdNetwork bids rendered by GAM: `activateBannerSKAdNetwork()` (from GAM's `onAdLoaded`), `activateInterstitialSKAdNetwork()`, `activateSKOverlay()` / `dismissSKOverlay()`, and `supportSKOverlay: true` on an interstitial `PrebidMultiformatAd`. They do nothing on Android.
+
 ## Result codes
 
 | `resultCode` | Meaning |
@@ -139,3 +156,5 @@ Prebid can fire the bid's impression URL (`burl`) when GAM shows the Prebid crea
 | `prebidNetworkError`, `prebidServerError` | The request failed. |
 | `prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`, `prebidServerURLInvalid` | Configuration errors. |
 | `prebidSdkNotInitialized` | `fetchDemand` ran before `initializeSdk` completed (Android). |
+| `prebidInvalidContext`, `prebidInvalidAdObject`, `prebidInvalidNativeRequest` | Request errors Prebid Android reports. |
+| `prebidUnknownError`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData`, `prebidSDKMisuse` | SDK errors Prebid iOS reports. |

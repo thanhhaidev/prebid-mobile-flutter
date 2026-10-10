@@ -16,8 +16,11 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `PrebidFullscreenControls.supportSKOverlay` | Ignored | ✓ (core and GAM) |
 | `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ |
 | Rewarded skip controls | ✓ | Ignored |
-| Banner `videoParameters` | SDK defaults | ✓ |
+| Rewarded `adFormats` and minimum size (`PrebidFullscreenControls.minSizePercentage`) | Ignored | ✓ |
+| Banner `videoParameters` (core, GAM, AdMob, MAX) | SDK defaults | ✓ |
 | Interstitial / rewarded `videoParameters` | `maxDuration` caps the rendered video | ✓ every field |
+| App keywords (`PrebidTargeting.addAppKeyword` and the rest) | Logged and ignored: set `app.keywords` with `setGlobalOrtbConfig` | ✓ |
+| Original API SKAdNetwork (`activateBannerSKAdNetwork`, `activateInterstitialSKAdNetwork`, `activateSKOverlay`, `supportSKOverlay`) | No-ops | ✓ |
 
 ## Behavior the plugin aligns
 
@@ -27,9 +30,10 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Original API auto-refresh | Prebid Android's `PrebidAdUnit` can't refresh; iOS ignores intervals under 30 s | Refresh works on both, clamped to 30–120 s |
 | Status check disabled | iOS reports "skipped" | `succeeded` on both |
 | Empty seat bid | Android reports success | `prebidDemandNoBids` on both |
-| Requests before init | Android drops them silently | `onAdFailed` / `prebidSdkNotInitialized` |
-| Native impression | Fired when a tracker request succeeds (never without trackers) | Viewability: half the view for 1 s, including Flutter's clipping, once per ad |
-| Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once |
+| Requests before init | Android drops them silently | `onAdFailed` / `prebidSdkNotInitialized`, in every package (GAM native: `onFetchDemandFailed('prebidSdkNotInitialized')`, then the GAM ad loads alone) |
+| Native impression | Fired when a tracker request succeeds (never without trackers) | `PrebidNativeAdView`: viewability, half the view for 1 s, including Flutter's clipping, once per ad. `PrebidGamNativeAd` keeps Prebid's tracker callback |
+| Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once (core and GAM banners) |
+| Native custom layout clicks | Prebid Android clicks a registered view; Prebid iOS has no click API | `PrebidNativeAd.performClick` on both |
 | Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
 | `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
 | Creative factory timeouts | iOS stores seconds | Milliseconds on both |
@@ -40,4 +44,5 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 - **Banner impression tracker (Original API):** iOS tracks the current bid; Android attaches the GAM view when the next auction starts. See [impression tracking](/docs/original-api#impression-tracking).
 - **Runtime server switch (iOS):** `setPrebidServerUrl` throws for a malformed URL and leaves the `nonTrackingUrl` from `initializeSdk` in place; `getPrebidServerUrl` returns the URL the current user's auctions use.
 - **Rendering API caching (iOS):** creating an Original API ad unit turns `useCacheForReportingWithRenderingApi` on.
+- **Result codes:** both platforms report the same names for the same outcome. A few exist on one platform only: `prebidInvalidContext`, `prebidInvalidAdObject` and `prebidInvalidNativeRequest` on Android; `prebidUnknownError`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData` and `prebidSDKMisuse` on iOS.
 - **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).

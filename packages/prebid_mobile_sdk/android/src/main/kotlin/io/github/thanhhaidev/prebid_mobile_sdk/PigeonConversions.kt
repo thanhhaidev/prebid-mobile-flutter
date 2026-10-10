@@ -2,6 +2,15 @@ package io.github.thanhhaidev.prebid_mobile_sdk
 
 import org.json.JSONArray
 import org.json.JSONObject
+import org.prebid.mobile.AdSize
+import org.prebid.mobile.NativeAdUnit
+import org.prebid.mobile.NativeAsset
+import org.prebid.mobile.NativeDataAsset
+import org.prebid.mobile.NativeEventTracker
+import org.prebid.mobile.NativeImageAsset
+import org.prebid.mobile.NativeParameters
+import org.prebid.mobile.NativeTitleAsset
+import org.prebid.mobile.PrebidNativeAd
 import org.prebid.mobile.ResultCode
 import org.prebid.mobile.Signals
 import org.prebid.mobile.VideoParameters
@@ -44,7 +53,10 @@ internal fun ResultCode.toDartCode(): String = when (this) {
     ResultCode.NO_BIDS -> "prebidDemandNoBids"
     ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
     ResultCode.TIMEOUT -> "prebidDemandTimedOut"
-    else -> "prebidInvalidRequest"
+    ResultCode.INVALID_CONTEXT -> "prebidInvalidContext"
+    ResultCode.INVALID_AD_OBJECT -> "prebidInvalidAdObject"
+    ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
+    ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
 }
 
 /**
@@ -84,6 +96,7 @@ internal fun VideoParametersConfig.toVideoParameters(): VideoParameters {
     }
     minBitrate?.let { vp.minBitrate = it.toInt() }
     maxBitrate?.let { vp.maxBitrate = it.toInt() }
+    if (width != null && height != null) vp.adSize = AdSize(width.toInt(), height.toInt())
     return vp
 }
 
@@ -115,3 +128,110 @@ private fun Any?.toPigeonValue(): Any? = when (this) {
     is JSONArray -> (0 until length()).map { opt(it).toPigeonValue() }
     else -> this
 }
+
+/** A Prebid native asset for the request, or null for an unknown type. */
+internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) {
+    "title" -> NativeTitleAsset().apply {
+        setLength(titleLength?.toInt() ?: 90)
+        isRequired = required_
+    }
+    "image" -> NativeImageAsset(
+        imageWidthMin?.toInt() ?: 0,
+        imageHeightMin?.toInt() ?: 0,
+        imageWidth?.toInt() ?: 0,
+        imageHeight?.toInt() ?: 0,
+    ).apply {
+        imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.imageType }
+        imageMimes?.filterNotNull()?.forEach(::addMime)
+        isRequired = required_
+    }
+    "data" -> NativeDataAsset().apply {
+        dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.dataType }
+        dataLength?.let { setLen(it.toInt()) }
+        isRequired = required_
+    }
+    else -> null
+}
+
+/** A Prebid native event tracker, or null for an unknown event type. */
+internal fun NativeEventTrackerConfig.toPrebidTracker(): NativeEventTracker? {
+    val type = NativeEventTracker.EVENT_TYPE.values().firstOrNull { it.id.toLong() == eventType }
+        ?: return null
+    val trackingMethods = methods.mapNotNull { id ->
+        NativeEventTracker.EVENT_TRACKING_METHOD.values().firstOrNull { it.id.toLong() == id }
+    }
+    return NativeEventTracker(type, ArrayList(trackingMethods))
+}
+
+/**
+ * The native request settings of a [NativeAdRequestConfig], applied to an
+ * In-App [NativeAdUnit] or an Original API [NativeParameters] (two Prebid
+ * types with the same setters and no common interface).
+ */
+internal class NativeRequestSettings(private val config: NativeAdRequestConfig) {
+    private val assets = config.assets.orEmpty().mapNotNull { it?.toPrebidAsset() }
+    private val trackers = config.eventTrackers.orEmpty().mapNotNull { it?.toPrebidTracker() }
+    private val context = NativeAdUnit.CONTEXT_TYPE.values().firstOrNull { it.id.toLong() == config.context }
+    private val contextSubType =
+        NativeAdUnit.CONTEXTSUBTYPE.values().firstOrNull { it.id.toLong() == config.contextSubType }
+    private val placementType =
+        NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { it.id.toLong() == config.placementType }
+    private val ext = config.ext?.let { runCatching { JSONObject(it) }.getOrNull() }
+
+    fun applyTo(unit: NativeAdUnit) {
+        assets.forEach(unit::addAsset)
+        trackers.forEach(unit::addEventTracker)
+        context?.let(unit::setContextType)
+        contextSubType?.let(unit::setContextSubType)
+        placementType?.let(unit::setPlacementType)
+        config.placementCount?.let { unit.setPlacementCount(it.toInt()) }
+        config.sequence?.let { unit.setSeq(it.toInt()) }
+        config.assetUrlSupport?.let(unit::setAUrlSupport)
+        config.dUrlSupport?.let(unit::setDUrlSupport)
+        config.privacy?.let(unit::setPrivacy)
+        ext?.let(unit::setExt)
+        config.pbAdSlot?.let(unit::setPbAdSlot)
+        config.gpid?.let(unit::setGpid)
+        config.impOrtbConfig?.let(unit::setImpOrtbConfig)
+        config.globalOrtbConfig?.let(unit::setGlobalOrtbConfig)
+    }
+
+    fun toParameters(): NativeParameters = NativeParameters(assets).apply {
+        trackers.forEach(::addEventTracker)
+        context?.let(::setContextType)
+        contextSubType?.let(::setContextSubType)
+        placementType?.let(::setPlacementType)
+        config.placementCount?.let { setPlacementCount(it.toInt()) }
+        config.sequence?.let { setSeq(it.toInt()) }
+        config.assetUrlSupport?.let(::setAUrlSupport)
+        config.dUrlSupport?.let(::setDUrlSupport)
+        config.privacy?.let(::setPrivacy)
+        ext?.let(::setExt)
+    }
+}
+
+/** The assets of a loaded native ad, as sent to Dart. */
+internal fun PrebidNativeAd.toNativeAdData() = NativeAdData(
+    title = title,
+    text = description,
+    iconUrl = iconUrl,
+    imageUrl = imageUrl,
+    sponsoredBy = sponsoredBy,
+    callToAction = callToAction,
+    clickUrl = clickUrl,
+    privacyUrl = privacyUrl,
+    titles = titles.map { it.text },
+    images = images.map { NativeAdImageData(type = it.typeNumber.toLong(), url = it.url) },
+    dataAssets = dataList.map { NativeAdDataAssetData(type = it.typeNumber.toLong(), value = it.value) },
+)
+
+/** The Original API result of a fetchDemand [BidInfo]. */
+internal fun BidInfo.toMultiformatResult() = MultiformatBidResult(
+    resultCode = dartResultCode(),
+    winningFormat = targetingKeywords?.get("hb_format"),
+    targetingKeywords = targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
+    nativeAdCacheId = nativeCacheId,
+    exp = exp?.toDouble(),
+    topBidFiltered = isTopBidFiltered,
+    events = events?.takeIf { it.isNotEmpty() },
+)

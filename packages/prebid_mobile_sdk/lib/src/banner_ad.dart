@@ -6,7 +6,52 @@ import 'package:flutter/widgets.dart';
 
 import 'ad_enums.dart';
 import 'ad_listener.dart';
+import 'companion/ad_view_channel.dart';
 import 'video_parameters.dart';
+
+/// The winning bid of a loaded Prebid-rendered banner
+/// ([PrebidBannerAdController.winningBid]).
+class PrebidWinningBid {
+  /// Creates a [PrebidWinningBid].
+  const PrebidWinningBid({
+    required this.price,
+    required this.size,
+    this.bidder,
+    this.targetingKeywords = const {},
+  });
+
+  /// Reads the `onAdLoaded` payload of a banner view; null without a bid.
+  static PrebidWinningBid? fromPayload(Object? raw) {
+    if (raw is! Map) return null;
+    final price = (raw['price'] as num?)?.toDouble();
+    if (price == null) return null;
+    return PrebidWinningBid(
+      price: price,
+      bidder: raw['bidder'] as String?,
+      size: Size(
+        (raw['width'] as num?)?.toDouble() ?? 0,
+        (raw['height'] as num?)?.toDouble() ?? 0,
+      ),
+      targetingKeywords: {
+        for (final MapEntry(:key, :value)
+            in (raw['targetingKeywords'] as Map? ?? const {}).entries)
+          if (key is String && value is String) key: value,
+      },
+    );
+  }
+
+  /// The bid price (CPM, in the auction currency).
+  final double price;
+
+  /// The winning bidder (`hb_bidder`), when Prebid Server reports it.
+  final String? bidder;
+
+  /// The creative size in density-independent pixels.
+  final Size size;
+
+  /// The bid's targeting keywords (`hb_pb`, `hb_bidder`, ...).
+  final Map<String, String> targetingKeywords;
+}
 
 /// Controls a [PrebidBannerAd]: load on demand (with `autoLoad: false`) or
 /// stop auto-refresh.
@@ -24,6 +69,15 @@ class PrebidBannerAdController {
 
   MethodChannel? _channel;
   bool _pendingLoad = false;
+
+  /// The winning bid of the banner's last load, for analytics; null before
+  /// the first load and when the last one had no bid.
+  PrebidWinningBid? get winningBid => _winningBid;
+  PrebidWinningBid? _winningBid;
+
+  /// Records the bid of a loaded banner. Called by the banner widgets; not
+  /// for app code.
+  void reportWinningBid(PrebidWinningBid? bid) => _winningBid = bid;
 
   /// Loads (or reloads) the banner. Safe to call before the banner's native
   /// view exists — the load runs once it is created.
@@ -81,6 +135,7 @@ class PrebidBannerAd extends StatefulWidget {
     this.adPosition,
     this.videoParameters,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
     this.controller,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
@@ -126,7 +181,12 @@ class PrebidBannerAd extends StatefulWidget {
   /// `{"ext":{"gpid":"/1111/home"}}`).
   final String? impOrtbConfig;
 
-  /// Optional controller to load on demand / stop refresh.
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// [PrebidTargeting.setGlobalOrtbConfig]).
+  final String? globalOrtbConfig;
+
+  /// Optional controller to load on demand / stop refresh, and to read the
+  /// [PrebidBannerAdController.winningBid].
   final PrebidBannerAdController? controller;
 
   /// Whether the ad should load automatically when the widget is created.
@@ -161,6 +221,13 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   late double _width = widget.width.toDouble();
   late double _height = widget.height.toDouble();
 
+  /// The native view's channel, listened to before the view exists; a new
+  /// view (changed configuration) gets a new one.
+  late AdViewChannel _view = _listen();
+
+  AdViewChannel _listen() =>
+      AdViewChannel('prebid_mobile_sdk/banner_ad', _onNativeEvent);
+
   @override
   void didUpdateWidget(PrebidBannerAd oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -170,24 +237,27 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       // gets a new view (keyed below) that starts at the requested size.
       _width = widget.width.toDouble();
       _height = widget.height.toDouble();
-      // The old view is disposed: drop its channel now, so a
-      // `controller.loadAd()` made before the new view exists is queued and
-      // replayed on it (by `attachChannel`) instead of reaching a dead view.
-      final channel = _channel;
-      if (channel != null) {
-        channel.setMethodCallHandler(null);
-        oldWidget.controller?.detachChannel(channel);
-        _channel = null;
-      }
-      // The new controller (if swapped) attaches once the new view exists.
+      // The old view is disposed: a `controller.loadAd()` made before the
+      // new view exists is queued and replayed on it (by `attachChannel`).
+      _detach(oldWidget.controller);
+      _view = _listen();
       return;
     }
-    final channel = _channel;
-    if (channel != null &&
-        !identical(oldWidget.controller, widget.controller)) {
-      oldWidget.controller?.detachChannel(channel);
-      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
+    if (_attached && !identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detachChannel(_view.methodChannel);
+      widget.controller?.attachChannel(
+        _view.methodChannel,
+        autoLoaded: widget.autoLoad,
+      );
     }
+  }
+
+  bool _attached = false;
+
+  void _detach(PrebidBannerAdController? controller) {
+    _view.dispose();
+    controller?.detachChannel(_view.methodChannel);
+    _attached = false;
   }
 
   static Map<String, dynamic> _creationParams(PrebidBannerAd widget) {
@@ -213,6 +283,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
       if (widget.videoParameters != null)
         'videoParameters': widget.videoParameters!.toMap(),
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.globalOrtbConfig != null)
+        'globalOrtbConfig': widget.globalOrtbConfig,
       if (widget.videoPlacementType != null)
         'videoPlacementType': widget.videoPlacementType!.name,
     };
@@ -220,7 +292,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = _creationParams(widget);
+    final creationParams = {..._creationParams(widget), 'channelId': _view.id};
 
     // The slot sizes dynamically: it starts at the requested size and adopts
     // the actual rendered creative size once the native SDK reports it.
@@ -232,8 +304,8 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   }
 
   Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    // Recreate the native view when its configuration changes.
-    final key = ValueKey(creationParams.toString());
+    // A new channel id means a new native view (changed configuration).
+    final key = ValueKey(_view.id);
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         key: key,
@@ -255,55 +327,50 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   }
 
   void _onPlatformViewCreated(int viewId) {
-    // The channel is set up even without a listener so the slot can still
-    // resize to the rendered creative via `onAdSize`.
-    final channel = MethodChannel('prebid_mobile_sdk/banner_ad_$viewId');
-    final previous = _channel;
-    if (previous != null) {
-      previous.setMethodCallHandler(null);
-      widget.controller?.detachChannel(previous);
-    }
-    _channel = channel;
-    widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
-    channel.setMethodCallHandler((call) async {
-      switch (call.method) {
-        case 'onAdSize':
-          final args = call.arguments as Map?;
-          final w = (args?['width'] as num?)?.toDouble();
-          final h = (args?['height'] as num?)?.toDouble();
-          if (w != null && h != null && w > 0 && h > 0 && mounted) {
-            setState(() {
-              _width = w;
-              _height = h;
-            });
-          }
-        case 'onAdLoaded':
-          widget.listener?.onAdLoaded?.call();
-        case 'onAdDisplayed':
-          widget.listener?.onAdDisplayed?.call();
-        case 'onAdFailed':
-          widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
-        case 'onAdClicked':
-          widget.listener?.onAdClicked?.call();
-        case 'onAdClosed':
-          widget.listener?.onAdClosed?.call();
-        case 'onAdExpired':
-          widget.listener?.onAdExpired?.call();
-        default:
-          widget.videoListener?.dispatch(call.method);
-      }
-    });
+    _attached = true;
+    widget.controller?.attachChannel(
+      _view.methodChannel,
+      autoLoaded: widget.autoLoad,
+    );
   }
 
-  MethodChannel? _channel;
+  // Set up even without a listener so the slot can still resize to the
+  // rendered creative via `onAdSize`.
+  Future<dynamic> _onNativeEvent(MethodCall call) async {
+    switch (call.method) {
+      case 'onAdSize':
+        final args = call.arguments as Map?;
+        final w = (args?['width'] as num?)?.toDouble();
+        final h = (args?['height'] as num?)?.toDouble();
+        if (w != null && h != null && w > 0 && h > 0 && mounted) {
+          setState(() {
+            _width = w;
+            _height = h;
+          });
+        }
+      case 'onAdLoaded':
+        widget.controller?.reportWinningBid(
+          PrebidWinningBid.fromPayload(call.arguments),
+        );
+        widget.listener?.onAdLoaded?.call();
+      case 'onAdDisplayed':
+        widget.listener?.onAdDisplayed?.call();
+      case 'onAdFailed':
+        widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
+      case 'onAdClicked':
+        widget.listener?.onAdClicked?.call();
+      case 'onAdClosed':
+        widget.listener?.onAdClosed?.call();
+      case 'onAdExpired':
+        widget.listener?.onAdExpired?.call();
+      default:
+        widget.videoListener?.dispatch(call.method);
+    }
+  }
 
   @override
   void dispose() {
-    final channel = _channel;
-    if (channel != null) {
-      channel.setMethodCallHandler(null);
-      widget.controller?.detachChannel(channel);
-    }
+    _detach(widget.controller);
     super.dispose();
   }
 }

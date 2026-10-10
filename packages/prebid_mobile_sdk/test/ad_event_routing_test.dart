@@ -31,7 +31,7 @@ void main() {
     Future<int> load(PrebidInterstitialAd ad) async {
       await ad.loadAd();
       return verify(
-            api.loadAd(captureAny, any, any, any, any, any),
+            api.loadAd(captureAny, any, any, any, any, any, any),
           ).captured.last
           as int;
     }
@@ -87,7 +87,7 @@ void main() {
       );
       await ad.loadAd();
       final captured = verify(
-        api.loadAd(any, any, captureAny, captureAny, any, captureAny),
+        api.loadAd(any, any, captureAny, captureAny, any, any, captureAny),
       ).captured;
       expect(captured[0], ['video']);
       expect((captured[1] as VideoParametersConfig).maxDuration, 15);
@@ -106,10 +106,13 @@ void main() {
       expect(b, isEmpty);
     });
 
-    test('an ad without a listener ignores events', () async {
+    test('an ad without a listener still tracks isLoaded', () async {
       final ad = PrebidInterstitialAd(configId: 'i');
       final id = await load(ad);
-      await _emit(id, 'onAdLoaded');
+      await expectLater(_emit(id, 'onAdLoaded'), completes);
+      expect(ad.isLoaded, isTrue);
+      await _emit(id, 'onAdClosed');
+      expect(ad.isLoaded, isFalse);
     });
 
     test('destroy unregisters the ad', () async {
@@ -151,7 +154,10 @@ void main() {
 
     Future<int> load(PrebidRewardedAd ad) async {
       await ad.loadAd();
-      return verify(api.loadAd(captureAny, any, any, any)).captured.last as int;
+      return verify(
+            api.loadAd(captureAny, any, any, any, any, any, any),
+          ).captured.last
+          as int;
     }
 
     test('every event name reaches the listener', () async {
@@ -236,7 +242,9 @@ void main() {
       );
       await ad.loadAd();
       final c =
-          verify(api.loadAd(any, 'r', '{}', captureAny)).captured.single
+          verify(
+                api.loadAd(any, 'r', any, any, '{}', any, captureAny),
+              ).captured.single
               as FullscreenControlsConfig;
       expect(c.isMuted, isTrue);
     });
@@ -414,7 +422,11 @@ void main() {
 
   group('AdEventRouter', () {
     test('events for unknown ad ids are dropped', () async {
-      await _emit(-42, 'onAdLoaded');
+      final seen = <String>[];
+      AdEventRouter.instance.register(-41, (e) => seen.add(e.eventName));
+      await expectLater(_emit(-42, 'onAdLoaded'), completes);
+      expect(seen, isEmpty);
+      AdEventRouter.instance.unregister(-41);
     });
 
     test('register is idempotent and unregister removes the handler', () async {

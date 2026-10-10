@@ -27,6 +27,8 @@ extension VideoParametersPigeon on VideoParameters {
     battr: battr?.map((a) => a.value).toList(),
     minBitrate: minBitrate,
     maxBitrate: maxBitrate,
+    width: size?.width.round(),
+    height: size?.height.round(),
   );
 }
 
@@ -62,6 +64,7 @@ extension NativeAssetPigeon on NativeAsset {
     imageHeightMin: imageHeightMin,
     dataType: dataType?.value,
     dataLength: dataLength,
+    imageMimes: imageMimes,
   );
 }
 

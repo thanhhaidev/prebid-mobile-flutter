@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 /// Video parameters for OpenRTB video ad configuration.
 ///
 /// Used with [PrebidInterstitialAd], [PrebidMultiformatAd], and
@@ -31,6 +33,7 @@ class VideoParameters {
     this.battr,
     this.minBitrate,
     this.maxBitrate,
+    this.size,
   });
 
   /// Supported content MIME types (e.g., `["video/mp4"]`).
@@ -79,6 +82,11 @@ class VideoParameters {
   /// Supported API frameworks (e.g., VPAID, MRAID).
   final List<VideoApi>? api;
 
+  /// Video player size in density-independent pixels (`imp.video.w` /
+  /// `imp.video.h`). Many bidders need it for Original API video requests;
+  /// the rendering and in-stream APIs size the player themselves.
+  final Size? size;
+
   /// Method-channel payload, for the GAM / AdMob / MAX companion packages.
   Map<String, Object> toMap() => {
     'mimes': mimes,
@@ -95,6 +103,8 @@ class VideoParameters {
     'battr': ?battr?.map((a) => a.value).toList(),
     'minBitrate': ?minBitrate,
     'maxBitrate': ?maxBitrate,
+    'width': ?size?.width.round(),
+    'height': ?size?.height.round(),
   };
 }
 

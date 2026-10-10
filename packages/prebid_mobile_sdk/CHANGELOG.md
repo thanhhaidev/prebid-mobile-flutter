@@ -38,4 +38,21 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
 - iOS privacy and attribution: a separate Prebid Server URL for users who
   haven't allowed tracking (App Tracking Transparency), and SKAdNetwork
   source app and iTunes ID.
+- Native ads in your own Flutter layout (`PrebidNativeAdView.custom`) with
+  impression and click tracking, and Original API native wins shown from
+  their cache id (`PrebidNativeAd.loadFromCacheId`).
+- Native request options: sequence, asset and DCO URL support, privacy,
+  `ext`, and image MIME types.
+- Per-ad-unit global OpenRTB configuration for banner, interstitial,
+  rewarded, native and in-stream video.
+- Rewarded ad formats, video parameters and minimum size (iOS), and
+  `isLoaded` on interstitial and rewarded ads.
+- Video player size in video parameters (`video.w` / `video.h`).
+- The winning bid of a Prebid-rendered banner
+  (`PrebidBannerAdController.winningBid`).
+- Original API: the Prebid creative size in a GAM banner
+  (`findPrebidCreativeSize`), bid event URLs, banner API frameworks, the
+  interstitial minimum size, GPID on every ad unit, and SKAdNetwork StoreKit
+  flows and SKOverlay on iOS.
+- Getters for the SDK settings and targeting values.
 - The same events and result codes on Android and iOS.

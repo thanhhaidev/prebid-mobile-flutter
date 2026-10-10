@@ -22,85 +22,7 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
         let adUnit = PrebidAdUnit(configId: config.configId)
         adUnits[adId] = adUnit
 
-        // Build banner parameters
-        var bannerParams: BannerParameters?
-        if let sizes = config.bannerSizes, !sizes.isEmpty {
-            let bp = BannerParameters()
-            var adSizes: [CGSize] = []
-            let sizeList = sizes.compactMap { $0 }
-            var i = 0
-            while i + 1 < sizeList.count {
-                adSizes.append(CGSize(width: Int(sizeList[i]), height: Int(sizeList[i + 1])))
-                i += 2
-            }
-            bp.adSizes = adSizes
-            bannerParams = bp
-        }
-
-        // Build video parameters
-        let videoParams = config.videoConfig?.makeVideoParameters()
-
-        // Build native parameters
-        var nativeParams: NativeParameters?
-        if let nc = config.nativeConfig {
-            let np = NativeParameters()
-            var assets: [NativeAsset] = []
-            if let configAssets = nc.assets {
-                for assetConfig in configAssets {
-                    guard let ac = assetConfig else { continue }
-                    switch ac.assetType {
-                    case "title":
-                        assets.append(NativeAssetTitle(
-                            length: ac.titleLength.map { Int($0) } ?? 90,
-                            required: ac.required_
-                        ))
-                    case "image":
-                        let img = NativeAssetImage(isRequired: ac.required_)
-                        if let t = ac.imageType { img.type = ImageAsset(integerLiteral: Int(t)) }
-                        if let w = ac.imageWidth { img.width = Int(w) }
-                        if let h = ac.imageHeight { img.height = Int(h) }
-                        if let wm = ac.imageWidthMin { img.widthMin = Int(wm) }
-                        if let hm = ac.imageHeightMin { img.heightMin = Int(hm) }
-                        assets.append(img)
-                    case "data":
-                        if let dt = ac.dataType, let dataType = DataAsset(rawValue: Int(dt)) {
-                            let data = NativeAssetData(type: dataType, required: ac.required_)
-                            if let len = ac.dataLength { data.length = Int(len) }
-                            assets.append(data)
-                        }
-                    default: break
-                    }
-                }
-            }
-            np.assets = assets
-            if let v = nc.context { np.context = ContextType(integerLiteral: Int(v)) }
-            if let v = nc.contextSubType { np.contextSubType = ContextSubType(integerLiteral: Int(v)) }
-            if let v = nc.placementType { np.placementType = PlacementType(integerLiteral: Int(v)) }
-
-            if let trackers = nc.eventTrackers {
-                var nativeTrackers: [NativeEventTracker] = []
-                for tc in trackers {
-                    guard let tc = tc else { continue }
-                    let methods = tc.methods.map { EventTracking(integerLiteral: Int($0)) }
-                    let eventType = EventType(integerLiteral: Int(tc.eventType))
-                    nativeTrackers.append(NativeEventTracker(event: eventType, methods: methods))
-                }
-                np.eventtrackers = nativeTrackers
-            }
-            nativeParams = np
-        }
-
-        let request = PrebidRequest(
-            bannerParameters: bannerParams,
-            videoParameters: videoParams,
-            nativeParameters: nativeParams,
-            isInterstitial: config.isInterstitial,
-            isRewarded: config.isRewarded
-        )
-        if let gpid = config.gpid { request.setGPID(gpid) }
-        if let pos = config.adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) {
-            request.adPosition = pos
-        }
+        let request = Self.makeRequest(config)
         if let seconds = refreshSeconds[adId] {
             adUnit.setAutoRefreshMillis(time: Double(seconds) * 1000)
         }
@@ -113,15 +35,7 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
         InFlightAdUnits.retain(adUnit)
         adUnit.fetchDemand(request: request) { [weak self, weak adUnit] bidInfo in
             InFlightAdUnits.release(unitId)
-            let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
-            let result = MultiformatBidResult(
-                resultCode: bidInfo.resultCode.dartCode,
-                exp: bidInfo.exp,
-                topBidFiltered: bidInfo.topBidFiltered,
-                winningFormat: bidInfo.targetingKeywords?["hb_format"],
-                targetingKeywords: keywords,
-                nativeAdCacheId: bidInfo.nativeAdCacheId
-            )
+            let result = bidInfo.multiformatResult
             if !replied {
                 replied = true
                 // Prebid's interstitial tracker watches the key window for the
@@ -134,6 +48,34 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
                 self.flutterApi.onDemandRefreshed(adId: adId, result: result) { _ in }
             }
         }
+    }
+
+    private static func makeRequest(_ config: MultiformatAdRequestConfig) -> PrebidRequest {
+        var bannerParameters: BannerParameters?
+        let sizes = (config.bannerSizes ?? []).compactMap { $0 }
+        if sizes.count >= 2 {
+            let parameters = BannerParameters()
+            parameters.adSizes = stride(from: 0, to: sizes.count - 1, by: 2).map {
+                CGSize(width: Int(sizes[$0]), height: Int(sizes[$0 + 1]))
+            }
+            parameters.api = config.bannerApi?.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
+            parameters.interstitialMinWidthPerc = config.interstitialMinWidthPercentage.map { Int($0) }
+            parameters.interstitialMinHeightPerc = config.interstitialMinHeightPercentage.map { Int($0) }
+            bannerParameters = parameters
+        }
+        let request = PrebidRequest(
+            bannerParameters: bannerParameters,
+            videoParameters: config.videoConfig?.makeVideoParameters(),
+            nativeParameters: config.nativeConfig.map { NativeRequestSettings($0).makeParameters() },
+            isInterstitial: config.isInterstitial,
+            isRewarded: config.isRewarded
+        )
+        if let gpid = config.gpid { request.setGPID(gpid) }
+        if let pos = config.adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) {
+            request.adPosition = pos
+        }
+        request.supportSKOverlayForInterstitial = config.supportSKOverlay
+        return request
     }
 
     func setAutoRefreshInterval(adId: Int64, seconds: Int64) throws {
@@ -152,12 +94,43 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     func activateBannerImpressionTracker(adId: Int64) throws -> Bool {
-        guard let adUnit = adUnits[adId],
-              let root = PrebidPresenter.topViewController()?.view.window else { return false }
-        let banners = Self.gmaBannerViews(in: root)
-        guard banners.count == 1 else { return false }
-        adUnit.activatePrebidAdViewImpressionTracker(adView: banners[0])
+        guard let adUnit = adUnits[adId], let banner = Self.onlyGmaBanner() else { return false }
+        adUnit.activatePrebidAdViewImpressionTracker(adView: banner)
         return true
+    }
+
+    func findPrebidCreativeSize(adId: Int64, completion: @escaping (Result<[Int64]?, Error>) -> Void) {
+        guard let banner = Self.onlyGmaBanner() else { return completion(.success(nil)) }
+        AdViewUtils.findPrebidCreativeSize(banner, success: { size in
+            DispatchQueue.main.async { completion(.success([Int64(size.width), Int64(size.height)])) }
+        }, failure: { _ in
+            DispatchQueue.main.async { completion(.success(nil)) }
+        })
+    }
+
+    func activateBannerSKAdNetwork(adId: Int64) throws -> Bool {
+        guard let adUnit = adUnits[adId], let banner = Self.onlyGmaBanner() else { return false }
+        adUnit.activatePrebidBannerSKAdNetworkStoreKitAdsFlow(adView: banner)
+        return true
+    }
+
+    func activateInterstitialSKAdNetwork(adId: Int64) throws {
+        adUnits[adId]?.activatePrebidInterstitialSKAdNetworkStoreKitAdsFlow()
+    }
+
+    func activateSKOverlay(adId: Int64) throws {
+        adUnits[adId]?.activateSKOverlayIfAvailable()
+    }
+
+    func dismissSKOverlay(adId: Int64) throws {
+        adUnits[adId]?.dismissSKOverlayIfAvailable()
+    }
+
+    /// The only Google Mobile Ads banner on screen, if there is exactly one.
+    private static func onlyGmaBanner() -> UIView? {
+        guard let root = PrebidPresenter.topViewController()?.view.window else { return nil }
+        let banners = gmaBannerViews(in: root)
+        return banners.count == 1 ? banners[0] : nil
     }
 
     /// Google Mobile Ads banner views in [view]'s tree, found by class so the

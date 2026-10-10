@@ -383,6 +383,63 @@ class PrebidMobile {
 
   /// Get the native Prebid Mobile SDK version string.
   ///
+  /// The bid request timeout in milliseconds ([setTimeoutMillis]).
+  static Future<int> getTimeoutMillis() => api.getTimeoutMillis();
+
+  /// Whether Prebid Server debug is on ([setPbsDebug]).
+  static Future<bool> getPbsDebug() => api.getPbsDebug();
+
+  /// Whether the device location is shared ([setShareGeoLocation]).
+  static Future<bool> getShareGeoLocation() => api.getShareGeoLocation();
+
+  /// The custom HTTP headers sent to Prebid Server ([setCustomHeaders]).
+  static Future<Map<String, String>> getCustomHeaders() =>
+      api.getCustomHeaders();
+
+  /// The stored auction response id, or null ([setStoredAuctionResponse]).
+  static Future<String?> getStoredAuctionResponse() =>
+      api.getStoredAuctionResponse();
+
+  /// The stored bid responses, bidder → response id
+  /// ([addStoredBidResponse]).
+  static Future<Map<String, String>> getStoredBidResponses() =>
+      api.getStoredBidResponses();
+
+  /// The custom status endpoint, or null ([setCustomStatusEndpoint]).
+  static Future<String?> getCustomStatusEndpoint() =>
+      api.getCustomStatusEndpoint();
+
+  /// Whether native asset ids are assigned ([setShouldAssignNativeAssetId]).
+  static Future<bool> getShouldAssignNativeAssetId() =>
+      api.getShouldAssignNativeAssetId();
+
+  /// Whether uncached bids are filtered out ([setFilterOutUncachedBids]).
+  static Future<bool> getFilterOutUncachedBids() =>
+      api.getFilterOutUncachedBids();
+
+  /// Where external user IDs are sent ([setEidsPlacement]).
+  static Future<PrebidEidsPlacement> getEidsPlacement() async {
+    final name = await api.getEidsPlacement();
+    return PrebidEidsPlacement.values.firstWhere(
+      (p) => p.name == name,
+      orElse: () => PrebidEidsPlacement.compatible,
+    );
+  }
+
+  /// Whether `ext.prebid.targeting.includewinners` is sent
+  /// ([setIncludeWinners]).
+  static Future<bool> getIncludeWinners() => api.getIncludeWinners();
+
+  /// Whether `ext.prebid.targeting.includebidderkeys` is sent
+  /// ([setIncludeBidderKeys]).
+  static Future<bool> getIncludeBidderKeys() => api.getIncludeBidderKeys();
+
+  /// The auction settings id, or null ([setAuctionSettingsId]).
+  static Future<String?> getAuctionSettingsId() => api.getAuctionSettingsId();
+
+  /// Whether the status check is skipped ([setDisableStatusCheck]).
+  static Future<bool> getDisableStatusCheck() => api.getDisableStatusCheck();
+
   /// Returns the version of the underlying Android or iOS Prebid SDK.
   static Future<String> getSdkVersion() async {
     return api.getSdkVersion();
@@ -411,3 +468,7 @@ class _PrebidEventReceiver implements PrebidEventFlutterApi {
     listener?.call(request, response);
   }
 }
+
+/// The host API the package's own code uses: [PrebidMobile.api], which tests
+/// swap. Not exported.
+PrebidMobileHostApi prebidMobileHostApi() => PrebidMobile.api;

@@ -5,22 +5,26 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// A platform view created through [SystemChannels.platform_views].
 class FakePlatformView {
-  FakePlatformView(this.id, this.viewType, this.params);
+  FakePlatformView(this.id, this.viewType, this.params, this.channelId);
 
-  /// The platform view id (also the suffix of the view's method channel).
+  /// The platform view id.
   final int id;
 
   /// The registered view type.
   final String viewType;
 
-  /// The decoded creation params.
+  /// The decoded creation params, without `channelId`.
   final Map<Object?, Object?>? params;
+
+  /// The `channelId` creation param: the suffix of the view's method
+  /// channel, chosen by the widget before the view exists.
+  final int channelId;
 
   /// Methods Dart invoked on the view's method channel.
   final List<MethodCall> calls = [];
 
   /// The view's method channel name for a plugin view-type [prefix].
-  String channelFor(String prefix) => '${prefix}_$id';
+  String channelFor(String prefix) => '${prefix}_$channelId';
 }
 
 /// Fakes the engine side of platform views (iOS UiKitView and Android
@@ -71,11 +75,19 @@ class FakePlatformViews {
         final raw = args['params'] as Uint8List?;
         final params = raw == null
             ? null
-            : const StandardMessageCodec().decodeMessage(
-                    ByteData.sublistView(raw),
-                  )
-                  as Map<Object?, Object?>;
-        final view = FakePlatformView(id, args['viewType']! as String, params);
+            : Map<Object?, Object?>.of(
+                const StandardMessageCodec().decodeMessage(
+                      ByteData.sublistView(raw),
+                    )
+                    as Map<Object?, Object?>,
+              );
+        final channelId = params?.remove('channelId') as int? ?? id;
+        final view = FakePlatformView(
+          id,
+          args['viewType']! as String,
+          params,
+          channelId,
+        );
         views.add(view);
         _messenger.setMockMethodCallHandler(
           MethodChannel(view.channelFor(channelPrefix)),

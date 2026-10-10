@@ -67,6 +67,10 @@ On iOS, `setPrebidServerUrl` throws a `PlatformException` for a malformed URL, a
 | `setShouldAssignNativeAssetId(bool)` | Number native request assets sequentially, for creatives that reference assets by ID. |
 | `setEidsPlacement(PrebidEidsPlacement)` | Send external IDs in `user.eids` (OpenRTB 2.6), `user.ext.eids` (2.5) or both. |
 
+### Reading the settings
+
+Each setting above has a getter that reads the native SDK's current value, e.g. `PrebidMobile.getTimeoutMillis()`, `getPbsDebug()`, `getShareGeoLocation()`, `getCustomHeaders()`, `getStoredAuctionResponse()`, `getStoredBidResponses()`, `getCustomStatusEndpoint()`, `getShouldAssignNativeAssetId()`, `getFilterOutUncachedBids()`, `getEidsPlacement()`, `getIncludeWinners()`, `getIncludeBidderKeys()`, `getAuctionSettingsId()` and `getDisableStatusCheck()`.
+
 ## Rendering
 
 | Method | Description |

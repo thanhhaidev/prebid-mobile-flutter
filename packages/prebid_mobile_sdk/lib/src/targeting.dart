@@ -392,4 +392,47 @@ class PrebidTargeting {
   static Future<void> setLocationPrecision(int? precision) async {
     await api.setLocationPrecision(precision);
   }
+
+  /// The app ext data, key → values ([addAppExtData]).
+  static Future<Map<String, List<String>>> getAppExtData() async {
+    final data = await api.getAppExtData();
+    return {
+      for (final MapEntry(:key, :value) in data.entries) key: [...value],
+    };
+  }
+
+  /// The bidders allowed to read first-party data
+  /// ([addBidderToAccessControlList]).
+  static Future<List<String>> getAccessControlList() =>
+      api.getAccessControlList();
+
+  /// The publisher name, or null ([setPublisherName]).
+  static Future<String?> getPublisherName() => api.getPublisherName();
+
+  /// The app store URL, or null ([setStoreUrl]).
+  static Future<String?> getStoreUrl() => api.getStoreUrl();
+
+  /// The app domain, or null ([setDomain]).
+  static Future<String?> getDomain() => api.getDomain();
+
+  /// The OMID partner name, or null ([setOmidPartnerName]).
+  static Future<String?> getOmidPartnerName() => api.getOmidPartnerName();
+
+  /// The OMID partner version, or null ([setOmidPartnerVersion]).
+  static Future<String?> getOmidPartnerVersion() => api.getOmidPartnerVersion();
+
+  /// Whether the SharedID is sent ([PrebidMobile.setSendSharedId]).
+  static Future<bool> getSendSharedId() => api.getSendSharedId();
+
+  /// The user location as (latitude, longitude), or null
+  /// ([setUserLatLng]).
+  static Future<(double, double)?> getUserLatLng() async {
+    final location = await api.getUserLatLng();
+    if (location == null || location.length != 2) return null;
+    return (location[0], location[1]);
+  }
+
+  /// The location precision in decimal places, or null (full precision;
+  /// [setLocationPrecision]).
+  static Future<int?> getLocationPrecision() => api.getLocationPrecision();
 }

@@ -392,6 +392,127 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<int> getTimeoutMillis() =>
+      (super.noSuchMethod(
+            Invocation.method(#getTimeoutMillis, []),
+            returnValue: _i4.Future<int>.value(0),
+          )
+          as _i4.Future<int>);
+
+  @override
+  _i4.Future<bool> getPbsDebug() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPbsDebug, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> getShareGeoLocation() =>
+      (super.noSuchMethod(
+            Invocation.method(#getShareGeoLocation, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<Map<String, String>> getCustomHeaders() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCustomHeaders, []),
+            returnValue: _i4.Future<Map<String, String>>.value(
+              <String, String>{},
+            ),
+          )
+          as _i4.Future<Map<String, String>>);
+
+  @override
+  _i4.Future<String?> getStoredAuctionResponse() =>
+      (super.noSuchMethod(
+            Invocation.method(#getStoredAuctionResponse, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<Map<String, String>> getStoredBidResponses() =>
+      (super.noSuchMethod(
+            Invocation.method(#getStoredBidResponses, []),
+            returnValue: _i4.Future<Map<String, String>>.value(
+              <String, String>{},
+            ),
+          )
+          as _i4.Future<Map<String, String>>);
+
+  @override
+  _i4.Future<String?> getCustomStatusEndpoint() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCustomStatusEndpoint, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<bool> getShouldAssignNativeAssetId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getShouldAssignNativeAssetId, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> getFilterOutUncachedBids() =>
+      (super.noSuchMethod(
+            Invocation.method(#getFilterOutUncachedBids, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<String> getEidsPlacement() =>
+      (super.noSuchMethod(
+            Invocation.method(#getEidsPlacement, []),
+            returnValue: _i4.Future<String>.value(
+              _i3.dummyValue<String>(
+                this,
+                Invocation.method(#getEidsPlacement, []),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
+
+  @override
+  _i4.Future<bool> getIncludeWinners() =>
+      (super.noSuchMethod(
+            Invocation.method(#getIncludeWinners, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> getIncludeBidderKeys() =>
+      (super.noSuchMethod(
+            Invocation.method(#getIncludeBidderKeys, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<String?> getAuctionSettingsId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAuctionSettingsId, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<bool> getDisableStatusCheck() =>
+      (super.noSuchMethod(
+            Invocation.method(#getDisableStatusCheck, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   _i4.Future<String> getSdkVersion() =>
       (super.noSuchMethod(
             Invocation.method(#getSdkVersion, []),
@@ -832,6 +953,88 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<Map<String, List<String>>> getAppExtData() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAppExtData, []),
+            returnValue: _i4.Future<Map<String, List<String>>>.value(
+              <String, List<String>>{},
+            ),
+          )
+          as _i4.Future<Map<String, List<String>>>);
+
+  @override
+  _i4.Future<List<String>> getAccessControlList() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAccessControlList, []),
+            returnValue: _i4.Future<List<String>>.value(<String>[]),
+          )
+          as _i4.Future<List<String>>);
+
+  @override
+  _i4.Future<String?> getPublisherName() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPublisherName, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<String?> getStoreUrl() =>
+      (super.noSuchMethod(
+            Invocation.method(#getStoreUrl, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<String?> getDomain() =>
+      (super.noSuchMethod(
+            Invocation.method(#getDomain, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<String?> getOmidPartnerName() =>
+      (super.noSuchMethod(
+            Invocation.method(#getOmidPartnerName, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<String?> getOmidPartnerVersion() =>
+      (super.noSuchMethod(
+            Invocation.method(#getOmidPartnerVersion, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<bool> getSendSharedId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getSendSharedId, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<List<double>?> getUserLatLng() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUserLatLng, []),
+            returnValue: _i4.Future<List<double>?>.value(),
+          )
+          as _i4.Future<List<double>?>);
+
+  @override
+  _i4.Future<int?> getLocationPrecision() =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocationPrecision, []),
+            returnValue: _i4.Future<int?>.value(),
+          )
+          as _i4.Future<int?>);
 }
 
 /// A class which mocks [InterstitialAdHostApi].
@@ -861,6 +1064,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
     List<String>? adFormats,
     _i2.VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
   ) =>
       (super.noSuchMethod(
@@ -870,6 +1074,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
               adFormats,
               videoConfig,
               impOrtbConfig,
+              globalOrtbConfig,
               controls,
             ]),
             returnValue: _i4.Future<void>.value(),
@@ -919,14 +1124,20 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
   _i4.Future<void> loadAd(
     int? adId,
     String? configId,
+    List<String>? adFormats,
+    _i2.VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
               adId,
               configId,
+              adFormats,
+              videoConfig,
               impOrtbConfig,
+              globalOrtbConfig,
               controls,
             ]),
             returnValue: _i4.Future<void>.value(),
@@ -980,6 +1191,23 @@ class MockNativeAdHostApi extends _i1.Mock implements _i2.NativeAdHostApi {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> loadFromCacheId(int? adId, String? cacheId) =>
+      (super.noSuchMethod(
+            Invocation.method(#loadFromCacheId, [adId, cacheId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool> performClick(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#performClick, [adId]),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
 
   @override
   _i4.Future<void> destroy(int? adId) =>
@@ -1061,6 +1289,49 @@ class MockMultiformatAdHostApi extends _i1.Mock
             returnValue: _i4.Future<bool>.value(false),
           )
           as _i4.Future<bool>);
+
+  @override
+  _i4.Future<List<int>?> findPrebidCreativeSize(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#findPrebidCreativeSize, [adId]),
+            returnValue: _i4.Future<List<int>?>.value(),
+          )
+          as _i4.Future<List<int>?>);
+
+  @override
+  _i4.Future<bool> activateBannerSKAdNetwork(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#activateBannerSKAdNetwork, [adId]),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
+  _i4.Future<void> activateInterstitialSKAdNetwork(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#activateInterstitialSKAdNetwork, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> activateSKOverlay(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#activateSKOverlay, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> dismissSKOverlay(int? adId) =>
+      (super.noSuchMethod(
+            Invocation.method(#dismissSKOverlay, [adId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 
   @override
   _i4.Future<void> destroy(int? adId) =>

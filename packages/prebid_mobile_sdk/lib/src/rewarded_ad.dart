@@ -8,7 +8,7 @@ import 'internal/ad_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'video_parameters.dart';
 
-/// A fullscreen interstitial ad using Prebid rendering.
+/// A fullscreen rewarded ad using Prebid rendering.
 ///
 /// Create an instance, call [loadAd], and then [show] when ready.
 ///
@@ -16,9 +16,9 @@ import 'video_parameters.dart';
 /// needed (e.g. from `State.dispose`) or the native ad leaks. The object
 /// stays usable: calling [loadAd] after [destroy] loads a fresh ad and its
 /// events reach [listener] again.
-class PrebidInterstitialAd {
-  /// Creates a [PrebidInterstitialAd].
-  PrebidInterstitialAd({
+class PrebidRewardedAd {
+  /// Creates a [PrebidRewardedAd].
+  PrebidRewardedAd({
     required this.configId,
     this.adFormats,
     this.videoParameters,
@@ -32,37 +32,35 @@ class PrebidInterstitialAd {
 
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
-  static InterstitialAdHostApi api = InterstitialAdHostApi();
-  static int _nextId = 0;
+  static RewardedAdHostApi api = RewardedAdHostApi();
+  static int _nextId = 1000000; // offset to avoid conflicts with interstitials
 
   final int _adId;
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
-  /// The ad formats to request (banner, video, or both).
+  /// The ad formats to request (banner, video, or both). iOS only: Prebid
+  /// Android's rewarded ad unit has no format setter and requests both.
   final Set<PrebidAdFormat>? adFormats;
 
-  /// Video playback parameters (protocols, playback methods, etc.).
-  ///
-  /// Only used when [adFormats] includes [PrebidAdFormat.video]. On Android the
-  /// rendering API has no video-parameters setter: the request carries the
-  /// SDK's defaults and `maxDuration` only caps the rendered video's length.
+  /// OpenRTB video parameters. iOS applies every field; on Android only
+  /// [VideoParameters.maxDuration] caps the rendered video.
   final VideoParameters? videoParameters;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
-  /// `{"ext":{"gpid":"/1111/interstitial"}}`).
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
   /// Request-level OpenRTB JSON for this ad unit only (merged over
   /// [PrebidTargeting.setGlobalOrtbConfig]).
   final String? globalOrtbConfig;
 
-  /// Close / skip button, sound and minimum-size controls.
+  /// Close button, sound and minimum-size controls. Skip controls apply on
+  /// Android only; the minimum size on iOS only.
   final PrebidFullscreenControls? controls;
 
-  /// Listener for interstitial ad events.
-  final PrebidInterstitialAdListener? listener;
+  /// Listener for rewarded ad events.
+  final PrebidRewardedAdListener? listener;
 
   bool _loaded = false;
 
@@ -88,12 +86,23 @@ class PrebidInterstitialAd {
         l.onAdClosed?.call();
       case 'onAdClicked':
         l.onAdClicked?.call();
+      case 'onUserEarnedReward':
+        // The platforms always attach a reward, defaulting to 'reward' x 1
+        // (the companion packages' default too); mirror that if it's absent.
+        final reward = event.reward;
+        l.onUserEarnedReward?.call(
+          PrebidReward(
+            type: reward?.type ?? 'reward',
+            count: reward?.count ?? 1,
+            ext: reward?.ext?.map((k, v) => MapEntry(k ?? '', v)),
+          ),
+        );
       case 'onAdExpired':
         l.onAdExpired?.call();
     }
   }
 
-  /// Load the interstitial ad. Also valid after [destroy].
+  /// Load the rewarded ad. Also valid after [destroy].
   Future<void> loadAd() async {
     _loaded = false;
     // Re-register: [destroy] unregisters, and the object may be reused.
@@ -116,8 +125,8 @@ class PrebidInterstitialAd {
     await api.show(_adId);
   }
 
-  /// Releases the native interstitial and stops event delivery to
-  /// [listener] until the next [loadAd].
+  /// Releases the native rewarded ad and stops event delivery to [listener]
+  /// until the next [loadAd].
   Future<void> destroy() async {
     _loaded = false;
     AdEventRouter.instance.unregister(_adId);

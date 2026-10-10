@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'companion/ad_view_channel.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/ad_event_router.dart';
 import 'internal/pigeon_conversions.dart';
@@ -133,6 +135,7 @@ class NativeAsset {
     this.imageHeightMin,
     this.dataType,
     this.dataLength,
+    this.imageMimes,
   });
 
   /// Creates a title asset.
@@ -150,9 +153,11 @@ class NativeAsset {
     int? height,
     int? widthMin,
     int? heightMin,
+    List<String>? mimes,
     bool required = false,
   }) : this._(
          type: NativeAssetType.image,
+         imageMimes: mimes,
          imageType: imageType,
          imageWidth: width,
          imageHeight: height,
@@ -203,6 +208,9 @@ class NativeAsset {
   /// Maximum data length in characters (data assets).
   final int? dataLength;
 
+  /// Image MIME types the app accepts, e.g. `['image/png']` (image assets).
+  final List<String>? imageMimes;
+
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
   /// Keys match the Pigeon `NativeAssetConfig` fields.
   Map<String, Object?> toMap() => {
@@ -216,6 +224,7 @@ class NativeAsset {
     'imageHeightMin': ?imageHeightMin,
     'dataType': ?dataType?.value,
     'dataLength': ?dataLength,
+    'imageMimes': ?imageMimes,
   };
 }
 
@@ -237,7 +246,11 @@ class NativeEventTracker {
   };
 }
 
-/// A native ad that loads structured ad data and renders via Flutter widgets.
+/// A native ad: loads the assets of a native bid for your app to show.
+///
+/// Show it with [PrebidNativeAdView], which renders a native layout, or with
+/// [PrebidNativeAdView.custom] around your own Flutter layout. Prebid only
+/// tracks impressions and clicks of an ad shown through one of them.
 ///
 /// ```dart
 /// final nativeAd = PrebidNativeAd(
@@ -257,7 +270,9 @@ class NativeEventTracker {
 ///     ),
 ///   ],
 ///   listener: PrebidNativeAdListener(
-///     onAdLoaded: (response) { /* render using Flutter widgets */ },
+///     // Show PrebidNativeAdView(ad: nativeAd), or your layout of
+///     // `response` inside PrebidNativeAdView.custom.
+///     onAdLoaded: (response) { /* ... */ },
 ///     onAdFailed: (error) { /* handle error */ },
 ///   ),
 /// );
@@ -281,6 +296,12 @@ class PrebidNativeAd {
     this.pbAdSlot,
     this.gpid,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.sequence,
+    this.assetUrlSupport,
+    this.dUrlSupport,
+    this.privacy,
+    this.ext,
     this.listener,
   }) : _adId = _nextId++ {
     AdEventRouter.instance.register(_adId, _handleEvent);
@@ -334,6 +355,27 @@ class PrebidNativeAd {
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// [PrebidTargeting.setGlobalOrtbConfig]).
+  final String? globalOrtbConfig;
+
+  /// Native request `seq`: the ad's position among several from one request.
+  final int? sequence;
+
+  /// Native request `aurlsupport`: whether the app accepts asset URLs
+  /// instead of assets.
+  final bool? assetUrlSupport;
+
+  /// Native request `durlsupport`: whether the app accepts DCO URLs.
+  final bool? dUrlSupport;
+
+  /// Native request `privacy`: whether the app renders the buyer's privacy
+  /// (AdChoices) notice itself.
+  final bool? privacy;
+
+  /// Native request `ext`.
+  final Map<String, Object?>? ext;
 
   /// Listener for native ad events.
   final PrebidNativeAdListener? listener;
@@ -396,9 +438,30 @@ class PrebidNativeAd {
       pbAdSlot: pbAdSlot,
       gpid: gpid,
       impOrtbConfig: impOrtbConfig,
+      globalOrtbConfig: globalOrtbConfig,
+      sequence: sequence,
+      assetUrlSupport: assetUrlSupport,
+      dUrlSupport: dUrlSupport,
+      privacy: privacy,
+      ext: ext == null ? null : jsonEncode(ext),
     );
     await api.loadAd(_adId, config);
   }
+
+  /// Loads the native ad a Prebid cache id points to instead of running an
+  /// auction: the [PrebidMultiformatBidResponse.nativeAdCacheId] of an
+  /// Original API native win. The result reaches [listener] as for
+  /// [loadAd], and the ad shows in a [PrebidNativeAdView].
+  Future<void> loadFromCacheId(String cacheId) async {
+    AdEventRouter.instance.register(_adId, _handleEvent);
+    await api.loadFromCacheId(_adId, cacheId);
+  }
+
+  /// Reports a click on the ad shown in [PrebidNativeAdView.custom], as a tap
+  /// on its layout does: Prebid fires the click trackers and opens the
+  /// click URL. Call it from your own buttons (e.g. the call to action);
+  /// returns false when the ad isn't on screen in a custom view.
+  Future<bool> performClick() => api.performClick(_adId);
 
   /// Releases the native ad and stops event delivery to [listener] until
   /// the next [loadAd].
@@ -445,11 +508,34 @@ class PrebidNativeAdView extends StatefulWidget {
     required this.ad,
     this.width,
     this.height = 320,
-  }) : assert(width == null || width > 0, 'width must be positive'),
+  }) : child = null,
+       assert(width == null || width > 0, 'width must be positive'),
        assert(height > 0, 'height must be positive');
+
+  /// Shows [child], your own layout of the ad's assets, and tracks it: a
+  /// transparent native view under [child] is registered with Prebid for the
+  /// impression, and a tap on [child] (one its own buttons don't handle)
+  /// reports a click through [PrebidNativeAd.performClick].
+  ///
+  /// ```dart
+  /// PrebidNativeAdView.custom(
+  ///   ad: ad,
+  ///   child: Column(children: [Text(response.title ?? ''), ...]),
+  /// );
+  /// ```
+  const PrebidNativeAdView.custom({
+    super.key,
+    required this.ad,
+    required Widget this.child,
+  }) : width = null,
+       height = 0;
 
   /// The loaded native ad to render.
   final PrebidNativeAd ad;
+
+  /// The app's layout, for [PrebidNativeAdView.custom]; null when the ad is
+  /// rendered natively.
+  final Widget? child;
 
   /// Width of the view. `null` (default) fills the parent's width.
   ///
@@ -458,7 +544,8 @@ class PrebidNativeAdView extends StatefulWidget {
   /// the screen width; set an explicit width there instead.
   final double? width;
 
-  /// Initial height, replaced by the rendered content height.
+  /// Initial height, replaced by the rendered content height. Unused by
+  /// [PrebidNativeAdView.custom], which takes [child]'s size.
   final double height;
 
   @override
@@ -473,7 +560,8 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   static const _visibilityInterval = Duration(milliseconds: 250);
 
   late double _height = widget.height;
-  MethodChannel? _channel;
+  late AdViewChannel _view = _listen();
+  bool _created = false;
   final _boxKey = GlobalKey();
   Timer? _visibilityTimer;
   double? _sentFraction;
@@ -483,13 +571,22 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
     super.didUpdateWidget(oldWidget);
     // A different ad gets a new native view (keyed by ad id below); stop
     // listening to the old view, whose late size reports would apply to it.
-    if (oldWidget.ad._adId != widget.ad._adId) {
-      _channel?.setMethodCallHandler(null);
-      _channel = null;
+    if (oldWidget.ad._adId != widget.ad._adId ||
+        (oldWidget.child == null) != (widget.child == null)) {
+      _view.dispose();
+      _view = _listen();
+      _created = false;
       _stopVisibility();
       _height = widget.height;
     }
   }
+
+  AdViewChannel _listen() => AdViewChannel(_viewType, (call) async {
+    if (call.method == 'onAdSize') {
+      final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
+      if (h != null && h > 0 && mounted) setState(() => _height = h);
+    }
+  });
 
   /// Reports the fraction of the view Flutter paints on screen to the native
   /// view, which counts the ad viewable only when both its own check and
@@ -498,8 +595,8 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
     _stopVisibility();
     _visibilityTimer = Timer.periodic(_visibilityInterval, (_) {
       final box = _boxKey.currentContext?.findRenderObject();
-      final channel = _channel;
-      if (box is! RenderBox || channel == null) return;
+      final channel = _view.methodChannel;
+      if (box is! RenderBox || !_created) return;
       final fraction = (visibleFraction(box) * 100).roundToDouble() / 100;
       if (fraction == _sentFraction) return;
       _sentFraction = fraction;
@@ -518,28 +615,26 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   }
 
   void _onPlatformViewCreated(int viewId) {
-    _channel?.setMethodCallHandler(null);
-    _channel = MethodChannel('prebid_mobile_sdk/native_ad_$viewId')
-      ..setMethodCallHandler((call) async {
-        if (call.method == 'onAdSize') {
-          final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
-          if (h != null && h > 0 && mounted) setState(() => _height = h);
-        }
-      });
+    _created = true;
     _startVisibility();
   }
 
   @override
   void dispose() {
     _stopVisibility();
-    _channel?.setMethodCallHandler(null);
+    _view.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = <String, Object?>{'adId': widget.ad._adId};
-    final key = ValueKey(widget.ad._adId);
+    final child = widget.child;
+    final creationParams = <String, Object?>{
+      'adId': widget.ad._adId,
+      'channelId': _view.id,
+      if (child != null) 'layout': 'custom',
+    };
+    final key = ValueKey(_view.id);
     final Widget view;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       view = AndroidView(
@@ -559,6 +654,20 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
       );
     } else {
       view = const SizedBox.shrink();
+    }
+    if (child != null) {
+      // The tracking view fills the child's area, under it.
+      return Stack(
+        key: _boxKey,
+        children: [
+          Positioned.fill(child: view),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => unawaited(widget.ad.performClick()),
+            child: child,
+          ),
+        ],
+      );
     }
     final width = widget.width;
     // `null` fills the parent's width. LimitedBox only applies when the

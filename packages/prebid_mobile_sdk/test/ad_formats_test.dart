@@ -33,6 +33,7 @@ void main() {
           any,
           '{"ext":{"gpid":"/1/i"}}',
           null,
+          null,
         ),
       ).called(1);
 
@@ -73,7 +74,7 @@ void main() {
       await ad.loadAd();
       final c =
           verify(
-                mockApi.loadAd(any, 'config-c', any, any, any, captureAny),
+                mockApi.loadAd(any, 'config-c', any, any, any, any, captureAny),
               ).captured.single
               as FullscreenControlsConfig;
       expect(c.closeButtonArea, 0.2);
@@ -106,7 +107,9 @@ void main() {
       final ad = PrebidRewardedAd(configId: 'config-2', impOrtbConfig: '{}');
 
       await ad.loadAd();
-      verify(mockApi.loadAd(any, 'config-2', '{}', null)).called(1);
+      verify(
+        mockApi.loadAd(any, 'config-2', null, null, '{}', null, null),
+      ).called(1);
 
       await ad.show();
       verify(mockApi.show(any)).called(1);

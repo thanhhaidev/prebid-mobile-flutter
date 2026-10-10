@@ -83,6 +83,10 @@ await PrebidTargeting.setLocationPrecision(2); // decimal places, null = full
 
 `setUserLatLng` sets `user.geo`; `setShareGeoLocation` lets the SDK send the device's location (`device.geo`) when the app has location permission.
 
+## Reading the values
+
+`PrebidTargeting` has getters for what you set: `getAppExtData()`, `getAccessControlList()`, `getPublisherName()`, `getStoreUrl()`, `getDomain()`, `getOmidPartnerName()`, `getOmidPartnerVersion()`, `getSendSharedId()`, `getUserLatLng()` (a `(latitude, longitude)` record) and `getLocationPrecision()`, next to the existing consent and keyword getters.
+
 ## User IDs
 
 External identity providers' IDs and Prebid's SharedID are set on `PrebidMobile`: see [Configuration](/docs/configuration#external-user-ids).

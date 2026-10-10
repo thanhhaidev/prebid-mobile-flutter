@@ -76,6 +76,10 @@ PrebidNativeAd(
 | `context`, `contextSubType`, `placementType` | Where the ad appears (OpenRTB Native 1.2). |
 | `placementCount` | Number of identical placements. |
 | `pbAdSlot`, `gpid`, `impOrtbConfig` | Ad slot, GPID and impression-level OpenRTB JSON. |
+| `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
+| `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy`, `ext` | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`. |
+
+`NativeAsset.image` also takes `mimes`, the image types your layout can show.
 
 If a creative references assets by ID, call `PrebidMobile.setShouldAssignNativeAssetId(true)` so the request numbers them sequentially.
 
@@ -92,7 +96,29 @@ If a creative references assets by ID, call `PrebidMobile.setShouldAssignNativeA
 | `titles`, `images`, `dataAssets` | Every asset of each kind (`PrebidNativeImage.type`, `PrebidNativeData.type`). |
 | `dataOf(NativeDataType)` | The values of one data type, e.g. `dataOf(NativeDataType.rating)`. |
 
-Impressions and clicks are only tracked for an ad shown in a `PrebidNativeAdView`; a layout built from the raw assets is not registered with Prebid.
+Impressions and clicks are only tracked for an ad shown through `PrebidNativeAdView`: the native layout above, or your own layout in `PrebidNativeAdView.custom`.
+
+## Your own layout
+
+`PrebidNativeAdView.custom` shows your Flutter widgets and still lets Prebid track the ad: a transparent native view under your layout is registered for the impression, and a tap on the layout reports a click (Prebid fires the click trackers and opens the click URL). Buttons that handle their own taps, such as the call to action, call `performClick()`:
+
+```dart
+PrebidNativeAdView.custom(
+  ad: _ad,
+  child: Column(
+    children: [
+      Image.network(response.imageUrl ?? ''),
+      Text(response.title ?? ''),
+      FilledButton(
+        onPressed: _ad.performClick,
+        child: Text(response.callToAction ?? 'Open'),
+      ),
+    ],
+  ),
+);
+```
+
+The widget takes your layout's size.
 
 ## Impressions
 
@@ -109,3 +135,12 @@ Impressions and clicks are only tracked for an ad shown in a `PrebidNativeAdView
 ## Original API native
 
 To let your ad server render native demand (GAM custom native formats), use [`PrebidNativeAdUnit`](/docs/original-api#native) or the [GAM native](/docs/gam#native) widget.
+
+When a native bid wins an Original API auction and you render it yourself, load it from its cache id instead of running a second auction, then show it as above:
+
+```dart
+final response = await PrebidMultiformatAd(...).fetchDemand();
+if (response.winningFormat == 'native') {
+  await _ad.loadFromCacheId(response.nativeAdCacheId!);
+}
+```

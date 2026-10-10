@@ -16,7 +16,7 @@ import org.prebid.mobile.rendering.utils.helpers.AppInfoManager
  * PrebidMobileHostApi: SDK initialization and the PrebidMobile settings.
  * [releaseAds] destroys every ad of this engine (Dart hot restart).
  */
-class PrebidMobileHostApiImpl(
+internal class PrebidMobileHostApiImpl(
     private val context: Context,
     private val eventFlutterApi: PrebidEventFlutterApi,
     private val releaseAds: () -> Unit,
@@ -266,6 +266,26 @@ class PrebidMobileHostApiImpl(
 
     override fun clearExternalUserIds() {
         TargetingParams.setExternalUserIds(null)
+    }
+
+    override fun getTimeoutMillis(): Long = PrebidMobile.getTimeoutMillis().toLong()
+    override fun getPbsDebug(): Boolean = PrebidMobile.getPbsDebug()
+    override fun getShareGeoLocation(): Boolean = PrebidMobile.isShareGeoLocation()
+    override fun getCustomHeaders(): Map<String, String> = PrebidMobile.getCustomHeaders().orEmpty()
+    override fun getStoredAuctionResponse(): String? = PrebidMobile.getStoredAuctionResponse()
+    override fun getStoredBidResponses(): Map<String, String> = PrebidMobile.getStoredBidResponses().orEmpty()
+    override fun getCustomStatusEndpoint(): String? = PrebidMobile.getCustomStatusEndpoint()
+    override fun getShouldAssignNativeAssetId(): Boolean = PrebidMobile.shouldAssignNativeAssetID()
+    override fun getFilterOutUncachedBids(): Boolean = PrebidMobile.isFilterOutUncachedBids()
+    override fun getIncludeWinners(): Boolean = PrebidMobile.getIncludeWinnersFlag()
+    override fun getIncludeBidderKeys(): Boolean = PrebidMobile.getIncludeBidderKeysFlag()
+    override fun getAuctionSettingsId(): String? = PrebidMobile.getAuctionSettingsId()
+    override fun getDisableStatusCheck(): Boolean = PrebidMobile.shouldDisableStatusCheck()
+
+    override fun getEidsPlacement(): String = when (PrebidMobile.getEidsPlacement()) {
+        EidsPlacement.OPEN_RTB_2_6 -> "openRtb26"
+        EidsPlacement.OPEN_RTB_2_5 -> "openRtb25"
+        else -> "compatible"
     }
 
     override fun getSdkVersion(): String {

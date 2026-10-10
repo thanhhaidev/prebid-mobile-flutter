@@ -41,6 +41,7 @@ PrebidBannerAd(
 | `adPosition` | `PrebidAdPosition?` | Position on screen (`imp.banner.pos`): `header`, `footer`, `aboveTheFold`, … |
 | `pbAdSlot` | `String?` | Prebid ad slot (`imp.ext.data.pbadslot`). |
 | `impOrtbConfig` | `String?` | OpenRTB JSON merged into the impression, e.g. `{"ext":{"gpid":"/1111/home"}}`. |
+| `globalOrtbConfig` | `String?` | Request-level OpenRTB JSON for this ad unit only, merged over `PrebidTargeting.setGlobalOrtbConfig`. |
 | `listener` | `PrebidBannerAdListener?` | Lifecycle callbacks. |
 | `videoListener` | `PrebidBannerVideoListener?` | Outstream video playback callbacks. |
 
@@ -78,6 +79,8 @@ await controller.stopRefresh();
 ```
 
 `loadAd()` is safe to call before the native view exists: the load runs when the view is created. The same controller works with the GAM, AdMob and MAX banners.
+
+After each load, `controller.winningBid` holds the winning bid of a Prebid-rendered banner for analytics: `price`, `bidder`, `size` and `targetingKeywords` (null when the load had no bid).
 
 ## Outstream video
 

@@ -1,4 +1,5 @@
 import PrebidMobile
+import UIKit
 
 // Conversions between Pigeon types and the Prebid SDK.
 
@@ -52,6 +53,7 @@ func applyVideoParameters(_ raw: [String: Any], to vp: VideoParameters) {
     if let v = ints("battr") { vp.battr = v.map { Signals.CreativeAttribute(integerLiteral: $0) } }
     if let v = int("minBitrate") { vp.minBitrate = SingleContainerInt(integerLiteral: v) }
     if let v = int("maxBitrate") { vp.maxBitrate = SingleContainerInt(integerLiteral: v) }
+    if let w = int("width"), let h = int("height") { vp.adSize = CGSize(width: w, height: h) }
 }
 
 extension VideoParametersConfig {
@@ -76,6 +78,7 @@ extension VideoParametersConfig {
         if let v = battr { vp.battr = v.compactMap { $0 }.map { Signals.CreativeAttribute(integerLiteral: Int($0)) } }
         if let v = minBitrate { vp.minBitrate = SingleContainerInt(integerLiteral: Int(v)) }
         if let v = maxBitrate { vp.maxBitrate = SingleContainerInt(integerLiteral: Int(v)) }
+        if let w = width, let h = height { vp.adSize = CGSize(width: Int(w), height: Int(h)) }
     }
 }
 
@@ -103,7 +106,153 @@ extension ResultCode {
         case .prebidDemandTimedOut: return "prebidDemandTimedOut"
         case .prebidServerURLInvalid: return "prebidServerURLInvalid"
         case .prebidDemandNoCachedBids: return "prebidDemandNoCachedBids"
+        case .prebidUnknownError: return "prebidUnknownError"
+        case .prebidInvalidResponseStructure: return "prebidInvalidResponseStructure"
+        case .prebidInternalSDKError: return "prebidInternalSDKError"
+        case .prebidWrongArguments: return "prebidWrongArguments"
+        case .prebidNoVastTagInMediaData: return "prebidNoVastTagInMediaData"
+        case .prebidSDKMisuse, .prebidSDKMisusePreviousFetchNotCompletedYet: return "prebidSDKMisuse"
         default: return "prebidInvalidRequest"
         }
+    }
+}
+
+/// The ad formats named by Dart ("banner", "video"); nil for none.
+func adFormatSet(_ names: [String]?) -> Set<AdFormat>? {
+    let formats = Set((names ?? []).compactMap { name -> AdFormat? in
+        switch name {
+        case "banner": return .banner
+        case "video": return .video
+        default: return nil
+        }
+    })
+    return formats.isEmpty ? nil : formats
+}
+
+// MARK: - Native
+
+extension NativeAssetConfig {
+    /// The Prebid asset for the request; nil for an unknown type.
+    func makePrebidAsset() -> NativeAsset? {
+        switch assetType {
+        case "title":
+            return NativeAssetTitle(length: titleLength.map { Int($0) } ?? 90, required: required_)
+        case "image":
+            let image = NativeAssetImage(isRequired: required_)
+            if let v = imageType { image.type = ImageAsset(integerLiteral: Int(v)) }
+            if let v = imageWidth { image.width = Int(v) }
+            if let v = imageHeight { image.height = Int(v) }
+            if let v = imageWidthMin { image.widthMin = Int(v) }
+            if let v = imageHeightMin { image.heightMin = Int(v) }
+            if let v = imageMimes { image.mimes = v.compactMap { $0 } }
+            return image
+        case "data":
+            guard let type = dataType.flatMap({ DataAsset(rawValue: Int($0)) }) else { return nil }
+            let data = NativeAssetData(type: type, required: required_)
+            if let v = dataLength { data.length = Int(v) }
+            return data
+        default:
+            return nil
+        }
+    }
+}
+
+extension NativeEventTrackerConfig {
+    func makePrebidTracker() -> NativeEventTracker {
+        NativeEventTracker(
+            event: EventType(integerLiteral: Int(eventType)),
+            methods: methods.map { EventTracking(integerLiteral: Int($0)) }
+        )
+    }
+}
+
+/// The native request settings of a [NativeAdRequestConfig], applied to an
+/// In-App `NativeRequest` or an Original API `NativeParameters` (two Prebid
+/// types with the same properties and no common protocol).
+struct NativeRequestSettings {
+    let config: NativeAdRequestConfig
+    let assets: [NativeAsset]
+    let trackers: [NativeEventTracker]
+    let ext: [String: Any]?
+
+    init(_ config: NativeAdRequestConfig) {
+        self.config = config
+        assets = (config.assets ?? []).compactMap { $0?.makePrebidAsset() }
+        trackers = (config.eventTrackers ?? []).compactMap { $0?.makePrebidTracker() }
+        ext = config.ext
+            .flatMap { $0.data(using: .utf8) }
+            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+    }
+
+    func apply(to request: NativeRequest) {
+        if !assets.isEmpty { request.assets = assets }
+        if !trackers.isEmpty { request.eventtrackers = trackers }
+        if let v = config.context { request.context = ContextType(integerLiteral: Int(v)) }
+        if let v = config.contextSubType { request.contextSubType = ContextSubType(integerLiteral: Int(v)) }
+        if let v = config.placementType { request.placementType = PlacementType(integerLiteral: Int(v)) }
+        if let v = config.placementCount { request.placementCount = Int(v) }
+        if let v = config.sequence { request.sequence = Int(v) }
+        if let v = config.assetUrlSupport { request.asseturlsupport = v ? 1 : 0 }
+        if let v = config.dUrlSupport { request.durlsupport = v ? 1 : 0 }
+        if let v = config.privacy { request.privacy = v ? 1 : 0 }
+        if let ext = ext { request.ext = ext }
+        if let v = config.pbAdSlot { request.pbAdSlot = v }
+        if let v = config.gpid { request.setGPID(v) }
+        if let v = config.impOrtbConfig { request.setImpORTBConfig(v) }
+        if let v = config.globalOrtbConfig { request.setGlobalOrtbConfig(v) } // AdUnit spells it Ortb.
+    }
+
+    func makeParameters() -> NativeParameters {
+        let parameters = NativeParameters()
+        parameters.assets = assets
+        if !trackers.isEmpty { parameters.eventtrackers = trackers }
+        if let v = config.context { parameters.context = ContextType(integerLiteral: Int(v)) }
+        if let v = config.contextSubType { parameters.contextSubType = ContextSubType(integerLiteral: Int(v)) }
+        if let v = config.placementType { parameters.placementType = PlacementType(integerLiteral: Int(v)) }
+        if let v = config.placementCount { parameters.placementCount = Int(v) }
+        if let v = config.sequence { parameters.sequence = Int(v) }
+        if let v = config.assetUrlSupport { parameters.asseturlsupport = v ? 1 : 0 }
+        if let v = config.dUrlSupport { parameters.durlsupport = v ? 1 : 0 }
+        if let v = config.privacy { parameters.privacy = v ? 1 : 0 }
+        if let ext = ext { parameters.ext = ext }
+        return parameters
+    }
+}
+
+extension NativeAd {
+    /// The assets of a loaded native ad, as sent to Dart.
+    var nativeAdData: NativeAdData {
+        NativeAdData(
+            title: title,
+            text: text,
+            iconUrl: iconUrl,
+            imageUrl: imageUrl,
+            sponsoredBy: sponsoredBy,
+            callToAction: callToAction,
+            clickUrl: clickURL,
+            privacyUrl: privacyUrl,
+            titles: titles.map { $0.text },
+            images: images.compactMap { image in
+                image.type.map { NativeAdImageData(type: Int64($0), url: image.url) }
+            },
+            dataAssets: dataObjects.compactMap { data in
+                data.type.map { NativeAdDataAssetData(type: Int64($0), value: data.value) }
+            }
+        )
+    }
+}
+
+extension BidInfo {
+    /// The Original API result of a fetchDemand.
+    var multiformatResult: MultiformatBidResult {
+        MultiformatBidResult(
+            resultCode: resultCode.dartCode,
+            events: events.isEmpty ? nil : events.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value },
+            exp: exp,
+            topBidFiltered: topBidFiltered,
+            winningFormat: targetingKeywords?["hb_format"],
+            targetingKeywords: targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value },
+            nativeAdCacheId: nativeAdCacheId
+        )
     }
 }

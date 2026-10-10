@@ -21,6 +21,7 @@ class PrebidMultiformatBidResponse {
     this.nativeAdCacheId,
     this.exp,
     this.topBidFiltered = false,
+    this.events = const {},
   });
 
   /// The Prebid result code, the same string on Android and iOS:
@@ -34,7 +35,11 @@ class PrebidMultiformatBidResponse {
   /// - `prebidInvalidAccountId`, `prebidInvalidConfigId`,
   ///   `prebidInvalidSize`, `prebidServerURLInvalid`,
   ///   `prebidServerNotSpecified`, `prebidInvalidRequest` — configuration
-  ///   errors.
+  ///   errors; Android can also report `prebidInvalidContext`,
+  ///   `prebidInvalidAdObject` and `prebidInvalidNativeRequest`.
+  /// - `prebidUnknownError`, `prebidInvalidResponseStructure`,
+  ///   `prebidInternalSDKError`, `prebidWrongArguments`,
+  ///   `prebidNoVastTagInMediaData`, `prebidSDKMisuse` — SDK errors (iOS).
   /// - `prebidSdkNotInitialized` — requested before
   ///   [PrebidMobile.initializeSdk] completed.
   final String resultCode;
@@ -55,6 +60,11 @@ class PrebidMultiformatBidResponse {
   /// Whether the top bid was dropped for a failed Prebid Cache entry and the
   /// next cached bid promoted (see [PrebidMobile.setFilterOutUncachedBids]).
   final bool topBidFiltered;
+
+  /// The winning bid's event URLs, keyed `ext.prebid.events.win` and
+  /// `ext.prebid.events.imp`, when Prebid Server sends them; for apps that
+  /// render the creative themselves.
+  final Map<String, String> events;
 
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
@@ -105,6 +115,9 @@ class PrebidMultiformatAd {
     this.nativeContextSubType,
     this.nativePlacementType,
     this.trackInterstitialImpression = false,
+    this.bannerApi,
+    this.interstitialMinSizePercentage,
+    this.supportSKOverlay = false,
     this.onDemandRefreshed,
   }) : _adId = _nextId++ {
     _register();
@@ -160,6 +173,16 @@ class PrebidMultiformatAd {
   /// Lets Prebid track the impression when your ad server's interstitial
   /// shows the Prebid creative (Prebid's interstitial impression tracker).
   final bool trackInterstitialImpression;
+
+  /// API frameworks the banner supports (OpenRTB `banner.api`), e.g. MRAID.
+  final List<VideoApi>? bannerApi;
+
+  /// Minimum interstitial creative size, in percent of the screen (width,
+  /// height), for an [isInterstitial] banner request.
+  final Size? interstitialMinSizePercentage;
+
+  /// iOS only: show an SKOverlay for an SKAdNetwork interstitial win.
+  final bool supportSKOverlay;
 
   /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).
   /// The first auction's result is returned by [fetchDemand].
@@ -227,6 +250,12 @@ class PrebidMultiformatAd {
       gpid: gpid,
       adPosition: adPosition?.value,
       trackInterstitialImpression: trackInterstitialImpression,
+      bannerApi: bannerApi?.map((a) => a.value).toList(),
+      interstitialMinWidthPercentage: interstitialMinSizePercentage?.width
+          .round(),
+      interstitialMinHeightPercentage: interstitialMinSizePercentage?.height
+          .round(),
+      supportSKOverlay: supportSKOverlay,
     );
 
     return _toResponse(await api.fetchDemand(_adId, config));
@@ -256,6 +285,34 @@ class PrebidMultiformatAd {
   Future<bool> activateBannerImpressionTracker() =>
       api.activateBannerImpressionTracker(_adId);
 
+  /// The size of the Prebid creative inside your ad server's banner (the
+  /// only Google Mobile Ads banner on screen), read from the rendered
+  /// creative once it has loaded; resize the banner to it. `null` when the
+  /// creative isn't a Prebid one or there isn't exactly one banner.
+  Future<Size?> findPrebidCreativeSize() async {
+    final size = await api.findPrebidCreativeSize(_adId);
+    if (size == null || size.length != 2) return null;
+    return Size(size[0].toDouble(), size[1].toDouble());
+  }
+
+  /// iOS only: starts SKAdNetwork's StoreKit flow for a click on the Prebid
+  /// creative in your ad server's banner (the only Google Mobile Ads banner
+  /// on screen). Returns `false` on Android or when the banner can't be
+  /// identified.
+  Future<bool> activateBannerSKAdNetwork() =>
+      api.activateBannerSKAdNetwork(_adId);
+
+  /// iOS only: starts SKAdNetwork's StoreKit flow for the Prebid creative of
+  /// your ad server's interstitial. Does nothing on Android.
+  Future<void> activateInterstitialSKAdNetwork() =>
+      api.activateInterstitialSKAdNetwork(_adId);
+
+  /// iOS only: shows the SKOverlay of an SKAdNetwork win, if it has one.
+  Future<void> activateSKOverlay() => api.activateSKOverlay(_adId);
+
+  /// iOS only: dismisses the SKOverlay shown by [activateSKOverlay].
+  Future<void> dismissSKOverlay() => api.dismissSKOverlay(_adId);
+
   static PrebidMultiformatBidResponse _toResponse(MultiformatBidResult result) {
     return PrebidMultiformatBidResponse(
       resultCode: result.resultCode,
@@ -264,6 +321,7 @@ class PrebidMultiformatAd {
       nativeAdCacheId: result.nativeAdCacheId,
       exp: result.exp,
       topBidFiltered: result.topBidFiltered ?? false,
+      events: stringMap(result.events) ?? const {},
     );
   }
 

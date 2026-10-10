@@ -16,8 +16,7 @@ void releasePreviousIsolateAds() {
   _released = true;
   try {
     // The same channel the rest of the package uses (tests swap it).
-    // ignore: invalid_use_of_visible_for_testing_member
-    unawaited(PrebidMobile.api.releaseAds().catchError((Object _) {}));
+    unawaited(prebidMobileHostApi().releaseAds().catchError((Object _) {}));
   } catch (_) {
     // Not registered (tests without a host API stub).
   }

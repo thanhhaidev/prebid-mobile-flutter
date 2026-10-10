@@ -6,12 +6,25 @@ import UIKit
 final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
     private let flutterApi: AdFlutterApi
     private var interstitialAds: [Int64: InterstitialRenderingAdUnit] = [:]
+    // Prebid holds the delegate weakly; kept here until the ad is destroyed.
+    private var delegates: [Int64: InterstitialDelegate] = [:]
 
     init(flutterApi: AdFlutterApi) {
         self.flutterApi = flutterApi
     }
 
-    func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?) throws {
+    func loadAd(
+        adId: Int64,
+        configId: String,
+        adFormats: [String]?,
+        videoConfig: VideoParametersConfig?,
+        impOrtbConfig: String?,
+        globalOrtbConfig: String?,
+        controls: FullscreenControlsConfig?
+    ) throws {
+        // A reload replaces the previous unit, which must stop sending events
+        // under this ad id.
+        try destroy(adId: adId)
         let adUnit: InterstitialRenderingAdUnit
         if let minSize = controls?.minSizePercentage {
             adUnit = InterstitialRenderingAdUnit(configID: configId, minSizePercentage: minSize)
@@ -19,16 +32,9 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
             adUnit = InterstitialRenderingAdUnit(configID: configId)
         }
         if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        if let globalOrtbConfig = globalOrtbConfig { adUnit.setGlobalORTBConfig(globalOrtbConfig) }
         controls?.apply(to: adUnit)
-
-        if let formats = adFormats {
-            var adUnitFormats: Set<AdFormat> = []
-            for f in formats {
-                if f == "banner" { adUnitFormats.insert(.banner) }
-                if f == "video" { adUnitFormats.insert(.video) }
-            }
-            if !adUnitFormats.isEmpty { adUnit.adFormats = adUnitFormats }
-        }
+        if let formats = adFormatSet(adFormats) { adUnit.adFormats = formats }
 
         // videoParameters is get-only but returns the ad unit's live
         // (reference-type) parameters, so configure it in place.
@@ -36,7 +42,7 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
 
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi)
         adUnit.delegate = delegate
-        objc_setAssociatedObject(adUnit, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        delegates[adId] = delegate
 
         interstitialAds[adId] = adUnit
         adUnit.loadAd()
@@ -57,12 +63,15 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
     }
 
     func destroy(adId: Int64) throws {
-        interstitialAds.removeValue(forKey: adId)
+        // The unit may outlive this (e.g. while on screen): detach it so it
+        // stops reporting under this ad id.
+        interstitialAds.removeValue(forKey: adId)?.delegate = nil
+        delegates.removeValue(forKey: adId)
     }
 
     func destroyAll() -> [Int64] {
         let ids = Array(interstitialAds.keys)
-        interstitialAds.removeAll()
+        ids.forEach { try? destroy(adId: $0) }
         return ids
     }
 }

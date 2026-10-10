@@ -6,18 +6,39 @@ import UIKit
 final class RewardedAdHostApiImpl: RewardedAdHostApi {
     private let flutterApi: AdFlutterApi
     private var rewardedAds: [Int64: RewardedAdUnit] = [:]
+    // Prebid holds the delegate weakly; kept here until the ad is destroyed.
+    private var delegates: [Int64: RewardedDelegate] = [:]
 
     init(flutterApi: AdFlutterApi) {
         self.flutterApi = flutterApi
     }
 
-    func loadAd(adId: Int64, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?) throws {
-        let adUnit = RewardedAdUnit(configID: configId)
+    func loadAd(
+        adId: Int64,
+        configId: String,
+        adFormats: [String]?,
+        videoConfig: VideoParametersConfig?,
+        impOrtbConfig: String?,
+        globalOrtbConfig: String?,
+        controls: FullscreenControlsConfig?
+    ) throws {
+        try destroy(adId: adId)
+        let adUnit: RewardedAdUnit
+        if let minSize = controls?.minSizePercentage {
+            adUnit = RewardedAdUnit(configID: configId, minSizePercentage: minSize)
+        } else {
+            adUnit = RewardedAdUnit(configID: configId)
+        }
         if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        if let globalOrtbConfig = globalOrtbConfig { adUnit.setGlobalORTBConfig(globalOrtbConfig) }
+        if let formats = adFormatSet(adFormats) { adUnit.adFormats = formats }
+        // videoParameters is get-only but returns the ad unit's live
+        // (reference-type) parameters, so configure it in place.
+        videoConfig?.apply(to: adUnit.videoParameters)
         controls?.apply(to: adUnit)
         let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
         adUnit.delegate = delegate
-        objc_setAssociatedObject(adUnit, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        delegates[adId] = delegate
         rewardedAds[adId] = adUnit
         adUnit.loadAd()
     }
@@ -37,12 +58,13 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
     }
 
     func destroy(adId: Int64) throws {
-        rewardedAds.removeValue(forKey: adId)
+        rewardedAds.removeValue(forKey: adId)?.delegate = nil
+        delegates.removeValue(forKey: adId)
     }
 
     func destroyAll() -> [Int64] {
         let ids = Array(rewardedAds.keys)
-        rewardedAds.removeAll()
+        ids.forEach { try? destroy(adId: $0) }
         return ids
     }
 }

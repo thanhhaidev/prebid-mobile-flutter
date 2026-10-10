@@ -58,6 +58,7 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         // Stop auto-refresh and viewability timers, which would otherwise
         // keep running for the rest of the process.
         releaseAllAds()
+        prebidMobileApi?.clearEventDelegate()
     }
 
     private func releaseAllAds() {

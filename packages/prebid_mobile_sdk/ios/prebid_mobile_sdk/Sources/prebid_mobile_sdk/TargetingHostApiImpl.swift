@@ -1,4 +1,5 @@
 import Flutter
+import MapKit
 import PrebidMobile
 
 /// TargetingHostApi: privacy signals, keywords, ext data and app info.
@@ -142,4 +143,20 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func setLocationPrecision(precision: Int64?) throws {
         Targeting.shared.locationPrecision = precision.map { NSNumber(value: $0) }
     }
+
+    func getAppExtData() throws -> [String: [String]] { Targeting.shared.getAppExtData() }
+    func getAccessControlList() throws -> [String] { Targeting.shared.getAccessControlList() }
+    func getPublisherName() throws -> String? { Targeting.shared.publisherName }
+    func getStoreUrl() throws -> String? { Targeting.shared.storeURL }
+    func getDomain() throws -> String? { Targeting.shared.domain }
+    func getOmidPartnerName() throws -> String? { Targeting.shared.omidPartnerName }
+    func getOmidPartnerVersion() throws -> String? { Targeting.shared.omidPartnerVersion }
+    func getSendSharedId() throws -> Bool { Targeting.shared.sendSharedId }
+
+    func getUserLatLng() throws -> [Double]? {
+        guard let coordinate = Targeting.shared.coordinate?.mkCoordinateValue else { return nil }
+        return [coordinate.latitude, coordinate.longitude]
+    }
+
+    func getLocationPrecision() throws -> Int64? { Targeting.shared.locationPrecision?.int64Value }
 }

@@ -7,21 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import org.prebid.mobile.AdSize
 import org.prebid.mobile.BannerParameters
-import org.prebid.mobile.NativeAdUnit
-import org.prebid.mobile.NativeAsset
-import org.prebid.mobile.NativeDataAsset
-import org.prebid.mobile.NativeEventTracker
-import org.prebid.mobile.NativeImageAsset
-import org.prebid.mobile.NativeParameters
-import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidMobile
-import org.prebid.mobile.api.data.BidInfo
+import org.prebid.mobile.Signals
+import org.prebid.mobile.addendum.AdViewUtils
+import org.prebid.mobile.addendum.PbFindSizeError
 import org.prebid.mobile.api.original.PrebidAdUnit
 import org.prebid.mobile.api.original.PrebidRequest
 import org.prebid.mobile.rendering.models.AdPosition
 
 /** MultiformatAdHostApi: the Original API (PrebidAdUnit fetchDemand → targeting keywords). */
-class MultiformatAdHostApiImpl(
+internal class MultiformatAdHostApiImpl(
     private val flutterApi: MultiformatFlutterApi,
     private val activity: () -> Activity?,
 ) : MultiformatAdHostApi {
@@ -49,95 +44,7 @@ class MultiformatAdHostApiImpl(
         // Must be set before the auction: Prebid starts the tracker when the
         // ad server's interstitial shows the Prebid creative.
         if (config.trackInterstitialImpression) adUnit.activateInterstitialPrebidImpressionTracker(true)
-
-        // Build PrebidRequest using setters
-        val request = PrebidRequest()
-        config.gpid?.let { request.setGpid(it) }
-
-        if (config.bannerSizes != null && config.bannerSizes.isNotEmpty()) {
-            val params = BannerParameters()
-            val sizes = mutableSetOf<AdSize>()
-            val sizeList = config.bannerSizes.filterNotNull()
-            var i = 0
-            while (i + 1 < sizeList.size) {
-                sizes.add(AdSize(sizeList[i].toInt(), sizeList[i + 1].toInt()))
-                i += 2
-            }
-            params.adSizes = sizes
-            request.setBannerParameters(params)
-        }
-
-        config.videoConfig?.let { request.setVideoParameters(it.toVideoParameters()) }
-
-        // Build native params if provided
-        config.nativeConfig?.let { nc ->
-            val assets = mutableListOf<NativeAsset>()
-            nc.assets?.filterNotNull()?.forEach { ac ->
-                when (ac.assetType) {
-                    "title" -> {
-                        val a = NativeTitleAsset()
-                        a.setLength(ac.titleLength?.toInt() ?: 90)
-                        a.isRequired = ac.required_
-                        assets.add(a)
-                    }
-                    "image" -> {
-                        val a = NativeImageAsset(
-                            ac.imageWidthMin?.toInt() ?: 0,
-                            ac.imageHeightMin?.toInt() ?: 0,
-                            ac.imageWidth?.toInt() ?: 0,
-                            ac.imageHeight?.toInt() ?: 0
-                        )
-                        ac.imageType?.let { a.imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { t -> t.id == it.toInt() } }
-                        a.isRequired = ac.required_
-                        assets.add(a)
-                    }
-                    "data" -> {
-                        val a = NativeDataAsset()
-                        ac.dataType?.let { a.dataType = NativeDataAsset.DATA_TYPE.values().firstOrNull { d -> d.id == it.toInt() } }
-                        ac.dataLength?.let { a.setLen(it.toInt()) }
-                        a.isRequired = ac.required_
-                        assets.add(a)
-                    }
-                }
-            }
-            val params = NativeParameters(assets)
-            nc.context?.let { v ->
-                NativeAdUnit.CONTEXT_TYPE.values().firstOrNull { it.id == v.toInt() }
-                    ?.let { params.setContextType(it) }
-            }
-            nc.contextSubType?.let { v ->
-                NativeAdUnit.CONTEXTSUBTYPE.values().firstOrNull { it.id == v.toInt() }
-                    ?.let { params.setContextSubType(it) }
-            }
-            nc.placementType?.let { v ->
-                NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { it.id == v.toInt() }
-                    ?.let { params.setPlacementType(it) }
-            }
-
-            // Event trackers
-            nc.eventTrackers?.filterNotNull()?.forEach { tc ->
-                val methods = ArrayList<NativeEventTracker.EVENT_TRACKING_METHOD>()
-                tc.methods.forEach { m ->
-                    NativeEventTracker.EVENT_TRACKING_METHOD.values()
-                        .firstOrNull { it.id == m.toInt() }?.let { methods.add(it) }
-                }
-                val eventType = NativeEventTracker.EVENT_TYPE.values()
-                    .firstOrNull { it.id == tc.eventType.toInt() }
-                if (eventType != null) {
-                    params.addEventTracker(NativeEventTracker(eventType, methods))
-                }
-            }
-            request.setNativeParameters(params)
-        }
-
-        request.setInterstitial(config.isInterstitial)
-        request.setRewarded(config.isRewarded)
-
-        config.adPosition?.let { pos ->
-            AdPosition.values().firstOrNull { it.value == pos.toInt() }
-                ?.let { request.setAdPosition(it) }
-        }
-
+        val request = buildRequest(config)
         requests[adId] = request
         inFlight += adUnit
         adUnit.fetchDemand(request) { bidInfo ->
@@ -148,6 +55,29 @@ class MultiformatAdHostApiImpl(
                 if (adUnits[adId] === adUnit) scheduleRefresh(adId) else adUnit.destroy()
             }
         }
+    }
+
+    private fun buildRequest(config: MultiformatAdRequestConfig) = PrebidRequest().apply {
+        config.gpid?.let(::setGpid)
+        val sizes = config.bannerSizes.orEmpty().filterNotNull().chunked(2)
+            .filter { it.size == 2 }
+            .map { (w, h) -> AdSize(w.toInt(), h.toInt()) }
+        if (sizes.isNotEmpty()) {
+            setBannerParameters(BannerParameters().apply {
+                adSizes = sizes.toSet()
+                config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
+                config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
+                config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
+            })
+        }
+        config.videoConfig?.let { setVideoParameters(it.toVideoParameters()) }
+        config.nativeConfig?.let { setNativeParameters(NativeRequestSettings(it).toParameters()) }
+        setInterstitial(config.isInterstitial)
+        setRewarded(config.isRewarded)
+        config.adPosition?.let { pos ->
+            AdPosition.values().firstOrNull { it.value.toLong() == pos }?.let(::setAdPosition)
+        }
+        // supportSKOverlay: iOS only (SKAdNetwork).
     }
 
     // Units with an auction running. Destroying one clears its result
@@ -227,6 +157,26 @@ class MultiformatAdHostApiImpl(
         return true
     }
 
+    override fun findPrebidCreativeSize(adId: Long, callback: (Result<List<Long>?>) -> Unit) {
+        val banner = activity()?.window?.decorView?.let { findGmaBannerViews(it).singleOrNull() }
+            ?: return callback(Result.success(null))
+        AdViewUtils.findPrebidCreativeSize(banner, object : AdViewUtils.PbFindSizeListener {
+            override fun success(width: Int, height: Int) {
+                mainHandler.post { callback(Result.success(listOf(width.toLong(), height.toLong()))) }
+            }
+
+            override fun failure(error: PbFindSizeError) {
+                mainHandler.post { callback(Result.success(null)) }
+            }
+        })
+    }
+
+    // SKAdNetwork: iOS only.
+    override fun activateBannerSKAdNetwork(adId: Long): Boolean = false
+    override fun activateInterstitialSKAdNetwork(adId: Long) {}
+    override fun activateSKOverlay(adId: Long) {}
+    override fun dismissSKOverlay(adId: Long) {}
+
     override fun destroy(adId: Long) {
         cancelRefresh(adId)
         refreshSeconds.remove(adId)
@@ -237,15 +187,6 @@ class MultiformatAdHostApiImpl(
     fun destroyAll() {
         adUnits.keys.toList().forEach(::destroy)
     }
-
-    private fun BidInfo.toMultiformatResult() = MultiformatBidResult(
-        resultCode = dartResultCode(),
-        winningFormat = targetingKeywords?.get("hb_format"),
-        targetingKeywords = targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
-        nativeAdCacheId = nativeCacheId,
-        exp = exp?.toDouble(),
-        topBidFiltered = isTopBidFiltered,
-    )
 
     /**
      * Google Mobile Ads banner views (AdView / AdManagerAdView) in [view]'s

@@ -10,19 +10,27 @@ import org.prebid.mobile.api.rendering.InterstitialAdUnit
 import org.prebid.mobile.api.rendering.listeners.InterstitialAdUnitListener
 
 /** InterstitialAdHostApi: rendering interstitials (Prebid renders). */
-class InterstitialAdHostApiImpl(
+internal class InterstitialAdHostApiImpl(
     private val flutterApi: AdFlutterApi,
     private val activity: () -> Activity?,
 ) : InterstitialAdHostApi {
 
     private val interstitialAds = mutableMapOf<Long, InterstitialAdUnit>()
 
-    override fun loadAd(adId: Long, configId: String, adFormats: List<String>?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
+    override fun loadAd(
+        adId: Long,
+        configId: String,
+        adFormats: List<String>?,
+        videoConfig: VideoParametersConfig?,
+        impOrtbConfig: String?,
+        globalOrtbConfig: String?,
+        controls: FullscreenControlsConfig?,
+    ) {
         // A reload replaces the previous unit; destroy it so it stops sending
         // events under this ad id.
         interstitialAds.remove(adId)?.destroy()
-        val act = activity() ?: return flutterApi.sendAdFailed(adId, PluginErrors.NO_ACTIVITY)
         if (!PrebidMobile.isSdkInitialized()) return flutterApi.sendAdFailed(adId, PluginErrors.NOT_INITIALIZED)
+        val act = activity() ?: return flutterApi.sendAdFailed(adId, PluginErrors.NO_ACTIVITY)
 
         // Build EnumSet for ad formats
         val formats = EnumSet.noneOf(AdUnitFormat::class.java)
@@ -43,6 +51,7 @@ class InterstitialAdHostApiImpl(
         // duration is configurable.
         videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
+        globalOrtbConfig?.let { adUnit.setGlobalOrtbConfig(it) }
         controls?.let { c ->
             c.applyTo(adUnit)
             if (c.minWidthPercentage != null && c.minHeightPercentage != null) {

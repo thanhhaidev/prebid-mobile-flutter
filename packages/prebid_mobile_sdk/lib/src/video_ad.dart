@@ -57,6 +57,10 @@ class PrebidInstreamVideoAd {
     required this.configId,
     required this.size,
     this.videoParameters,
+    this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
   }) : _adId = _nextId++ {
     releasePreviousIsolateAds();
   }
@@ -78,6 +82,19 @@ class PrebidInstreamVideoAd {
   /// start delay, ...). Buyers usually need at least mimes and protocols.
   final VideoParameters? videoParameters;
 
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// [PrebidTargeting.setGlobalOrtbConfig]).
+  final String? globalOrtbConfig;
+
   /// Fetch demand for this in-stream video ad.
   ///
   /// Returns a [PrebidVideoAdBidResponse] with result code and targeting
@@ -88,6 +105,10 @@ class PrebidInstreamVideoAd {
       width: size.width.toInt(),
       height: size.height.toInt(),
       videoConfig: videoParameters?.toConfig(),
+      gpid: gpid,
+      pbAdSlot: pbAdSlot,
+      impOrtbConfig: impOrtbConfig,
+      globalOrtbConfig: globalOrtbConfig,
     );
 
     final result = await api.fetchDemand(_adId, config);

@@ -16,22 +16,19 @@ final class InstreamVideoAdHostApiImpl: InstreamVideoAdHostApi {
         if let videoParameters = config.videoConfig?.makeVideoParameters() {
             adUnit.videoParameters = videoParameters
         }
+        if let v = config.gpid { adUnit.setGPID(v) }
+        if let v = config.pbAdSlot { adUnit.pbAdSlot = v }
+        if let v = config.impOrtbConfig { adUnit.setImpORTBConfig(v) }
+        if let v = config.globalOrtbConfig { adUnit.setGlobalOrtbConfig(v) } // AdUnit spells it Ortb.
         adUnits[adId] = adUnit
 
         let unitId = ObjectIdentifier(adUnit)
         InFlightAdUnits.retain(adUnit)
         adUnit.fetchDemand(completionBidInfo: { bidInfo in
             InFlightAdUnits.release(unitId)
-            let resultStr = bidInfo.resultCode.dartCode
-
-            let keywords = bidInfo.targetingKeywords?.reduce(into: [String?: String?]()) { $0[$1.key] = $1.value }
-
-            completion(.success(MultiformatBidResult(
-                resultCode: resultStr,
-                exp: bidInfo.exp,
-                winningFormat: "video",
-                targetingKeywords: keywords
-            )))
+            var result = bidInfo.multiformatResult
+            result.winningFormat = "video"
+            completion(.success(result))
         })
     }
 

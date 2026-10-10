@@ -2,8 +2,6 @@ package io.github.thanhhaidev.prebid_mobile_sdk
 
 import android.app.Activity
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -19,9 +17,10 @@ import org.prebid.mobile.api.exceptions.AdException
 import org.prebid.mobile.api.rendering.BannerView
 import org.prebid.mobile.api.rendering.listeners.BannerVideoListener
 import org.prebid.mobile.api.rendering.listeners.BannerViewListener
+import org.prebid.mobile.rendering.bidding.data.bid.BidResponse
 import org.prebid.mobile.rendering.models.AdPosition
 
-class BannerAdViewFactory(
+internal class BannerAdViewFactory(
     private val messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -32,7 +31,7 @@ class BannerAdViewFactory(
     }
 }
 
-class BannerAdPlatformView(
+internal class BannerAdPlatformView(
     private val context: Context,
     private val viewId: Int,
     messenger: BinaryMessenger,
@@ -54,7 +53,9 @@ class BannerAdPlatformView(
         val impOrtbConfig = params["impOrtbConfig"] as? String
         val videoPlacement = videoPlacementType(params["videoPlacementType"] as? String)
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk/banner_ad_$viewId")
+        // Named by the Dart widget before this view exists (AdViewChannel).
+        val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
+        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk/banner_ad_$channelId")
 
         bannerView = BannerView(context, configId, AdSize(width, height))
         (params["additionalSizes"] as? List<*>)?.mapNotNull { (it as? Number)?.toInt() }
@@ -83,6 +84,7 @@ class BannerAdPlatformView(
         // params["videoParameters"]: iOS only; Prebid Android's BannerView has
         // no video-parameters setter.
         impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
+        (params["globalOrtbConfig"] as? String)?.let { bannerView.setGlobalOrtbConfig(it) }
 
         if (refreshInterval != null && refreshInterval > 0) {
             bannerView.setAutoRefreshDelay(refreshInterval)
@@ -102,7 +104,7 @@ class BannerAdPlatformView(
                         ),
                     )
                 }
-                methodChannel.invokeMethod("onAdLoaded", null)
+                methodChannel.invokeMethod("onAdLoaded", view.bidResponse?.toWinningBid())
             }
 
             override fun onAdDisplayed(view: BannerView) {
@@ -150,12 +152,9 @@ class BannerAdPlatformView(
 
     private fun load() {
         // Prebid drops a request made before the SDK has initialized without
-        // calling back; report it instead. Posted: on auto-load the Dart side
-        // sets its channel handler only after this view is created.
+        // calling back; report it instead.
         if (!PrebidMobile.isSdkInitialized()) {
-            Handler(Looper.getMainLooper()).post {
-                methodChannel.invokeMethod("onAdFailed", PluginErrors.NOT_INITIALIZED)
-            }
+            methodChannel.invokeMethod("onAdFailed", PluginErrors.NOT_INITIALIZED)
             return
         }
         bannerView.loadAd()
@@ -174,4 +173,17 @@ internal fun videoPlacementType(name: String?): VideoPlacementType? = when (name
     "inArticle" -> VideoPlacementType.IN_ARTICLE
     "inFeed" -> VideoPlacementType.IN_FEED
     else -> null
+}
+
+/** The winning bid of a loaded banner, as sent with `onAdLoaded`. */
+private fun BidResponse.toWinningBid(): Map<String, Any?>? {
+    val bid = winningBid ?: return null
+    val keywords = targeting.orEmpty()
+    return mapOf(
+        "price" to bid.price,
+        "bidder" to keywords["hb_bidder"],
+        "width" to bid.width,
+        "height" to bid.height,
+        "targetingKeywords" to keywords,
+    )
 }

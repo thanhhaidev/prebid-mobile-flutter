@@ -8,22 +8,34 @@ import org.prebid.mobile.api.rendering.listeners.RewardedAdUnitListener
 import org.prebid.mobile.rendering.interstitial.rewarded.Reward
 
 /** RewardedAdHostApi: rendering rewarded ads (Prebid renders). */
-class RewardedAdHostApiImpl(
+internal class RewardedAdHostApiImpl(
     private val flutterApi: AdFlutterApi,
     private val activity: () -> Activity?
 ) : RewardedAdHostApi {
 
     private val rewardedAds = mutableMapOf<Long, RewardedAdUnit>()
 
-    override fun loadAd(adId: Long, configId: String, impOrtbConfig: String?, controls: FullscreenControlsConfig?) {
+    override fun loadAd(
+        adId: Long,
+        configId: String,
+        adFormats: List<String>?,
+        videoConfig: VideoParametersConfig?,
+        impOrtbConfig: String?,
+        globalOrtbConfig: String?,
+        controls: FullscreenControlsConfig?,
+    ) {
         rewardedAds.remove(adId)?.destroy()
-        val act = activity()
-            ?: return flutterApi.sendAdFailed(adId, PluginErrors.NO_ACTIVITY)
         if (!PrebidMobile.isSdkInitialized()) {
             return flutterApi.sendAdFailed(adId, PluginErrors.NOT_INITIALIZED)
         }
+        val act = activity() ?: return flutterApi.sendAdFailed(adId, PluginErrors.NO_ACTIVITY)
+        // Prebid Android's RewardedAdUnit has no ad formats, video parameters
+        // (beyond the rendered video's max duration) or minimum size: those
+        // apply on iOS only.
         val adUnit = RewardedAdUnit(act, configId)
-        impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
+        videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
+        impOrtbConfig?.let(adUnit::setImpOrtbConfig)
+        globalOrtbConfig?.let(adUnit::setGlobalOrtbConfig)
         controls?.applyTo(adUnit)
 
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {

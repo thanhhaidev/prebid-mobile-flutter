@@ -4,7 +4,7 @@ import org.prebid.mobile.InStreamVideoAdUnit
 import org.prebid.mobile.PrebidMobile
 
 /** InstreamVideoAdHostApi: Original API in-stream video demand. */
-class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
+internal class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
 
     private val adUnits = mutableMapOf<Long, InStreamVideoAdUnit>()
 
@@ -27,19 +27,17 @@ class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
             config.height.toInt()
         )
         config.videoConfig?.let { adUnit.videoParameters = it.toVideoParameters() }
+        config.gpid?.let(adUnit::setGpid)
+        config.pbAdSlot?.let(adUnit::setPbAdSlot)
+        config.impOrtbConfig?.let(adUnit::setImpOrtbConfig)
+        config.globalOrtbConfig?.let(adUnit::setGlobalOrtbConfig)
         adUnits[adId] = adUnit
 
         inFlight += adUnit
         adUnit.fetchDemand { bidInfo ->
             inFlight -= adUnit
             if (adUnits[adId] !== adUnit) adUnit.destroy()
-            val resultStr = bidInfo.dartResultCode()
-            callback(Result.success(MultiformatBidResult(
-                resultCode = resultStr,
-                winningFormat = "video",
-                targetingKeywords = bidInfo.targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
-                exp = bidInfo.exp?.toDouble(),
-            )))
+            callback(Result.success(bidInfo.toMultiformatResult().copy(winningFormat = "video")))
         }
     }
 

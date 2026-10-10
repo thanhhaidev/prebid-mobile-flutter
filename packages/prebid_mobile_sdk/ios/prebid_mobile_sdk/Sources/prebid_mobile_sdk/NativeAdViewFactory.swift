@@ -1,60 +1,6 @@
 import Flutter
-import UIKit
 import PrebidMobile
-
-/// Loaded In-App native ads of one Flutter engine, keyed by the Dart ad id,
-/// so a `NativeAdPlatformView` can render and register the ad for tracking.
-/// One store per engine: every engine numbers its ads from the same start.
-final class NativeAdStore {
-    private(set) var ads: [Int64: NativeAd] = [:]
-
-    /// The rendered, registered view of each ad. `NativeAd.registerView` only
-    /// accepts one view per ad, so a platform view re-created for the same ad
-    /// (e.g. after scrolling out of a list and back) reuses this one.
-    var views: [Int64: UIView] = [:]
-
-    /// Event delegates, held strongly: Prebid holds the ad's delegate weakly.
-    private(set) var delegates: [Int64: NativeAdEventForwarder] = [:]
-
-    /// Platform views currently showing each ad id, newest last.
-    private var platformViews: [Int64: [Weak<NativeAdPlatformView>]] = [:]
-
-    /// Stores a newly loaded ad. Its delegate is set now, not when it is
-    /// rendered, so an ad that expires before it is shown still reports
-    /// `onAdExpired`. The newest platform view already on screen for the id
-    /// shows it (a reload keeps the same Dart widget).
-    func put(_ adId: Int64, ad: NativeAd, delegate: NativeAdEventForwarder) {
-        ads[adId] = ad
-        delegates[adId] = delegate
-        ad.delegate = delegate
-        platformViews[adId]?.compactMap(\.value).last?.show()
-    }
-
-    func remove(_ adId: Int64) {
-        ads.removeValue(forKey: adId)
-        delegates.removeValue(forKey: adId)?.stopWatching()
-        views.removeValue(forKey: adId)?.removeFromSuperview()
-    }
-
-    func removeAll() {
-        Set(ads.keys).union(views.keys).union(delegates.keys).forEach(remove)
-        platformViews.removeAll()
-    }
-
-    func attach(_ view: NativeAdPlatformView) {
-        platformViews[view.adId, default: []].append(Weak(view))
-    }
-
-    func detach(_ view: NativeAdPlatformView) {
-        platformViews[view.adId]?.removeAll { $0.value == nil || $0.value === view }
-        if platformViews[view.adId]?.isEmpty == true { platformViews.removeValue(forKey: view.adId) }
-    }
-}
-
-final class Weak<T: AnyObject> {
-    weak var value: T?
-    init(_ value: T) { self.value = value }
-}
+import UIKit
 
 /// Re-measures the native content whenever its width changes: Flutter sizes
 /// the platform view after it is created, and again on rotation.
@@ -102,18 +48,26 @@ final class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// A `PrebidNativeAdView`: renders the ad natively, or (custom layout) adds
+/// a transparent view under the app's Flutter layout and registers it, so
+/// Prebid tracks the impression and `NativeAdStore.performClick` reports taps
+/// on the Flutter layout as clicks.
 final class NativeAdPlatformView: NSObject, FlutterPlatformView {
 
     private let container = NativeAdContainer()
     let adId: Int64
+    private let customLayout: Bool
     private let methodChannel: FlutterMethodChannel
     private let store: NativeAdStore
     private var lastReportedHeight: CGFloat = 0
 
     init(viewId: Int64, messenger: FlutterBinaryMessenger, store: NativeAdStore, args: [String: Any]) {
         adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
+        customLayout = args["layout"] as? String == "custom"
+        // Named by the Dart widget before this view exists (AdViewChannel).
+        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk/native_ad_\(viewId)",
+            name: "prebid_mobile_sdk/native_ad_\(channelId)",
             binaryMessenger: messenger
         )
         self.store = store
@@ -153,11 +107,39 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         container.subviews.forEach { $0.removeFromSuperview() }
         if let content = store.views[adId] {
             content.removeFromSuperview()
-            embed(content)
-            reportHeight()
+            customLayout ? fill(content) : embed(content)
+            if !customLayout { reportHeight() }
         } else if let ad = store.ads[adId], let forwarder = store.delegates[adId] {
-            render(ad, forwarder: forwarder)
+            customLayout ? track(ad, forwarder: forwarder) : render(ad, forwarder: forwarder)
         }
+    }
+
+    /// Custom layout: registers an empty view that fills the Flutter layout.
+    private func track(_ ad: NativeAd, forwarder: NativeAdEventForwarder) {
+        let trackingView = UIView()
+        guard ad.registerView(view: trackingView, clickableViews: [trackingView]) else {
+            return expire(forwarder)
+        }
+        fill(trackingView)
+        store.views[adId] = trackingView
+        forwarder.watchViewability(of: trackingView)
+    }
+
+    /// The bid expired before the ad was shown: Prebid won't track it.
+    private func expire(_ forwarder: NativeAdEventForwarder) {
+        store.remove(adId)
+        forwarder.reportExpired()
+    }
+
+    private func fill(_ content: UIView) {
+        content.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: container.topAnchor),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            content.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
     }
 
     private func embed(_ content: UIView) {
@@ -234,11 +216,8 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
-        guard ad.registerView(view: stack, clickableViews: [titleLabel, mainImageView, bodyLabel, ctaButton]) else {
-            // The bid expired before the ad was shown: Prebid won't track it.
-            store.remove(adId)
-            forwarder.reportExpired()
-            return
+        guard ad.registerView(view: stack, clickableViews: [iconView, titleLabel, mainImageView, bodyLabel, ctaButton]) else {
+            return expire(forwarder)
         }
         embed(stack)
         store.views[adId] = stack
@@ -275,127 +254,4 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         }.resume()
     }
 
-}
-
-/// `NativeAdEventDelegate` → Flutter, one per ad (it outlives platform views).
-///
-/// Prebid iOS calls `adDidLogImpression` only after an `eventtrackers` URL
-/// request succeeds: never when the response has no event trackers, and only
-/// after a 300 s retry when the request fails. So the impression is reported
-/// from the same IAB viewability rule Prebid applies before firing its
-/// trackers (at least half the view on screen for 1 s, checked every 0.25 s),
-/// with the delegate as a fallback.
-final class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
-    private let adId: Int64
-    private let flutterApi: AdFlutterApi
-
-    private static let checkInterval: TimeInterval = 0.25
-    private static let requiredViewableChecks = 5 // 1 s / 0.25 s + 1, as Prebid
-    private weak var watchedView: UIView?
-    private var viewabilityTimer: Timer?
-    private var viewableChecks = 0
-
-    /// The fraction of the view Flutter paints on screen, reported by the
-    /// Dart widget; 1 until the first report.
-    var flutterVisibleFraction: Double = 1
-
-    init(adId: Int64, flutterApi: AdFlutterApi) {
-        self.adId = adId
-        self.flutterApi = flutterApi
-    }
-
-    deinit {
-        viewabilityTimer?.invalidate()
-    }
-
-    // Prebid calls this once per impression tracker URL; report one impression.
-    private var impressionReported = false
-
-    func watchViewability(of view: UIView) {
-        guard !impressionReported else { return }
-        watchedView = view
-        viewableChecks = 0
-        viewabilityTimer?.invalidate()
-        viewabilityTimer = Timer.scheduledTimer(
-            withTimeInterval: Self.checkInterval,
-            repeats: true
-        ) { [weak self] timer in
-            guard let self = self, let view = self.watchedView else {
-                timer.invalidate()
-                return
-            }
-            let viewable = self.flutterVisibleFraction >= 0.5 && Self.isAtLeastHalfViewable(view)
-            self.viewableChecks = viewable ? self.viewableChecks + 1 : 0
-            if self.viewableChecks >= Self.requiredViewableChecks {
-                self.reportImpression()
-            }
-        }
-    }
-
-    func stopWatching() {
-        viewabilityTimer?.invalidate()
-        viewabilityTimer = nil
-    }
-
-    private func reportImpression() {
-        stopWatching()
-        guard !impressionReported else { return }
-        impressionReported = true
-        send("onAdImpression")
-    }
-
-    /// Prebid's `UIView.pb_isAtLeastHalfViewable` (internal to the SDK),
-    /// stricter: a transparent view or ancestor isn't viewable, and the
-    /// visible area is clipped to the window and to every ancestor that
-    /// clips its subviews. Flutter applies its clips (scroll viewports under
-    /// an app bar, ClipRect/ClipRRect) to platform views as layer masks,
-    /// which expose no geometry to read: those come from the Dart widget as
-    /// `flutterVisibleFraction`.
-    private static func isAtLeastHalfViewable(_ view: UIView) -> Bool {
-        guard let window = view.window else { return false }
-        let rect = view.convert(view.bounds, to: nil)
-        guard rect.width * rect.height > 0 else { return false }
-        var visible = rect.intersection(window.bounds)
-        var current: UIView? = view
-        while let v = current {
-            if v.isHidden || v.alpha < 0.01 { return false }
-            if v !== view, v.clipsToBounds {
-                visible = visible.intersection(v.convert(v.bounds, to: nil))
-            }
-            current = v.superview
-        }
-        guard !visible.isNull else { return false }
-        return visible.width * visible.height >= 0.5 * rect.width * rect.height
-    }
-
-    func adDidLogImpression(ad: NativeAd) {
-        DispatchQueue.main.async { [weak self] in
-            self?.reportImpression()
-        }
-    }
-
-    func adWasClicked(ad: NativeAd) {
-        send("onAdClicked")
-    }
-
-    func adDidExpire(ad: NativeAd) {
-        DispatchQueue.main.async { [weak self] in self?.reportExpired() }
-    }
-
-    private var expiredReported = false
-
-    /// Prebid stops tracking an expired ad; so does the watcher. Reported
-    /// once, whether Prebid's expiry or a refused `registerView` comes first.
-    func reportExpired() {
-        stopWatching()
-        guard !expiredReported else { return }
-        expiredReported = true
-        send("onAdExpired")
-    }
-
-    private func send(_ name: String) {
-        DispatchQueue.main.async { [adId, flutterApi] in
-            flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: name)) { _ in }
-        }
-    }
 }

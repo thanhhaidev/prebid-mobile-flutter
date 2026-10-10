@@ -55,8 +55,10 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
 
         let adSize = CGSize(width: width, height: height)
 
+        // Named by the Dart widget before this view exists (AdViewChannel).
+        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk/banner_ad_\(viewId)",
+            name: "prebid_mobile_sdk/banner_ad_\(channelId)",
             binaryMessenger: messenger
         )
 
@@ -97,6 +99,9 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
             applyVideoParameters(raw, to: bannerView.videoParameters)
         }
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
+        if let globalOrtbConfig = args["globalOrtbConfig"] as? String {
+            bannerView.setGlobalORTBConfig(globalOrtbConfig)
+        }
 
         // iOS defaults to a 60s refresh (Android: none) and clamps 0 up to 15s;
         // a negative value is what disables it.
@@ -150,7 +155,7 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
             "width": Double(adSize.width),
             "height": Double(adSize.height),
         ])
-        methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+        methodChannel.invokeMethod("onAdLoaded", arguments: bannerView.lastBidResponse?.winningBidPayload)
     }
 
     // Fired once the creative is on screen and its impression is tracked
@@ -243,5 +248,20 @@ enum StoredAuctionResponseKeeper {
                 Prebid.shared.storedAuctionResponse = value
             }
         }
+    }
+}
+
+extension BidResponse {
+    /// The winning bid, as sent with a banner's `onAdLoaded`.
+    var winningBidPayload: [String: Any]? {
+        guard let bid = winningBid else { return nil }
+        let keywords = targetingInfo ?? [:]
+        return [
+            "price": Double(bid.price),
+            "bidder": keywords["hb_bidder"] as Any,
+            "width": Int(bid.size.width),
+            "height": Int(bid.size.height),
+            "targetingKeywords": keywords,
+        ]
     }
 }

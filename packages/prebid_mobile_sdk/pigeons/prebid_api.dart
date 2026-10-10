@@ -60,6 +60,7 @@ class NativeAssetConfig {
     this.imageHeightMin,
     this.dataType,
     this.dataLength,
+    this.imageMimes,
   });
 
   /// "title", "image", or "data"
@@ -73,6 +74,9 @@ class NativeAssetConfig {
   final int? imageHeightMin;
   final int? dataType;
   final int? dataLength;
+
+  /// Image MIME types the app accepts (image assets only).
+  final List<String?>? imageMimes;
 }
 
 /// Configuration for a native event tracker.
@@ -95,6 +99,12 @@ class NativeAdRequestConfig {
     this.pbAdSlot,
     this.gpid,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.sequence,
+    this.assetUrlSupport,
+    this.dUrlSupport,
+    this.privacy,
+    this.ext,
   });
   final String configId;
   final List<NativeAssetConfig?>? assets;
@@ -106,6 +116,18 @@ class NativeAdRequestConfig {
   final String? pbAdSlot;
   final String? gpid;
   final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only.
+  final String? globalOrtbConfig;
+
+  /// Native request `seq`, `aurlsupport`, `durlsupport` and `privacy`.
+  final int? sequence;
+  final bool? assetUrlSupport;
+  final bool? dUrlSupport;
+  final bool? privacy;
+
+  /// Native request `ext`, as JSON.
+  final String? ext;
 }
 
 /// Native ad response data sent back to Flutter.
@@ -205,6 +227,8 @@ class VideoParametersConfig {
     this.battr,
     this.minBitrate,
     this.maxBitrate,
+    this.width,
+    this.height,
   });
 
   /// Supported content MIME types (e.g., ["video/mp4"]).
@@ -246,6 +270,10 @@ class VideoParametersConfig {
   /// Bitrate bounds in Kbps.
   final int? minBitrate;
   final int? maxBitrate;
+
+  /// Video player size (`video.w` / `video.h`).
+  final int? width;
+  final int? height;
 }
 
 /// Fullscreen (interstitial / rewarded) rendering controls.
@@ -358,6 +386,24 @@ abstract class PrebidMobileHostApi {
   List<ExternalUserIdData> getExternalUserIds();
   void clearExternalUserIds();
 
+  // Current values of the settings above.
+  int getTimeoutMillis();
+  bool getPbsDebug();
+  bool getShareGeoLocation();
+  Map<String, String> getCustomHeaders();
+  String? getStoredAuctionResponse();
+
+  /// Bidder → stored response id.
+  Map<String, String> getStoredBidResponses();
+  String? getCustomStatusEndpoint();
+  bool getShouldAssignNativeAssetId();
+  bool getFilterOutUncachedBids();
+  String getEidsPlacement();
+  bool getIncludeWinners();
+  bool getIncludeBidderKeys();
+  String? getAuctionSettingsId();
+  bool getDisableStatusCheck();
+
   // SDK Version
   String getSdkVersion();
 
@@ -451,6 +497,20 @@ abstract class TargetingHostApi {
   // Location
   void setUserLatLng(double latitude, double longitude);
   void setLocationPrecision(int? precision);
+
+  // Current values of the settings above.
+  Map<String, List<String>> getAppExtData();
+  List<String> getAccessControlList();
+  String? getPublisherName();
+  String? getStoreUrl();
+  String? getDomain();
+  String? getOmidPartnerName();
+  String? getOmidPartnerVersion();
+  bool getSendSharedId();
+
+  /// [latitude, longitude], or null when not set.
+  List<double>? getUserLatLng();
+  int? getLocationPrecision();
 }
 
 /// Interstitial ad operations (Dart → Native).
@@ -462,6 +522,7 @@ abstract class InterstitialAdHostApi {
     List<String>? adFormats,
     VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
   );
   void show(int adId);
@@ -474,7 +535,10 @@ abstract class RewardedAdHostApi {
   void loadAd(
     int adId,
     String configId,
+    List<String>? adFormats,
+    VideoParametersConfig? videoConfig,
     String? impOrtbConfig,
+    String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
   );
   void show(int adId);
@@ -485,6 +549,14 @@ abstract class RewardedAdHostApi {
 @HostApi()
 abstract class NativeAdHostApi {
   void loadAd(int adId, NativeAdRequestConfig config);
+
+  /// Loads the native ad a Prebid cache id points to (an Original API native
+  /// win); the result arrives like [loadAd]'s.
+  void loadFromCacheId(int adId, String cacheId);
+
+  /// Reports a click on the ad's tracking view (a custom Flutter layout).
+  /// Returns false when the ad has no tracking view on screen.
+  bool performClick(int adId);
   void destroy(int adId);
 }
 
@@ -500,9 +572,23 @@ class MultiformatAdRequestConfig {
     this.gpid,
     this.adPosition,
     this.trackInterstitialImpression = false,
+    this.bannerApi,
+    this.interstitialMinWidthPercentage,
+    this.interstitialMinHeightPercentage,
+    this.supportSKOverlay = false,
   });
   final String configId;
   final String? gpid;
+
+  /// Banner API frameworks (OpenRTB `banner.api`).
+  final List<int?>? bannerApi;
+
+  /// Minimum interstitial creative size, in percent of the screen.
+  final int? interstitialMinWidthPercentage;
+  final int? interstitialMinHeightPercentage;
+
+  /// iOS only: SKOverlay for SKAdNetwork interstitial wins.
+  final bool supportSKOverlay;
 
   /// OpenRTB `pos` (PrebidAdPosition value).
   final int? adPosition;
@@ -528,8 +614,12 @@ class MultiformatBidResult {
     this.nativeAdCacheId,
     this.exp,
     this.topBidFiltered,
+    this.events,
   });
   final String resultCode;
+
+  /// The winning bid's event URLs (`win`, `imp`), when the server sends them.
+  final Map<String?, String?>? events;
 
   /// Winning bid expiration in seconds (`bid.exp`), if provided.
   final double? exp;
@@ -560,6 +650,19 @@ abstract class MultiformatAdHostApi {
   /// only Google Mobile Ads banner on screen). Returns false if there is not
   /// exactly one.
   bool activateBannerImpressionTracker(int adId);
+
+  /// Size of the Prebid creative inside the ad server's banner view (the only
+  /// Google Mobile Ads banner on screen), as [width, height]; null when it
+  /// can't be found.
+  @asyncCallback
+  List<int>? findPrebidCreativeSize(int adId);
+
+  /// iOS only: SKAdNetwork StoreKit flows and SKOverlay for the Original API.
+  /// Return false (or do nothing) on Android and when there is no view.
+  bool activateBannerSKAdNetwork(int adId);
+  void activateInterstitialSKAdNetwork(int adId);
+  void activateSKOverlay(int adId);
+  void dismissSKOverlay(int adId);
   void destroy(int adId);
 }
 
@@ -577,11 +680,19 @@ class InstreamVideoAdRequestConfig {
     required this.width,
     required this.height,
     this.videoConfig,
+    this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
   });
   final String configId;
   final int width;
   final int height;
   final VideoParametersConfig? videoConfig;
+  final String? gpid;
+  final String? pbAdSlot;
+  final String? impOrtbConfig;
+  final String? globalOrtbConfig;
 }
 
 /// In-stream video ad operations (Dart → Native).

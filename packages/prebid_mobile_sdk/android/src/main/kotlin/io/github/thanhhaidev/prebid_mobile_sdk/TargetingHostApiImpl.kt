@@ -8,7 +8,7 @@ import org.prebid.mobile.TargetingParams
 import org.prebid.mobile.rendering.utils.helpers.AppInfoManager
 
 /** TargetingHostApi: privacy signals, keywords, ext data and app info. */
-class TargetingHostApiImpl(private val context: Context) : TargetingHostApi {
+internal class TargetingHostApiImpl(private val context: Context) : TargetingHostApi {
 
     override fun setSubjectToCOPPA(value: Boolean?) {
         TargetingParams.setSubjectToCOPPA(value)
@@ -152,6 +152,19 @@ class TargetingHostApiImpl(private val context: Context) : TargetingHostApi {
     override fun setLocationPrecision(precision: Long?) {
         TargetingParams.setLocationDecimalPrecision(precision?.toInt())
     }
+
+    override fun getAppExtData(): Map<String, List<String>> =
+        TargetingParams.getExtDataDictionary().orEmpty().mapValues { it.value.toList() }
+    override fun getAccessControlList(): List<String> = TargetingParams.getAccessControlList().orEmpty().toList()
+    override fun getPublisherName(): String? = TargetingParams.getPublisherName()
+    override fun getStoreUrl(): String? = TargetingParams.getStoreUrl()
+    override fun getDomain(): String? = TargetingParams.getDomain()
+    override fun getOmidPartnerName(): String? = TargetingParams.getOmidPartnerName()
+    override fun getOmidPartnerVersion(): String? = TargetingParams.getOmidPartnerVersion()
+    override fun getSendSharedId(): Boolean = TargetingParams.getSendSharedId() == true
+    override fun getUserLatLng(): List<Double>? =
+        TargetingParams.getUserLatLng()?.let { listOf(it.first.toDouble(), it.second.toDouble()) }
+    override fun getLocationPrecision(): Long? = TargetingParams.getLocationDecimalPrecision()?.toLong()
 
     internal companion object {
         private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()

@@ -14,7 +14,13 @@ import 'video_parameters.dart';
 /// to your ad request as custom targeting.
 class PrebidBidResponse {
   /// Creates a [PrebidBidResponse].
-  const PrebidBidResponse({required this.resultCode, this.targetingKeywords});
+  const PrebidBidResponse({
+    required this.resultCode,
+    this.targetingKeywords,
+    this.exp,
+    this.topBidFiltered = false,
+    this.events = const {},
+  });
 
   /// The Prebid result code, the same string on Android and iOS. One of
   /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
@@ -29,6 +35,16 @@ class PrebidBidResponse {
   /// Bid-winning targeting keywords to hand to your ad server, or `null`/empty
   /// when there was no bid.
   final Map<String, String>? targetingKeywords;
+
+  /// Winning bid expiration in seconds (`bid.exp`), if the bid set one.
+  final double? exp;
+
+  /// Whether the top bid was dropped for a failed Prebid Cache entry and the
+  /// next cached bid promoted.
+  final bool topBidFiltered;
+
+  /// The winning bid's event URLs; see [PrebidMultiformatBidResponse.events].
+  final Map<String, String> events;
 
   /// Whether the auction returned a winning bid.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
@@ -61,6 +77,9 @@ PrebidBidResponse _bidResponse(PrebidMultiformatBidResponse r) =>
     PrebidBidResponse(
       resultCode: r.resultCode,
       targetingKeywords: r.targetingKeywords,
+      exp: r.exp,
+      topBidFiltered: r.topBidFiltered,
+      events: r.events,
     );
 
 /// A banner ad unit for the **Original API** integration: Prebid runs the
@@ -86,11 +105,13 @@ class PrebidBannerAdUnit with _AutoRefresh {
     required this.configId,
     required this.sizes,
     this.adPosition,
+    this.gpid,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
          adPosition: adPosition,
+         gpid: gpid,
          onDemandRefreshed: onDemandRefreshed == null
              ? null
              : (r) => onDemandRefreshed(_bidResponse(r)),
@@ -104,6 +125,9 @@ class PrebidBannerAdUnit with _AutoRefresh {
 
   /// Ad position on screen (`imp.banner.pos`).
   final PrebidAdPosition? adPosition;
+
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
 
   @override
   final PrebidMultiformatAd _delegate;
@@ -150,11 +174,13 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
     this.sizes,
     this.videoParameters,
     this.trackImpression = false,
+    this.gpid,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
          videoParameters: videoParameters,
+         gpid: gpid,
          isInterstitial: true,
          trackInterstitialImpression: trackImpression,
          onDemandRefreshed: onDemandRefreshed == null
@@ -174,6 +200,9 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
   /// Lets Prebid track the impression (`burl`) when your ad server's
   /// interstitial shows this bid's creative.
   final bool trackImpression;
+
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
 
   @override
   final PrebidMultiformatAd _delegate;
@@ -198,9 +227,11 @@ class PrebidNativeAdUnit with _AutoRefresh {
     this.context,
     this.contextSubType,
     this.placementType,
+    this.gpid,
     void Function(PrebidNativeBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
+         gpid: gpid,
          nativeAssets: assets,
          nativeEventTrackers: eventTrackers,
          nativeContext: context,
@@ -229,6 +260,9 @@ class PrebidNativeAdUnit with _AutoRefresh {
   /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
+
   @override
   final PrebidMultiformatAd _delegate;
 
@@ -241,6 +275,9 @@ class PrebidNativeAdUnit with _AutoRefresh {
   ) => PrebidNativeBidResponse(
     resultCode: r.resultCode,
     targetingKeywords: r.targetingKeywords,
+    exp: r.exp,
+    topBidFiltered: r.topBidFiltered,
+    events: r.events,
     nativeAdCacheId: r.nativeAdCacheId,
   );
 }
@@ -251,9 +288,13 @@ class PrebidNativeBidResponse extends PrebidBidResponse {
   const PrebidNativeBidResponse({
     required super.resultCode,
     super.targetingKeywords,
+    super.exp,
+    super.topBidFiltered,
+    super.events,
     this.nativeAdCacheId,
   });
 
-  /// Native cache ID returned by Prebid, when native demand wins.
+  /// Native cache ID returned by Prebid, when native demand wins; show the
+  /// ad with [PrebidNativeAd.loadFromCacheId].
   final String? nativeAdCacheId;
 }

@@ -360,9 +360,10 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `adFormats` | `Set<PrebidAdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
 | `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
+| `globalOrtbConfig` | `String?` | `null` | Request-level OpenRTB JSON for this ad unit only. |
 | `adPosition` | `PrebidAdPosition?` | `null` | Ad position on screen (`imp.banner.pos`). |
 | `videoParameters` | `VideoParameters?` | `null` | Video signals for video banners (iOS only: Prebid Android's banner sends the SDK defaults). |
-| `controller` | `PrebidBannerAdController?` | `null` | `loadAd()` (with `autoLoad: false`) and `stopRefresh()`. |
+| `controller` | `PrebidBannerAdController?` | `null` | `loadAd()` (with `autoLoad: false`), `stopRefresh()`, and the last load's `winningBid` (price, bidder, size, keywords). |
 | `listener` | `PrebidBannerAdListener?` | `null` | Callback listener for ad lifecycle events (incl. `onAdExpired`). |
 | `videoListener` | `PrebidBannerVideoListener?` | `null` | Outstream video events: completed, paused, resumed, muted, unmuted. |
 
@@ -377,9 +378,10 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 | `configId` | `String` | **Required.** Prebid Server config ID. |
 | `adFormats` | `Set<PrebidAdFormat>?` | Specify `{PrebidAdFormat.banner}`, `{PrebidAdFormat.video}`, or both. |
 | `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
-| `impOrtbConfig` | `String?` | Impression-level OpenRTB JSON. |
+| `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
 | `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
 | `listener` | `PrebidInterstitialAdListener?` | Callback listener (incl. `onAdExpired`). |
+| `isLoaded` | `bool` | Whether the ad is ready to show. |
 | `loadAd()` | `Future<void>` | Request an interstitial ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
@@ -393,9 +395,12 @@ A fullscreen rewarded ad. Users are granted a `PrebidReward` upon completing the
 | Property / Method | Type | Description |
 |---|---|---|
 | `configId` | `String` | **Required.** Prebid Server config ID. |
-| `impOrtbConfig` | `String?` | Impression-level OpenRTB JSON. |
-| `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only). |
+| `adFormats` | `Set<PrebidAdFormat>?` | Banner, video or both (iOS only). |
+| `videoParameters` | `VideoParameters?` | Video signals (iOS: every field; Android: `maxDuration`). |
+| `impOrtbConfig` / `globalOrtbConfig` | `String?` | Impression-level and per-ad-unit request-level OpenRTB JSON. |
+| `controls` | `PrebidFullscreenControls?` | Close button, mute and sound controls (skip controls on Android only, minimum size on iOS only). |
 | `listener` | `PrebidRewardedAdListener?` | Callback listener (includes `onUserEarnedReward`, `onAdExpired`). |
+| `isLoaded` | `bool` | Whether the ad is ready to show. |
 | `loadAd()` | `Future<void>` | Request a rewarded ad. |
 | `show()` | `Future<void>` | Present the loaded ad fullscreen. Calls `onAdFailed` if it isn't loaded. |
 | `destroy()` | `Future<void>` | Release all resources. |
@@ -429,8 +434,12 @@ delivered to `onAdLoaded` as a `PrebidNativeAdResponse`: the common fields
 | `contextSubType` | `NativeContextSubType?` | Context subtype (`contextsubtype`). |
 | `placementType` | `NativePlacementType?` | Placement type. |
 | `placementCount` | `int?` | Number of placements. |
+| `pbAdSlot` / `gpid` / `impOrtbConfig` / `globalOrtbConfig` | `String?` | Ad slot, GPID and OpenRTB JSON. |
+| `sequence` / `assetUrlSupport` / `dUrlSupport` / `privacy` / `ext` | | Native request `seq`, `aurlsupport`, `durlsupport`, `privacy`, `ext`. |
 | `listener` | `PrebidNativeAdListener?` | Callback listener. |
 | `loadAd()` | `Future<void>` | Request a native ad. |
+| `loadFromCacheId(String)` | `Future<void>` | Load an Original API native win from its cache id. |
+| `performClick()` | `Future<bool>` | Report a click on the ad shown in `PrebidNativeAdView.custom`. |
 | `destroy()` | `Future<void>` | Release all resources. |
 
 ### `PrebidNativeAdView` — Native Ad View
@@ -458,6 +467,10 @@ if (_loaded) PrebidNativeAdView(ad: ad);
 | `ad` | `PrebidNativeAd` | **Required.** A loaded native ad. |
 | `width` | `double?` | View width. `null` (default) fills a bounded parent; in an unbounded one (a `Row`, a horizontal list) it uses the screen width. |
 | `height` | `double` | Initial height; grows to the rendered content. |
+
+`PrebidNativeAdView.custom(ad: ad, child: yourLayout)` shows your own Flutter
+layout instead and still tracks the impression; a tap on the layout (or
+`ad.performClick()` from your call to action) reports the click.
 
 ---
 

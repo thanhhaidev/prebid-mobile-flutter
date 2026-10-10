@@ -32,6 +32,7 @@ await interstitial.loadAd();
 | `videoParameters` | [Video signals](/docs/video#video-parameters) for video demand. |
 | `controls` | [Rendering controls](#rendering-controls). |
 | `impOrtbConfig` | OpenRTB JSON merged into the impression. |
+| `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
 | `listener` | `PrebidInterstitialAdListener`. |
 
 ## Rewarded
@@ -51,10 +52,13 @@ rewarded = PrebidRewardedAd(
 await rewarded.loadAd();
 ```
 
+`PrebidRewardedAd` takes the same `videoParameters`, `controls`, `impOrtbConfig` and `globalOrtbConfig` as the interstitial, plus `adFormats` (iOS only: Prebid Android's rewarded unit always asks for both). On Android only `videoParameters.maxDuration` applies, as for the interstitial.
+
 `PrebidReward` carries `type`, `count` and the creative's optional `ext` map. The reward rules (after a playback event, after a time, on completion) come from the bid's `rewarded` configuration on Prebid Server.
 
 ## Lifecycle
 
+- `isLoaded` is true from `onAdLoaded` until the ad is shown, fails, closes or expires.
 - `loadAd()` again replaces the previous ad; the old one stops sending events.
 - `show()` before `onAdLoaded`, or with no foreground Activity / view controller, reports `onAdFailed` instead of failing silently.
 - `onAdExpired` fires when the bid's `exp` elapses before `show()`. Load again.
@@ -92,7 +96,7 @@ PrebidInterstitialAd(
 | `closeButtonArea`, `closeButtonPosition` | Close button size (fraction of the screen, `0..1`) and corner. | Both |
 | `skipButtonArea`, `skipButtonPosition`, `skipDelay` | Skip button size, corner, and the seconds before it appears. | Interstitial: both. Rewarded: Android |
 | `isMuted`, `isSoundButtonVisible` | Start muted; show the mute button. | Both |
-| `minSizePercentage` | Minimum creative size as a percentage of the screen. | Interstitial only |
+| `minSizePercentage` | Minimum creative size as a percentage of the screen. | Interstitial: both. Rewarded: iOS |
 | `isAutoCloseOnCompletionEnabled` | Close when the video completes. | <Only platform="ios" /> |
 | `supportSKOverlay` | Present an SKOverlay (App Store sheet) for SKAdNetwork ads. | <Only platform="ios" /> |
 

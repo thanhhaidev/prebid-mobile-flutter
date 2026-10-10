@@ -38,6 +38,8 @@ await video.destroy();
 
 `PrebidVideoAdBidResponse` has the `resultCode`, `targetingKeywords`, `isSuccess` and the bid's `exp` (seconds before it expires).
 
+`PrebidInstreamVideoAd` also takes `gpid`, `pbAdSlot`, `impOrtbConfig` and `globalOrtbConfig`.
+
 ## Video parameters
 
 `VideoParameters` describes what your player supports. The same class configures interstitial, rewarded, outstream, multiformat, Original API and in-stream requests.
@@ -74,6 +76,7 @@ const params = VideoParameters(
 | `battr` | `battr` | Blocked creative attributes, e.g. `annoying`, `surveys`, `pop`. |
 | `minDuration`, `maxDuration` | `minduration`, `maxduration` | Seconds. |
 | `minBitrate`, `maxBitrate` | `minbitrate`, `maxbitrate` | Kbps. |
+| `size` | `w`, `h` | Player size. Set it for Original API video ([multiformat](/docs/original-api#multiformat)); in-stream video takes its own `size`. |
 
 Every field except `mimes` is optional; unset fields are left out of the request.
 

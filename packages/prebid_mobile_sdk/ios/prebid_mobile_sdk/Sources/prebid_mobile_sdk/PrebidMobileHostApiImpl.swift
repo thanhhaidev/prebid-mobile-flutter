@@ -101,7 +101,7 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         case 3: Prebid.shared.logLevel = .warn
         case 4: Prebid.shared.logLevel = .error
         case 5: Prebid.shared.logLevel = .severe
-        default: Prebid.shared.logLevel = .info
+        default: Prebid.shared.logLevel = .debug // As Android.
         }
     }
 
@@ -186,14 +186,19 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
     }
 
     func setEventDelegateEnabled(enabled: Bool) throws {
-        if enabled {
-            let forwarder = BidEventForwarder(api: eventFlutterApi)
-            eventDelegate = forwarder
-            Prebid.shared.eventDelegate = forwarder
-        } else {
-            Prebid.shared.eventDelegate = nil
-            eventDelegate = nil
-        }
+        guard enabled else { return clearEventDelegate() }
+        let forwarder = BidEventForwarder(api: eventFlutterApi)
+        eventDelegate = forwarder
+        Prebid.shared.eventDelegate = forwarder
+    }
+
+    /// Drops this engine's delegate. Prebid has a single process-wide one, so
+    /// it's only cleared there while it is still this engine's: another
+    /// engine (add-to-app) may have set its own since.
+    func clearEventDelegate() {
+        guard let own = eventDelegate else { return }
+        eventDelegate = nil
+        if Prebid.shared.eventDelegate === own { Prebid.shared.eventDelegate = nil }
     }
 
     // SharedID
@@ -244,6 +249,9 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
                   let uids = dict["uids"] as? [[String: Any]] else { return [] }
             return uids.map { uid in
                 ExternalUserIdData(
+                    inserter: dict["inserter"] as? String,
+                    matcher: dict["matcher"] as? String,
+                    mm: (dict["mm"] as? NSNumber)?.int64Value,
                     source: source,
                     identifier: uid["id"] as? String ?? "",
                     atype: (uid["atype"] as? NSNumber)?.int64Value,
@@ -255,6 +263,28 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
 
     func clearExternalUserIds() throws {
         Targeting.shared.setExternalUserIds([])
+    }
+
+    func getTimeoutMillis() throws -> Int64 { Int64(Prebid.shared.timeoutMillis) }
+    func getPbsDebug() throws -> Bool { Prebid.shared.pbsDebug }
+    func getShareGeoLocation() throws -> Bool { Prebid.shared.shareGeoLocation }
+    func getCustomHeaders() throws -> [String: String] { Prebid.shared.customHeaders }
+    func getStoredAuctionResponse() throws -> String? { Prebid.shared.storedAuctionResponse }
+    func getStoredBidResponses() throws -> [String: String] { Prebid.shared.storedBidResponses }
+    func getCustomStatusEndpoint() throws -> String? { Prebid.shared.customStatusEndpoint }
+    func getShouldAssignNativeAssetId() throws -> Bool { Prebid.shared.shouldAssignNativeAssetID }
+    func getFilterOutUncachedBids() throws -> Bool { Prebid.shared.filterOutUncachedBids }
+    func getIncludeWinners() throws -> Bool { Prebid.shared.includeWinners }
+    func getIncludeBidderKeys() throws -> Bool { Prebid.shared.includeBidderKeys }
+    func getAuctionSettingsId() throws -> String? { Prebid.shared.auctionSettingsId }
+    func getDisableStatusCheck() throws -> Bool { Prebid.shared.shouldDisableStatusCheck }
+
+    func getEidsPlacement() throws -> String {
+        switch Prebid.shared.eidsPlacement {
+        case .openRTB26: return "openRtb26"
+        case .openRTB25: return "openRtb25"
+        default: return "compatible"
+        }
     }
 
     func getSdkVersion() throws -> String {

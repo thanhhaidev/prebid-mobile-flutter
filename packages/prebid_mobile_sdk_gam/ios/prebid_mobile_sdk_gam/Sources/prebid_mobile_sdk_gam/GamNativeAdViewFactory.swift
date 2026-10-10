@@ -178,7 +178,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     // MARK: - AdLoaderDelegate
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
-        send("primaryAdFailed", PrebidErrorFormatter.describe(error))
+        send("primaryAdFailed", failure(PrebidErrorFormatter.describe(error)))
     }
 
     // MARK: - PrebidMobile.NativeAdDelegate

@@ -119,28 +119,4 @@ void main() {
       });
     });
   });
-
-  group('PrebidBannerVideoListener.dispatch', () {
-    test('routes video events and reports unknown names', () {
-      final fired = <String>[];
-      final listener = PrebidBannerVideoListener(
-        onVideoCompleted: () => fired.add('completed'),
-        onVideoPaused: () => fired.add('paused'),
-        onVideoResumed: () => fired.add('resumed'),
-        onVideoMuted: () => fired.add('muted'),
-        onVideoUnmuted: () => fired.add('unmuted'),
-      );
-      for (final e in [
-        'onVideoCompleted',
-        'onVideoPaused',
-        'onVideoResumed',
-        'onVideoMuted',
-        'onVideoUnmuted',
-      ]) {
-        expect(listener.dispatch(e), isTrue);
-      }
-      expect(listener.dispatch('onAdLoaded'), isFalse);
-      expect(fired, ['completed', 'paused', 'resumed', 'muted', 'unmuted']);
-    });
-  });
 }

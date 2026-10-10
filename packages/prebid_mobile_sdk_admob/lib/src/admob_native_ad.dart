@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/companion.dart';
@@ -87,79 +86,31 @@ class PrebidAdMobNativeAd extends StatefulWidget {
   State<PrebidAdMobNativeAd> createState() => _PrebidAdMobNativeAdState();
 }
 
-class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
-  late double _height = widget.height;
-
-  /// The current native view's channel. Each view gets its own, so events of
-  /// a replaced view can't reach this widget.
-  late AdViewChannel _view = _newView();
-
-  AdViewChannel _newView() =>
-      AdViewChannel('prebid_mobile_sdk_admob/native', _onCall);
+class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd>
+    with AdViewState<PrebidAdMobNativeAd> {
+  @override
+  String get viewType => 'prebid_mobile_sdk_admob/native';
 
   @override
-  void didUpdateWidget(PrebidAdMobNativeAd oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_creationParams(oldWidget).toString() !=
-        _creationParams(widget).toString()) {
-      // The native view reads its configuration once, so a changed config
-      // gets a new view (keyed by its channel) that starts at the requested
-      // height.
-      _height = widget.height;
-      _view.dispose();
-      _view = _newView();
-    }
-  }
-
-  static Map<String, dynamic> _creationParams(PrebidAdMobNativeAd widget) {
-    return <String, dynamic>{
-      'configId': widget.configId,
-      'adMobAdUnitId': widget.adMobAdUnitId,
-      ...widget.nativeParameters.toMap(),
-      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
-      if (widget.globalOrtbConfig != null)
-        'globalOrtbConfig': widget.globalOrtbConfig,
-    };
-  }
+  Map<String, Object?> configOf(PrebidAdMobNativeAd widget) => {
+    'configId': widget.configId,
+    'adMobAdUnitId': widget.adMobAdUnitId,
+    ...widget.nativeParameters.toMap(),
+    'impOrtbConfig': ?widget.impOrtbConfig,
+    'globalOrtbConfig': ?widget.globalOrtbConfig,
+  };
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: _height,
-      child: _buildPlatformView(),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: reportedHeight ?? widget.height,
+    child: buildAdView(),
+  );
 
-  Widget _buildPlatformView() {
-    final creationParams = {..._creationParams(widget), 'channelId': _view.id};
-    // A new channel means a new native view (the config changed).
-    final key = ValueKey(_view.id);
-    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return AndroidView(
-        key: key,
-        viewType: 'prebid_mobile_sdk_admob/native',
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-      );
-    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      return UiKitView(
-        key: key,
-        viewType: 'prebid_mobile_sdk_admob/native',
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Future<dynamic> _onCall(MethodCall call) async {
+  @override
+  void onViewEvent(MethodCall call) {
     final l = widget.listener;
     switch (call.method) {
-      case 'onAdSize':
-        final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
-        if (h != null && h > 0 && mounted) setState(() => _height = h);
       case 'onAdLoaded':
         l?.onAdLoaded?.call();
       case 'onAdImpression':
@@ -169,13 +120,7 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
       case 'onAdOpened':
         l?.onAdOpened?.call();
       case 'onAdFailed':
-        l?.onAdFailed?.call(call.arguments as String? ?? '');
+        l?.onAdFailed?.call(adEventError(call.arguments));
     }
-  }
-
-  @override
-  void dispose() {
-    _view.dispose();
-    super.dispose();
   }
 }

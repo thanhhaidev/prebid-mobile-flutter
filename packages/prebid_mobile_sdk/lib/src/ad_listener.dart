@@ -120,21 +120,6 @@ class PrebidBannerVideoListener {
 
   /// The video was unmuted.
   final void Function()? onVideoUnmuted;
-
-  /// Dispatches a native video event name to the matching callback. Returns
-  /// `false` for names that aren't video events.
-  bool dispatch(String event) {
-    final callback = switch (event) {
-      'onVideoCompleted' => onVideoCompleted,
-      'onVideoPaused' => onVideoPaused,
-      'onVideoResumed' => onVideoResumed,
-      'onVideoMuted' => onVideoMuted,
-      'onVideoUnmuted' => onVideoUnmuted,
-      _ => null,
-    };
-    callback?.call();
-    return event.startsWith('onVideo');
-  }
 }
 
 /// Listener for [PrebidInterstitialAd] lifecycle events.

@@ -142,7 +142,7 @@ void main() {
         'v:muted',
         'v:unmuted',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     }, variant: android);
 
@@ -378,7 +378,7 @@ void main() {
         'clicked',
         'expired',
         'primaryFailed:No fill',
-        'primaryFailed:',
+        'primaryFailed:Unknown error',
       ]);
     }, variant: android);
 

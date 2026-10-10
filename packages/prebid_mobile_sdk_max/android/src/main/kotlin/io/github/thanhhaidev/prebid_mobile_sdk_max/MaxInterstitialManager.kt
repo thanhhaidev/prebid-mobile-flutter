@@ -39,17 +39,17 @@ internal class MaxInterstitialManager(
         interstitial.setListener(object : MaxAdListener {
             override fun onAdLoaded(ad: MaxAd) = send(adId, "onAdLoaded")
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) =
-                send(adId, "onAdFailed", errorMessage(error.message))
+                send(adId, "onAdFailed", error.message)
             override fun onAdDisplayed(ad: MaxAd) = send(adId, "onAdDisplayed")
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) =
-                send(adId, "onAdFailed", errorMessage(error.message))
+                send(adId, "onAdFailed", error.message)
             override fun onAdHidden(ad: MaxAd) = send(adId, "onAdClosed")
             override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
         })
         // MAX reports revenue when the impression is recorded.
         interstitial.setRevenueListener { ad ->
             send(adId, "onAdImpression")
-            send(adId, "onAdRevenuePaid", revenuePayload(ad))
+            send(adId, "onAdRevenuePaid", extras = revenuePayload(ad))
         }
 
         val adUnit = MediationInterstitialAdUnit(
@@ -66,10 +66,10 @@ internal class MaxInterstitialManager(
         return Ad(adUnit, interstitial, debugDropBidProbability(args["debugDropBidProbability"]))
     }
 
-    override fun start(adId: Long, ad: Ad) {
+    override fun load(adId: Long, ad: Ad, activity: Activity) {
         ad.adUnit.fetchDemand {
             // Destroyed / replaced while the auction ran: skip the load.
-            if (ads[adId] !== ad) return@fetchDemand
+            if (!isCurrent(adId, ad)) return@fetchDemand
             if (shouldDropBid(ad.dropBidProbability)) {
                 ad.interstitial.setLocalExtraParameter(PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID, "")
             }
@@ -77,9 +77,9 @@ internal class MaxInterstitialManager(
         }
     }
 
-    override fun isReady(ad: Ad): Boolean = ad.interstitial.isReady
+    override fun isLoaded(ad: Ad): Boolean = ad.interstitial.isReady
 
-    override fun show(ad: Ad, activity: Activity) = ad.interstitial.showAd(activity)
+    override fun show(adId: Long, ad: Ad, activity: Activity) = ad.interstitial.showAd(activity)
 
     override fun destroy(adId: Long, ad: Ad) {
         ad.adUnit.destroy()

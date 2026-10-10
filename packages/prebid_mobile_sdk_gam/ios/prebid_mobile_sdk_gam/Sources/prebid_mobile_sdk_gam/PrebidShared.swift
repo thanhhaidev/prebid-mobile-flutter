@@ -3,19 +3,8 @@ import CoreGraphics
 import UIKit
 import PrebidMobile
 
-// This package's own helpers; the parsing every companion shares is in
-// PrebidRequests.
-
-/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
-/// else video or banner from `isVideo`.
-func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
-    let names = raw as? [String] ?? []
-    // Qualified: GoogleMobileAds also has an `AdFormat`.
-    var formats = Set<PrebidMobile.AdFormat>()
-    if names.contains("banner") { formats.insert(.banner) }
-    if names.contains("video") { formats.insert(.video) }
-    return formats.isEmpty ? (isVideo ? [.video] : [.banner]) : formats
-}
+// This package's own helpers; what every companion shares is in
+// PrebidPlugin and PrebidRequests.
 
 extension FullscreenControls {
     func apply(to adUnit: InterstitialRenderingAdUnit) {

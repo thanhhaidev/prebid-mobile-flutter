@@ -5,13 +5,13 @@ import PrebidMobileGAMEventHandlers
 
 /// GAM-rendered rewarded ads over the `prebid_mobile_sdk_gam/rewarded` method
 /// channel.
-final class GamRewardedManager: FullscreenAdManager, RewardedAdUnitDelegate {
+final class GamRewardedManager: GamFullscreenAdManager {
 
     init(messenger: FlutterBinaryMessenger) {
         super.init(name: "prebid_mobile_sdk_gam/rewarded", messenger: messenger)
     }
 
-    override func makeAdUnit(args: [String: Any]) -> FullscreenAdUnit {
+    override func makeAdUnit(_ args: [String: Any], delegate: GamFullscreenEvents) -> GamFullscreenAdUnit {
         let configId = args["configId"] as? String ?? ""
         let gamAdUnitId = args["gamAdUnitId"] as? String ?? ""
 
@@ -39,47 +39,7 @@ final class GamRewardedManager: FullscreenAdManager, RewardedAdUnitDelegate {
             adUnit.setImpORTBConfig(config)
         }
         if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
-        adUnit.delegate = self
+        adUnit.delegate = delegate
         return adUnit
-    }
-
-    // MARK: - RewardedAdUnitDelegate
-
-    func rewardedAdDidReceiveAd(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onAdLoaded")
-    }
-
-    func rewardedAd(_ rewardedAd: RewardedAdUnit, didFailToReceiveAdWithError error: Error?) {
-        send(rewardedAd, "onAdFailed", error: PrebidErrorFormatter.describe(error))
-    }
-
-    func rewardedAdWillPresentAd(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onAdDisplayed")
-    }
-
-    func rewardedAdDidDismissAd(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onAdClosed")
-    }
-
-    func rewardedAdDidClickAd(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onAdClicked")
-    }
-
-    func rewardedAdDidExpire(_ rewardedAd: RewardedAdUnit) {
-        send(rewardedAd, "onAdExpired")
-    }
-
-    func rewardedAdUserDidEarnReward(_ rewardedAd: RewardedAdUnit, reward: PrebidReward) {
-        var payload: [String: Any] = [
-            "rewardType": reward.type ?? "reward",
-            "rewardCount": reward.count?.intValue ?? 1,
-        ]
-        // Omitted rather than NSNull when absent, as on Android.
-        if let ext = reward.ext,
-           let data = try? JSONSerialization.data(withJSONObject: ext),
-           let json = String(data: data, encoding: .utf8) {
-            payload["rewardExt"] = json
-        }
-        send(rewardedAd, "onUserEarnedReward", extras: payload)
     }
 }

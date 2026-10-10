@@ -73,9 +73,8 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         adaptive = isAdaptive
         dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
 
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/banner_\(viewChannelId(args, viewId: viewId))",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_admob/banner", args: args, viewId: viewId, messenger: messenger
         )
 
         // 1. Create the GMA banner view (the request is a stored property).
@@ -202,7 +201,7 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         didFailToReceiveAdWithError error: Error
     ) {
         mediationAdUnit?.adObjectDidFailToLoadAd(adObject: gadBanner, with: error)
-        send("onAdFailed", PrebidErrorFormatter.describe(error))
+        send("onAdFailed", failure(PrebidErrorFormatter.describe(error)))
     }
 
     func bannerViewDidRecordImpression(_ bannerView: GoogleMobileAds.BannerView) {

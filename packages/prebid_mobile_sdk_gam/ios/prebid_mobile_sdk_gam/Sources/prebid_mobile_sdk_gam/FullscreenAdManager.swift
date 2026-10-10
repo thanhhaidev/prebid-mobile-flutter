@@ -1,60 +1,100 @@
 import Flutter
 import UIKit
-import PrebidMobile
 
-/// What `FullscreenAdManager` needs from a Prebid fullscreen ad unit.
-protocol FullscreenAdUnit: AnyObject {
-    var isReady: Bool { get }
-    func loadAd()
-    func show(from controller: UIViewController)
-}
-
-extension InterstitialRenderingAdUnit: FullscreenAdUnit {}
-extension RewardedAdUnit: FullscreenAdUnit {}
+// Shared by the companion packages; tool/check_copies.sh keeps the copies
+// identical.
 
 /// The method channel of one fullscreen ad kind (e.g.
 /// `prebid_mobile_sdk_gam/interstitial`): `load`, `show`, `destroy` and
 /// `releaseAll` calls for ads keyed by the `adId` the Dart side allocates,
-/// and their events sent back over the same channel. Subclasses build the ad
-/// unit in `makeAdUnit(args:)`, set themselves as its delegate and report
-/// with `send(_:_:error:extras:)`.
+/// and their events sent back over the same channel. A subclass builds,
+/// loads, shows and frees its kind of ad (`Ad`) and reports with `send`.
 ///
-/// Not generic: a subclass of a generic class can't adopt Prebid's `@objc`
-/// delegate protocols.
-class FullscreenAdManager: NSObject {
+/// A subclass can't adopt the SDKs' `@objc` delegate protocols (it is a
+/// subclass of a generic class): its ads forward their delegate callbacks
+/// through their own delegate objects.
+class FullscreenAdManager<Ad: AnyObject> {
 
     private let channel: FlutterMethodChannel
-    private var ads: [Int: FullscreenAdUnit] = [:]
-    private var adIdByUnit: [ObjectIdentifier: Int] = [:]
+    private var ads: [Int: Ad] = [:]
 
     init(name: String, messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
-        super.init()
         channel.setMethodCallHandler { [weak self] call, result in
             self?.handle(call, result)
         }
     }
 
-    /// Builds an ad unit from the `load` arguments, not loaded yet.
-    func makeAdUnit(args: [String: Any]) -> FullscreenAdUnit {
-        fatalError("Subclasses build their ad unit")
+    // MARK: - Subclass hooks
+
+    /// Why a load must be refused before the previous ad of its `adId` is
+    /// freed, or `nil` to go ahead.
+    func refuseLoad(_ adId: Int, _ args: [String: Any]) -> String? { nil }
+
+    /// Builds the ad for `adId` from the `load` arguments, without loading it.
+    func create(_ adId: Int, _ args: [String: Any]) -> Ad {
+        preconditionFailure("Subclasses build their ads")
     }
 
-    /// Stops answering calls and drops every ad (engine detached).
-    func dispose() {
+    /// Starts loading `ad`, already registered for `adId`, and reports
+    /// `onAdLoaded` / `onAdFailed` when done (check `isCurrent` first).
+    func load(_ adId: Int, _ ad: Ad) {
+        preconditionFailure("Subclasses load their ads")
+    }
+
+    /// Whether `ad` has loaded and can be shown.
+    func isLoaded(_ ad: Ad) -> Bool { false }
+
+    /// Shows the loaded `ad` from `controller`.
+    func show(_ adId: Int, _ ad: Ad, from controller: UIViewController) {}
+
+    /// Frees `ad`, no longer registered for `adId`, so it reports nothing
+    /// more.
+    func destroy(_ adId: Int, _ ad: Ad) {}
+
+    // MARK: - For subclasses
+
+    /// Whether `ad` is still the one registered for `adId`: false once it was
+    /// destroyed or replaced by a newer load, whose events it must not send.
+    final func isCurrent(_ adId: Int, _ ad: Ad) -> Bool {
+        ads[adId] === ad
+    }
+
+    /// Frees the ad of `adId`, if any.
+    final func release(_ adId: Int) {
+        if let ad = ads.removeValue(forKey: adId) {
+            destroy(adId, ad)
+        }
+    }
+
+    /// Sends `event` for `adId` on the main thread, with any `extras`;
+    /// `onAdFailed` carries `error` as its `error` ("Unknown error" when nil).
+    final func send(_ adId: Int, _ event: String, error: String? = nil, extras: [String: Any] = [:]) {
+        var payload = extras
+        payload["adId"] = adId
+        if let error = error {
+            payload["error"] = error
+        } else if event == "onAdFailed" && payload["error"] == nil {
+            payload["error"] = PrebidErrorFormatter.describe(nil as Error?)
+        }
+        onMain { [channel] in channel.invokeMethod(event, arguments: payload) }
+    }
+
+    /// Stops answering calls and frees every ad (engine detached).
+    final func dispose() {
         channel.setMethodCallHandler(nil)
         releaseAll()
     }
 
+    // MARK: - Calls
+
     private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         let args = call.arguments as? [String: Any] ?? [:]
         let adId = (args["adId"] as? NSNumber)?.intValue
-
         switch call.method {
         case "load", "show":
             guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
+                return result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
             }
             if call.method == "load" { load(adId, args) } else { show(adId) }
         case "destroy":
@@ -62,65 +102,45 @@ class FullscreenAdManager: NSObject {
         case "releaseAll":
             releaseAll()
         default:
-            result(FlutterMethodNotImplemented)
-            return
+            return result(FlutterMethodNotImplemented)
         }
         result(nil)
     }
 
+    // No SDK-initialized guard as on Android: Prebid iOS runs requests made
+    // before initialization.
     private func load(_ adId: Int, _ args: [String: Any]) {
-        // Reloading an adId replaces its previous ad unit. No init guard:
-        // Prebid iOS handles requests made before initialization.
+        if let reason = refuseLoad(adId, args) {
+            return send(adId, "onAdFailed", error: reason)
+        }
+        // Reloading an adId replaces (and frees) its previous ad.
         release(adId)
-        let adUnit = makeAdUnit(args: args)
-        ads[adId] = adUnit
-        adIdByUnit[ObjectIdentifier(adUnit)] = adId
-        adUnit.loadAd()
+        let ad = create(adId, args)
+        ads[adId] = ad
+        load(adId, ad)
     }
 
     private func show(_ adId: Int) {
-        guard let adUnit = ads[adId], adUnit.isReady else {
-            return send(adId: adId, "onAdFailed", error: PrebidPresenter.notReady)
+        guard let ad = ads[adId], isLoaded(ad) else {
+            return send(adId, "onAdFailed", error: PrebidPresenter.notReady)
         }
         PrebidPresenter.whenReady(
-            fail: { [weak self] reason in self?.send(adId: adId, "onAdFailed", error: reason) },
-            present: { [weak self] controller in
-                // The wait may have outlived the ad: destroyed or reloaded
-                // (nothing to report), or expired.
-                guard let self = self, self.ads[adId] === adUnit else { return }
-                guard adUnit.isReady else {
-                    return self.send(adId: adId, "onAdFailed", error: PrebidPresenter.notReady)
+            fail: { [weak self] reason in self?.send(adId, "onAdFailed", error: reason) },
+            present: { [weak self, weak ad] controller in
+                // The wait for a busy controller may outlast the ad:
+                // destroyed, reloaded or expired meanwhile.
+                guard let self = self else { return }
+                guard let ad = ad, self.isCurrent(adId, ad), self.isLoaded(ad) else {
+                    return self.send(adId, "onAdFailed", error: PrebidPresenter.notReady)
                 }
-                adUnit.show(from: controller)
+                self.show(adId, ad, from: controller)
             }
         )
     }
 
-    /// Drops the ad unit for `adId` and its reverse mapping, so late delegate
-    /// callbacks from it are no longer forwarded.
-    private func release(_ adId: Int) {
-        if let adUnit = ads.removeValue(forKey: adId) {
-            adIdByUnit.removeValue(forKey: ObjectIdentifier(adUnit))
-        }
-    }
-
-    /// Drops every ad. Also called from Dart before its first call: after a
+    /// Frees every ad. Also called from Dart before its first call: after a
     /// hot restart this manager still holds the previous isolate's ads.
     private func releaseAll() {
-        ads.removeAll()
-        adIdByUnit.removeAll()
-    }
-
-    /// Sends `event` for the ad `adUnit` belongs to; ignored once released.
-    func send(_ adUnit: AnyObject, _ event: String, error: String? = nil, extras: [String: Any] = [:]) {
-        guard let adId = adIdByUnit[ObjectIdentifier(adUnit)] else { return }
-        send(adId: adId, event, error: error, extras: extras)
-    }
-
-    private func send(adId: Int, _ event: String, error: String? = nil, extras: [String: Any] = [:]) {
-        var payload = extras
-        payload["adId"] = adId
-        if let error = error { payload["error"] = error }
-        channel.invokeMethod(event, arguments: payload)
+        ads.keys.forEach { release($0) }
     }
 }

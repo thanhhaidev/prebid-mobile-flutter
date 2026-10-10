@@ -21,7 +21,7 @@ internal class GamRewardedManager(
     activityProvider,
 ) {
 
-    override fun create(activity: Activity, adId: Long, args: Map<*, *>): RewardedAdUnit {
+    override fun create(adId: Long, args: Map<*, *>, activity: Activity): RewardedAdUnit {
         val configId = args["configId"] as? String ?: ""
         val gamAdUnitId = args["gamAdUnitId"] as? String ?: ""
         val eventHandler = GamRewardedEventHandler(activity, gamAdUnitId).apply {
@@ -42,7 +42,7 @@ internal class GamRewardedManager(
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
             override fun onAdLoaded(unit: RewardedAdUnit) = send(adId, "onAdLoaded")
             override fun onAdFailed(unit: RewardedAdUnit, e: AdException?) =
-                send(adId, "onAdFailed", e?.message ?: PluginErrors.UNKNOWN)
+                send(adId, "onAdFailed", e?.message)
             override fun onAdDisplayed(unit: RewardedAdUnit) = send(adId, "onAdDisplayed")
             override fun onAdClosed(unit: RewardedAdUnit) = send(adId, "onAdClosed")
             override fun onAdClicked(unit: RewardedAdUnit) = send(adId, "onAdClicked")
@@ -52,6 +52,15 @@ internal class GamRewardedManager(
         })
         return adUnit
     }
+
+    override fun load(adId: Long, ad: RewardedAdUnit, activity: Activity) = ad.loadAd()
+
+    override fun isLoaded(ad: RewardedAdUnit): Boolean = ad.isLoaded
+
+    // Prebid shows from the Activity the ad unit was loaded with.
+    override fun show(adId: Long, ad: RewardedAdUnit, activity: Activity) = ad.show()
+
+    override fun destroy(adId: Long, ad: RewardedAdUnit) = ad.destroy()
 
     /** The reward keys every companion sends; `rewardExt` only when present. */
     private fun rewardPayload(reward: Reward?): Map<String, Any?> = buildMap {

@@ -79,10 +79,7 @@ internal class AdMobNativePlatformView(
         val configId = params["configId"] as? String ?: ""
         val adMobAdUnitId = params["adMobAdUnitId"] as? String ?: ""
 
-        methodChannel = MethodChannel(
-            messenger,
-            "prebid_mobile_sdk_admob/native_${viewChannelId(params, viewId)}",
-        )
+        methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_admob/native", params, viewId))
 
         buildLayout(context)
 
@@ -141,7 +138,7 @@ internal class AdMobNativePlatformView(
             .withAdListener(object : AdListener() {
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     if (disposed) return
-                    methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
+                    methodChannel.invokeMethod("onAdFailed", failure(error.message))
                 }
 
                 override fun onAdImpression() {
@@ -166,7 +163,7 @@ internal class AdMobNativePlatformView(
         // Prebid Android drops requests made before initialization without
         // calling back, so AdMob's waterfall would never run.
         if (!PrebidMobile.isSdkInitialized()) {
-            methodChannel.invokeMethod("onAdFailed", SDK_NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
         } else {
             adUnit.fetchDemand {
                 if (disposed) return@fetchDemand

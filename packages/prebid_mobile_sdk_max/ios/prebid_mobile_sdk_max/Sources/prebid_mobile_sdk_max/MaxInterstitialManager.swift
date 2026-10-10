@@ -59,7 +59,7 @@ final class MaxInterstitialManager: FullscreenAdManager<MaxInterstitialEntry> {
         if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
 
         let proxy = MaxAdEventProxy { [weak self] event, payload in
-            self?.send(adId, event, payload)
+            self?.send(adId, event, extras: payload)
         }
         interstitial.delegate = proxy
         interstitial.revenueDelegate = proxy
@@ -72,10 +72,10 @@ final class MaxInterstitialManager: FullscreenAdManager<MaxInterstitialEntry> {
         )
     }
 
-    override func start(_ adId: Int, _ ad: MaxInterstitialEntry) {
+    override func load(_ adId: Int, _ ad: MaxInterstitialEntry) {
         ad.adUnit.fetchDemand { [weak self, weak ad] _ in
             // Destroyed / replaced while the auction ran: skip the load.
-            guard let self = self, let ad = ad, self.ads[adId] === ad else { return }
+            guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
             if shouldDropBid(ad.dropBidProbability) {
                 ad.interstitial.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
             }
@@ -83,11 +83,11 @@ final class MaxInterstitialManager: FullscreenAdManager<MaxInterstitialEntry> {
         }
     }
 
-    override func isReady(_ ad: MaxInterstitialEntry) -> Bool {
+    override func isLoaded(_ ad: MaxInterstitialEntry) -> Bool {
         ad.interstitial.isReady
     }
 
-    override func show(_ ad: MaxInterstitialEntry, from viewController: UIViewController) {
+    override func show(_ adId: Int, _ ad: MaxInterstitialEntry, from viewController: UIViewController) {
         ad.interstitial.show(forPlacement: nil, customData: nil, viewController: viewController)
     }
 

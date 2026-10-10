@@ -6,7 +6,7 @@ import PrebidMobileAdMobAdapters
 
 /// One AdMob-mediated interstitial: the Prebid ad unit that runs the auction
 /// and, once loaded, the AdMob ad.
-final class AdMobInterstitial: FullscreenAd {
+final class AdMobInterstitial {
     let adUnit: MediationInterstitialAdUnit
     let request: GoogleMobileAds.Request
     let adMobAdUnitId: String
@@ -58,26 +58,26 @@ final class AdMobInterstitialManager: FullscreenAdManager<AdMobInterstitial> {
         super.init(name: "prebid_mobile_sdk_admob/interstitial", messenger: messenger)
     }
 
-    override func makeAd(adId: Int, args: [String: Any]) -> AdMobInterstitial {
+    override func create(_ adId: Int, _ args: [String: Any]) -> AdMobInterstitial {
         AdMobInterstitial(args: args)
     }
 
-    override func load(_ ad: AdMobInterstitial, adId: Int) {
+    override func load(_ adId: Int, _ ad: AdMobInterstitial) {
         ad.adUnit.fetchDemand { [weak self, weak ad] _ in
             onMain {
                 // Destroyed / replaced while the auction ran: skip the load.
-                guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                 maybeDropBid(ad.dropBidProbability, from: ad.request)
                 GoogleMobileAds.InterstitialAd.load(
                     with: ad.adMobAdUnitId,
                     request: ad.request
                 ) { [weak self, weak ad] interstitial, error in
-                    guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                    guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                     guard let interstitial = interstitial else {
                         return self.send(adId, "onAdFailed", error: PrebidErrorFormatter.describe(error))
                     }
                     let events = FullScreenEvents { [weak self, weak ad] event, error in
-                        guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                        guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                         self.send(adId, event, error: error.map { PrebidErrorFormatter.describe($0) })
                     }
                     ad.events = events
@@ -89,7 +89,15 @@ final class AdMobInterstitialManager: FullscreenAdManager<AdMobInterstitial> {
         }
     }
 
-    override func present(_ ad: AdMobInterstitial, adId: Int, from controller: UIViewController) {
+    override func isLoaded(_ ad: AdMobInterstitial) -> Bool {
+        ad.isLoaded
+    }
+
+    override func destroy(_ adId: Int, _ ad: AdMobInterstitial) {
+        ad.destroy()
+    }
+
+    override func show(_ adId: Int, _ ad: AdMobInterstitial, from controller: UIViewController) {
         ad.interstitial?.present(from: controller)
     }
 }

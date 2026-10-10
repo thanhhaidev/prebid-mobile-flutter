@@ -4,9 +4,9 @@
 #   itself. The example app skips public_member_api_docs (not a library).
 # - test/channel_harness.dart of the companion packages: test code can't be
 #   shared through the core package.
-# - PrebidRequests.kt / PrebidRequests.swift of the companion packages: the
-#   native parsing of the channel arguments, which each plugin compiles on its
-#   own (the Kotlin copies differ only in their package line).
+# - the native code every companion package shares (the request parsing,
+#   the fullscreen ad manager, the plugin helpers), which each plugin
+#   compiles on its own (the Kotlin copies differ only in their package line).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -33,24 +33,29 @@ for file in packages/prebid_mobile_sdk_{admob,max}/test/channel_harness.dart; do
   fi
 done
 kotlin=android/src/main/kotlin/io/github/thanhhaidev
-requests() { sed '/^package /d' "$1"; }
-reference=packages/prebid_mobile_sdk_gam/$kotlin/prebid_mobile_sdk_gam/PrebidRequests.kt
-for pkg in admob max; do
-  file=packages/prebid_mobile_sdk_$pkg/$kotlin/prebid_mobile_sdk_$pkg/PrebidRequests.kt
-  if ! diff -q <(requests "$reference") <(requests "$file") >/dev/null; then
-    echo "copies: $file differs from $reference; keep the three identical" >&2
-    diff -u <(requests "$reference") <(requests "$file") >&2 || true
-    status=1
-  fi
+swift=ios/prebid_mobile_sdk_PKG/Sources/prebid_mobile_sdk_PKG
+unpackaged() { sed '/^package /d' "$1"; }
+for name in PrebidRequests.kt FullscreenAdManager.kt PrebidPlugin.kt; do
+  reference=packages/prebid_mobile_sdk_gam/$kotlin/prebid_mobile_sdk_gam/$name
+  for pkg in admob max; do
+    file=packages/prebid_mobile_sdk_$pkg/$kotlin/prebid_mobile_sdk_$pkg/$name
+    if ! diff -q <(unpackaged "$reference") <(unpackaged "$file") >/dev/null; then
+      echo "copies: $file differs from $reference; keep the three identical" >&2
+      diff -u <(unpackaged "$reference") <(unpackaged "$file") >&2 || true
+      status=1
+    fi
+  done
 done
-reference=packages/prebid_mobile_sdk_gam/ios/prebid_mobile_sdk_gam/Sources/prebid_mobile_sdk_gam/PrebidRequests.swift
-for pkg in admob max; do
-  file=packages/prebid_mobile_sdk_$pkg/ios/prebid_mobile_sdk_$pkg/Sources/prebid_mobile_sdk_$pkg/PrebidRequests.swift
-  if ! cmp -s "$reference" "$file"; then
-    echo "copies: $file differs from $reference; keep the three identical" >&2
-    diff -u "$reference" "$file" >&2 || true
-    status=1
-  fi
+for name in PrebidRequests.swift FullscreenAdManager.swift PrebidPlugin.swift; do
+  reference=packages/prebid_mobile_sdk_gam/${swift//PKG/gam}/$name
+  for pkg in admob max; do
+    file=packages/prebid_mobile_sdk_$pkg/${swift//PKG/$pkg}/$name
+    if ! cmp -s "$reference" "$file"; then
+      echo "copies: $file differs from $reference; keep the three identical" >&2
+      diff -u "$reference" "$file" >&2 || true
+      status=1
+    fi
+  done
 done
-[ "$status" -eq 0 ] && echo "copies: lint rules, companion test harnesses and native request parsing in sync"
+[ "$status" -eq 0 ] && echo "copies: lint rules, companion test harnesses and shared native code in sync"
 exit "$status"

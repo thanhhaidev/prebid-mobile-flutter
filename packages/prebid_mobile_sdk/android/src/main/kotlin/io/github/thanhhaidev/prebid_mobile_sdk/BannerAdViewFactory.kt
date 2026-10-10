@@ -112,7 +112,7 @@ internal class BannerAdPlatformView(
             }
 
             override fun onAdFailed(view: BannerView, exception: AdException?) {
-                methodChannel.invokeMethod("onAdFailed", exception?.message ?: "Unknown error")
+                methodChannel.invokeMethod("onAdFailed", mapOf("error" to (exception?.message ?: "Unknown error")))
             }
 
             override fun onAdClicked(view: BannerView) {
@@ -154,7 +154,7 @@ internal class BannerAdPlatformView(
         // Prebid drops a request made before the SDK has initialized without
         // calling back; report it instead.
         if (!PrebidMobile.isSdkInitialized()) {
-            methodChannel.invokeMethod("onAdFailed", PluginErrors.NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", mapOf("error" to PluginErrors.NOT_INITIALIZED))
             return
         }
         bannerView.loadAd()

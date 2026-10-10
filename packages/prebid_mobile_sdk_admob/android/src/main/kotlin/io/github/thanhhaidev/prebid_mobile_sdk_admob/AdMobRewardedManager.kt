@@ -99,12 +99,12 @@ internal class AdMobRewardedManager(
             send(
                 adId,
                 "onUserEarnedReward",
-                extra = mapOf("rewardType" to reward.type, "rewardCount" to reward.amount),
+                extras = mapOf("rewardType" to reward.type, "rewardCount" to reward.amount),
             )
         }
     }
 
-    override fun destroy(ad: Ad) {
+    override fun destroy(adId: Long, ad: Ad) {
         ad.rewarded?.fullScreenContentCallback = null
         ad.rewarded = null
         ad.adUnit.destroy()

@@ -93,7 +93,7 @@ void main() {
         'clicked',
         'closed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     }, variant: android);
 
@@ -309,7 +309,7 @@ void main() {
         'impression',
         'clicked',
         'failed:No fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     }, variant: android);
 

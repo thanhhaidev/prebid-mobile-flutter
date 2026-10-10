@@ -232,7 +232,7 @@ internal class GamNativePlatformView(
         return builder
             .withAdListener(object : AdListener() {
                 override fun onAdFailedToLoad(error: LoadAdError) {
-                    send("primaryAdFailed", error.message)
+                    send("primaryAdFailed", failure(error.message))
                 }
 
                 override fun onAdImpression() {

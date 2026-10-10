@@ -5,43 +5,72 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.prebid.mobile.PrebidMobile
-import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
+
+// Shared by the companion packages; tool/check_copies.sh keeps the copies
+// identical.
 
 /**
  * The method channel of one fullscreen ad kind (e.g.
  * `prebid_mobile_sdk_gam/interstitial`): `load`, `show`, `destroy` and
  * `releaseAll` calls for ads keyed by the `adId` the Dart side allocates,
- * and their events sent back over the same channel. Subclasses only build
- * the ad unit and wire its listener to [send].
+ * and their events sent back over the same channel. A subclass builds,
+ * loads, shows and frees its kind of ad ([A]) and reports through [send].
  */
-internal abstract class FullscreenAdManager<T : BaseInterstitialAdUnit>(
+internal abstract class FullscreenAdManager<A : Any>(
     messenger: BinaryMessenger,
     channelName: String,
     private val activityProvider: () -> Activity?,
 ) : MethodChannel.MethodCallHandler {
 
     private val channel = MethodChannel(messenger, channelName)
-    private val ads = mutableMapOf<Long, T>()
+    private val ads = mutableMapOf<Long, A>()
 
     init {
         channel.setMethodCallHandler(this)
     }
 
     /**
-     * Builds the ad unit for [adId] from the `load` [args], with its listener
-     * reporting through [send]. Not loaded yet.
+     * Why a load must be refused before the previous ad of its `adId` is
+     * freed, or null to go ahead.
      */
-    protected abstract fun create(activity: Activity, adId: Long, args: Map<*, *>): T
+    protected open fun refuseLoad(adId: Long, args: Map<*, *>): String? = null
 
-    /** Stops answering calls and destroys every ad (engine detached). */
+    /** Builds the ad for [adId] from the `load` arguments, without loading it. */
+    protected abstract fun create(adId: Long, args: Map<*, *>, activity: Activity): A
+
+    /**
+     * Starts loading [ad], already registered for [adId], and reports
+     * `onAdLoaded` / `onAdFailed` when done (check [isCurrent] first).
+     */
+    protected abstract fun load(adId: Long, ad: A, activity: Activity)
+
+    /** Whether [ad] has loaded and can be shown. */
+    protected abstract fun isLoaded(ad: A): Boolean
+
+    /** Shows the loaded [ad] from [activity]. */
+    protected abstract fun show(adId: Long, ad: A, activity: Activity)
+
+    /** Frees [ad], no longer registered for [adId], so it reports nothing more. */
+    protected abstract fun destroy(adId: Long, ad: A)
+
+    /**
+     * Whether [ad] is still the one registered for [adId]: false once it was
+     * destroyed or replaced by a newer load, whose events it must not send.
+     */
+    protected fun isCurrent(adId: Long, ad: A): Boolean = ads[adId] === ad
+
+    /** Unregisters the ad of [adId] without freeing it, and returns it. */
+    protected fun forget(adId: Long): A? = ads.remove(adId)
+
+    /** Stops answering calls and frees every ad (engine detached). */
     fun dispose() {
         channel.setMethodCallHandler(null)
         releaseAll()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        val args = call.arguments as? Map<*, *>
-        val adId = (args?.get("adId") as? Number)?.toLong()
+        val args = call.arguments as? Map<*, *> ?: emptyMap<String, Any>()
+        val adId = (args["adId"] as? Number)?.toLong()
         when (call.method) {
             "load" -> {
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
@@ -51,7 +80,7 @@ internal abstract class FullscreenAdManager<T : BaseInterstitialAdUnit>(
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
                 show(adId)
             }
-            "destroy" -> adId?.let { ads.remove(it)?.destroy() }
+            "destroy" -> adId?.let { release(it) }
             "releaseAll" -> releaseAll()
             else -> return result.notImplemented()
         }
@@ -59,42 +88,46 @@ internal abstract class FullscreenAdManager<T : BaseInterstitialAdUnit>(
     }
 
     private fun load(adId: Long, args: Map<*, *>) {
-        // Reloading an adId replaces (and frees) its previous ad unit, also
-        // when the new load fails below.
-        ads.remove(adId)?.destroy()
+        refuseLoad(adId, args)?.let { return send(adId, "onAdFailed", it) }
+        // Reloading an adId replaces (and frees) its previous ad, also when
+        // the new load fails below.
+        release(adId)
         // Failures are reported through the listener, as iOS does, rather
-        // than as a PlatformException from loadAd().
+        // than as a PlatformException from loadAd(). Prebid Android drops a
+        // request made before initialization without calling back, so the
+        // load would never finish.
         if (!PrebidMobile.isSdkInitialized()) {
-            // Prebid Android drops a request made before initialization
-            // without calling back, so the load would never finish.
             return send(adId, "onAdFailed", PluginErrors.NOT_INITIALIZED)
         }
         val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
-        val adUnit = create(activity, adId, args)
-        ads[adId] = adUnit
-        adUnit.loadAd()
+        val ad = create(adId, args, activity)
+        ads[adId] = ad
+        load(adId, ad, activity)
     }
 
     private fun show(adId: Long) {
-        val adUnit = ads[adId]
-        when {
-            adUnit == null || !adUnit.isLoaded -> send(adId, "onAdFailed", PluginErrors.NOT_LOADED)
-            // Prebid shows from the Activity the ad unit was loaded with.
-            activityProvider() == null -> send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
-            else -> adUnit.show()
-        }
+        val ad = ads[adId]?.takeIf { isLoaded(it) }
+            ?: return send(adId, "onAdFailed", PluginErrors.NOT_LOADED)
+        val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
+        show(adId, ad, activity)
+    }
+
+    private fun release(adId: Long) {
+        ads.remove(adId)?.let { destroy(adId, it) }
     }
 
     /**
-     * Destroys every ad. Also called from Dart before its first call: after
-     * a hot restart this manager still holds the previous isolate's ads.
+     * Frees every ad. Also called from Dart before its first call: after a
+     * hot restart this manager still holds the previous isolate's ads.
      */
     private fun releaseAll() {
-        ads.values.forEach { it.destroy() }
-        ads.clear()
+        ads.keys.toList().forEach { release(it) }
     }
 
-    /** Sends [event] for [adId], with an `error` and any [extras]. */
+    /**
+     * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
+     * [error] as its `error` (blank becomes "Unknown error").
+     */
     protected fun send(
         adId: Long,
         event: String,
@@ -102,7 +135,7 @@ internal abstract class FullscreenAdManager<T : BaseInterstitialAdUnit>(
         extras: Map<String, Any?> = emptyMap(),
     ) {
         val payload = mutableMapOf<String, Any?>("adId" to adId)
-        if (error != null) payload["error"] = error
+        if (event == "onAdFailed" || error != null) payload["error"] = errorMessage(error)
         payload.putAll(extras)
         channel.invokeMethod(event, payload)
     }

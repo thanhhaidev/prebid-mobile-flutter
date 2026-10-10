@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 
 import '../ad_listener.dart';
+import 'ad_view_state.dart';
 import 'companion_ad_channel.dart';
 
 /// Base class of the companion packages' interstitial and rewarded ads.
@@ -70,10 +71,6 @@ abstract class CompanionFullscreenAd {
   }
 }
 
-/// The `error` of an `onAdFailed` payload.
-String companionError(Map? args) =>
-    args?['error'] as String? ?? 'Unknown error';
-
 /// Calls the [listener] callback for an interstitial [event]. Returns whether
 /// the event is one of [PrebidInterstitialAdListener]'s.
 bool dispatchInterstitialEvent(
@@ -85,7 +82,7 @@ bool dispatchInterstitialEvent(
     case 'onAdLoaded':
       listener?.onAdLoaded?.call();
     case 'onAdFailed':
-      listener?.onAdFailed?.call(companionError(args));
+      listener?.onAdFailed?.call(adEventError(args));
     case 'onAdDisplayed':
       listener?.onAdDisplayed?.call();
     case 'onAdClosed':
@@ -113,7 +110,7 @@ bool dispatchRewardedEvent(
     case 'onAdLoaded':
       listener?.onAdLoaded?.call();
     case 'onAdFailed':
-      listener?.onAdFailed?.call(companionError(args));
+      listener?.onAdFailed?.call(adEventError(args));
     case 'onAdDisplayed':
       listener?.onAdDisplayed?.call();
     case 'onAdClosed':

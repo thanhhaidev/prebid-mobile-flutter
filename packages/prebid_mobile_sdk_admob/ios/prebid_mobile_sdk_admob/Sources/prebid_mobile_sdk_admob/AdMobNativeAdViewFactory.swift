@@ -58,9 +58,8 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         let configId = args["configId"] as? String ?? ""
         let adMobAdUnitId = args["adMobAdUnitId"] as? String ?? ""
 
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/native_\(viewChannelId(args, viewId: viewId))",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_admob/native", args: args, viewId: viewId, messenger: messenger
         )
 
         super.init()
@@ -198,7 +197,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
     }
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
-        send("onAdFailed", PrebidErrorFormatter.describe(error))
+        send("onAdFailed", failure(PrebidErrorFormatter.describe(error)))
     }
 
     // MARK: - GoogleMobileAds.NativeAdDelegate

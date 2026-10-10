@@ -5,13 +5,13 @@ import PrebidMobileGAMEventHandlers
 
 /// GAM-rendered interstitials over the `prebid_mobile_sdk_gam/interstitial`
 /// method channel.
-final class GamInterstitialManager: FullscreenAdManager, InterstitialAdUnitDelegate {
+final class GamInterstitialManager: GamFullscreenAdManager {
 
     init(messenger: FlutterBinaryMessenger) {
         super.init(name: "prebid_mobile_sdk_gam/interstitial", messenger: messenger)
     }
 
-    override func makeAdUnit(args: [String: Any]) -> FullscreenAdUnit {
+    override func makeAdUnit(_ args: [String: Any], delegate: GamFullscreenEvents) -> GamFullscreenAdUnit {
         let configId = args["configId"] as? String ?? ""
         let gamAdUnitId = args["gamAdUnitId"] as? String ?? ""
         let isVideo = args["isVideo"] as? Bool ?? false
@@ -43,33 +43,7 @@ final class GamInterstitialManager: FullscreenAdManager, InterstitialAdUnitDeleg
             adUnit.setImpORTBConfig(config)
         }
         if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
-        adUnit.delegate = self
+        adUnit.delegate = delegate
         return adUnit
-    }
-
-    // MARK: - InterstitialAdUnitDelegate
-
-    func interstitialDidReceiveAd(_ interstitial: InterstitialRenderingAdUnit) {
-        send(interstitial, "onAdLoaded")
-    }
-
-    func interstitial(_ interstitial: InterstitialRenderingAdUnit, didFailToReceiveAdWithError error: Error?) {
-        send(interstitial, "onAdFailed", error: PrebidErrorFormatter.describe(error))
-    }
-
-    func interstitialWillPresentAd(_ interstitial: InterstitialRenderingAdUnit) {
-        send(interstitial, "onAdDisplayed")
-    }
-
-    func interstitialDidDismissAd(_ interstitial: InterstitialRenderingAdUnit) {
-        send(interstitial, "onAdClosed")
-    }
-
-    func interstitialDidClickAd(_ interstitial: InterstitialRenderingAdUnit) {
-        send(interstitial, "onAdClicked")
-    }
-
-    func interstitialDidExpireAd(_ interstitial: InterstitialRenderingAdUnit) {
-        send(interstitial, "onAdExpired")
     }
 }

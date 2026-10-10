@@ -46,7 +46,7 @@ library;
 
 export 'src/ad_enums.dart';
 export 'src/ad_listener.dart';
-export 'src/banner_ad.dart';
+export 'src/banner_ad.dart' hide attachBannerController, detachBannerController;
 export 'src/external_user_id.dart';
 export 'src/fullscreen_controls.dart';
 export 'src/interstitial_ad.dart';

@@ -75,8 +75,7 @@ internal class GamBannerPlatformView(
             else -> VideoPlacementType.IN_BANNER
         }
 
-        val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$channelId")
+        methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_gam/banner", params, viewId))
 
         // The BannerView requests every size the GAM event handler accepts.
         val adSizes = (listOf(AdSize(width, height)) + additionalSizes).toTypedArray()
@@ -130,7 +129,7 @@ internal class GamBannerPlatformView(
             }
 
             override fun onAdFailed(view: BannerView, exception: AdException?) {
-                methodChannel.invokeMethod("onAdFailed", exception?.message ?: PluginErrors.UNKNOWN)
+                methodChannel.invokeMethod("onAdFailed", failure(exception?.message))
             }
 
             override fun onAdClicked(view: BannerView) {
@@ -173,7 +172,7 @@ internal class GamBannerPlatformView(
         // without calling back; report it instead. The Dart side listens on
         // this channel before creating the view, so nothing is missed.
         if (!PrebidMobile.isSdkInitialized()) {
-            methodChannel.invokeMethod("onAdFailed", PluginErrors.NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
             return
         }
         bannerView.loadAd()

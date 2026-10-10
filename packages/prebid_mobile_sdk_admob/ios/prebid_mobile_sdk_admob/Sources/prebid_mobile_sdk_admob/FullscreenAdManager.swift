@@ -1,22 +1,19 @@
 import Flutter
 import UIKit
-import GoogleMobileAds
 
-/// One ad of a `FullscreenAdManager`.
-protocol FullscreenAd: AnyObject {
-    /// Whether the ad has loaded and can be presented.
-    var isLoaded: Bool { get }
+// Shared by the companion packages; tool/check_copies.sh keeps the copies
+// identical.
 
-    /// Frees the ad and detaches its callbacks, so it reports nothing more.
-    func destroy()
-}
-
-/// Base of the interstitial and rewarded managers: one method channel shared
-/// by every ad of a kind, each ad keyed by the `adId` the Dart side allocates.
-/// Answers `load` / `show` / `destroy` / `releaseAll` and pushes the ads'
-/// events back over the same channel; a subclass builds, loads and presents
-/// its kind of ad.
-class FullscreenAdManager<Ad: FullscreenAd> {
+/// The method channel of one fullscreen ad kind (e.g.
+/// `prebid_mobile_sdk_gam/interstitial`): `load`, `show`, `destroy` and
+/// `releaseAll` calls for ads keyed by the `adId` the Dart side allocates,
+/// and their events sent back over the same channel. A subclass builds,
+/// loads, shows and frees its kind of ad (`Ad`) and reports with `send`.
+///
+/// A subclass can't adopt the SDKs' `@objc` delegate protocols (it is a
+/// subclass of a generic class): its ads forward their delegate callbacks
+/// through their own delegate objects.
+class FullscreenAdManager<Ad: AnyObject> {
 
     private let channel: FlutterMethodChannel
     private var ads: [Int: Ad] = [:]
@@ -28,36 +25,58 @@ class FullscreenAdManager<Ad: FullscreenAd> {
         }
     }
 
+    // MARK: - Subclass hooks
+
+    /// Why a load must be refused before the previous ad of its `adId` is
+    /// freed, or `nil` to go ahead.
+    func refuseLoad(_ adId: Int, _ args: [String: Any]) -> String? { nil }
+
     /// Builds the ad for `adId` from the `load` arguments, without loading it.
-    func makeAd(adId: Int, args: [String: Any]) -> Ad {
-        fatalError("Subclasses build their ads")
+    func create(_ adId: Int, _ args: [String: Any]) -> Ad {
+        preconditionFailure("Subclasses build their ads")
     }
 
     /// Starts loading `ad`, already registered for `adId`, and reports
     /// `onAdLoaded` / `onAdFailed` when done (check `isCurrent` first).
-    func load(_ ad: Ad, adId: Int) {
-        fatalError("Subclasses load their ads")
+    func load(_ adId: Int, _ ad: Ad) {
+        preconditionFailure("Subclasses load their ads")
     }
 
-    /// Presents the loaded `ad` from `controller`.
-    func present(_ ad: Ad, adId: Int, from controller: UIViewController) {
-        fatalError("Subclasses present their ads")
-    }
+    /// Whether `ad` has loaded and can be shown.
+    func isLoaded(_ ad: Ad) -> Bool { false }
+
+    /// Shows the loaded `ad` from `controller`.
+    func show(_ adId: Int, _ ad: Ad, from controller: UIViewController) {}
+
+    /// Frees `ad`, no longer registered for `adId`, so it reports nothing
+    /// more.
+    func destroy(_ adId: Int, _ ad: Ad) {}
+
+    // MARK: - For subclasses
 
     /// Whether `ad` is still the one registered for `adId`: false once it was
     /// destroyed or replaced by a newer load, whose events it must not send.
-    final func isCurrent(_ ad: Ad, adId: Int) -> Bool {
+    final func isCurrent(_ adId: Int, _ ad: Ad) -> Bool {
         ads[adId] === ad
     }
 
-    /// Sends `event` for `adId` on the main thread, with `error` for
-    /// `onAdFailed` ("Unknown error" when nil) and any `extra` payload keys.
-    final func send(_ adId: Int, _ event: String, error: String? = nil, extra: [String: Any] = [:]) {
-        var payload: [String: Any] = ["adId": adId]
-        if event == "onAdFailed" {
-            payload["error"] = error ?? PrebidErrorFormatter.describe(nil)
+    /// Frees the ad of `adId`, if any.
+    final func release(_ adId: Int) {
+        if let ad = ads.removeValue(forKey: adId) {
+            destroy(adId, ad)
         }
-        payload.merge(extra) { _, new in new }
+    }
+
+    /// Sends `event` for `adId` on the main thread, with any `extras`;
+    /// `onAdFailed` carries `error` as its `error` ("Unknown error" when nil).
+    final func send(_ adId: Int, _ event: String, error: String? = nil, extras: [String: Any] = [:]) {
+        var payload = extras
+        payload["adId"] = adId
+        if let error = error {
+            payload["error"] = error
+        } else if event == "onAdFailed" && payload["error"] == nil {
+            payload["error"] = PrebidErrorFormatter.describe(nil as Error?)
+        }
         onMain { [channel] in channel.invokeMethod(event, arguments: payload) }
     }
 
@@ -67,98 +86,61 @@ class FullscreenAdManager<Ad: FullscreenAd> {
         releaseAll()
     }
 
+    // MARK: - Calls
+
     private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         let args = call.arguments as? [String: Any] ?? [:]
         let adId = (args["adId"] as? NSNumber)?.intValue
-
         switch call.method {
-        case "load":
-            guard let adId = adId else { return result(Self.missingAdId) }
-            // Reloading an adId replaces (and frees) its previous ad. No
-            // initialization check: Prebid iOS handles requests made before
-            // the SDK finished initializing.
-            release(adId)
-            let ad = makeAd(adId: adId, args: args)
-            ads[adId] = ad
-            load(ad, adId: adId)
-            result(nil)
-        case "show":
-            guard let adId = adId else { return result(Self.missingAdId) }
-            show(adId)
-            result(nil)
+        case "load", "show":
+            guard let adId = adId else {
+                return result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
+            }
+            if call.method == "load" { load(adId, args) } else { show(adId) }
         case "destroy":
             if let adId = adId { release(adId) }
-            result(nil)
         case "releaseAll":
             releaseAll()
-            result(nil)
         default:
-            result(FlutterMethodNotImplemented)
+            return result(FlutterMethodNotImplemented)
         }
+        result(nil)
+    }
+
+    // No SDK-initialized guard as on Android: Prebid iOS runs requests made
+    // before initialization.
+    private func load(_ adId: Int, _ args: [String: Any]) {
+        if let reason = refuseLoad(adId, args) {
+            return send(adId, "onAdFailed", error: reason)
+        }
+        // Reloading an adId replaces (and frees) its previous ad.
+        release(adId)
+        let ad = create(adId, args)
+        ads[adId] = ad
+        load(adId, ad)
     }
 
     private func show(_ adId: Int) {
-        guard let ad = ads[adId], ad.isLoaded else {
+        guard let ad = ads[adId], isLoaded(ad) else {
             return send(adId, "onAdFailed", error: PrebidPresenter.notReady)
         }
         PrebidPresenter.whenReady(
             fail: { [weak self] reason in self?.send(adId, "onAdFailed", error: reason) },
             present: { [weak self, weak ad] controller in
+                // The wait for a busy controller may outlast the ad:
+                // destroyed, reloaded or expired meanwhile.
                 guard let self = self else { return }
-                // The wait for a busy controller may outlast the ad.
-                guard let ad = ad, self.isCurrent(ad, adId: adId), ad.isLoaded else {
+                guard let ad = ad, self.isCurrent(adId, ad), self.isLoaded(ad) else {
                     return self.send(adId, "onAdFailed", error: PrebidPresenter.notReady)
                 }
-                self.present(ad, adId: adId, from: controller)
+                self.show(adId, ad, from: controller)
             }
         )
     }
 
-    private func release(_ adId: Int) {
-        ads.removeValue(forKey: adId)?.destroy()
-    }
-
+    /// Frees every ad. Also called from Dart before its first call: after a
+    /// hot restart this manager still holds the previous isolate's ads.
     private func releaseAll() {
-        let all = ads.values
-        ads.removeAll()
-        all.forEach { $0.destroy() }
-    }
-
-    private static var missingAdId: FlutterError {
-        FlutterError(code: "no_ad_id", message: "Missing adId", details: nil)
-    }
-}
-
-/// Forwards one AdMob fullscreen ad's callbacks as Dart events. AdMob holds
-/// `fullScreenContentDelegate` weakly, so the ad's `FullscreenAd` keeps it.
-final class FullScreenEvents: NSObject, FullScreenContentDelegate {
-
-    private let send: (_ event: String, _ error: Error?) -> Void
-
-    init(send: @escaping (_ event: String, _ error: Error?) -> Void) {
-        self.send = send
-    }
-
-    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        send("onAdDisplayed", nil)
-    }
-
-    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        send("onAdClosed", nil)
-    }
-
-    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
-        send("onAdImpression", nil)
-    }
-
-    func adDidRecordClick(_ ad: FullScreenPresentingAd) {
-        send("onAdClicked", nil)
-    }
-
-    func ad(
-        _ ad: FullScreenPresentingAd,
-        didFailToPresentFullScreenContentWithError error: Error
-    ) {
-        send("onAdFailed", error)
+        ads.keys.forEach { release($0) }
     }
 }

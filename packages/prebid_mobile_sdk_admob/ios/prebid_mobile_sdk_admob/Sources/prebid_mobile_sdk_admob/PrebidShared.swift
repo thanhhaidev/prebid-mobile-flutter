@@ -5,32 +5,8 @@ import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
 
-// This package's own helpers; the parsing every companion shares is in
-// PrebidRequests.
-
-/// Runs `block` on the main thread: method channels must be called there,
-/// and some SDK completions arrive on background queues.
-func onMain(_ block: @escaping () -> Void) {
-    if Thread.isMainThread {
-        block()
-    } else {
-        DispatchQueue.main.async(execute: block)
-    }
-}
-
-/// The method-channel suffix of a platform view: the `channelId` creation
-/// param the Dart widget listens on before the view exists (falls back to the
-/// platform view id).
-func viewChannelId(_ args: [String: Any], viewId: Int64) -> Int64 {
-    (args["channelId"] as? NSNumber)?.int64Value ?? viewId
-}
-
-/// `debugDropBidProbability` (`PrebidAdMob.debugDropBidProbability`, testing
-/// only), clamped to `0...1`; 0 when absent.
-func debugDropBidProbability(_ raw: Any?) -> Double {
-    guard let p = (raw as? NSNumber)?.doubleValue, !p.isNaN else { return 0 }
-    return min(max(p, 0), 1)
-}
+// This package's own helpers; what every companion shares is in
+// PrebidPlugin and PrebidRequests.
 
 /// Testing hook: with `probability`, drops the Prebid bid from `request` after
 /// `fetchDemand` so the Prebid AdMob adapter finds no bid and AdMob falls back
@@ -39,21 +15,10 @@ func debugDropBidProbability(_ raw: Any?) -> Double {
 /// extras, so those are cleared — as the mediation utils' `cleanUpAdObject`
 /// does — while the `hb_*` keywords stay and still pick the Prebid line.
 func maybeDropBid(_ probability: Double, from request: GoogleMobileAds.Request) {
-    guard probability > 0, Double.random(in: 0..<1) < probability else { return }
+    guard shouldDropBid(probability) else { return }
     let extras = GoogleMobileAds.CustomEventExtras()
     extras.setExtras(nil, forLabel: AdMobConstants.PrebidAdMobEventExtrasLabel)
     request.register(extras)
-}
-
-/// Ad unit formats: `adFormats` (`PrebidAdFormat` names) when it names any,
-/// else video or banner from `isVideo`.
-func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
-    let names = raw as? [String] ?? []
-    // Qualified: GoogleMobileAds also has an `AdFormat`.
-    var formats = Set<PrebidMobile.AdFormat>()
-    if names.contains("banner") { formats.insert(.banner) }
-    if names.contains("video") { formats.insert(.video) }
-    return formats.isEmpty ? (isVideo ? [.video] : [.banner]) : formats
 }
 
 extension FullscreenControls {

@@ -197,12 +197,12 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
             userInfo: [NSLocalizedDescriptionKey: error.message]
         )
         mediationAdUnit?.adObjectDidFailToLoadAd(adObject: maxAdBannerView, with: nsError)
-        send("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
+        send("onAdFailed", arguments: failure(PrebidErrorFormatter.describe(error)))
     }
 
     func didFail(toDisplay ad: MAAd, withError error: MAError) {
         // Dart reports it through onAdFailed too.
-        send("onAdDisplayFailed", arguments: PrebidErrorFormatter.describe(error))
+        send("onAdDisplayFailed", arguments: failure(PrebidErrorFormatter.describe(error)))
     }
 
     func didClick(_ ad: MAAd) {

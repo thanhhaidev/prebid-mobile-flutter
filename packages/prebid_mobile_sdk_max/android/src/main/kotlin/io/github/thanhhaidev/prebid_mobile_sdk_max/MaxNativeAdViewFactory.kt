@@ -98,7 +98,7 @@ internal class MaxNativePlatformView(
             }
 
             override fun onNativeAdLoadFailed(adUnitId: String, error: MaxError) {
-                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
+                methodChannel.invokeMethod("onAdFailed", failure(error.message))
             }
 
             override fun onNativeAdClicked(ad: MaxAd) {
@@ -122,7 +122,7 @@ internal class MaxNativePlatformView(
         } else {
             // Prebid Android drops requests made before init without calling
             // back: report it instead of leaving the slot empty and silent.
-            methodChannel.invokeMethod("onAdFailed", FullscreenAdManager.NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
         }
     }
 

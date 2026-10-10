@@ -198,7 +198,7 @@ void main() {
         'loaded',
         'displayed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
         'clicked',
         'closed',
         'expired',

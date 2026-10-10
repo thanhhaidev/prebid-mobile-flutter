@@ -6,7 +6,7 @@ import PrebidMobileAdMobAdapters
 
 /// One AdMob-mediated rewarded ad: the Prebid ad unit that runs the auction
 /// and, once loaded, the AdMob ad.
-final class AdMobRewarded: FullscreenAd {
+final class AdMobRewarded {
     let adUnit: MediationRewardedAdUnit
     let request: GoogleMobileAds.Request
     let adMobAdUnitId: String
@@ -56,26 +56,26 @@ final class AdMobRewardedManager: FullscreenAdManager<AdMobRewarded> {
         super.init(name: "prebid_mobile_sdk_admob/rewarded", messenger: messenger)
     }
 
-    override func makeAd(adId: Int, args: [String: Any]) -> AdMobRewarded {
+    override func create(_ adId: Int, _ args: [String: Any]) -> AdMobRewarded {
         AdMobRewarded(args: args)
     }
 
-    override func load(_ ad: AdMobRewarded, adId: Int) {
+    override func load(_ adId: Int, _ ad: AdMobRewarded) {
         ad.adUnit.fetchDemand { [weak self, weak ad] _ in
             onMain {
                 // Destroyed / replaced while the auction ran: skip the load.
-                guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                 maybeDropBid(ad.dropBidProbability, from: ad.request)
                 GoogleMobileAds.RewardedAd.load(
                     with: ad.adMobAdUnitId,
                     request: ad.request
                 ) { [weak self, weak ad] rewarded, error in
-                    guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                    guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                     guard let rewarded = rewarded else {
                         return self.send(adId, "onAdFailed", error: PrebidErrorFormatter.describe(error))
                     }
                     let events = FullScreenEvents { [weak self, weak ad] event, error in
-                        guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                        guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
                         self.send(adId, event, error: error.map { PrebidErrorFormatter.describe($0) })
                     }
                     ad.events = events
@@ -87,16 +87,24 @@ final class AdMobRewardedManager: FullscreenAdManager<AdMobRewarded> {
         }
     }
 
-    override func present(_ ad: AdMobRewarded, adId: Int, from controller: UIViewController) {
+    override func isLoaded(_ ad: AdMobRewarded) -> Bool {
+        ad.isLoaded
+    }
+
+    override func destroy(_ adId: Int, _ ad: AdMobRewarded) {
+        ad.destroy()
+    }
+
+    override func show(_ adId: Int, _ ad: AdMobRewarded, from controller: UIViewController) {
         guard let rewarded = ad.rewarded else { return }
         rewarded.present(from: controller) { [weak self, weak ad, weak rewarded] in
-            guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId),
+            guard let self = self, let ad = ad, self.isCurrent(adId, ad),
                   let reward = rewarded?.adReward else { return }
             // Same reward keys as the GAM / MAX packages.
             self.send(
                 adId,
                 "onUserEarnedReward",
-                extra: ["rewardType": reward.type, "rewardCount": reward.amount.intValue]
+                extras: ["rewardType": reward.type, "rewardCount": reward.amount.intValue]
             )
         }
     }

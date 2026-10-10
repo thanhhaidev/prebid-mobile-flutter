@@ -165,7 +165,7 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
     }
     
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWith error: Error) {
-        methodChannel.invokeMethod("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
+        methodChannel.invokeMethod("onAdFailed", arguments: ["error": PrebidErrorFormatter.describe(error)])
     }
     
     func bannerViewWillPresentModal(_ bannerView: BannerView) {

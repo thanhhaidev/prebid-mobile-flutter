@@ -81,10 +81,7 @@ internal class AdMobBannerPlatformView(
             .map { (w, h) -> AdSize(w, h) }
         dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
-        methodChannel = MethodChannel(
-            messenger,
-            "prebid_mobile_sdk_admob/banner_${viewChannelId(params, viewId)}",
-        )
+        methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_admob/banner", params, viewId))
 
         if (adaptive) {
             // Landscape inline adaptive size for the width Flutter measured
@@ -111,7 +108,7 @@ internal class AdMobBannerPlatformView(
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
-                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
+                methodChannel.invokeMethod("onAdFailed", failure(error.message))
             }
 
             override fun onAdClicked() {
@@ -175,7 +172,7 @@ internal class AdMobBannerPlatformView(
         // Prebid Android drops requests made before initialization without
         // calling back, so AdMob's waterfall would never run.
         if (!PrebidMobile.isSdkInitialized()) {
-            methodChannel.invokeMethod("onAdFailed", SDK_NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
             return
         }
         adUnit?.fetchDemand {

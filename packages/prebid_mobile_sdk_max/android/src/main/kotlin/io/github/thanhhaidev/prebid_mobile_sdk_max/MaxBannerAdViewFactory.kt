@@ -110,12 +110,12 @@ internal class MaxBannerPlatformView(
             }
 
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) {
-                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
+                methodChannel.invokeMethod("onAdFailed", failure(error.message))
             }
 
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
                 // Dart reports it through onAdFailed too.
-                methodChannel.invokeMethod("onAdDisplayFailed", errorMessage(error.message))
+                methodChannel.invokeMethod("onAdDisplayFailed", failure(error.message))
             }
 
             override fun onAdClicked(ad: MaxAd) {
@@ -187,7 +187,7 @@ internal class MaxBannerPlatformView(
         // Prebid Android drops requests made before init without calling
         // back: report it instead of leaving the slot empty and silent.
         if (!PrebidMobile.isSdkInitialized()) {
-            methodChannel.invokeMethod("onAdFailed", FullscreenAdManager.NOT_INITIALIZED)
+            methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
             return
         }
         adUnit?.fetchDemand {

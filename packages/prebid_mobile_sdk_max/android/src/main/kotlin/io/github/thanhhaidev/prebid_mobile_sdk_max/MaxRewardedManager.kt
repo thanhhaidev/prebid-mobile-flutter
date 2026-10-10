@@ -59,7 +59,7 @@ internal class MaxRewardedManager(
         // receiving events (the listener is replaced below) and is told why.
         // Its Prebid ad unit is freed, the MAX ad is not.
         ownerByUnit[maxAdUnitId]?.takeIf { it != adId }?.let { previous ->
-            ads.remove(previous)?.adUnit?.destroy()
+            forget(previous)?.adUnit?.destroy()
             send(previous, "onAdFailed", "Replaced by another ad on the same MAX ad unit")
         }
         ownerByUnit[maxAdUnitId] = adId
@@ -77,24 +77,24 @@ internal class MaxRewardedManager(
             }
             override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) =
-                send(adId, "onAdFailed", errorMessage(error.message))
+                send(adId, "onAdFailed", error.message)
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
                 showingUnits.remove(maxAdUnitId)
-                send(adId, "onAdFailed", errorMessage(error.message))
+                send(adId, "onAdFailed", error.message)
             }
             override fun onUserRewarded(ad: MaxAd, reward: MaxReward) {
                 // Same reward keys as the GAM / AdMob packages.
                 send(
                     adId,
                     "onUserEarnedReward",
-                    mapOf("rewardType" to reward.label, "rewardCount" to reward.amount),
+                    extras = mapOf("rewardType" to reward.label, "rewardCount" to reward.amount),
                 )
             }
         })
         // MAX reports revenue when the impression is recorded.
         rewarded.setRevenueListener { ad ->
             send(adId, "onAdImpression")
-            send(adId, "onAdRevenuePaid", revenuePayload(ad))
+            send(adId, "onAdRevenuePaid", extras = revenuePayload(ad))
         }
 
         val adUnit = MediationRewardedVideoAdUnit(activity, configId, MaxMediationRewardedUtils(rewarded))
@@ -106,10 +106,10 @@ internal class MaxRewardedManager(
         return Ad(adUnit, rewarded, debugDropBidProbability(args["debugDropBidProbability"]))
     }
 
-    override fun start(adId: Long, ad: Ad) {
+    override fun load(adId: Long, ad: Ad, activity: Activity) {
         ad.adUnit.fetchDemand {
             // Destroyed / replaced while the auction ran: skip the load.
-            if (ads[adId] !== ad) return@fetchDemand
+            if (!isCurrent(adId, ad)) return@fetchDemand
             if (shouldDropBid(ad.dropBidProbability)) {
                 ad.rewarded.setLocalExtraParameter(PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID, "")
             }
@@ -117,9 +117,9 @@ internal class MaxRewardedManager(
         }
     }
 
-    override fun isReady(ad: Ad): Boolean = ad.rewarded.isReady
+    override fun isLoaded(ad: Ad): Boolean = ad.rewarded.isReady
 
-    override fun show(ad: Ad, activity: Activity) = ad.rewarded.showAd(activity)
+    override fun show(adId: Long, ad: Ad, activity: Activity) = ad.rewarded.showAd(activity)
 
     /**
      * The shared MAX instance is destroyed only when [adId] still owns its

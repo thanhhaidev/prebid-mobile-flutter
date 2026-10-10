@@ -125,7 +125,7 @@ void main() {
         'clicked',
         'closed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     }, variant: android);
 
@@ -288,7 +288,7 @@ void main() {
         'clicked',
         'opened',
         'failed:No fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     }, variant: android);
 

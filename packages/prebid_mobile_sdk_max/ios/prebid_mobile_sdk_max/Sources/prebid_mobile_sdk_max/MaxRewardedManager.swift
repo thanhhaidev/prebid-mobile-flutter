@@ -65,7 +65,7 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
         // receiving events and is told why.
         if let previous = ownerByUnit[maxAdUnitId], previous != adId {
             release(previous)
-            send(previous, "onAdFailed", ["error": "Replaced by another ad on the same MAX ad unit"])
+            send(previous, "onAdFailed", error: "Replaced by another ad on the same MAX ad unit")
         }
 
         let rewarded = MARewardedAd.shared(withAdUnitIdentifier: maxAdUnitId)
@@ -91,7 +91,7 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
             default:
                 break
             }
-            self.send(adId, event, payload)
+            self.send(adId, event, extras: payload)
         }
         rewarded.delegate = proxy
         rewarded.revenueDelegate = proxy
@@ -105,10 +105,10 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
         )
     }
 
-    override func start(_ adId: Int, _ ad: MaxRewardedEntry) {
+    override func load(_ adId: Int, _ ad: MaxRewardedEntry) {
         ad.adUnit.fetchDemand { [weak self, weak ad] _ in
             // Destroyed / replaced while the auction ran: skip the load.
-            guard let self = self, let ad = ad, self.ads[adId] === ad else { return }
+            guard let self = self, let ad = ad, self.isCurrent(adId, ad) else { return }
             if shouldDropBid(ad.dropBidProbability) {
                 ad.rewarded.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
             }
@@ -116,11 +116,11 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
         }
     }
 
-    override func isReady(_ ad: MaxRewardedEntry) -> Bool {
+    override func isLoaded(_ ad: MaxRewardedEntry) -> Bool {
         ad.rewarded.isReady
     }
 
-    override func show(_ ad: MaxRewardedEntry, from viewController: UIViewController) {
+    override func show(_ adId: Int, _ ad: MaxRewardedEntry, from viewController: UIViewController) {
         ad.rewarded.show(forPlacement: nil, customData: nil, viewController: viewController)
     }
 

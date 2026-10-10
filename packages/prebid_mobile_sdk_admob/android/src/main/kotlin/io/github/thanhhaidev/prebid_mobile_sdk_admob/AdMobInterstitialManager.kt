@@ -96,7 +96,7 @@ internal class AdMobInterstitialManager(
         ad.interstitial?.show(activity)
     }
 
-    override fun destroy(ad: Ad) {
+    override fun destroy(adId: Long, ad: Ad) {
         ad.interstitial?.fullScreenContentCallback = null
         ad.interstitial = null
         ad.adUnit.destroy()

@@ -6,23 +6,24 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.prebid.mobile.PrebidMobile
 
+// Shared by the companion packages; tool/check_copies.sh keeps the copies
+// identical.
+
 /**
- * The method channel of one fullscreen ad kind (`prebid_mobile_sdk_max/interstitial`,
- * `prebid_mobile_sdk_max/rewarded`): `load`, `show`, `destroy` and `releaseAll`
- * calls keyed by the `adId` the Dart side allocates, with events sent back over
- * the same channel. A subclass builds, starts, shows and destroys its ads of
- * type [T].
+ * The method channel of one fullscreen ad kind (e.g.
+ * `prebid_mobile_sdk_gam/interstitial`): `load`, `show`, `destroy` and
+ * `releaseAll` calls for ads keyed by the `adId` the Dart side allocates,
+ * and their events sent back over the same channel. A subclass builds,
+ * loads, shows and frees its kind of ad ([A]) and reports through [send].
  */
-internal abstract class FullscreenAdManager<T : Any>(
+internal abstract class FullscreenAdManager<A : Any>(
     messenger: BinaryMessenger,
     channelName: String,
     private val activityProvider: () -> Activity?,
 ) : MethodChannel.MethodCallHandler {
 
     private val channel = MethodChannel(messenger, channelName)
-
-    /** The live ads by `adId`. */
-    protected val ads = mutableMapOf<Long, T>()
+    private val ads = mutableMapOf<Long, A>()
 
     init {
         channel.setMethodCallHandler(this)
@@ -34,20 +35,38 @@ internal abstract class FullscreenAdManager<T : Any>(
      */
     protected open fun refuseLoad(adId: Long, args: Map<*, *>): String? = null
 
-    /** Builds the ad for [adId]; it is stored before [start] runs. */
-    protected abstract fun create(adId: Long, args: Map<*, *>, activity: Activity): T
+    /** Builds the ad for [adId] from the `load` arguments, without loading it. */
+    protected abstract fun create(adId: Long, args: Map<*, *>, activity: Activity): A
 
-    /** Starts loading [ad] (the Prebid auction, then the MAX load). */
-    protected abstract fun start(adId: Long, ad: T)
+    /**
+     * Starts loading [ad], already registered for [adId], and reports
+     * `onAdLoaded` / `onAdFailed` when done (check [isCurrent] first).
+     */
+    protected abstract fun load(adId: Long, ad: A, activity: Activity)
 
     /** Whether [ad] has loaded and can be shown. */
-    protected abstract fun isReady(ad: T): Boolean
+    protected abstract fun isLoaded(ad: A): Boolean
 
-    /** Shows [ad] from [activity]. */
-    protected abstract fun show(ad: T, activity: Activity)
+    /** Shows the loaded [ad] from [activity]. */
+    protected abstract fun show(adId: Long, ad: A, activity: Activity)
 
-    /** Frees [ad], already removed from [ads]. */
-    protected abstract fun destroy(adId: Long, ad: T)
+    /** Frees [ad], no longer registered for [adId], so it reports nothing more. */
+    protected abstract fun destroy(adId: Long, ad: A)
+
+    /**
+     * Whether [ad] is still the one registered for [adId]: false once it was
+     * destroyed or replaced by a newer load, whose events it must not send.
+     */
+    protected fun isCurrent(adId: Long, ad: A): Boolean = ads[adId] === ad
+
+    /** Unregisters the ad of [adId] without freeing it, and returns it. */
+    protected fun forget(adId: Long): A? = ads.remove(adId)
+
+    /** Stops answering calls and frees every ad (engine detached). */
+    fun dispose() {
+        channel.setMethodCallHandler(null)
+        releaseAll()
+    }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val args = call.arguments as? Map<*, *> ?: emptyMap<String, Any>()
@@ -56,80 +75,68 @@ internal abstract class FullscreenAdManager<T : Any>(
             "load" -> {
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
                 load(adId, args)
-                result.success(null)
             }
             "show" -> {
                 if (adId == null) return result.error("no_ad_id", "Missing adId", null)
                 show(adId)
-                result.success(null)
             }
-            "destroy" -> {
-                adId?.let { release(it) }
-                result.success(null)
-            }
-            "releaseAll" -> {
-                releaseAll()
-                result.success(null)
-            }
-            else -> result.notImplemented()
+            "destroy" -> adId?.let { release(it) }
+            "releaseAll" -> releaseAll()
+            else -> return result.notImplemented()
         }
+        result.success(null)
     }
 
     private fun load(adId: Long, args: Map<*, *>) {
         refuseLoad(adId, args)?.let { return send(adId, "onAdFailed", it) }
-        // Reloading an adId replaces (and frees) its previous ad.
+        // Reloading an adId replaces (and frees) its previous ad, also when
+        // the new load fails below.
         release(adId)
-        // Prebid Android drops requests made before init without calling back,
-        // so the load would hang and the MAX waterfall would never run.
-        if (!PrebidMobile.isSdkInitialized()) return send(adId, "onAdFailed", NOT_INITIALIZED)
-        // Reported through the listener, as iOS does and as `show` does,
-        // rather than as a PlatformException from loadAd().
-        val activity = activityProvider() ?: return send(adId, "onAdFailed", NO_ACTIVITY)
+        // Failures are reported through the listener, as iOS does, rather
+        // than as a PlatformException from loadAd(). Prebid Android drops a
+        // request made before initialization without calling back, so the
+        // load would never finish.
+        if (!PrebidMobile.isSdkInitialized()) {
+            return send(adId, "onAdFailed", PluginErrors.NOT_INITIALIZED)
+        }
+        val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
         val ad = create(adId, args, activity)
         ads[adId] = ad
-        start(adId, ad)
+        load(adId, ad, activity)
     }
 
     private fun show(adId: Long) {
-        val ad = ads[adId]
-        val activity = activityProvider()
-        when {
-            ad == null || !isReady(ad) -> send(adId, "onAdFailed", NOT_LOADED)
-            activity == null -> send(adId, "onAdFailed", NO_ACTIVITY)
-            // Show from the current Activity, not the one used to load.
-            else -> show(ad, activity)
-        }
+        val ad = ads[adId]?.takeIf { isLoaded(it) }
+            ?: return send(adId, "onAdFailed", PluginErrors.NOT_LOADED)
+        val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
+        show(adId, ad, activity)
     }
 
-    /** Frees the ad of [adId], if any. */
-    protected fun release(adId: Long) {
+    private fun release(adId: Long) {
         ads.remove(adId)?.let { destroy(adId, it) }
     }
 
-    /** Frees every ad: the Dart side restarted (hot restart) and owns none. */
+    /**
+     * Frees every ad. Also called from Dart before its first call: after a
+     * hot restart this manager still holds the previous isolate's ads.
+     */
     private fun releaseAll() {
         ads.keys.toList().forEach { release(it) }
     }
 
-    /** Stops answering calls and frees every ad (engine detached). */
-    fun dispose() {
-        channel.setMethodCallHandler(null)
-        releaseAll()
-    }
-
-    /** Sends [event] for [adId], with [error] as the payload's `error`. */
-    protected fun send(adId: Long, event: String, error: String? = null) {
-        send(adId, event, if (error != null) mapOf("error" to error) else emptyMap())
-    }
-
-    /** Sends [event] for [adId] with [payload]. */
-    protected fun send(adId: Long, event: String, payload: Map<String, Any?>) {
-        channel.invokeMethod(event, payload + ("adId" to adId))
-    }
-
-    companion object {
-        const val NOT_INITIALIZED = "The Prebid SDK is not initialized"
-        const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
-        const val NOT_LOADED = "The ad is not loaded"
+    /**
+     * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
+     * [error] as its `error` (blank becomes "Unknown error").
+     */
+    protected fun send(
+        adId: Long,
+        event: String,
+        error: String? = null,
+        extras: Map<String, Any?> = emptyMap(),
+    ) {
+        val payload = mutableMapOf<String, Any?>("adId" to adId)
+        if (event == "onAdFailed" || error != null) payload["error"] = errorMessage(error)
+        payload.putAll(extras)
+        channel.invokeMethod(event, payload)
     }
 }

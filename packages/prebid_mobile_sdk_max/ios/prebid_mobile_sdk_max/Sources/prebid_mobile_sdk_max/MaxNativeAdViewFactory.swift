@@ -213,7 +213,7 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
     }
 
     func didFailToLoadNativeAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
-        send("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
+        send("onAdFailed", arguments: failure(PrebidErrorFormatter.describe(error)))
     }
 
     // MAX reports revenue when the impression is recorded.

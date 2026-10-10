@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/companion.dart';
@@ -168,35 +167,37 @@ class PrebidGamNativeAd extends StatefulWidget {
   State<PrebidGamNativeAd> createState() => _PrebidGamNativeAdState();
 }
 
-class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
-  /// The current native view's channel. The native side starts the auction
-  /// as soon as it is created, before `onPlatformViewCreated`, so the channel
-  /// is listened to first. A configuration change gets a new channel (and a
-  /// new native view), so late events from the old view never reach it.
-  late AdViewChannel _view = _newView();
-  late double _height = widget.height;
-
-  AdViewChannel _newView() =>
-      AdViewChannel('prebid_mobile_sdk_gam/native', _onNativeEvent);
+class _PrebidGamNativeAdState extends State<PrebidGamNativeAd>
+    with AdViewState<PrebidGamNativeAd> {
+  // The native side starts the auction as soon as the view is created,
+  // before `onPlatformViewCreated`; the view's channel is listened to first.
+  @override
+  String get viewType => 'prebid_mobile_sdk_gam/native';
 
   @override
-  void didUpdateWidget(PrebidGamNativeAd oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_config(oldWidget).toString() != _config(widget).toString()) {
-      // The native view reads its configuration once, so a changed config
-      // gets a new view (keyed below) on a new channel, at the initial height.
-      _view.dispose();
-      _view = _newView();
-      _height = widget.height;
-    }
-  }
+  Map<String, Object?> configOf(PrebidGamNativeAd widget) => {
+    'configId': widget.configId,
+    'gamAdUnitId': widget.gamAdUnitId,
+    ...widget.nativeParameters.toMap(),
+    'customFormatId': widget.customFormatId ?? '',
+    'customTargeting': ?widget.customTargeting,
+    'gpid': ?widget.gpid,
+    'pbAdSlot': ?widget.pbAdSlot,
+    'impOrtbConfig': ?widget.impOrtbConfig,
+    'globalOrtbConfig': ?widget.globalOrtbConfig,
+  };
 
-  Future<dynamic> _onNativeEvent(MethodCall call) async {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: widget.width,
+    height: reportedHeight ?? widget.height,
+    child: buildAdView(),
+  );
+
+  @override
+  void onViewEvent(MethodCall call) {
     final l = widget.listener;
     switch (call.method) {
-      case 'onAdSize':
-        final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
-        if (h != null && h > 0 && mounted) setState(() => _height = h);
       case 'fetchDemandSuccess':
         l?.onFetchDemandSuccess?.call();
       case 'fetchDemandFailed':
@@ -208,7 +209,7 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
       case 'unifiedAdLoaded':
         l?.onUnifiedAdLoaded?.call();
       case 'primaryAdFailed':
-        l?.onPrimaryAdFailed?.call(call.arguments as String? ?? '');
+        l?.onPrimaryAdFailed?.call(adEventError(call.arguments));
       case 'nativeAdLoaded':
         l?.onNativeAdLoaded?.call();
       case 'primaryAdWinCustom':
@@ -222,65 +223,5 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
       case 'onAdExpired':
         l?.onAdExpired?.call();
     }
-  }
-
-  /// The configuration the native view is created with (without the
-  /// per-view channel id).
-  static Map<String, Object?> _config(PrebidGamNativeAd widget) {
-    return <String, Object?>{
-      'configId': widget.configId,
-      'gamAdUnitId': widget.gamAdUnitId,
-      ...widget.nativeParameters.toMap(),
-      'customFormatId': widget.customFormatId ?? '',
-      if (widget.customTargeting != null)
-        'customTargeting': widget.customTargeting,
-      if (widget.gpid != null) 'gpid': widget.gpid,
-      if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
-      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
-      if (widget.globalOrtbConfig != null)
-        'globalOrtbConfig': widget.globalOrtbConfig,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.width,
-      height: _height,
-      child: _buildPlatformView(),
-    );
-  }
-
-  Widget _buildPlatformView() {
-    final view = _view;
-    final creationParams = <String, Object?>{
-      'channelId': view.id,
-      ..._config(widget),
-    };
-    // A new channel means a new native view (the config changed).
-    final key = ValueKey(view.id);
-    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return AndroidView(
-        key: key,
-        viewType: 'prebid_mobile_sdk_gam/native',
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-      );
-    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      return UiKitView(
-        key: key,
-        viewType: 'prebid_mobile_sdk_gam/native',
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  @override
-  void dispose() {
-    _view.dispose();
-    super.dispose();
   }
 }

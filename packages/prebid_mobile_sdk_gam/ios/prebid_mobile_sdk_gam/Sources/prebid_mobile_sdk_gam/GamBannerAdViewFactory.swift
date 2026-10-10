@@ -74,10 +74,8 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
             CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
         }
 
-        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_gam/banner_\(channelId)",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_gam/banner", args: args, viewId: viewId, messenger: messenger
         )
 
         let eventHandler = GAMBannerEventHandler(
@@ -191,7 +189,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didFailToReceiveAdWith error: Error) {
-        methodChannel.invokeMethod("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
+        methodChannel.invokeMethod("onAdFailed", arguments: failure(PrebidErrorFormatter.describe(error)))
     }
 
     func bannerViewWillPresentModal(_ bannerView: PrebidMobile.BannerView) {

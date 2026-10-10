@@ -1,37 +1,10 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
-import java.util.EnumSet
 import org.prebid.mobile.ResultCode
-import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
 
-// This package's own helpers; the parsing every companion shares is in
-// PrebidRequests.
-
-/** The error messages and codes this plugin reports to Dart. */
-internal object PluginErrors {
-    const val NOT_INITIALIZED = "The Prebid SDK is not initialized"
-    /** [NOT_INITIALIZED] as a result-code name (the native view's reason). */
-    const val NOT_INITIALIZED_CODE = "prebidSdkNotInitialized"
-    const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
-    const val NOT_LOADED = "The ad is not loaded"
-    const val UNKNOWN = "Unknown error"
-}
-
-/**
- * Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
- * else video or banner from `isVideo`.
- */
-internal fun adUnitFormats(raw: Any?, isVideo: Boolean): EnumSet<AdUnitFormat> {
-    val names = (raw as? List<*>).orEmpty().filterIsInstance<String>()
-    val formats = EnumSet.noneOf(AdUnitFormat::class.java)
-    if ("banner" in names) formats.add(AdUnitFormat.BANNER)
-    if ("video" in names) formats.add(AdUnitFormat.VIDEO)
-    if (formats.isEmpty()) {
-        formats.add(if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER)
-    }
-    return formats
-}
+// This package's own helpers; what every companion shares is in
+// PrebidPlugin and PrebidRequests.
 
 /** Applies the controls to a Prebid rendering interstitial / rewarded ad unit. */
 internal fun FullscreenControls.applyTo(adUnit: BaseInterstitialAdUnit) {

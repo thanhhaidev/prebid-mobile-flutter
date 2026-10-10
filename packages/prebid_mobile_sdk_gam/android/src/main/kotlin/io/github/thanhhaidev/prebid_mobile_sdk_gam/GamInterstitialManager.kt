@@ -21,7 +21,7 @@ internal class GamInterstitialManager(
     activityProvider,
 ) {
 
-    override fun create(activity: Activity, adId: Long, args: Map<*, *>): InterstitialAdUnit {
+    override fun create(adId: Long, args: Map<*, *>, activity: Activity): InterstitialAdUnit {
         val configId = args["configId"] as? String ?: ""
         val gamAdUnitId = args["gamAdUnitId"] as? String ?: ""
         val isVideo = args["isVideo"] as? Boolean ?: false
@@ -55,7 +55,7 @@ internal class GamInterstitialManager(
         adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
             override fun onAdLoaded(unit: InterstitialAdUnit) = send(adId, "onAdLoaded")
             override fun onAdFailed(unit: InterstitialAdUnit, e: AdException?) =
-                send(adId, "onAdFailed", e?.message ?: PluginErrors.UNKNOWN)
+                send(adId, "onAdFailed", e?.message)
             override fun onAdDisplayed(unit: InterstitialAdUnit) = send(adId, "onAdDisplayed")
             override fun onAdClosed(unit: InterstitialAdUnit) = send(adId, "onAdClosed")
             override fun onAdClicked(unit: InterstitialAdUnit) = send(adId, "onAdClicked")
@@ -63,4 +63,13 @@ internal class GamInterstitialManager(
         })
         return adUnit
     }
+
+    override fun load(adId: Long, ad: InterstitialAdUnit, activity: Activity) = ad.loadAd()
+
+    override fun isLoaded(ad: InterstitialAdUnit): Boolean = ad.isLoaded
+
+    // Prebid shows from the Activity the ad unit was loaded with.
+    override fun show(adId: Long, ad: InterstitialAdUnit, activity: Activity) = ad.show()
+
+    override fun destroy(adId: Long, ad: InterstitialAdUnit) = ad.destroy()
 }

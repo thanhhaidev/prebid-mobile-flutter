@@ -1,112 +1,37 @@
 import 'package:flutter/material.dart';
 
-import 'about_page.dart';
-import 'bid_inspector_page.dart';
-import 'consent_settings_page.dart';
-import 'log_page.dart';
-import 'settings_page.dart';
-import 'targeting_data_page.dart';
+import '../widgets/common.dart';
+import 'app_settings_page.dart';
+import 'developer_tools/developer_tools_page.dart';
+import 'iab_consent_settings_page.dart';
+import 'versions_page.dart';
 
-/// Utilities tab — consent, app settings, targeting data, and versions.
+/// The Utilities tab — the original `UtilitiesListFragment` (exactly
+/// "IAB Consent Settings", "App settings", "Versions") plus the Flutter
+/// example's extra "Developer tools" entry at the end.
 class UtilitiesPage extends StatelessWidget {
   const UtilitiesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final entries = <(String, Widget Function())>[
+      ('IAB Consent Settings', () => const IabConsentSettingsPage()),
+      ('App settings', () => const AppSettingsPage()),
+      ('Versions', () => const VersionsPage()),
+      ('Developer tools', () => const DeveloperToolsPage()),
+    ];
     return Scaffold(
       appBar: AppBar(title: const Text('Utilities')),
       body: ListView(
-        padding: const EdgeInsets.all(12),
         children: [
-          _tile(
-            context,
-            icon: Icons.privacy_tip_rounded,
-            color: const Color(0xFF7C3AED),
-            title: 'IAB Consent Settings',
-            subtitle: 'GDPR (TCF) & CCPA (US Privacy)',
-            page: const ConsentSettingsPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.tune_rounded,
-            color: const Color(0xFF2563EB),
-            title: 'App Settings',
-            subtitle: 'Server, timeouts, bidding, SharedID, privacy',
-            page: const SettingsPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.manage_search_rounded,
-            color: const Color(0xFFEA580C),
-            title: 'Bid Inspector',
-            subtitle: 'Bid requests & responses (PrebidEventDelegate)',
-            page: const BidInspectorPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.data_object_rounded,
-            color: const Color(0xFF0D9488),
-            title: 'Targeting Data',
-            subtitle: 'Keywords, ext data, ORTB, OMID, location',
-            page: const TargetingDataPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.receipt_long_rounded,
-            color: const Color(0xFF0891B2),
-            title: 'Logs',
-            subtitle: 'SDK setup and every ad callback',
-            page: const LogPage(),
-          ),
-          _tile(
-            context,
-            icon: Icons.info_rounded,
-            color: const Color(0xFF64748B),
-            title: 'Versions',
-            subtitle: 'SDK & plugin info',
-            page: const AboutPage(),
-          ),
+          for (final (label, page) in entries)
+            PlainListRow(
+              label: label,
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute<void>(builder: (_) => page())),
+            ),
         ],
-      ),
-    );
-  }
-
-  Widget _tile(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required Widget page,
-  }) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: Icon(
-          Icons.chevron_right_rounded,
-          color: theme.colorScheme.outline,
-        ),
-        onTap: () =>
-            Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
       ),
     );
   }

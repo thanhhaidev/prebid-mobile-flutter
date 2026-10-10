@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
-        android:label="prebid_mobile_sdk_example"
+        android:label="Prebid Rendering Flutter Demo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -34,11 +34,14 @@
             android:value="2" />
 
         <!-- Google Mobile Ads (GAM/AdMob) app ID — required by google_mobile_ads.
-             This is Google's public sample app ID; replace it with your own Ad
-             Manager / AdMob app ID in production. -->
+             Same as Prebid's PrebidInternalTestApp (the account that owns the
+             AdMob demo ad units); replace it with your own app ID in production. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1875909575462531~6255590079" />
+        <meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true" />
 
         <!-- AppLovin MAX SDK key (Prebid public demo key). Required for the MAX
              mediation examples; replace with your own key in production. The app

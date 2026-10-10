@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
-import '../data/test_case_registry.dart';
-import '../models/demo_ad_category.dart';
-import '../models/demo_ad_format.dart';
-import '../models/demo_integration.dart';
-import '../models/test_case.dart';
-import '../utils/app_settings.dart';
-import '../utils/category_style.dart';
-import 'detail/banner_detail_page.dart';
-import 'detail/demand_detail_page.dart';
-import 'detail/fullscreen_detail_page.dart';
-import 'detail/native_detail_page.dart';
-import 'detail/original_banner_detail_page.dart';
-import 'settings_page.dart';
+import '../data/demo_item.dart';
+import '../data/demo_items.dart';
+import '../demo/demo_router.dart';
+import '../demo/demo_screen.dart' show ConfigurationMode;
+import '../platform/iab_consent_store.dart';
+import '../platform/pending_api.dart';
+import '../theme/app_theme.dart';
+import '../widgets/common.dart';
 
-/// Main examples list — mirrors the Prebid reference test app: a search field,
-/// an integration-type filter row (In-App / GAM / Original), an ad-format
-/// filter row, quick privacy/debug switches, and a flat list of test cases.
+/// App title of the Examples screen ("Prebid Rendering Kotlin Demo" in the
+/// original).
+const kAppTitle = 'Prebid Rendering Flutter Demo';
+
+/// The Examples tab — the original `HeaderBiddingFragment` (spec §1.1):
+/// search (label only), integration row, category row, the
+/// "Enable GDPR" / "Enable Caching" switches and the configuration toggle,
+/// then the plain list of demo items.
 class ExamplesPage extends StatefulWidget {
   const ExamplesPage({super.key});
 
@@ -26,248 +25,170 @@ class ExamplesPage extends StatefulWidget {
 }
 
 class _ExamplesPageState extends State<ExamplesPage> {
-  /// Selected integration, or null for "All".
+  final _search = TextEditingController();
+
+  /// `null` = All (last segment, default).
   DemoIntegration? _integration;
+  DemoCategory? _category;
 
-  /// Selected ad-format category ([DemoAdCategory.all] = no filter).
-  DemoAdCategory _category = DemoAdCategory.all;
+  bool _gdpr = true;
+  bool _caching = false;
 
-  String _searchText = '';
-  bool _gdpr = AppSettings.gdpr;
-  bool _pbsDebug = AppSettings.pbsDebug;
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(() => setState(() {}));
+    IabConsentStore.isGdprEnabled().then((v) {
+      if (mounted) setState(() => _gdpr = v);
+    });
+    PendingApi.getUseCacheForReportingWithRenderingApi().then((v) {
+      if (mounted) setState(() => _caching = v);
+    });
+  }
 
-  List<TestCase> get _filtered {
-    final q = _searchText.toLowerCase();
-    return TestCaseRegistry.allCases.where((t) {
-      final matchesIntegration =
-          _integration == null || t.integration == _integration;
-      final matchesCategory =
-          _category == DemoAdCategory.all || categoryOf(t) == _category;
-      final matchesSearch =
-          q.isEmpty ||
-          t.title.toLowerCase().contains(q) ||
-          t.configId.toLowerCase().contains(q);
-      return matchesIntegration && matchesCategory && matchesSearch;
-    }).toList();
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// Remote AND integration AND category AND label contains the query.
+  List<DemoItem> get _filtered {
+    final q = _search.text.toLowerCase();
+    return [
+      for (final item in demoItems)
+        if (item.remote &&
+            (_integration == null || item.integration == _integration) &&
+            (_category == null || item.category == _category) &&
+            item.label.toLowerCase().contains(q))
+          item,
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final filtered = _filtered;
+    final c = DemoColors.of(context);
+    final items = _filtered;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prebid Flutter Demo'),
-        titleTextStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
+      appBar: AppBar(title: const Text(kAppTitle)),
       body: Column(
         children: [
-          // Search
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search examples',
-                prefixIcon: const Icon(Icons.search_rounded),
-                isDense: true,
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (v) => setState(() => _searchText = v),
-            ),
-          ),
-
-          // Integration-type filter row
-          _chipRow(
-            children: [
-              _integrationChip(null, 'All'),
-              for (final i in DemoIntegration.values)
-                _integrationChip(i, i.label),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Ad-format filter row
-          _chipRow(
-            children: [for (final c in DemoAdCategory.values) _categoryChip(c)],
-          ),
-          const SizedBox(height: 8),
-
-          // Quick toggles + settings gear
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Column(
               children: [
-                _switchTile(
-                  label: 'Enable GDPR',
-                  value: _gdpr,
-                  onChanged: (v) async {
-                    setState(() => _gdpr = v);
-                    await AppSettings.setGdpr(v);
-                    await PrebidTargeting.setSubjectToGDPR(v);
-                  },
-                ),
-                const SizedBox(width: 16),
-                _switchTile(
-                  label: 'PBS Debug',
-                  value: _pbsDebug,
-                  onChanged: (v) async {
-                    setState(() => _pbsDebug = v);
-                    await AppSettings.setPbsDebug(v);
-                    await PrebidMobile.setPbsDebug(v);
-                  },
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded),
-                  tooltip: 'App Settings',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                TextField(
+                  controller: _search,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: c.muted),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: Icon(Icons.close, color: c.muted),
+                            onPressed: _search.clear,
+                          ),
                   ),
                 ),
+                const SizedBox(height: 10),
+                SegmentedRow<DemoIntegration?>(
+                  values: const [...DemoIntegration.values, null],
+                  selected: _integration,
+                  labelOf: (v) => v?.label ?? 'All',
+                  onChanged: (v) => setState(() => _integration = v),
+                ),
+                const SizedBox(height: 8),
+                SegmentedRow<DemoCategory?>(
+                  values: const [...DemoCategory.values, null],
+                  selected: _category,
+                  labelOf: (v) => v?.label ?? 'All',
+                  onChanged: (v) => setState(() => _category = v),
+                ),
+                const SizedBox(height: 4),
+                _togglesRow(c),
               ],
             ),
           ),
-
-          const Divider(height: 1),
-
+          Divider(height: 1, color: c.border),
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      'No examples found',
-                      style: TextStyle(color: theme.colorScheme.outline),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, _) =>
-                        const Divider(height: 1, indent: 64),
-                    itemBuilder: (context, i) => _caseRow(filtered[i]),
-                  ),
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, i) => PlainListRow(
+                label: items[i].label,
+                onTap: () => openDemo(context, items[i]),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Horizontal, scrollable row of filter chips.
-  Widget _chipRow({required List<Widget> children}) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: children.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (_, i) => children[i],
-      ),
-    );
-  }
-
-  Widget _integrationChip(DemoIntegration? value, String label) {
-    final selected = _integration == value;
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      showCheckmark: false,
-      onSelected: (_) => setState(() => _integration = value),
-    );
-  }
-
-  Widget _categoryChip(DemoAdCategory c) {
-    final selected = _category == c;
-    return FilterChip(
-      label: Text(c.label),
-      selected: selected,
-      showCheckmark: false,
-      avatar: Icon(
-        styleFor(c).icon,
-        size: 18,
-        color: selected
-            ? styleFor(c).color
-            : Theme.of(context).colorScheme.outline,
-      ),
-      onSelected: (_) => setState(() => _category = c),
-    );
-  }
-
-  Widget _switchTile({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
+  Widget _togglesRow(DemoColors c) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        Switch(value: value, onChanged: onChanged),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                children: [
+                  _switch('Enable GDPR', _gdpr, (v) {
+                    setState(() => _gdpr = v);
+                    IabConsentStore.setGdprEnabled(v);
+                  }),
+                  const SizedBox(width: 8),
+                  _switch('Enable Caching', _caching, (v) {
+                    setState(() => _caching = v);
+                    PendingApi.setUseCacheForReportingWithRenderingApi(v);
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ValueListenableBuilder<bool>(
+          valueListenable: ConfigurationMode.enabled,
+          builder: (context, on, _) => Tooltip(
+            message: 'Configuration mode',
+            child: Material(
+              color: on ? c.mint : Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                side: BorderSide(color: on ? c.primary : c.border),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                onTap: () => ConfigurationMode.enabled.value = !on,
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Icon(
+                    Icons.tune,
+                    size: 20,
+                    color: on ? c.primaryStrong : c.muted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _caseRow(TestCase tc) {
-    final theme = Theme.of(context);
-    final category = categoryOf(tc);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CategoryAvatar(category: category),
-      title: Text(
-        tc.title,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          tc.configId,
-          style: TextStyle(
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: theme.colorScheme.outline,
-          ),
-          overflow: TextOverflow.ellipsis,
+  Widget _switch(String label, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13)),
+        Transform.scale(
+          scale: 0.8,
+          child: Switch(value: value, onChanged: onChanged),
         ),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: theme.colorScheme.outline,
-      ),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => detailPageFor(tc)),
-      ),
+      ],
     );
   }
-}
-
-/// The detail page for [tc], chosen by format and integration.
-Widget detailPageFor(TestCase tc) {
-  return switch (tc.format) {
-    // Original API banners render through google_mobile_ads.
-    DemoAdFormat.displayBanner || DemoAdFormat.videoBanner
-        when tc.integration == DemoIntegration.original =>
-      OriginalBannerDetailPage(tc: tc),
-    DemoAdFormat.displayBanner ||
-    DemoAdFormat.videoBanner => BannerDetailPage(tc: tc),
-    DemoAdFormat.displayInterstitial ||
-    DemoAdFormat.videoInterstitial ||
-    DemoAdFormat.displayRewarded ||
-    DemoAdFormat.videoRewarded => FullscreenDetailPage(tc: tc),
-    DemoAdFormat.native => NativeDetailPage(tc: tc),
-    DemoAdFormat.videoInstream ||
-    DemoAdFormat.multiformat => DemandDetailPage(tc: tc),
-  };
 }

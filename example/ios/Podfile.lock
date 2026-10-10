@@ -1,5 +1,8 @@
 PODS:
-  - AppLovinSDK (13.6.4)
+  - applovin_max (4.6.4):
+    - AppLovinSDK (= 13.6.3)
+    - Flutter
+  - AppLovinSDK (13.6.3)
   - Flutter (1.0.0)
   - Google-Mobile-Ads-SDK (13.11.0):
     - GoogleUserMessagingPlatform (>= 1.1)
@@ -7,9 +10,13 @@ PODS:
     - Flutter
     - Google-Mobile-Ads-SDK (~> 13.7)
     - webview_flutter_wkwebview
+  - GoogleAds-IMA-iOS-SDK (3.27.4)
   - GoogleUserMessagingPlatform (3.1.0)
   - integration_test (0.0.1):
     - Flutter
+  - interactive_media_ads (0.0.1):
+    - Flutter
+    - GoogleAds-IMA-iOS-SDK (< 3.28.10, >= 3.23)
   - prebid_mobile_sdk (1.0.0):
     - Flutter
     - PrebidMobile (>= 3.4.1, ~> 3.4)
@@ -39,26 +46,33 @@ PODS:
     - FlutterMacOS
   - url_launcher_ios (0.0.1):
     - Flutter
+  - video_player_avfoundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
     - FlutterMacOS
 
 DEPENDENCIES:
+  - applovin_max (from `.symlinks/plugins/applovin_max/ios`)
   - Flutter (from `Flutter`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - interactive_media_ads (from `.symlinks/plugins/interactive_media_ads/ios`)
   - prebid_mobile_sdk (from `.symlinks/plugins/prebid_mobile_sdk/ios`)
   - prebid_mobile_sdk_admob (from `.symlinks/plugins/prebid_mobile_sdk_admob/ios`)
   - prebid_mobile_sdk_gam (from `.symlinks/plugins/prebid_mobile_sdk_gam/ios`)
   - prebid_mobile_sdk_max (from `.symlinks/plugins/prebid_mobile_sdk_max/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+  - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
   trunk:
     - AppLovinSDK
     - Google-Mobile-Ads-SDK
+    - GoogleAds-IMA-iOS-SDK
     - GoogleUserMessagingPlatform
     - PrebidMobile
     - PrebidMobileAdMobAdapters
@@ -66,12 +80,16 @@ SPEC REPOS:
     - PrebidMobileMAXAdapters
 
 EXTERNAL SOURCES:
+  applovin_max:
+    :path: ".symlinks/plugins/applovin_max/ios"
   Flutter:
     :path: Flutter
   google_mobile_ads:
     :path: ".symlinks/plugins/google_mobile_ads/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
+  interactive_media_ads:
+    :path: ".symlinks/plugins/interactive_media_ads/ios"
   prebid_mobile_sdk:
     :path: ".symlinks/plugins/prebid_mobile_sdk/ios"
   prebid_mobile_sdk_admob:
@@ -84,26 +102,32 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
+  video_player_avfoundation:
+    :path: ".symlinks/plugins/video_player_avfoundation/darwin"
   webview_flutter_wkwebview:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
-  AppLovinSDK: 730be87bac90c5b0f7d507c3a2530213f7685370
+  applovin_max: 90f1b944d5772b882ff8714d2c312901209c1289
+  AppLovinSDK: f3da9503e8193d8c4badc1a9965d73a0779812fa
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   Google-Mobile-Ads-SDK: 09d0868abe43b9f851b7b340a245679f0eafc96c
   google_mobile_ads: 6b1c16497394528f4a59e76e2fc947cb32b101e2
+  GoogleAds-IMA-iOS-SDK: 1c696013d47bc3cafa48b7de9c8196941bd3105b
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  prebid_mobile_sdk: 4355070e20f38e4a453df3d3644030bb3473d16c
-  prebid_mobile_sdk_admob: 127f532c52b28cdb14e69736640055ab84d21a36
-  prebid_mobile_sdk_gam: 928ec9776a140c90a821e38d28baa8580417b5fc
-  prebid_mobile_sdk_max: 42b3ef4227629c6e71b5e36d49f336414e610034
+  interactive_media_ads: 74c714e953f0d4cea16eab9412cee383482af174
+  prebid_mobile_sdk: eab9c930803b0d3f8ae437a5fa17bb448b9edbd7
+  prebid_mobile_sdk_admob: 60cffcee1fb37d951e6d19a8b3f517543c9122c3
+  prebid_mobile_sdk_gam: 8131d80349c6cd17ece9e6a8ad281e42e6e22f98
+  prebid_mobile_sdk_max: be832ab31d87d278e88ed8a375eb11f7360ec799
   PrebidMobile: 2ebb30717214023ac5178f050a4aa1a7c41396d6
   PrebidMobileAdMobAdapters: ace94831a3e855c068410f912d0763f15add8a7f
   PrebidMobileGAMEventHandlers: b79e23615d5903aeeb1421070ed8a5e628978d34
   PrebidMobileMAXAdapters: 1efd6bbf00e7d30f6df34d7d4357c1da0cbebcf9
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
+  video_player_avfoundation: 3453f792138786248960ca029747fcd9f318ef52
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
 PODFILE CHECKSUM: 3ba3a73b1b12adcf321a227a745625fe0888cc82

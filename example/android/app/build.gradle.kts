@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // The IMA SDK (interactive_media_ads, in-stream screens) needs it.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -43,4 +45,14 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // PreferenceManager.getDefaultSharedPreferences for the example's raw IAB
+    // consent-key channel (MainActivity.kt).
+    implementation("androidx.preference:preference-ktx:1.2.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // SampleCustomRenderer (the "[Custom Renderer]" cases) implements the
+    // Prebid plugin-renderer API directly.
+    implementation("org.prebid:prebid-mobile-sdk:3.4.0")
 }

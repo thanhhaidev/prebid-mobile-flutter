@@ -8,70 +8,104 @@
 > not to Prebid.
 
 A test app for the `prebid_mobile_sdk` plugin and its GAM / AdMob / MAX
-companion packages, structured like Prebid's
-[`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp).
+companion packages. It mirrors Prebid's Android
+[`PrebidInternalTestApp`](https://github.com/prebid/prebid-mobile-android/tree/master/Example/PrebidInternalTestApp):
+the same screens, the same 187 test cases in the same order, with the same
+labels, config ids, ad unit ids, sizes and behaviour. The visual style follows
+this project's docs website (navy bars, Prebid orange, Rethink Sans and
+JetBrains Mono, light and dark).
+
 Every case runs a live auction against Prebid's public test server
-(`prebid-server-test-j.prebid.org`).
+(`prebid-server-test-j.prebid.org`, account
+`0689a263-318d-448b-a3d4-b02e8a709d9d`).
 
-## Layout
+## Screens
 
-- **Bottom navigation**: an **Examples** tab and a **Utilities** tab. Each tab
-  keeps its own navigation stack, so the bottom bar stays visible.
-- **Examples**: search, integration filter (In-App · GAM · Original · AdMob ·
-  Max), format filter (Banner · Interstitial · MRAID · Video · Native), GDPR /
-  PBS-debug toggles.
-- **Utilities**: IAB consent (GDPR / CCPA), Settings, Bid Inspector, Targeting
-  Data, Logs, Versions.
+- **Bottom navigation**: **Examples** and **Utilities**. The bar is always
+  visible. Switching tabs returns to the tab's root, as in the original.
+- **Examples** ("Prebid Rendering Flutter Demo"):
+  - a search box (matches labels);
+  - integration filter: In-App · GAM · Original · AdMob · Max · All;
+  - category filter: Banner · Interstitial · MRAID · Video · Native · All;
+  - **Enable GDPR**: writes the raw IAB keys `IABTCF_gdprApplies` and
+    `IABTCF_CmpSdkID`. It is on for a fresh install;
+  - **Enable Caching**;
+  - the configuration toggle: when it is on, a demo shows **Configure the Ad**
+    (config id, size, refresh, or min-size percentages) before it loads;
+  - the list of cases.
+- **Demo screens**: the title is the case label. The ad loads as soon as the
+  screen opens. Below it are the `AdUnitId: <configId>` label, the original
+  buttons (Load, Stop refresh, ...) and the original event rows
+  (`onAdLoaded called  -  2 ( +1 )`). Tap a lit row to acknowledge it.
+- **Utilities**:
+  - **IAB Consent Settings**: TCF v1 / v2, CCPA and KeepSettings, written as
+    raw IAB keys to Android's default SharedPreferences or iOS's
+    `NSUserDefaults.standard`;
+  - **App settings**: "Show Progress Dialog";
+  - **Versions**: Prebid, GAM and OMSDK versions;
+  - **Developer tools** (extras that are not in the original):
+    - SDK settings overrides (server, account, timeouts, PBS debug, privacy,
+      theme);
+    - Bid Inspector and the last bid response;
+    - targeting data;
+    - the event log;
+    - about.
 
-## Test cases
+    SDK overrides only apply when you change them, so by default the app
+    starts exactly like the original.
 
-90+ cases with the reference app's config ids and ad-unit ids:
+## Code layout
 
-| Integration | Formats |
-|---|---|
-| **In-App** (Prebid renders) | Banner (sizes, multisize, deeplink, no-bids), MRAID 2.0 / 3.0, video outstream, display / video interstitial, display / video rewarded, native (styles, links), in-stream, multiformat |
-| **GAM** (Prebid GAM event handlers) | Banner, MRAID, video outstream, display / video interstitial, rewarded, native custom template + unified |
-| **GAM Original API** (keywords to `google_mobile_ads`) | Banner sizes, video banner, filter-uncached-bids banner, display / video / multiformat interstitial, video rewarded |
-| **AdMob** / **MAX** (Prebid mediation adapters) | Banner, display / video interstitial, video rewarded, native |
+```
+lib/
+  main.dart, app.dart        entry point, MaterialApp, bottom-tab shell
+  theme/app_theme.dart       docs-website palette (DemoColors), fonts, themes
+  data/demo_item.dart        DemoItem model: integration, category, ScreenType,
+                             config id (or random list), ad unit, size, flags…
+  data/demo_items.dart       the 187 items, in the original order
+  demo/demo_screen.dart      DemoScreen / DemoScreenState (the original
+                             AdFragment), DemoScaffold, AdUnitIdLabel, buttons
+  demo/event_counter.dart    EventCounters + EventCounterList (event rows)
+  demo/configure_ad_dialog.dart  "Configure the Ad" (banner / interstitial)
+  demo/demo_router.dart      DemoItem -> screen (unmatched -> placeholder)
+  demo/screens/              screen families (A1 In-App banner, placeholder…)
+  pages/                     Examples, Utilities, IAB consent, App settings,
+                             Versions, developer_tools/
+  platform/sdk_initializer.dart  start-up (Prebid, AppLovin MAX)
+  platform/iab_consent_store.dart  raw IAB keys (example method channel)
+  platform/pending_api.dart  every call to a plugin API that does not exist
+                             yet (TODO(pending-api) stubs)
+```
 
-## Test case screen
+### Adding a screen
 
-Each case uses the same layout:
+1. Create `lib/demo/screens/<name>_screen.dart`: a `DemoScreen` with a
+   `DemoScreenState`. Implement `startAd()`, `destroyAd()` and `buildDemo()`,
+   and use `config` (the effective config id and size), `EventCounters` with
+   the exact row labels, `AdUnitIdLabel` and `DemoButton`.
+2. Route it in `lib/demo/demo_router.dart`.
 
-1. **Ad stage**: the inline ad (banner / native).
-2. **Ad unit header**: config id and ad-server ad unit, tap to copy.
-3. **Actions**: Load / Show / Stop refresh / Fetch Demand.
-4. **Callback rows**: one per listener callback for that integration, lit up
-   with its count once it fires. Examples:
-   - In-App / GAM banners: `onAdExpired` and outstream video events
-     (`onVideoCompleted`, paused, resumed, muted, unmuted).
-   - AdMob / MAX: `onAdImpression`.
-   - Rewarded: `onUserEarnedReward` with the reward.
-   - GAM native: the full `fetchDemand` → custom / unified → `onNativeAdLoaded`
-     / `onPrimaryAdWin` flow.
-5. **Last bid response**: bidders and prices from the latest auction. Tap it for
-   the JSON.
-6. **Event log**: every callback with a timestamp and its details (errors,
-   rewards, winning bid, `exp`, `topBidFiltered`).
+The base state already does the shared work:
 
-The gear icon opens **Configure the Ad**:
+- clears the stored auction response;
+- applies the item's account, server and app-name overrides, and the random
+  bid drop and custom renderer flags;
+- shows the configurator;
+- shows the progress overlay;
+- restores the overrides on exit.
 
-- **Banners**: config id, size, auto-refresh.
-- **Interstitial / rewarded**: config id plus `PrebidFullscreenControls`
-  (close / skip button position and area, skip delay, mute, sound button,
-  auto-close, minimum size).
+## Status
 
-## Utilities
-
-- **Settings**: server URL and account, bid timeout, auction settings id, PBS
-  debug, geo, log level, creative factory timeouts, filter uncached bids, EIDs
-  placement, include winners / bidder keys, SharedID (send, view, reset),
-  COPPA / GDPR. Settings are persisted and applied at startup.
-- **Bid Inspector**: every Prebid Server request / response pair captured with
-  `PrebidMobile.setEventListener`, as pretty JSON with copy.
-- **Targeting Data**: user / app keywords, ext data, global ORTB config, app
-  info, OMID partner, user location and location precision.
-- **Logs**: SDK setup and every ad callback across all screens.
+- Done: the shell, Examples, Utilities and the framework. Of the screens,
+  **A1 for In-App banners** is done (25 cases).
+- Placeholder: every other screen type opens a page with the case's registry
+  data and "Screen type X — coming next".
+- Waiting for plugin APIs: runtime account / server switch, Enable Caching,
+  creative-factory getters, OMSDK version, app name, AdMob / MAX refresh,
+  adaptive banners, multiformat mediation interstitials, MAX extra callbacks
+  and the debug bid-drop hook. These calls go through stubs in
+  `platform/pending_api.dart`.
+- Custom renderer: these cases will be built in the example's native code.
 
 ## Running the app
 
@@ -85,7 +119,10 @@ flutter run
   files to a plugin. The Xcode project is signed with the maintainer's team
   (`DEVELOPMENT_TEAM`); to run on a device, pick your own team under
   **Runner → Signing & Capabilities**. Simulators need no signing.
-- **Android**: minSdk 24.
-- **AppLovin MAX**: MAX only loads ads after the AppLovin SDK is initialized
-  with an SDK key. This example does not initialize it, so MAX cases may not
-  fill on iOS.
+- **Android**: minSdk 24. The GMA app id is the original's
+  (`ca-app-pub-1875909575462531~6255590079`, `AD_MANAGER_APP=true`).
+- **AppLovin MAX**: initialized at start-up with the original's SDK key
+  (`applovin_max`; mediation provider "max"). The key is also declared in
+  the Android manifest and the iOS `Info.plist`.
+- **Fonts**: Rethink Sans and JetBrains Mono, bundled in `assets/fonts/`
+  (SIL OFL 1.1).

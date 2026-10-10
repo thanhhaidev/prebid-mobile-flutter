@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 
 import 'pages/examples_page.dart';
 import 'pages/utilities_page.dart';
+import 'services/app_settings.dart';
 import 'theme/app_theme.dart';
-import 'utils/app_settings.dart';
 
 /// The app: docs-website light / dark themes and the [RootShell].
 class PrebidDemoApp extends StatelessWidget {

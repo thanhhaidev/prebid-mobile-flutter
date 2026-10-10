@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:ui' show Size;
 
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show AdFormat, PrebidFullscreenControls, VideoParameters;
+    show PrebidAdFormat, PrebidFullscreenControls, VideoParameters;
 
 /// Integration filter of the Examples screen (`Tag` in the original
 /// `DemoItem.kt`). Order = the segmented row order (All is appended last).
@@ -81,7 +81,7 @@ enum DemoFlag {
 
   /// "Random" cases: randomly (50 %) drop the Prebid bid before the ad server
   /// load (`BidResponseCache` pop / empty `EXTRA_RESPONSE_ID`). Uses
-  /// `PendingApi.setDebugBidDropProbability`.
+  /// `PrebidAdMob` / `PrebidMax.debugDropBidProbability`.
   randomBidDrop,
 
   /// Adaptive mediation banner (AdMob inline adaptive / MAX adaptive).
@@ -109,14 +109,13 @@ enum DemoFlag {
 /// For interstitial screens the original passes min-size percentages in the
 /// same keys ([isMinSizePercentage] = true, e.g. 30 % x 30 %).
 class DemoSize {
-  final int width;
-  final int height;
-  final bool isMinSizePercentage;
-
   const DemoSize(this.width, this.height) : isMinSizePercentage = false;
 
   const DemoSize.minPercent(this.width, this.height)
     : isMinSizePercentage = true;
+  final int width;
+  final int height;
+  final bool isMinSizePercentage;
 
   /// No size (`— (0x0)` in the spec).
   static const none = DemoSize(0, 0);
@@ -138,6 +137,30 @@ const kNoBidsConfigIdLegacy = '28259226-68de-49f8-88d6-f0f2fab846e3';
 /// One test case of the Examples list — mirrors `DemoItem` +
 /// `createBannerBundle(...)` of `DemoItemProvider.kt`.
 class DemoItem {
+  const DemoItem({
+    required this.label,
+    required this.integration,
+    required this.category,
+    required this.screen,
+    this.remote = true,
+    this.configId,
+    this.randomConfigIds,
+    this.adUnitId,
+    this.size = DemoSize.none,
+    this.additionalSizes,
+    this.refreshSeconds,
+    this.adFormats,
+    this.minSizePercentage,
+    this.videoParameters,
+    this.controls,
+    this.accountId,
+    this.serverUrl,
+    this.customFormatId,
+    this.appName,
+    this.flags = const {},
+    this.note,
+  });
+
   /// Exact display name (also the screen title).
   final String label;
 
@@ -175,7 +198,7 @@ class DemoItem {
 
   /// Formats requested (banner / video / both). `null` = the ad type default
   /// (banner for banners, native for natives).
-  final Set<AdFormat>? adFormats;
+  final Set<PrebidAdFormat>? adFormats;
 
   /// The min-size percentage the fragment applies to an interstitial
   /// (`setMinSizePercentage`), when it applies one.
@@ -202,32 +225,8 @@ class DemoItem {
 
   final Set<DemoFlag> flags;
 
-  /// Short behaviour note from the spec, for implementers and the placeholder.
+  /// Short behaviour note from the original app (documentation only).
   final String? note;
-
-  const DemoItem({
-    required this.label,
-    required this.integration,
-    required this.category,
-    required this.screen,
-    this.remote = true,
-    this.configId,
-    this.randomConfigIds,
-    this.adUnitId,
-    this.size = DemoSize.none,
-    this.additionalSizes,
-    this.refreshSeconds,
-    this.adFormats,
-    this.minSizePercentage,
-    this.videoParameters,
-    this.controls,
-    this.accountId,
-    this.serverUrl,
-    this.customFormatId,
-    this.appName,
-    this.flags = const {},
-    this.note,
-  });
 
   bool has(DemoFlag flag) => flags.contains(flag);
 
@@ -283,28 +282,6 @@ class DemoItem {
     ScreenType.t => false,
     _ => true,
   };
-
-  /// Plugin APIs this item needs that are still stubbed in
-  /// `lib/platform/pending_api.dart` (shown by the placeholder screen).
-  List<String> get pendingApis => [
-    if (accountId != null) 'setPrebidServerAccountId',
-    if (serverUrl != null) 'setPrebidServerUrl',
-    if (appName != null) 'PrebidTargeting.setAppName',
-    if (has(DemoFlag.customRenderer)) 'custom renderer (example native code)',
-    if (has(DemoFlag.randomBidDrop)) 'setDebugBidDropProbability',
-    if (has(DemoFlag.adaptiveBanner)) 'adaptive mediation banner',
-    if (has(DemoFlag.creativeFactoryTimeoutCheck))
-      'getCreativeFactoryTimeout(PreRenderContent)',
-    if ((integration == DemoIntegration.adMob ||
-            integration == DemoIntegration.max) &&
-        refreshSeconds != null)
-      'mediation banner refreshIntervalSeconds',
-    if ((screen == ScreenType.g2 || screen == ScreenType.h2) &&
-        (adFormats?.length ?? 0) > 1)
-      'mediation interstitial adFormats',
-    if (screen == ScreenType.h1) 'MAX banner expanded/collapsed/displayFailed',
-    if (screen == ScreenType.h4) 'MAX native onAdRevenuePaid',
-  ];
 
   @override
   String toString() => 'DemoItem($label)';

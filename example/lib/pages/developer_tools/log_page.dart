@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../utils/logger.dart';
+import '../../services/logger.dart';
 
 /// App-wide log of SDK setup and ad callbacks ([PrebidDemoLogger]).
 class LogPage extends StatelessWidget {

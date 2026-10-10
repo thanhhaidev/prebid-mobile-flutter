@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -66,7 +67,7 @@ class _MultiformatScreenState extends DemoScreenState<MultiformatScreen> {
 
   Future<void> _load() async {
     events.reset(only: events.labels);
-    _ad?.dispose();
+    unawaited(_ad?.dispose());
     setState(() {
       _ad = null;
       _size = null;

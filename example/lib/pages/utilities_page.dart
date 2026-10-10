@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/common.dart';
+import '../widgets/plain_list_row.dart';
 import 'app_settings_page.dart';
 import 'developer_tools/developer_tools_page.dart';
 import 'iab_consent_settings_page.dart';

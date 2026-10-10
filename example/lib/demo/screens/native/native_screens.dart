@@ -133,9 +133,8 @@ class _InAppNativeScreenState extends DemoScreenState<InAppNativeScreen> {
 /// C3's link assets: root link (CTA), deeplink-ok (description),
 /// deeplink-fallback (sponsored by), link-url (rating).
 class _LinkAssets extends StatelessWidget {
-  final PrebidNativeAdResponse response;
-
   const _LinkAssets({required this.response});
+  final PrebidNativeAdResponse response;
 
   String? _data(NativeDataType type) {
     for (final d in response.dataAssets) {
@@ -276,9 +275,8 @@ class _NativeFeedScreenState extends DemoScreenState<NativeFeedScreen> {
 
 /// One In-App native ad of a feed slot.
 class _FeedNativeAd extends StatefulWidget {
-  final String configId;
-
   const _FeedNativeAd({super.key, required this.configId});
+  final String configId;
 
   @override
   State<_FeedNativeAd> createState() => _FeedNativeAdState();

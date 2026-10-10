@@ -8,17 +8,16 @@ import '../theme/app_theme.dart';
 /// For [ConfiguratorMode.interstitial], [width] / [height] are the min-size
 /// percentages and [refreshSeconds] is unused.
 class AdConfiguration {
-  final String configId;
-  final int width;
-  final int height;
-  final int refreshSeconds;
-
   const AdConfiguration({
     required this.configId,
     required this.width,
     required this.height,
     this.refreshSeconds = 30,
   });
+  final String configId;
+  final int width;
+  final int height;
+  final int refreshSeconds;
 
   AdConfiguration copyWith({
     String? configId,
@@ -48,14 +47,13 @@ class AdConfiguration {
 /// "Load the ad" returns the edited values; dismissing returns `null` (the
 /// caller then loads with the original values).
 class ConfigureAdDialog extends StatefulWidget {
-  final ConfiguratorMode mode;
-  final AdConfiguration initial;
-
   const ConfigureAdDialog({
     super.key,
     required this.mode,
     required this.initial,
   });
+  final ConfiguratorMode mode;
+  final AdConfiguration initial;
 
   static Future<AdConfiguration?> show(
     BuildContext context, {
@@ -133,7 +131,7 @@ class _ConfigureAdDialogState extends State<ConfigureAdDialog> {
       child: TextField(
         controller: c,
         keyboardType: number ? TextInputType.number : TextInputType.text,
-        style: AppFonts.monoStyle(fontSize: 13),
+        style: AppFonts.monoStyle(),
         decoration: InputDecoration(labelText: label),
       ),
     );

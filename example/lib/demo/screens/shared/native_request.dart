@@ -4,7 +4,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 /// §1.2): title 90 · icon 20x20 (min 20x20) · main image 200x200 (min
 /// 200x200) · sponsored 90 · description · call to action, all required.
 const kStandardNativeAssets = <NativeAsset>[
-  NativeAsset.title(length: 90, required: true),
+  NativeAsset.title(required: true),
   NativeAsset.image(
     imageType: NativeImageType.icon,
     width: 20,
@@ -14,7 +14,6 @@ const kStandardNativeAssets = <NativeAsset>[
     required: true,
   ),
   NativeAsset.image(
-    imageType: NativeImageType.main,
     width: 200,
     height: 200,
     widthMin: 200,

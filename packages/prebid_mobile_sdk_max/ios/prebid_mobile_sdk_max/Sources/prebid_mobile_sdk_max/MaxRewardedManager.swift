@@ -13,7 +13,7 @@ import AppLovinSDK
 /// previous owner gets `onAdFailed`), and only the owner's events are routed.
 /// While the owner's ad is on screen the unit cannot be handed over (its
 /// reward and close would reach the new owner), so a load on it fails.
-class MaxRewardedManager: NSObject {
+final class MaxRewardedManager: NSObject {
 
     private let channel: FlutterMethodChannel
 

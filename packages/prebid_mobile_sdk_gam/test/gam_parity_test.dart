@@ -39,7 +39,7 @@ void main() {
     addTearDown(views.dispose);
     await tester.pumpWidget(
       _host(
-        PrebidGamBannerAd(
+        const PrebidGamBannerAd(
           configId: 'c',
           gamAdUnitId: 'u',
           width: 320,
@@ -57,7 +57,7 @@ void main() {
     addTearDown(views.dispose);
     await tester.pumpWidget(
       _host(
-        PrebidGamNativeAd(
+        const PrebidGamNativeAd(
           configId: 'c',
           gamAdUnitId: 'u',
           context: NativeContextType.contentCentric,

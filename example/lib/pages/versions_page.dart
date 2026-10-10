@@ -3,7 +3,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart' show MobileAds;
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../demo/demo_screen.dart' show DemoScaffold;
-import '../platform/pending_api.dart';
 import '../theme/app_theme.dart';
 
 /// Utilities → "Versions" — the original `VersionInfoFragment`: a 3-row
@@ -35,7 +34,7 @@ class _VersionsPageState extends State<VersionsPage> {
       return MobileAds.instance.getVersionString();
     });
     if (mounted) setState(() => _gam = gam);
-    final omsdk = await _safe(PendingApi.getOmsdkVersion);
+    final omsdk = await _safe(PrebidMobile.getOmsdkVersion);
     if (mounted) setState(() => _omsdk = omsdk);
   }
 

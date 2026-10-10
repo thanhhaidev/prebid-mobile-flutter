@@ -13,6 +13,9 @@ import 'video_parameters.dart';
 /// Manager via `google_mobile_ads`) renders the ad. Pass [targetingKeywords]
 /// to your ad request as custom targeting.
 class PrebidBidResponse {
+  /// Creates a [PrebidBidResponse].
+  const PrebidBidResponse({required this.resultCode, this.targetingKeywords});
+
   /// The Prebid result code, the same string on Android and iOS. One of
   /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
   /// `prebidDemandNoCachedBids`, `prebidDemandTimedOut`,
@@ -29,9 +32,6 @@ class PrebidBidResponse {
 
   /// Whether the auction returned a winning bid.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
-
-  /// Creates a [PrebidBidResponse].
-  const PrebidBidResponse({required this.resultCode, this.targetingKeywords});
 }
 
 /// Auto-refresh shared by the Original API ad units: after [fetchDemand]
@@ -80,18 +80,6 @@ PrebidBidResponse _bidResponse(PrebidMultiformatBidResponse r) =>
 /// Call [destroy] when the unit is no longer needed (e.g. from
 /// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidBannerAdUnit with _AutoRefresh {
-  /// The Prebid Server stored impression config ID.
-  final String configId;
-
-  /// Banner sizes to request (e.g. `[Size(300, 250)]`).
-  final List<Size> sizes;
-
-  /// Ad position on screen (`imp.banner.pos`).
-  final PrebidAdPosition? adPosition;
-
-  @override
-  final PrebidMultiformatAd _delegate;
-
   /// Creates a [PrebidBannerAdUnit]. [onDemandRefreshed] receives each
   /// auto-refreshed result (see [setAutoRefreshInterval]).
   PrebidBannerAdUnit({
@@ -107,6 +95,18 @@ class PrebidBannerAdUnit with _AutoRefresh {
              ? null
              : (r) => onDemandRefreshed(_bidResponse(r)),
        );
+
+  /// The Prebid Server stored impression config ID.
+  final String configId;
+
+  /// Banner sizes to request (e.g. `[Size(300, 250)]`).
+  final List<Size> sizes;
+
+  /// Ad position on screen (`imp.banner.pos`).
+  final PrebidAdPosition? adPosition;
+
+  @override
+  final PrebidMultiformatAd _delegate;
 
   /// Runs the Prebid auction and returns targeting keywords for your ad server.
   Future<PrebidBidResponse> fetchDemand() async =>
@@ -144,22 +144,6 @@ class PrebidBannerAdUnit with _AutoRefresh {
 /// Call [destroy] when the unit is no longer needed (e.g. from
 /// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidInterstitialAdUnit with _AutoRefresh {
-  /// The Prebid Server stored impression config ID.
-  final String configId;
-
-  /// Display interstitial sizes (optional if [videoParameters] is set).
-  final List<Size>? sizes;
-
-  /// Video parameters for a video interstitial (optional if [sizes] is set).
-  final VideoParameters? videoParameters;
-
-  /// Lets Prebid track the impression (`burl`) when your ad server's
-  /// interstitial shows this bid's creative.
-  final bool trackImpression;
-
-  @override
-  final PrebidMultiformatAd _delegate;
-
   /// Creates a [PrebidInterstitialAdUnit].
   PrebidInterstitialAdUnit({
     required this.configId,
@@ -178,6 +162,22 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
              : (r) => onDemandRefreshed(_bidResponse(r)),
        );
 
+  /// The Prebid Server stored impression config ID.
+  final String configId;
+
+  /// Display interstitial sizes (optional if [videoParameters] is set).
+  final List<Size>? sizes;
+
+  /// Video parameters for a video interstitial (optional if [sizes] is set).
+  final VideoParameters? videoParameters;
+
+  /// Lets Prebid track the impression (`burl`) when your ad server's
+  /// interstitial shows this bid's creative.
+  final bool trackImpression;
+
+  @override
+  final PrebidMultiformatAd _delegate;
+
   /// Runs the Prebid auction and returns targeting keywords for your ad server.
   Future<PrebidBidResponse> fetchDemand() async =>
       _bidResponse(await _delegate.fetchDemand());
@@ -190,27 +190,6 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
 /// Call [destroy] when the unit is no longer needed (e.g. from
 /// `State.dispose`); [fetchDemand] may be called again afterwards.
 class PrebidNativeAdUnit with _AutoRefresh {
-  /// The Prebid Server stored impression config ID.
-  final String configId;
-
-  /// Native assets to request.
-  final List<NativeAsset> assets;
-
-  /// Native event trackers.
-  final List<NativeEventTracker>? eventTrackers;
-
-  /// Native context, context subtype and placement type.
-  final NativeContextType? context;
-
-  /// Native context subtype (`contextsubtype`).
-  final NativeContextSubType? contextSubType;
-
-  /// Native placement type (`plcmttype`).
-  final NativePlacementType? placementType;
-
-  @override
-  final PrebidMultiformatAd _delegate;
-
   /// Creates a [PrebidNativeAdUnit].
   PrebidNativeAdUnit({
     required this.configId,
@@ -232,6 +211,27 @@ class PrebidNativeAdUnit with _AutoRefresh {
              : (r) => onDemandRefreshed(_nativeResponse(r)),
        );
 
+  /// The Prebid Server stored impression config ID.
+  final String configId;
+
+  /// Native assets to request.
+  final List<NativeAsset> assets;
+
+  /// Native event trackers.
+  final List<NativeEventTracker>? eventTrackers;
+
+  /// Native context, context subtype and placement type.
+  final NativeContextType? context;
+
+  /// Native context subtype (`contextsubtype`).
+  final NativeContextSubType? contextSubType;
+
+  /// Native placement type (`plcmttype`).
+  final NativePlacementType? placementType;
+
+  @override
+  final PrebidMultiformatAd _delegate;
+
   /// Runs the Prebid auction and returns targeting keywords for your ad server.
   Future<PrebidNativeBidResponse> fetchDemand() async =>
       _nativeResponse(await _delegate.fetchDemand());
@@ -247,13 +247,13 @@ class PrebidNativeAdUnit with _AutoRefresh {
 
 /// Result of an Original API native bid request.
 class PrebidNativeBidResponse extends PrebidBidResponse {
-  /// Native cache ID returned by Prebid, when native demand wins.
-  final String? nativeAdCacheId;
-
   /// Creates a [PrebidNativeBidResponse].
   const PrebidNativeBidResponse({
     required super.resultCode,
     super.targetingKeywords,
     this.nativeAdCacheId,
   });
+
+  /// Native cache ID returned by Prebid, when native demand wins.
+  final String? nativeAdCacheId;
 }

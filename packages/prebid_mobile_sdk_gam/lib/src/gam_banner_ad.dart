@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
-        AdFormat,
+        PrebidAdFormat,
         PrebidAdPosition,
         PrebidBannerAdController,
         PrebidBannerAdListener,
@@ -18,6 +18,29 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
 /// Universal Creative) or a direct-sold GAM ad. Contrast with the core
 /// `PrebidBannerAd`, where the Prebid SDK renders directly.
 class PrebidGamBannerAd extends StatefulWidget {
+  /// Creates a [PrebidGamBannerAd] widget.
+  const PrebidGamBannerAd({
+    super.key,
+    required this.configId,
+    required this.gamAdUnitId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.isVideo = false,
+    this.adFormats,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.videoParameters,
+    this.autoLoad = true,
+    this.refreshIntervalSeconds,
+    this.customTargeting,
+    this.videoPlacementType,
+    this.controller,
+    this.adPosition,
+    this.listener,
+    this.videoListener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -40,9 +63,9 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Ignored when [adFormats] is set.
   final bool isVideo;
 
-  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// Formats to request — e.g. `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a
   /// multiformat banner (Prebid 3.4). Overrides [isVideo] when set.
-  final Set<AdFormat>? adFormats;
+  final Set<PrebidAdFormat>? adFormats;
 
   /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
@@ -85,29 +108,6 @@ class PrebidGamBannerAd extends StatefulWidget {
 
   /// Listener for video playback events (outstream video creatives).
   final PrebidBannerVideoListener? videoListener;
-
-  /// Creates a [PrebidGamBannerAd] widget.
-  const PrebidGamBannerAd({
-    super.key,
-    required this.configId,
-    required this.gamAdUnitId,
-    required this.width,
-    required this.height,
-    this.additionalSizes,
-    this.isVideo = false,
-    this.adFormats,
-    this.pbAdSlot,
-    this.impOrtbConfig,
-    this.videoParameters,
-    this.autoLoad = true,
-    this.refreshIntervalSeconds,
-    this.customTargeting,
-    this.videoPlacementType,
-    this.controller,
-    this.adPosition,
-    this.listener,
-    this.videoListener,
-  });
 
   @override
   State<PrebidGamBannerAd> createState() => _PrebidGamBannerAdState();

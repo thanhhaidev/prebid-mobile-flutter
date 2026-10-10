@@ -52,6 +52,15 @@ class _MaxRewardedRouter {
 /// await rewarded.loadAd();
 /// ```
 class PrebidMaxRewardedAd {
+  /// Creates a [PrebidMaxRewardedAd].
+  PrebidMaxRewardedAd({
+    required this.configId,
+    required this.maxAdUnitId,
+    this.controls,
+    this.impOrtbConfig,
+    this.videoParameters,
+    this.listener,
+  }) : _adId = _nextId++;
   static int _nextId = 7500000;
 
   final int _adId;
@@ -85,16 +94,6 @@ class PrebidMaxRewardedAd {
 
   /// Whether the rewarded ad has loaded and is ready to [show].
   bool get isLoaded => _loaded;
-
-  /// Creates a [PrebidMaxRewardedAd].
-  PrebidMaxRewardedAd({
-    required this.configId,
-    required this.maxAdUnitId,
-    this.controls,
-    this.impOrtbConfig,
-    this.videoParameters,
-    this.listener,
-  }) : _adId = _nextId++;
 
   /// Requests the ad. [PrebidRewardedAdListener.onAdLoaded] fires when it is
   /// ready to [show].

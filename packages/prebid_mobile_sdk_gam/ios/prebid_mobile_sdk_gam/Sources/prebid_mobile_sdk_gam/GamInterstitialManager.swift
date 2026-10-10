@@ -6,7 +6,7 @@ import PrebidMobileGAMEventHandlers
 /// Handles GAM-rendered interstitials over the `prebid_mobile_sdk_gam/interstitial`
 /// method channel. Each ad is keyed by an `adId` allocated on the Dart side;
 /// native events are pushed back over the same channel.
-class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
+final class GamInterstitialManager: NSObject, InterstitialAdUnitDelegate {
 
     private let channel: FlutterMethodChannel
     private var ads: [Int: InterstitialRenderingAdUnit] = [:]

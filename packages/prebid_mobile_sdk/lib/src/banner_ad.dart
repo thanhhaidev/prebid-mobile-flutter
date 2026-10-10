@@ -68,6 +68,27 @@ class PrebidBannerAdController {
 ///
 /// Uses a native PlatformView to render the banner ad on both Android and iOS.
 class PrebidBannerAd extends StatefulWidget {
+  /// Creates a [PrebidBannerAd] widget.
+  const PrebidBannerAd({
+    super.key,
+    required this.configId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.isVideo = false,
+    this.adFormats,
+    this.pbAdSlot,
+    this.adPosition,
+    this.videoParameters,
+    this.impOrtbConfig,
+    this.controller,
+    this.autoLoad = true,
+    this.refreshIntervalSeconds,
+    this.videoPlacementType,
+    this.listener,
+    this.videoListener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -87,9 +108,9 @@ class PrebidBannerAd extends StatefulWidget {
   /// Ignored when [adFormats] is set.
   final bool isVideo;
 
-  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// Formats to request — e.g. `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a
   /// multiformat banner (Prebid 3.4). Overrides [isVideo] when set.
-  final Set<AdFormat>? adFormats;
+  final Set<PrebidAdFormat>? adFormats;
 
   /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
@@ -127,27 +148,6 @@ class PrebidBannerAd extends StatefulWidget {
 
   /// Listener for video playback events (outstream video creatives).
   final PrebidBannerVideoListener? videoListener;
-
-  /// Creates a [PrebidBannerAd] widget.
-  const PrebidBannerAd({
-    super.key,
-    required this.configId,
-    required this.width,
-    required this.height,
-    this.additionalSizes,
-    this.isVideo = false,
-    this.adFormats,
-    this.pbAdSlot,
-    this.adPosition,
-    this.videoParameters,
-    this.impOrtbConfig,
-    this.controller,
-    this.autoLoad = true,
-    this.refreshIntervalSeconds,
-    this.videoPlacementType,
-    this.listener,
-    this.videoListener,
-  });
 
   @override
   State<PrebidBannerAd> createState() => _PrebidBannerAdState();
@@ -237,7 +237,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         key: key,
-        viewType: 'prebid_mobile_flutter/banner_ad',
+        viewType: 'prebid_mobile_sdk/banner_ad',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
@@ -245,7 +245,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         key: key,
-        viewType: 'prebid_mobile_flutter/banner_ad',
+        viewType: 'prebid_mobile_sdk/banner_ad',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
         onPlatformViewCreated: _onPlatformViewCreated,
@@ -257,7 +257,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd> {
   void _onPlatformViewCreated(int viewId) {
     // The channel is set up even without a listener so the slot can still
     // resize to the rendered creative via `onAdSize`.
-    final channel = MethodChannel('prebid_mobile_flutter/banner_ad_$viewId');
+    final channel = MethodChannel('prebid_mobile_sdk/banner_ad_$viewId');
     final previous = _channel;
     if (previous != null) {
       previous.setMethodCallHandler(null);

@@ -308,10 +308,6 @@ class _BannersAndInterstitialScreenState
 
 /// In-App or GAM interstitial behind one interface.
 class _Interstitial {
-  final Future<void> Function() load;
-  final Future<void> Function() show;
-  final Future<void> Function() destroy;
-
   _Interstitial._(this.load, this.show, this.destroy);
 
   factory _Interstitial.inApp(PrebidInterstitialAd ad) =>
@@ -319,6 +315,9 @@ class _Interstitial {
 
   factory _Interstitial.gam(PrebidGamInterstitialAd ad) =>
       _Interstitial._(ad.loadAd, ad.show, ad.destroy);
+  final Future<void> Function() load;
+  final Future<void> Function() show;
+  final Future<void> Function() destroy;
 }
 
 /// F — video outstream feeds (In-App `PpmFeedVideoFragment`, GAM
@@ -343,14 +342,14 @@ class _VideoFeedScreenState extends DemoScreenState<VideoFeedScreen> {
           gamAdUnitId: item.adUnitId ?? '',
           width: config.width,
           height: config.height,
-          adFormats: const {AdFormat.video},
+          adFormats: const {PrebidAdFormat.video},
           videoPlacementType: VideoPlacementType.inFeed,
         )
       : PrebidBannerAd(
           configId: config.configId,
           width: config.width,
           height: config.height,
-          adFormats: const {AdFormat.video},
+          adFormats: const {PrebidAdFormat.video},
           videoPlacementType: VideoPlacementType.inFeed,
         );
 
@@ -364,7 +363,7 @@ class _VideoFeedScreenState extends DemoScreenState<VideoFeedScreen> {
             child: Center(child: _ad()),
           );
         }
-        return ListTile(title: const Text(kAppTitle));
+        return const ListTile(title: Text(kAppTitle));
       },
     );
   }

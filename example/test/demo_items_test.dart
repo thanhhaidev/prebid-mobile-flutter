@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show AdFormat;
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart' show PrebidAdFormat;
 import 'package:prebid_mobile_sdk_example/data/demo_item.dart';
 import 'package:prebid_mobile_sdk_example/data/demo_items.dart';
 
@@ -55,7 +55,7 @@ void main() {
     expect((resizeErrors.size.width, resizeErrors.size.height), (300, 100));
 
     final mraidVideo = byLabel('MRAID 2.0: Video Interstitial (In-App)');
-    expect(mraidVideo.adFormats, {AdFormat.banner}); // title rule
+    expect(mraidVideo.adFormats, {PrebidAdFormat.banner}); // title rule
     expect(mraidVideo.size.isMinSizePercentage, isTrue);
 
     final multiformat = byLabel('Multiformat Interstitial 320x480 (In-App)');
@@ -64,7 +64,10 @@ void main() {
       'prebid-demo-display-interstitial-320-480',
       'prebid-demo-video-interstitial-320-480',
     ]);
-    expect(multiformat.adFormats, {AdFormat.banner, AdFormat.video});
+    expect(multiformat.adFormats, {
+      PrebidAdFormat.banner,
+      PrebidAdFormat.video,
+    });
 
     final events = byLabel('Banner 320x50 Events (In-App)');
     expect(events.accountId, 'prebid-stored-request-enabled-events');

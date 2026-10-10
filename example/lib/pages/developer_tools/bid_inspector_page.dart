@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../utils/app_settings.dart';
-import '../../utils/bid_inspector.dart';
+import '../../services/app_settings.dart';
+import '../../services/bid_inspector.dart';
 
 /// Lists every Prebid Server request / response pair captured through
 /// `PrebidEventDelegate` ([BidInspector]); tap one for the full JSON.
@@ -58,8 +58,8 @@ class BidInspectorPage extends StatelessWidget {
 }
 
 class _RecordTile extends StatelessWidget {
-  final BidRecord record;
   const _RecordTile({required this.record});
+  final BidRecord record;
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +105,8 @@ class _RecordTile extends StatelessWidget {
 
 /// Request / response JSON of one [BidRecord].
 class BidRecordPage extends StatelessWidget {
-  final BidRecord record;
   const BidRecordPage({super.key, required this.record});
+  final BidRecord record;
 
   @override
   Widget build(BuildContext context) {
@@ -154,8 +154,8 @@ class BidRecordPage extends StatelessWidget {
 }
 
 class _JsonView extends StatelessWidget {
-  final String text;
   const _JsonView(this.text);
+  final String text;
 
   @override
   Widget build(BuildContext context) {

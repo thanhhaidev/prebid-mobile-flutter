@@ -4,14 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'ad_event_router.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/ad_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/visibility.dart';
 import 'native_ad_enums.dart';
 
 /// Listener for native ad events.
 class PrebidNativeAdListener {
+  /// Creates a [PrebidNativeAdListener].
+  const PrebidNativeAdListener({
+    this.onAdLoaded,
+    this.onAdFailed,
+    this.onAdImpression,
+    this.onAdClicked,
+    this.onAdExpired,
+  });
+
   /// Called when the native ad data is loaded.
   final void Function(PrebidNativeAdResponse response)? onAdLoaded;
 
@@ -27,19 +36,25 @@ class PrebidNativeAdListener {
 
   /// Called when the ad's bid expired (per `bid.exp`) before it was shown.
   final void Function()? onAdExpired;
-
-  /// Creates a [PrebidNativeAdListener].
-  const PrebidNativeAdListener({
-    this.onAdLoaded,
-    this.onAdFailed,
-    this.onAdImpression,
-    this.onAdClicked,
-    this.onAdExpired,
-  });
 }
 
 /// Structured native ad response data.
 class PrebidNativeAdResponse {
+  /// Creates a [PrebidNativeAdResponse].
+  const PrebidNativeAdResponse({
+    this.title,
+    this.text,
+    this.iconUrl,
+    this.imageUrl,
+    this.sponsoredBy,
+    this.callToAction,
+    this.clickUrl,
+    this.privacyUrl,
+    this.titles = const [],
+    this.images = const [],
+    this.dataAssets = const [],
+  });
+
   /// The ad title text.
   final String? title;
 
@@ -74,21 +89,6 @@ class PrebidNativeAdResponse {
   /// Every data asset of the response (rating, price, likes, address, ...).
   final List<PrebidNativeData> dataAssets;
 
-  /// Creates a [PrebidNativeAdResponse].
-  const PrebidNativeAdResponse({
-    this.title,
-    this.text,
-    this.iconUrl,
-    this.imageUrl,
-    this.sponsoredBy,
-    this.callToAction,
-    this.clickUrl,
-    this.privacyUrl,
-    this.titles = const [],
-    this.images = const [],
-    this.dataAssets = const [],
-  });
-
   /// The values of the data assets of [type].
   List<String> dataOf(NativeDataType type) => [
     for (final d in dataAssets)
@@ -98,60 +98,30 @@ class PrebidNativeAdResponse {
 
 /// An image asset of a native response.
 class PrebidNativeImage {
+  /// Creates a [PrebidNativeImage].
+  const PrebidNativeImage({required this.type, this.url});
+
   /// The OpenRTB image type (see [NativeImageType]).
   final int type;
 
   /// The image URL.
   final String? url;
-
-  /// Creates a [PrebidNativeImage].
-  const PrebidNativeImage({required this.type, this.url});
 }
 
 /// A data asset of a native response.
 class PrebidNativeData {
+  /// Creates a [PrebidNativeData].
+  const PrebidNativeData({required this.type, this.value});
+
   /// The OpenRTB data asset type (see [NativeDataType]).
   final int type;
 
   /// The asset value.
   final String? value;
-
-  /// Creates a [PrebidNativeData].
-  const PrebidNativeData({required this.type, this.value});
 }
 
 /// Defines a native asset for the ad request.
 class NativeAsset {
-  /// The kind of asset: title, image or data.
-  final NativeAssetType type;
-
-  /// Whether the bid must include this asset.
-  final bool required;
-
-  /// Maximum title length in characters (title assets).
-  final int? titleLength;
-
-  /// Image subtype: icon, main or custom (image assets).
-  final NativeImageType? imageType;
-
-  /// Exact image width in pixels (image assets).
-  final int? imageWidth;
-
-  /// Exact image height in pixels (image assets).
-  final int? imageHeight;
-
-  /// Minimum image width in pixels (image assets).
-  final int? imageWidthMin;
-
-  /// Minimum image height in pixels (image assets).
-  final int? imageHeightMin;
-
-  /// Data subtype, e.g. sponsored, description or rating (data assets).
-  final NativeDataType? dataType;
-
-  /// Maximum data length in characters (data assets).
-  final int? dataLength;
-
   const NativeAsset._({
     required this.type,
     this.required = false,
@@ -203,6 +173,36 @@ class NativeAsset {
          required: required,
        );
 
+  /// The kind of asset: title, image or data.
+  final NativeAssetType type;
+
+  /// Whether the bid must include this asset.
+  final bool required;
+
+  /// Maximum title length in characters (title assets).
+  final int? titleLength;
+
+  /// Image subtype: icon, main or custom (image assets).
+  final NativeImageType? imageType;
+
+  /// Exact image width in pixels (image assets).
+  final int? imageWidth;
+
+  /// Exact image height in pixels (image assets).
+  final int? imageHeight;
+
+  /// Minimum image width in pixels (image assets).
+  final int? imageWidthMin;
+
+  /// Minimum image height in pixels (image assets).
+  final int? imageHeightMin;
+
+  /// Data subtype, e.g. sponsored, description or rating (data assets).
+  final NativeDataType? dataType;
+
+  /// Maximum data length in characters (data assets).
+  final int? dataLength;
+
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
   /// Keys match the Pigeon `NativeAssetConfig` fields.
   Map<String, Object?> toMap() => {
@@ -221,14 +221,14 @@ class NativeAsset {
 
 /// Defines a native event tracker for the ad request.
 class NativeEventTracker {
+  /// Creates a [NativeEventTracker].
+  const NativeEventTracker({required this.eventType, required this.methods});
+
   /// The event to track, e.g. an impression.
   final NativeEventType eventType;
 
   /// How the event is tracked: image pixel, JavaScript or custom.
   final List<NativeEventTrackingMethod> methods;
-
-  /// Creates a [NativeEventTracker].
-  const NativeEventTracker({required this.eventType, required this.methods});
 
   /// The method-channel form used by the GAM / AdMob / MAX native widgets.
   Map<String, Object?> toMap() => {
@@ -269,6 +269,23 @@ class NativeEventTracker {
 /// usable: calling [loadAd] after [destroy] loads a fresh ad and its events
 /// reach [listener] again.
 class PrebidNativeAd {
+  /// Creates a [PrebidNativeAd].
+  PrebidNativeAd({
+    required this.configId,
+    this.assets,
+    this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
+    this.placementCount,
+    this.pbAdSlot,
+    this.gpid,
+    this.impOrtbConfig,
+    this.listener,
+  }) : _adId = _nextId++ {
+    AdEventRouter.instance.register(_adId, _handleEvent);
+  }
+
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static NativeAdHostApi api = NativeAdHostApi();
@@ -286,8 +303,8 @@ class PrebidNativeAd {
   /// Requested when [assets] is null: title, main image, icon, sponsored,
   /// description and call to action (the companion packages' default too).
   static const defaultAssets = [
-    NativeAsset.title(length: 90, required: true),
-    NativeAsset.image(imageType: NativeImageType.main, required: true),
+    NativeAsset.title(required: true),
+    NativeAsset.image(required: true),
     NativeAsset.image(imageType: NativeImageType.icon, required: true),
     NativeAsset.data(dataType: NativeDataType.sponsored, required: true),
     NativeAsset.data(dataType: NativeDataType.desc),
@@ -320,23 +337,6 @@ class PrebidNativeAd {
 
   /// Listener for native ad events.
   final PrebidNativeAdListener? listener;
-
-  /// Creates a [PrebidNativeAd].
-  PrebidNativeAd({
-    required this.configId,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.placementCount,
-    this.pbAdSlot,
-    this.gpid,
-    this.impOrtbConfig,
-    this.listener,
-  }) : _adId = _nextId++ {
-    AdEventRouter.instance.register(_adId, _handleEvent);
-  }
 
   void _handleEvent(AdEvent event) {
     final l = listener;
@@ -439,6 +439,15 @@ class PrebidNativeAd {
 /// accounts for Flutter's own clipping too, such as a list scrolled under an
 /// app bar.
 class PrebidNativeAdView extends StatefulWidget {
+  /// Creates a [PrebidNativeAdView].
+  const PrebidNativeAdView({
+    super.key,
+    required this.ad,
+    this.width,
+    this.height = 320,
+  }) : assert(width == null || width > 0, 'width must be positive'),
+       assert(height > 0, 'height must be positive');
+
   /// The loaded native ad to render.
   final PrebidNativeAd ad;
 
@@ -452,21 +461,12 @@ class PrebidNativeAdView extends StatefulWidget {
   /// Initial height, replaced by the rendered content height.
   final double height;
 
-  /// Creates a [PrebidNativeAdView].
-  const PrebidNativeAdView({
-    super.key,
-    required this.ad,
-    this.width,
-    this.height = 320,
-  }) : assert(width == null || width > 0, 'width must be positive'),
-       assert(height > 0, 'height must be positive');
-
   @override
   State<PrebidNativeAdView> createState() => _PrebidNativeAdViewState();
 }
 
 class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
-  static const _viewType = 'prebid_mobile_flutter/native_ad';
+  static const _viewType = 'prebid_mobile_sdk/native_ad';
 
   /// How often the visible fraction is measured, as the native viewability
   /// check polls.
@@ -519,7 +519,7 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
 
   void _onPlatformViewCreated(int viewId) {
     _channel?.setMethodCallHandler(null);
-    _channel = MethodChannel('prebid_mobile_flutter/native_ad_$viewId')
+    _channel = MethodChannel('prebid_mobile_sdk/native_ad_$viewId')
       ..setMethodCallHandler((call) async {
         if (call.method == 'onAdSize') {
           final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();

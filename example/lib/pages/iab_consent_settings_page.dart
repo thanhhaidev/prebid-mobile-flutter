@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../demo/demo_screen.dart' show DemoScaffold;
-import '../platform/iab_consent_store.dart';
+import '../services/iab_consent_store.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common.dart';
+import '../widgets/section_header.dart';
 
 enum _PrefType { boolean, string, integer }
 
 class _Pref {
+  const _Pref(this.key, this.title, this.type);
   final String key;
   final String title;
   final _PrefType type;
-
-  const _Pref(this.key, this.title, this.type);
 }
 
 /// Utilities → "IAB Consent Settings" — the original `ConsentSettingsFragment`

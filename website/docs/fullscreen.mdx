@@ -14,7 +14,7 @@ late final PrebidInterstitialAd interstitial;
 
 interstitial = PrebidInterstitialAd(
   configId: 'prebid-demo-display-interstitial-320-480',
-  adFormats: const {AdFormat.banner, AdFormat.video},
+  adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
   listener: PrebidInterstitialAdListener(
     onAdLoaded: () => interstitial.show(),
     onAdFailed: (error) => debugPrint('failed: $error'),
@@ -28,7 +28,7 @@ await interstitial.loadAd();
 | Parameter | Description |
 | --- | --- |
 | `configId` | **Required.** Stored impression ID. |
-| `adFormats` | `{AdFormat.banner}` (default), `{AdFormat.video}` or both. |
+| `adFormats` | `{PrebidAdFormat.banner}` (default), `{PrebidAdFormat.video}` or both. |
 | `videoParameters` | [Video signals](/docs/video#video-parameters) for video demand. |
 | `controls` | [Rendering controls](#rendering-controls). |
 | `impOrtbConfig` | OpenRTB JSON merged into the impression. |
@@ -76,7 +76,7 @@ await rewarded.loadAd();
 ```dart
 PrebidInterstitialAd(
   configId: 'prebid-demo-video-interstitial-320-480',
-  adFormats: const {AdFormat.video},
+  adFormats: const {PrebidAdFormat.video},
   controls: const PrebidFullscreenControls(
     closeButtonPosition: PrebidButtonPosition.topLeft,
     closeButtonArea: 0.1,

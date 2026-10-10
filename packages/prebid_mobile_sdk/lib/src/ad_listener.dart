@@ -10,6 +10,9 @@ import 'ad_enums.dart';
 /// },
 /// ```
 class PrebidReward {
+  /// Creates a [PrebidReward] with the given [type], [count], and optional [ext] data.
+  const PrebidReward({required this.type, required this.count, this.ext});
+
   /// The reward type identifier (e.g., `"coins"`, `"lives"`, `"points"`).
   ///
   /// `"reward"` when the creative doesn't name one.
@@ -20,19 +23,16 @@ class PrebidReward {
 
   /// Optional extra data from the reward payload.
   final Map<String, dynamic>? ext;
-
-  /// Creates a [PrebidReward] with the given [type], [count], and optional [ext] data.
-  const PrebidReward({required this.type, required this.count, this.ext});
 }
 
 /// Listener for SDK initialization events.
 ///
 /// ```dart
 /// typedef OnInitializationComplete =
-///     void Function(InitializationStatus status, String? error);
+///     void Function(PrebidInitializationStatus status, String? error);
 /// ```
 typedef OnInitializationComplete =
-    void Function(InitializationStatus status, String? error);
+    void Function(PrebidInitializationStatus status, String? error);
 
 /// Listener for [PrebidBannerAd] lifecycle events.
 ///
@@ -48,6 +48,17 @@ typedef OnInitializationComplete =
 /// )
 /// ```
 class PrebidBannerAdListener {
+  /// Creates a [PrebidBannerAdListener].
+  const PrebidBannerAdListener({
+    this.onAdLoaded,
+    this.onAdDisplayed,
+    this.onAdFailed,
+    this.onAdClicked,
+    this.onAdClosed,
+    this.onAdExpired,
+    this.onAdImpression,
+  });
+
   /// Called when the banner ad content has been successfully loaded and is
   /// ready to display.
   final void Function()? onAdLoaded;
@@ -80,23 +91,21 @@ class PrebidBannerAdListener {
   /// Called when the ad server records an impression. Fired by mediated
   /// banners (`PrebidAdMobBannerAd`, `PrebidMaxBannerAd`).
   final void Function()? onAdImpression;
-
-  /// Creates a [PrebidBannerAdListener].
-  const PrebidBannerAdListener({
-    this.onAdLoaded,
-    this.onAdDisplayed,
-    this.onAdFailed,
-    this.onAdClicked,
-    this.onAdClosed,
-    this.onAdExpired,
-    this.onAdImpression,
-  });
 }
 
 /// Video playback events of a Prebid-rendered banner showing an outstream
 /// video creative (`PrebidBannerAd`, `PrebidGamBannerAd`), mirroring Prebid's
 /// `BannerVideoListener` / `BannerViewVideoPlaybackDelegate`.
 class PrebidBannerVideoListener {
+  /// Creates a [PrebidBannerVideoListener].
+  const PrebidBannerVideoListener({
+    this.onVideoCompleted,
+    this.onVideoPaused,
+    this.onVideoResumed,
+    this.onVideoMuted,
+    this.onVideoUnmuted,
+  });
+
   /// The video played to the end.
   final void Function()? onVideoCompleted;
 
@@ -111,15 +120,6 @@ class PrebidBannerVideoListener {
 
   /// The video was unmuted.
   final void Function()? onVideoUnmuted;
-
-  /// Creates a [PrebidBannerVideoListener].
-  const PrebidBannerVideoListener({
-    this.onVideoCompleted,
-    this.onVideoPaused,
-    this.onVideoResumed,
-    this.onVideoMuted,
-    this.onVideoUnmuted,
-  });
 
   /// Dispatches a native video event name to the matching callback. Returns
   /// `false` for names that aren't video events.
@@ -151,6 +151,17 @@ class PrebidBannerVideoListener {
 /// )
 /// ```
 class PrebidInterstitialAdListener {
+  /// Creates a [PrebidInterstitialAdListener].
+  const PrebidInterstitialAdListener({
+    this.onAdLoaded,
+    this.onAdFailed,
+    this.onAdDisplayed,
+    this.onAdClosed,
+    this.onAdClicked,
+    this.onAdExpired,
+    this.onAdImpression,
+  });
+
   /// Called when the interstitial ad is loaded and ready to be shown
   /// via [PrebidInterstitialAd.show].
   final void Function()? onAdLoaded;
@@ -177,17 +188,6 @@ class PrebidInterstitialAdListener {
   /// Called when the ad server records an impression. Fired by mediated
   /// interstitials (AdMob, MAX).
   final void Function()? onAdImpression;
-
-  /// Creates a [PrebidInterstitialAdListener].
-  const PrebidInterstitialAdListener({
-    this.onAdLoaded,
-    this.onAdFailed,
-    this.onAdDisplayed,
-    this.onAdClosed,
-    this.onAdClicked,
-    this.onAdExpired,
-    this.onAdImpression,
-  });
 }
 
 /// Listener for [PrebidRewardedAd] lifecycle events.
@@ -206,6 +206,18 @@ class PrebidInterstitialAdListener {
 /// )
 /// ```
 class PrebidRewardedAdListener {
+  /// Creates a [PrebidRewardedAdListener].
+  const PrebidRewardedAdListener({
+    this.onAdLoaded,
+    this.onAdFailed,
+    this.onAdDisplayed,
+    this.onAdClosed,
+    this.onAdClicked,
+    this.onUserEarnedReward,
+    this.onAdExpired,
+    this.onAdImpression,
+  });
+
   /// Called when the rewarded ad is loaded and ready to be shown.
   final void Function()? onAdLoaded;
 
@@ -233,16 +245,4 @@ class PrebidRewardedAdListener {
   /// Called when the ad server records an impression. Fired by mediated
   /// rewarded ads (AdMob, MAX).
   final void Function()? onAdImpression;
-
-  /// Creates a [PrebidRewardedAdListener].
-  const PrebidRewardedAdListener({
-    this.onAdLoaded,
-    this.onAdFailed,
-    this.onAdDisplayed,
-    this.onAdClosed,
-    this.onAdClicked,
-    this.onUserEarnedReward,
-    this.onAdExpired,
-    this.onAdImpression,
-  });
 }

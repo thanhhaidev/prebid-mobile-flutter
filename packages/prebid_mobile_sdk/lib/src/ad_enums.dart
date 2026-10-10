@@ -2,7 +2,7 @@
 ///
 /// Used with [PrebidInterstitialAd.adFormats] and [PrebidBannerAd.isVideo]
 /// to specify the desired creative type for an ad request.
-enum AdFormat {
+enum PrebidAdFormat {
   /// HTML display ad format (standard banner or interstitial).
   banner,
 
@@ -40,7 +40,7 @@ enum PrebidLogLevel {
 ///
 /// The [completion] callback receives one of these values along with an
 /// optional error message.
-enum InitializationStatus {
+enum PrebidInitializationStatus {
   /// SDK initialized successfully and is ready to serve ads.
   succeeded,
 

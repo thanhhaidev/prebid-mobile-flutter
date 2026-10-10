@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../demo/demo_screen.dart' show DemoScaffold;
-import '../../utils/bid_inspector.dart';
-import '../../widgets/common.dart';
+import '../../services/bid_inspector.dart';
+import '../../widgets/plain_list_row.dart';
 import 'about_page.dart';
 import 'bid_inspector_page.dart';
 import 'log_page.dart';

@@ -12,6 +12,15 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
 /// Listener for [PrebidAdMobNativeAd] events, mirroring the AdMob native
 /// callback set from Prebid's reference integration.
 class PrebidAdMobNativeAdListener {
+  /// Creates a [PrebidAdMobNativeAdListener].
+  const PrebidAdMobNativeAdListener({
+    this.onAdLoaded,
+    this.onAdImpression,
+    this.onAdClicked,
+    this.onAdOpened,
+    this.onAdFailed,
+  });
+
   /// The native ad loaded and is rendered.
   final VoidCallback? onAdLoaded;
 
@@ -26,15 +35,6 @@ class PrebidAdMobNativeAdListener {
 
   /// The native ad failed to load.
   final void Function(String error)? onAdFailed;
-
-  /// Creates a [PrebidAdMobNativeAdListener].
-  const PrebidAdMobNativeAdListener({
-    this.onAdLoaded,
-    this.onAdImpression,
-    this.onAdClicked,
-    this.onAdOpened,
-    this.onAdFailed,
-  });
 }
 
 /// A native ad mediated by **Google AdMob** with Prebid demand.
@@ -45,6 +45,20 @@ class PrebidAdMobNativeAdListener {
 /// that the plugin populates. Prebid's `MediationNativeAdUnit` runs the auction
 /// and hands the winning bid to AdMob via the Prebid native adapter.
 class PrebidAdMobNativeAd extends StatefulWidget {
+  /// Creates a [PrebidAdMobNativeAd] widget.
+  const PrebidAdMobNativeAd({
+    super.key,
+    required this.configId,
+    required this.adMobAdUnitId,
+    this.height = 320,
+    this.assets,
+    this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
+    this.listener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -74,20 +88,6 @@ class PrebidAdMobNativeAd extends StatefulWidget {
 
   /// Listener for native ad events.
   final PrebidAdMobNativeAdListener? listener;
-
-  /// Creates a [PrebidAdMobNativeAd] widget.
-  const PrebidAdMobNativeAd({
-    super.key,
-    required this.configId,
-    required this.adMobAdUnitId,
-    this.height = 320,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.listener,
-  });
 
   @override
   State<PrebidAdMobNativeAd> createState() => _PrebidAdMobNativeAdState();

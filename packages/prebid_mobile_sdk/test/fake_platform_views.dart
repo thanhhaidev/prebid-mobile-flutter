@@ -29,7 +29,7 @@ class FakePlatformView {
 class FakePlatformViews {
   FakePlatformViews({required this.channelPrefix});
 
-  /// Per-view channel prefix, e.g. `prebid_mobile_flutter/banner_ad`.
+  /// Per-view channel prefix, e.g. `prebid_mobile_sdk/banner_ad`.
   final String channelPrefix;
 
   /// Every view created so far, in creation order.

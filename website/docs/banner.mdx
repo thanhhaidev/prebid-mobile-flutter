@@ -34,7 +34,7 @@ PrebidBannerAd(
 | `refreshIntervalSeconds` | `int?` | Auto-refresh interval. `null` or `0` disables refresh. |
 | `autoLoad` | `bool` | Load when the view is created (default `true`). |
 | `controller` | `PrebidBannerAdController?` | Load on demand and stop refresh. |
-| `adFormats` | `Set<AdFormat>?` | `{AdFormat.banner, AdFormat.video}` for a multiformat banner. Overrides `isVideo`. |
+| `adFormats` | `Set<PrebidAdFormat>?` | `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat banner. Overrides `isVideo`. |
 | `isVideo` | `bool` | Request outstream video only. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` (default), `inArticle` or `inFeed`. |
 | `videoParameters` | `VideoParameters?` | Video signals. <Only platform="ios" /> |
@@ -86,7 +86,7 @@ PrebidBannerAd(
   configId: 'prebid-demo-video-outstream',
   width: 300,
   height: 250,
-  adFormats: const {AdFormat.video},
+  adFormats: const {PrebidAdFormat.video},
   videoPlacementType: VideoPlacementType.inArticle,
   videoListener: PrebidBannerVideoListener(
     onVideoCompleted: () => debugPrint('video completed'),

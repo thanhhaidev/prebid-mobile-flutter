@@ -39,23 +39,6 @@ abstract final class AppFonts {
 /// | danger / dangerBg | #b42318 / #fef3f2 | #fda29b / #3a1714 | |
 @immutable
 class DemoColors extends ThemeExtension<DemoColors> {
-  final Color primary;
-  final Color primaryStrong;
-  final Color ink;
-  final Color inkDeep;
-  final Color secondary;
-  final Color mint;
-  final Color surface;
-  final Color border;
-  final Color muted;
-  final Color codeBg;
-  final Color codeFg;
-  final Color danger;
-  final Color dangerBg;
-  final Color background;
-  final Color text;
-  final Color heading;
-
   const DemoColors({
     required this.primary,
     required this.primaryStrong,
@@ -74,6 +57,22 @@ class DemoColors extends ThemeExtension<DemoColors> {
     required this.text,
     required this.heading,
   });
+  final Color primary;
+  final Color primaryStrong;
+  final Color ink;
+  final Color inkDeep;
+  final Color secondary;
+  final Color mint;
+  final Color surface;
+  final Color border;
+  final Color muted;
+  final Color codeBg;
+  final Color codeFg;
+  final Color danger;
+  final Color dangerBg;
+  final Color background;
+  final Color text;
+  final Color heading;
 
   static const light = DemoColors(
     primary: Color(0xFFF67725),

@@ -20,6 +20,21 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
 /// rendered ([onNativeAdLoaded]); otherwise the GAM ad wins directly
 /// ([onPrimaryAdWinCustom] / [onPrimaryAdWinUnified]).
 class PrebidGamNativeAdListener {
+  /// Creates a [PrebidGamNativeAdListener].
+  const PrebidGamNativeAdListener({
+    this.onFetchDemandSuccess,
+    this.onFetchDemandFailed,
+    this.onCustomAdLoaded,
+    this.onUnifiedAdLoaded,
+    this.onPrimaryAdFailed,
+    this.onNativeAdLoaded,
+    this.onPrimaryAdWinCustom,
+    this.onPrimaryAdWinUnified,
+    this.onAdImpression,
+    this.onAdClicked,
+    this.onAdExpired,
+  });
+
   /// The Prebid auction returned a winning bid (`fetchDemand` succeeded).
   final VoidCallback? onFetchDemandSuccess;
 
@@ -60,21 +75,6 @@ class PrebidGamNativeAdListener {
 
   /// The Prebid native bid expired (per `bid.exp`) before an impression.
   final VoidCallback? onAdExpired;
-
-  /// Creates a [PrebidGamNativeAdListener].
-  const PrebidGamNativeAdListener({
-    this.onFetchDemandSuccess,
-    this.onFetchDemandFailed,
-    this.onCustomAdLoaded,
-    this.onUnifiedAdLoaded,
-    this.onPrimaryAdFailed,
-    this.onNativeAdLoaded,
-    this.onPrimaryAdWinCustom,
-    this.onPrimaryAdWinUnified,
-    this.onAdImpression,
-    this.onAdClicked,
-    this.onAdExpired,
-  });
 }
 
 /// A native ad rendered through **Google Ad Manager** with Prebid demand, using
@@ -97,6 +97,22 @@ class PrebidGamNativeAdListener {
 /// );
 /// ```
 class PrebidGamNativeAd extends StatefulWidget {
+  /// Creates a [PrebidGamNativeAd].
+  const PrebidGamNativeAd({
+    super.key,
+    required this.configId,
+    required this.gamAdUnitId,
+    this.customFormatId,
+    this.width = double.infinity,
+    this.height = 320,
+    this.assets,
+    this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
+    this.listener,
+  });
+
   /// The Prebid Server stored impression config ID.
   final String configId;
 
@@ -132,22 +148,6 @@ class PrebidGamNativeAd extends StatefulWidget {
 
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
-
-  /// Creates a [PrebidGamNativeAd].
-  const PrebidGamNativeAd({
-    super.key,
-    required this.configId,
-    required this.gamAdUnitId,
-    this.customFormatId,
-    this.width = double.infinity,
-    this.height = 320,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.listener,
-  });
 
   @override
   State<PrebidGamNativeAd> createState() => _PrebidGamNativeAdState();

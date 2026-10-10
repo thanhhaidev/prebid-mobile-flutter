@@ -15,6 +15,24 @@
 /// );
 /// ```
 class VideoParameters {
+  /// Creates a [VideoParameters] configuration.
+  const VideoParameters({
+    required this.mimes,
+    this.protocols,
+    this.playbackMethods,
+    this.placement,
+    this.maxDuration,
+    this.minDuration,
+    this.api,
+    this.plcmt,
+    this.startDelay,
+    this.linearity,
+    this.skippable,
+    this.battr,
+    this.minBitrate,
+    this.maxBitrate,
+  });
+
   /// Supported content MIME types (e.g., `["video/mp4"]`).
   final List<String> mimes;
 
@@ -60,24 +78,6 @@ class VideoParameters {
 
   /// Supported API frameworks (e.g., VPAID, MRAID).
   final List<VideoApi>? api;
-
-  /// Creates a [VideoParameters] configuration.
-  const VideoParameters({
-    required this.mimes,
-    this.protocols,
-    this.playbackMethods,
-    this.placement,
-    this.maxDuration,
-    this.minDuration,
-    this.api,
-    this.plcmt,
-    this.startDelay,
-    this.linearity,
-    this.skippable,
-    this.battr,
-    this.minBitrate,
-    this.maxBitrate,
-  });
 
   /// Method-channel payload, for the GAM / AdMob / MAX companion packages.
   Map<String, Object> toMap() => {

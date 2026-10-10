@@ -8,7 +8,7 @@ import AppLovinSDK
 /// is a `MANativeAdView` with tag-bound asset views that the MAX SDK populates;
 /// Prebid's `MediationNativeAdUnit` runs the auction via the Prebid native
 /// adapter. Rendering through the SDK's native view keeps tracking intact.
-class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -34,7 +34,7 @@ class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, MAAdRevenueDelegate {
+final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, MAAdRevenueDelegate {
 
     private let container = UIView()
     private let methodChannel: FlutterMethodChannel

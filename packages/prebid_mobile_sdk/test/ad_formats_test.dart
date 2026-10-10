@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
@@ -20,7 +20,7 @@ void main() {
     test('loadAd, show, and destroy calls pigeon api', () async {
       final ad = PrebidInterstitialAd(
         configId: 'config-1',
-        adFormats: {AdFormat.banner, AdFormat.video},
+        adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
         impOrtbConfig: '{"ext":{"gpid":"/1/i"}}',
       );
 
@@ -127,7 +127,7 @@ void main() {
     test('loadAd and destroy call api', () async {
       final ad = PrebidNativeAd(
         configId: 'config-3',
-        assets: [const NativeAsset.title(length: 90)],
+        assets: [const NativeAsset.title()],
       );
 
       await ad.loadAd();

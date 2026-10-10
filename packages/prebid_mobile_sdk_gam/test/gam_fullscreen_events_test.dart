@@ -62,7 +62,7 @@ void main() {
       await PrebidGamInterstitialAd(
         configId: 'c',
         gamAdUnitId: 'u',
-        adFormats: {AdFormat.banner, AdFormat.video},
+        adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
       ).loadAd();
       expect(
         h.argsOf('load')['adFormats'],

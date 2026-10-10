@@ -7,7 +7,7 @@ import PrebidMobileGAMEventHandlers
 /// PlatformView factory for GAM-rendered banners. Mirrors the core
 /// BannerAdViewFactory but builds the BannerView with a `GAMBannerEventHandler`
 /// so Google Ad Manager renders the ad.
-class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -34,7 +34,7 @@ class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate,
+final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate,
     BannerViewVideoPlaybackDelegate {
 
     private let bannerView: PrebidMobile.BannerView

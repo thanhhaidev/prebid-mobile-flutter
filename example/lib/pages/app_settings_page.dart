@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../demo/demo_screen.dart' show DemoScaffold;
-import '../utils/app_settings.dart';
-import '../widgets/common.dart';
+import '../services/app_settings.dart';
+import '../widgets/section_header.dart';
 
 /// Utilities → "App settings" (title "App Settings") — the original
 /// `AppSettingsFragment` (spec §4.1). Its only setting: "Show Progress

@@ -4,7 +4,7 @@ import UIKit
 /// Companion plugin that adds AppLovin MAX mediation on top of the core
 /// prebid_mobile_sdk plugin. Registers the MAX banner PlatformView factory and
 /// the MAX interstitial method channel.
-public class PrebidMobileSdkMaxPlugin: NSObject, FlutterPlugin {
+public final class PrebidMobileSdkMaxPlugin: NSObject, FlutterPlugin {
 
     /// Each engine's managers, kept by its plugin instance (published to the
     /// registrar): shared statics would be replaced by a second engine and

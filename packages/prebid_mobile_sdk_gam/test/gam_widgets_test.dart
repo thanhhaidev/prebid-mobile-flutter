@@ -54,16 +54,16 @@ void main() {
 
     await tester.pumpWidget(
       _host(
-        PrebidGamBannerAd(
+        const PrebidGamBannerAd(
           configId: 'config-b',
           gamAdUnitId: '/1/banner',
           width: 320,
           height: 50,
-          additionalSizes: const [Size(300, 250), Size(728, 90)],
-          adFormats: {AdFormat.banner, AdFormat.video},
+          additionalSizes: [Size(300, 250), Size(728, 90)],
+          adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
           pbAdSlot: '/1/banner-slot',
           impOrtbConfig: '{"ext":{"gpid":"/1/banner"}}',
-          videoParameters: const VideoParameters(
+          videoParameters: VideoParameters(
             mimes: ['video/mp4'],
             plcmt: VideoPlcmt.accompanyingContent,
             maxDuration: 30,

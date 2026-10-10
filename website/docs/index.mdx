@@ -53,7 +53,7 @@ Future<void> main() async {
     prebidServerUrl: 'https://prebid-server-test-j.prebid.org/openrtb2/auction',
     accountId: '0689a263-318d-448b-a3d4-b02e8a709d9d',
     completion: (status, error) {
-      if (status == InitializationStatus.failed) {
+      if (status == PrebidInitializationStatus.failed) {
         debugPrint('Prebid init failed: $error');
       }
     },

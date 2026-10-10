@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
-import '../../utils/app_settings.dart';
-import '../../utils/bid_inspector.dart';
+import '../../services/app_settings.dart';
+import '../../services/bid_inspector.dart';
 import 'bid_inspector_page.dart';
 import 'targeting_data_page.dart';
 
@@ -113,10 +113,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(switch (status) {
-              InitializationStatus.succeeded => '✅ SDK re-initialized',
-              InitializationStatus.serverStatusWarning =>
+              PrebidInitializationStatus.succeeded => '✅ SDK re-initialized',
+              PrebidInitializationStatus.serverStatusWarning =>
                 '⚠️ SDK ready (warning)',
-              InitializationStatus.failed => '❌ Failed: ${error ?? "unknown"}',
+              PrebidInitializationStatus.failed =>
+                '❌ Failed: ${error ?? "unknown"}',
             }),
             duration: const Duration(seconds: 2),
           ),

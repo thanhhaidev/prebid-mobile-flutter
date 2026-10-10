@@ -110,7 +110,7 @@ void main() {
       await PrebidAdMobInterstitialAd(
         configId: 'c',
         adMobAdUnitId: 'u',
-        adFormats: const {AdFormat.banner, AdFormat.video},
+        adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
       ).loadAd();
       final args = h.argsOf('load');
       expect(args['adFormats'], ['banner', 'video']);

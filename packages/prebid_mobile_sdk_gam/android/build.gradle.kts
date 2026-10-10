@@ -1,4 +1,4 @@
-group = "com.prebid.prebid_mobile_sdk_gam"
+group = "io.github.thanhhaidev.prebid_mobile_sdk_gam"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -34,7 +34,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.prebid.prebid_mobile_sdk_gam"
+    namespace = "io.github.thanhhaidev.prebid_mobile_sdk_gam"
 
     compileSdk = 36
 

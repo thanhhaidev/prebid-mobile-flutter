@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.prebid.prebid_mobile_flutter_example"
+    namespace = "io.github.thanhhaidev.prebid_mobile_sdk_example"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.prebid.prebid_mobile_flutter_example"
+        applicationId = "io.github.thanhhaidev.prebid_mobile_sdk_example"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

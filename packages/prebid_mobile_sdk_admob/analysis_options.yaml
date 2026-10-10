@@ -1,3 +1,6 @@
+# Shared lint set of the repo. Every package and the example carry the same
+# rules (a published package can't include a file outside itself); keep the
+# copies in sync. See CONTRIBUTING.md → "Code style".
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
@@ -5,3 +8,37 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+
+linter:
+  rules:
+    - public_member_api_docs
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - avoid_redundant_argument_values
+    - avoid_slow_async_io
+    - avoid_unused_constructor_parameters
+    - cancel_subscriptions
+    - directives_ordering
+    - empty_catches
+    - omit_local_variable_types
+    - only_throw_errors
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_relative_imports
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - sort_constructors_first
+    - sort_unnamed_constructors_first
+    - type_annotate_public_apis
+    - unawaited_futures
+    - unnecessary_await_in_return
+    - unnecessary_lambdas
+    - unnecessary_library_name
+    - unnecessary_parenthesis
+    - unnecessary_raw_strings
+    - unnecessary_statements
+    - use_named_constants
+    - use_super_parameters

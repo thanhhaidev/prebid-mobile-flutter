@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'app.dart';
-import 'platform/sdk_initializer.dart';
-import 'utils/app_settings.dart';
+import 'services/app_settings.dart';
+import 'services/sdk_initializer.dart';
 
 /// Entry point. Structure of the app (see README.md):
 ///

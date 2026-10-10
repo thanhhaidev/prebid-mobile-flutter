@@ -2,9 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
-import 'package:prebid_mobile_sdk/src/ad_event_router.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
-import 'package:prebid_mobile_sdk/src/multiformat_event_router.dart';
+import 'package:prebid_mobile_sdk/src/internal/ad_event_router.dart';
+import 'package:prebid_mobile_sdk/src/internal/multiformat_event_router.dart';
 
 import 'mock_host_api.mocks.dart';
 
@@ -78,7 +78,7 @@ void main() {
     test('loadAd sends formats, video parameters and controls', () async {
       final ad = PrebidInterstitialAd(
         configId: 'i',
-        adFormats: {AdFormat.video},
+        adFormats: {PrebidAdFormat.video},
         videoParameters: const VideoParameters(
           mimes: ['video/mp4'],
           maxDuration: 15,
@@ -492,41 +492,40 @@ void main() {
       final banner = <PrebidBidResponse>[];
       final interstitial = <PrebidBidResponse>[];
       final native = <PrebidNativeBidResponse>[];
-      final units = <(dynamic, List<Object>)>[
-        (
-          PrebidBannerAdUnit(
-            configId: 'b',
-            sizes: const [Size(300, 250)],
-            onDemandRefreshed: banner.add,
-          ),
-          banner,
-        ),
-        (
-          PrebidInterstitialAdUnit(
-            configId: 'i',
-            sizes: const [Size(320, 480)],
-            onDemandRefreshed: interstitial.add,
-          ),
-          interstitial,
-        ),
-        (
-          PrebidNativeAdUnit(
-            configId: 'n',
-            assets: const [NativeAsset.title()],
-            onDemandRefreshed: native.add,
-          ),
-          native,
-        ),
-      ];
+      final bannerUnit = PrebidBannerAdUnit(
+        configId: 'b',
+        sizes: const [Size(300, 250)],
+        onDemandRefreshed: banner.add,
+      );
+      final interstitialUnit = PrebidInterstitialAdUnit(
+        configId: 'i',
+        sizes: const [Size(320, 480)],
+        onDemandRefreshed: interstitial.add,
+      );
+      final nativeUnit = PrebidNativeAdUnit(
+        configId: 'n',
+        assets: const [NativeAsset.title()],
+        onDemandRefreshed: native.add,
+      );
+      final units =
+          <(Future<Object?> Function(), Future<void> Function(), List<Object>)>[
+            (bannerUnit.fetchDemand, bannerUnit.destroy, banner),
+            (
+              interstitialUnit.fetchDemand,
+              interstitialUnit.destroy,
+              interstitial,
+            ),
+            (nativeUnit.fetchDemand, nativeUnit.destroy, native),
+          ];
 
-      for (final (unit, received) in units) {
-        await unit.fetchDemand();
+      for (final (fetchDemand, destroy, received) in units) {
+        await fetchDemand();
         final id = await lastAdId();
-        await unit.destroy();
+        await destroy();
         await refresh(id, 'prebidDemandFetchSuccess');
         expect(received, isEmpty);
 
-        await unit.fetchDemand();
+        await fetchDemand();
         await refresh(id, 'prebidDemandFetchSuccess');
         expect(received, hasLength(1));
       }

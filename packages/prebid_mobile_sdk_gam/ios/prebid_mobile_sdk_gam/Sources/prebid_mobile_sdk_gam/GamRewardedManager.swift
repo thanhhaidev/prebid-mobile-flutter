@@ -3,7 +3,7 @@ import UIKit
 import PrebidMobile
 import PrebidMobileGAMEventHandlers
 
-class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
+final class GamRewardedManager: NSObject, RewardedAdUnitDelegate {
 
     private let channel: FlutterMethodChannel
     private var ads: [Int: RewardedAdUnit] = [:]

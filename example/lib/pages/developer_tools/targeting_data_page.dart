@@ -119,7 +119,7 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
 
   Future<void> _clearAppKeywords() async {
     await PrebidTargeting.clearAppKeywords();
-    setState(() => _appKeywords.clear());
+    setState(_appKeywords.clear);
     _showSnack('Cleared all app keywords');
   }
 
@@ -138,7 +138,7 @@ class _TargetingDataPageState extends State<TargetingDataPage> {
 
   Future<void> _clearExtData() async {
     await PrebidTargeting.clearAppExtData();
-    setState(() => _extDataEntries.clear());
+    setState(_extDataEntries.clear);
     _showSnack('Cleared all ext data');
   }
 

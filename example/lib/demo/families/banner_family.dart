@@ -3,13 +3,16 @@ import 'package:flutter/widgets.dart';
 import '../../data/demo_item.dart';
 import '../screens/banner/banner_layouts.dart';
 import '../screens/banner/banner_screen.dart';
+import '../screens/banner/in_app_banner_screen.dart';
 
-/// Screens of the banner family: A1 (except In-App, which has its own
-/// screen), A2, A3, A4, A5, A6, E and the video feeds of F. Returns `null`
-/// for items this family doesn't handle; [buildDemoScreen] then tries the
+/// Screens of the banner family: A1 (In-App has its own screen), A2, A3,
+/// A4, A5, A6, E and the video feeds of F. Returns `null` for items this
+/// family doesn't handle; [buildDemoScreen] then tries the
 /// next family.
 Widget? buildBannerScreen(DemoItem item) {
   return switch (item.screen) {
+    ScreenType.a1 when item.integration == DemoIntegration.inApp =>
+      InAppBannerScreen(item: item),
     ScreenType.a1 ||
     ScreenType.a2 ||
     ScreenType.a5 ||

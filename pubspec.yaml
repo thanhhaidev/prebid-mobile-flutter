@@ -28,9 +28,11 @@ melos:
 
   scripts:
     analyze:
-      description: Analyze all packages.
+      description: Check the shared lint rules, then analyze all packages.
       # One at a time: parallel `flutter` commands fight over the startup lock.
-      run: dart run melos exec --concurrency=1 -- flutter analyze --no-pub
+      run: >-
+        tool/check_lints.sh &&
+        dart run melos exec --concurrency=1 -- flutter analyze --no-pub
 
     test:
       description: Run tests in packages that have a test/ directory.

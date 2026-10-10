@@ -2,16 +2,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prebid_mobile_sdk_example/data/demo_items.dart';
 import 'package:prebid_mobile_sdk_example/demo/demo_router.dart';
-import 'package:prebid_mobile_sdk_example/demo/screens/placeholder_screen.dart';
 import 'package:prebid_mobile_sdk_example/demo/screens/special/instream_screen.dart';
 
 void main() {
-  test('every test case opens a real screen (no placeholder)', () {
-    final placeholders = [
-      for (final item in demoItems)
-        if (buildDemoScreen(item) is PlaceholderScreen) item.label,
-    ];
-    expect(placeholders, isEmpty);
+  test('every test case has a screen', () {
+    for (final item in demoItems) {
+      expect(() => buildDemoScreen(item), returnsNormally, reason: item.label);
+    }
   });
 
   group('generateInstreamUriForGam (Prebid Util port)', () {

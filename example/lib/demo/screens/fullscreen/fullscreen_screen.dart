@@ -213,11 +213,10 @@ class _FullscreenScreenState extends DemoScreenState<FullscreenScreen> {
 
 /// load / show / destroy of any fullscreen ad.
 class _FullscreenAd {
+  const _FullscreenAd(this.load, this.show, this.destroy);
   final Future<void> Function() load;
   final Future<void> Function() show;
   final Future<void> Function() destroy;
-
-  const _FullscreenAd(this.load, this.show, this.destroy);
 }
 
 /// GAM Original fullscreen: the Prebid auction, then a Google Ad Manager
@@ -227,8 +226,6 @@ class _FullscreenAd {
 ///   banner/video config with both formats), min size 30 %;
 /// - rewarded: `RewardedVideoAdUnit`, or the multiformat rewarded request.
 class _OriginalFullscreenAd extends _FullscreenAd {
-  _OriginalFullscreenAd._(super.load, super.show, super.destroy);
-
   factory _OriginalFullscreenAd({
     required DemoItem item,
     required String configId,
@@ -241,17 +238,19 @@ class _OriginalFullscreenAd extends _FullscreenAd {
     gma.RewardedAd? rewardedAd;
     final formats =
         item.adFormats ??
-        (rewarded ? const {AdFormat.video} : const {AdFormat.banner});
+        (rewarded
+            ? const {PrebidAdFormat.video}
+            : const {PrebidAdFormat.banner});
 
     Future<void> load() async {
       unit = PrebidMultiformatAd(
         configId: configId,
         isInterstitial: !rewarded,
         isRewarded: rewarded,
-        bannerSizes: formats.contains(AdFormat.banner)
+        bannerSizes: formats.contains(PrebidAdFormat.banner)
             ? const [Size(320, 480)]
             : null,
-        videoParameters: formats.contains(AdFormat.video)
+        videoParameters: formats.contains(PrebidAdFormat.video)
             ? (item.videoParameters ?? kMp4Video)
             : null,
       );
@@ -300,4 +299,5 @@ class _OriginalFullscreenAd extends _FullscreenAd {
 
     return _OriginalFullscreenAd._(load, show, destroy);
   }
+  _OriginalFullscreenAd._(super.load, super.show, super.destroy);
 }

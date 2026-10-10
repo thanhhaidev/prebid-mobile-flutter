@@ -14,7 +14,7 @@ void main() {
       final ad = PrebidGamInterstitialAd(
         configId: 'config-i',
         gamAdUnitId: '/1/inter',
-        adFormats: {AdFormat.video},
+        adFormats: {PrebidAdFormat.video},
         customTargeting: const {'section': 'news'},
         controls: const PrebidFullscreenControls(
           closeButtonPosition: PrebidButtonPosition.topLeft,

@@ -7,7 +7,7 @@ import PrebidMobileAdMobAdapters
 /// PlatformView factory for AdMob-mediated banners. The rendered view is the
 /// Google Mobile Ads `BannerView`; Prebid's `MediationBannerAdUnit` runs the
 /// auction and passes the winning bid to AdMob via the Prebid AdMob adapter.
-class AdMobBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class AdMobBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -34,7 +34,7 @@ class AdMobBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.BannerViewDelegate {
+final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.BannerViewDelegate {
 
     private let gadBanner: GoogleMobileAds.BannerView
     private let methodChannel: FlutterMethodChannel

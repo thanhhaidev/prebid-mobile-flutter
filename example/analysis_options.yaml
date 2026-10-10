@@ -1,38 +1,45 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+# Shared lint set of the repo. Every package and the example carry the same
+# rules (a published package can't include a file outside itself); keep the
+# copies in sync. See CONTRIBUTING.md → "Code style".
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
-  # Exclude build artifacts. The iOS SPM build checks out a full copy of
-  # google_mobile_ads under build/ios/SourcePackages/, which would otherwise be
-  # analyzed and clash with the pub-cache copy (duplicate types / ambiguous
-  # imports). build/ is gitignored but present on disk after a build.
   exclude:
+    # The iOS SPM build checks out google_mobile_ads under build/; analyzing it
+    # clashes with the pub-cache copy.
     - build/**
     - android/**
     - ios/**
 
 linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
-
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - avoid_redundant_argument_values
+    - avoid_slow_async_io
+    - avoid_unused_constructor_parameters
+    - cancel_subscriptions
+    - directives_ordering
+    - empty_catches
+    - omit_local_variable_types
+    - only_throw_errors
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_relative_imports
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - sort_constructors_first
+    - sort_unnamed_constructors_first
+    - type_annotate_public_apis
+    - unawaited_futures
+    - unnecessary_await_in_return
+    - unnecessary_lambdas
+    - unnecessary_library_name
+    - unnecessary_parenthesis
+    - unnecessary_raw_strings
+    - unnecessary_statements
+    - use_named_constants
+    - use_super_parameters

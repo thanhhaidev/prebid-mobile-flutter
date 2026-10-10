@@ -17,7 +17,7 @@ void main() {
   group('public library surface', () {
     final library = File('lib/prebid_mobile_sdk.dart').readAsStringSync();
     final exported = RegExp(
-      r"^export '([^']+)'",
+      "^export '([^']+)'",
       multiLine: true,
     ).allMatches(library).map((m) => m.group(1)!).toList();
 
@@ -278,7 +278,7 @@ void main() {
     });
 
     test('initializeSdk maps every status and the error', () async {
-      final results = <(InitializationStatus, String?)>[];
+      final results = <(PrebidInitializationStatus, String?)>[];
       for (final (status, error) in [
         ('succeeded', null),
         ('serverStatusWarning', 'warn'),
@@ -295,10 +295,10 @@ void main() {
         );
       }
       expect(results, [
-        (InitializationStatus.succeeded, null),
-        (InitializationStatus.serverStatusWarning, 'warn'),
-        (InitializationStatus.failed, 'down'),
-        (InitializationStatus.failed, null),
+        (PrebidInitializationStatus.succeeded, null),
+        (PrebidInitializationStatus.serverStatusWarning, 'warn'),
+        (PrebidInitializationStatus.failed, 'down'),
+        (PrebidInitializationStatus.failed, null),
       ]);
       expect(PrebidMobile.isSdkInitialized, isFalse);
     });

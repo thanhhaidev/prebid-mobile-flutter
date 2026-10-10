@@ -4,7 +4,7 @@ import UIKit
 /// Companion plugin that adds Google AdMob mediation on top of the core
 /// prebid_mobile_sdk plugin. Registers the AdMob banner PlatformView factory and
 /// the AdMob interstitial method channel.
-public class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
+public final class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
 
     /// Each engine's managers, kept by its plugin instance (published to the
     /// registrar): shared statics would be replaced by a second engine and

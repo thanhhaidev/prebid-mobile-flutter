@@ -9,7 +9,7 @@ import PrebidMobileAdMobAdapters
 /// Prebid's `MediationNativeAdUnit` runs the auction via the Prebid native
 /// adapter. Rendering through the SDK's native view keeps impression/click
 /// tracking intact.
-class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -35,7 +35,7 @@ class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate,
+final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate,
     GoogleMobileAds.NativeAdDelegate {
 
     private let nativeAdView = GoogleMobileAds.NativeAdView()

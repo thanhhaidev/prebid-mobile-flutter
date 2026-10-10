@@ -21,13 +21,6 @@ import 'banner_screen.dart' show gamSizesFor;
 /// itself). The banner takes the size GAM reports after loading, standing in
 /// for `AdViewUtils.findPrebidCreativeSize`.
 class OriginalBannerAd extends StatefulWidget {
-  final DemoItem item;
-  final AdConfiguration config;
-  final int? refreshSeconds;
-  final VoidCallback? onLoaded;
-  final void Function(String error)? onFailed;
-  final VoidCallback? onClicked;
-
   const OriginalBannerAd({
     super.key,
     required this.item,
@@ -37,6 +30,12 @@ class OriginalBannerAd extends StatefulWidget {
     this.onFailed,
     this.onClicked,
   });
+  final DemoItem item;
+  final AdConfiguration config;
+  final int? refreshSeconds;
+  final VoidCallback? onLoaded;
+  final void Function(String error)? onFailed;
+  final VoidCallback? onClicked;
 
   @override
   State<OriginalBannerAd> createState() => OriginalBannerAdState();
@@ -59,18 +58,18 @@ class OriginalBannerAdState extends State<OriginalBannerAd> {
   }
 
   PrebidMultiformatAd _createUnit() {
-    final formats = _item.adFormats ?? const {AdFormat.banner};
+    final formats = _item.adFormats ?? const {PrebidAdFormat.banner};
     final c = widget.config;
     return PrebidMultiformatAd(
       configId: c.configId,
-      bannerSizes: _native || !formats.contains(AdFormat.banner)
+      bannerSizes: _native || !formats.contains(PrebidAdFormat.banner)
           ? null
           : [
               Size(c.width.toDouble(), c.height.toDouble()),
               ...?_item.additionalSizes,
             ],
       // The video size comes from the stored request on Prebid Server.
-      videoParameters: formats.contains(AdFormat.video)
+      videoParameters: formats.contains(PrebidAdFormat.video)
           ? (_item.videoParameters ?? kMp4Video)
           : null,
       nativeAssets: _native ? kStandardNativeAssets : null,

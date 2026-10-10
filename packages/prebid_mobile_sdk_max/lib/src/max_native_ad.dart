@@ -13,6 +13,15 @@ import 'max_listeners.dart';
 
 /// Listener for [PrebidMaxNativeAd] events.
 class PrebidMaxNativeAdListener {
+  /// Creates a [PrebidMaxNativeAdListener].
+  const PrebidMaxNativeAdListener({
+    this.onAdLoaded,
+    this.onAdImpression,
+    this.onAdClicked,
+    this.onAdFailed,
+    this.onAdRevenuePaid,
+  });
+
   /// The native ad loaded and is rendered.
   final VoidCallback? onAdLoaded;
 
@@ -27,15 +36,6 @@ class PrebidMaxNativeAdListener {
 
   /// MAX paid revenue for an impression (it also fires [onAdImpression]).
   final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
-
-  /// Creates a [PrebidMaxNativeAdListener].
-  const PrebidMaxNativeAdListener({
-    this.onAdLoaded,
-    this.onAdImpression,
-    this.onAdClicked,
-    this.onAdFailed,
-    this.onAdRevenuePaid,
-  });
 }
 
 /// A native ad mediated by **AppLovin MAX** with Prebid demand.
@@ -46,6 +46,20 @@ class PrebidMaxNativeAdListener {
 /// that the plugin populates. Prebid's `MediationNativeAdUnit` runs the auction
 /// and hands the winning bid to MAX via the Prebid native adapter.
 class PrebidMaxNativeAd extends StatefulWidget {
+  /// Creates a [PrebidMaxNativeAd] widget.
+  const PrebidMaxNativeAd({
+    super.key,
+    required this.configId,
+    required this.maxAdUnitId,
+    this.height = 320,
+    this.assets,
+    this.eventTrackers,
+    this.context,
+    this.contextSubType,
+    this.placementType,
+    this.listener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -75,20 +89,6 @@ class PrebidMaxNativeAd extends StatefulWidget {
 
   /// Listener for native ad events.
   final PrebidMaxNativeAdListener? listener;
-
-  /// Creates a [PrebidMaxNativeAd] widget.
-  const PrebidMaxNativeAd({
-    super.key,
-    required this.configId,
-    required this.maxAdUnitId,
-    this.height = 320,
-    this.assets,
-    this.eventTrackers,
-    this.context,
-    this.contextSubType,
-    this.placementType,
-    this.listener,
-  });
 
   @override
   State<PrebidMaxNativeAd> createState() => _PrebidMaxNativeAdState();

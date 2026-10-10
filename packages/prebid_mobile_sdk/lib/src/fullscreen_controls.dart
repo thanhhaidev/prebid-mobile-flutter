@@ -17,7 +17,7 @@ enum PrebidButtonPosition {
 /// ```dart
 /// PrebidInterstitialAd(
 ///   configId: 'prebid-demo-video-interstitial-320-480',
-///   adFormats: {AdFormat.video},
+///   adFormats: {PrebidAdFormat.video},
 ///   controls: const PrebidFullscreenControls(
 ///     closeButtonPosition: PrebidButtonPosition.topLeft,
 ///     skipDelay: 5,
@@ -31,6 +31,20 @@ enum PrebidButtonPosition {
 /// and to rewarded ads on Android only; [isAutoCloseOnCompletionEnabled] is
 /// iOS only; [minSizePercentage] applies to interstitials only.
 class PrebidFullscreenControls {
+  /// Creates [PrebidFullscreenControls].
+  const PrebidFullscreenControls({
+    this.closeButtonArea,
+    this.closeButtonPosition,
+    this.skipButtonArea,
+    this.skipButtonPosition,
+    this.skipDelay,
+    this.isMuted,
+    this.isSoundButtonVisible,
+    this.isAutoCloseOnCompletionEnabled,
+    this.minSizePercentage,
+    this.supportSKOverlay,
+  });
+
   /// Close button size as a fraction of the screen, `0..1`.
   final double? closeButtonArea;
 
@@ -61,20 +75,6 @@ class PrebidFullscreenControls {
 
   /// iOS only: present an SKOverlay (App Store sheet) for SKAdNetwork ads.
   final bool? supportSKOverlay;
-
-  /// Creates [PrebidFullscreenControls].
-  const PrebidFullscreenControls({
-    this.closeButtonArea,
-    this.closeButtonPosition,
-    this.skipButtonArea,
-    this.skipButtonPosition,
-    this.skipDelay,
-    this.isMuted,
-    this.isSoundButtonVisible,
-    this.isAutoCloseOnCompletionEnabled,
-    this.minSizePercentage,
-    this.supportSKOverlay,
-  });
 
   /// The method-channel form sent by the GAM / AdMob / MAX companion
   /// packages. Unset fields are omitted; the min size is sent as

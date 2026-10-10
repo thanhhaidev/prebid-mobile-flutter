@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/multiformat_event_router.dart';
 import 'internal/pigeon_conversions.dart';
-import 'multiformat_event_router.dart';
 import 'native_ad.dart';
 import 'native_ad_enums.dart';
 import 'prebid_mobile.dart';
@@ -13,6 +13,16 @@ import 'video_parameters.dart';
 
 /// Result of a multiformat bid request.
 class PrebidMultiformatBidResponse {
+  /// Creates a [PrebidMultiformatBidResponse].
+  const PrebidMultiformatBidResponse({
+    required this.resultCode,
+    this.winningFormat,
+    this.targetingKeywords,
+    this.nativeAdCacheId,
+    this.exp,
+    this.topBidFiltered = false,
+  });
+
   /// The Prebid result code, the same string on Android and iOS:
   ///
   /// - `prebidDemandFetchSuccess` — a bid won ([isSuccess]).
@@ -48,16 +58,6 @@ class PrebidMultiformatBidResponse {
 
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
-
-  /// Creates a [PrebidMultiformatBidResponse].
-  const PrebidMultiformatBidResponse({
-    required this.resultCode,
-    this.winningFormat,
-    this.targetingKeywords,
-    this.nativeAdCacheId,
-    this.exp,
-    this.topBidFiltered = false,
-  });
 }
 
 /// A multiformat ad unit that combines banner, video, and native in one
@@ -90,6 +90,26 @@ class PrebidMultiformatBidResponse {
 /// calling [fetchDemand] after [destroy] runs a fresh auction and
 /// auto-refreshed results reach [onDemandRefreshed] again.
 class PrebidMultiformatAd {
+  /// Creates a [PrebidMultiformatAd].
+  PrebidMultiformatAd({
+    required this.configId,
+    this.bannerSizes,
+    this.videoParameters,
+    this.nativeAssets,
+    this.nativeEventTrackers,
+    this.isInterstitial = false,
+    this.isRewarded = false,
+    this.gpid,
+    this.adPosition,
+    this.nativeContext,
+    this.nativeContextSubType,
+    this.nativePlacementType,
+    this.trackInterstitialImpression = false,
+    this.onDemandRefreshed,
+  }) : _adId = _nextId++ {
+    _register();
+  }
+
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static MultiformatAdHostApi api = MultiformatAdHostApi();
@@ -144,26 +164,6 @@ class PrebidMultiformatAd {
   /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).
   /// The first auction's result is returned by [fetchDemand].
   final void Function(PrebidMultiformatBidResponse response)? onDemandRefreshed;
-
-  /// Creates a [PrebidMultiformatAd].
-  PrebidMultiformatAd({
-    required this.configId,
-    this.bannerSizes,
-    this.videoParameters,
-    this.nativeAssets,
-    this.nativeEventTrackers,
-    this.isInterstitial = false,
-    this.isRewarded = false,
-    this.gpid,
-    this.adPosition,
-    this.nativeContext,
-    this.nativeContextSubType,
-    this.nativePlacementType,
-    this.trackInterstitialImpression = false,
-    this.onDemandRefreshed,
-  }) : _adId = _nextId++ {
-    _register();
-  }
 
   /// Routes auto-refreshed results to [onDemandRefreshed]. Idempotent;
   /// [destroy] undoes it and [fetchDemand] redoes it.

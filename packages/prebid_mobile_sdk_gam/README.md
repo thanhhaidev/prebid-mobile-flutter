@@ -161,7 +161,7 @@ The banner also mirrors the core `PrebidBannerAd` request options:
 | Parameter | Description |
 |---|---|
 | `additionalSizes` | Extra sizes besides `width` x `height` (multisize). All sizes go to the GAM event handler as valid ad sizes and Prebid requests them all. |
-| `adFormats` | `{AdFormat.banner, AdFormat.video}` for a multiformat banner (Prebid 3.4); overrides `isVideo`. |
+| `adFormats` | `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat banner (Prebid 3.4); overrides `isVideo`. |
 | `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). |
 | `impOrtbConfig` | Impression-level OpenRTB JSON merged into the `imp`. |
 | `videoParameters` | OpenRTB video parameters for outstream video. **iOS only** — Prebid Android's `BannerView` has no video-parameters setter. |

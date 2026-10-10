@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
-        AdFormat,
+        PrebidAdFormat,
         PrebidFullscreenControls,
         PrebidInterstitialAdListener,
         VideoParameters;
@@ -54,6 +54,17 @@ class _MaxInterstitialRouter {
 /// await interstitial.loadAd();
 /// ```
 class PrebidMaxInterstitialAd {
+  /// Creates a [PrebidMaxInterstitialAd].
+  PrebidMaxInterstitialAd({
+    required this.configId,
+    required this.maxAdUnitId,
+    this.isVideo = false,
+    this.adFormats,
+    this.controls,
+    this.impOrtbConfig,
+    this.videoParameters,
+    this.listener,
+  }) : _adId = _nextId++;
   static int _nextId = 7000000;
 
   final int _adId;
@@ -70,10 +81,10 @@ class PrebidMaxInterstitialAd {
   /// Ignored when [adFormats] is set.
   final bool isVideo;
 
-  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// Formats to request — e.g. `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a
   /// multiformat interstitial (the winning bid decides the creative).
   /// Overrides [isVideo] when set; an empty set falls back to [isVideo].
-  final Set<AdFormat>? adFormats;
+  final Set<PrebidAdFormat>? adFormats;
 
   /// Close / skip button, sound and (interstitial) minimum-size controls.
   final PrebidFullscreenControls? controls;
@@ -98,18 +109,6 @@ class PrebidMaxInterstitialAd {
 
   /// Whether the interstitial has loaded and is ready to [show].
   bool get isLoaded => _loaded;
-
-  /// Creates a [PrebidMaxInterstitialAd].
-  PrebidMaxInterstitialAd({
-    required this.configId,
-    required this.maxAdUnitId,
-    this.isVideo = false,
-    this.adFormats,
-    this.controls,
-    this.impOrtbConfig,
-    this.videoParameters,
-    this.listener,
-  }) : _adId = _nextId++;
 
   /// Requests the ad. [PrebidInterstitialAdListener.onAdLoaded] fires when it is
   /// ready to [show].

@@ -77,7 +77,7 @@ interstitial = PrebidAdMobInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{AdFormat.banner, AdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
+`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
 
 ## Native
 

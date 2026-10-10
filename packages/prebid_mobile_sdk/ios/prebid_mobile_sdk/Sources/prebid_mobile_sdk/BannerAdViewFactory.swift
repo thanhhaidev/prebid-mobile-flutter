@@ -2,7 +2,7 @@ import Flutter
 import UIKit
 import PrebidMobile
 
-class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     
     private let messenger: FlutterBinaryMessenger
     
@@ -29,7 +29,7 @@ class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, BannerViewVideoPlaybackDelegate {
+final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, BannerViewVideoPlaybackDelegate {
 
     private let bannerView: BannerView
     private let methodChannel: FlutterMethodChannel
@@ -56,7 +56,7 @@ class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, B
         let adSize = CGSize(width: width, height: height)
 
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_flutter/banner_ad_\(viewId)",
+            name: "prebid_mobile_sdk/banner_ad_\(viewId)",
             binaryMessenger: messenger
         )
 

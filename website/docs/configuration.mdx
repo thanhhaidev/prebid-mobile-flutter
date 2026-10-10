@@ -20,9 +20,9 @@ await PrebidMobile.initializeSdk(
 
 | Status | Meaning |
 | --- | --- |
-| `InitializationStatus.succeeded` | Ready. Also reported when the status check is disabled. |
-| `InitializationStatus.serverStatusWarning` | Prebid Server's `/status` endpoint didn't answer as expected; requests still go out. |
-| `InitializationStatus.failed` | The SDK couldn't initialize (for example an invalid server URL). |
+| `PrebidInitializationStatus.succeeded` | Ready. Also reported when the status check is disabled. |
+| `PrebidInitializationStatus.serverStatusWarning` | Prebid Server's `/status` endpoint didn't answer as expected; requests still go out. |
+| `PrebidInitializationStatus.failed` | The SDK couldn't initialize (for example an invalid server URL). |
 
 - Calling `initializeSdk` again (for example after a hot restart) completes immediately and applies the new server URL.
 - `nonTrackingUrl` <Only platform="ios" /> is used instead of `prebidServerUrl` while the user hasn't authorized tracking (App Tracking Transparency).

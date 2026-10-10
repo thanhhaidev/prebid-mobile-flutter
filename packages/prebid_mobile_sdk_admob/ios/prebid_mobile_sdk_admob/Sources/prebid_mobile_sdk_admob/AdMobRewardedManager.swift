@@ -8,7 +8,7 @@ import PrebidMobileAdMobAdapters
 /// `prebid_mobile_sdk_admob/rewarded` method channel. Each ad is keyed by an
 /// `adId` allocated on the Dart side; native events (including the reward) are
 /// pushed back over the same channel.
-class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
+final class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
 
     private let channel: FlutterMethodChannel
 

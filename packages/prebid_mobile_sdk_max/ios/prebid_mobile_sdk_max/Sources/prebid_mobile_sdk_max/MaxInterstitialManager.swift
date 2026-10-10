@@ -57,7 +57,7 @@ final class MaxAdEventProxy: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate
 /// `prebid_mobile_sdk_max/interstitial` method channel. Each ad is keyed by an
 /// `adId` allocated on the Dart side; native events are pushed back over the
 /// same channel.
-class MaxInterstitialManager: NSObject {
+final class MaxInterstitialManager: NSObject {
 
     private let channel: FlutterMethodChannel
 

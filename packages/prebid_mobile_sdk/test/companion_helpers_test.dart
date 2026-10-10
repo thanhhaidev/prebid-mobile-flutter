@@ -4,7 +4,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 void main() {
   group('Channel maps used by the companion packages', () {
     test('NativeAsset.toMap carries type ids and omits unset fields', () {
-      expect(const NativeAsset.title(length: 90, required: true).toMap(), {
+      expect(const NativeAsset.title(required: true).toMap(), {
         'assetType': 'title',
         'required': true,
         'titleLength': 90,

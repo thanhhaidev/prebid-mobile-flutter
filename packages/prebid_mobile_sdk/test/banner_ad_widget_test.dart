@@ -6,7 +6,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import 'fake_platform_views.dart';
 
-const _prefix = 'prebid_mobile_flutter/banner_ad';
+const _prefix = 'prebid_mobile_sdk/banner_ad';
 final _ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
 Widget _host(Widget child) => Directionality(
@@ -36,7 +36,7 @@ void main() {
             width: 320,
             height: 50,
             additionalSizes: [Size(300, 250)],
-            adFormats: {AdFormat.banner, AdFormat.video},
+            adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
             pbAdSlot: '/slot',
             adPosition: PrebidAdPosition.header,
             videoParameters: VideoParameters(mimes: ['video/mp4']),

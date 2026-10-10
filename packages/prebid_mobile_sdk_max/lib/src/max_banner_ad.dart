@@ -14,6 +14,23 @@ import 'max_testing.dart';
 /// creative or a competing MAX creative. Contrast with the core
 /// `PrebidBannerAd`, where the Prebid SDK renders directly.
 class PrebidMaxBannerAd extends StatefulWidget {
+  /// Creates a [PrebidMaxBannerAd] widget.
+  const PrebidMaxBannerAd({
+    super.key,
+    required this.configId,
+    required this.maxAdUnitId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.adaptive = false,
+    this.refreshIntervalSeconds,
+    this.autoLoad = true,
+    this.controller,
+    this.adPosition,
+    this.impOrtbConfig,
+    this.listener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -67,23 +84,6 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
   /// also get MAX's expand / collapse, display-failure and revenue events.
   final PrebidBannerAdListener? listener;
-
-  /// Creates a [PrebidMaxBannerAd] widget.
-  const PrebidMaxBannerAd({
-    super.key,
-    required this.configId,
-    required this.maxAdUnitId,
-    required this.width,
-    required this.height,
-    this.additionalSizes,
-    this.adaptive = false,
-    this.refreshIntervalSeconds,
-    this.autoLoad = true,
-    this.controller,
-    this.adPosition,
-    this.impOrtbConfig,
-    this.listener,
-  });
 
   @override
   State<PrebidMaxBannerAd> createState() => _PrebidMaxBannerAdState();

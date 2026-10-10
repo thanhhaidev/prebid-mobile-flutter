@@ -228,7 +228,7 @@ void main() {
       final ad = PrebidMaxInterstitialAd(
         configId: 'c',
         maxAdUnitId: 'u',
-        adFormats: const {AdFormat.banner, AdFormat.video},
+        adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
         listener: PrebidMaxInterstitialAdListener(
           onAdRevenuePaid: (r) => revenues.add(r.revenue),
         ),

@@ -4,7 +4,7 @@ import UIKit
 /// Companion plugin that adds Google Ad Manager (GAM) rendering on top of the
 /// core prebid_mobile_sdk plugin. Registers the GAM banner PlatformView factory
 /// and the GAM interstitial method channel.
-public class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
+public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
     /// Each engine's managers, kept by its plugin instance (published to the
     /// registrar): shared statics would be replaced by a second engine and

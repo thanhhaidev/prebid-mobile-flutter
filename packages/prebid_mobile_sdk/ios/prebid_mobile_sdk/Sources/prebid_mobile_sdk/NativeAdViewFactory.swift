@@ -73,7 +73,7 @@ private final class NativeAdContainer: UIView {
 /// PlatformView factory for `PrebidNativeAdView`: renders a loaded `NativeAd`
 /// natively and calls `registerView` so Prebid tracks viewability-based
 /// impressions and clicks.
-class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
     private let store: NativeAdStore
@@ -102,7 +102,7 @@ class NativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class NativeAdPlatformView: NSObject, FlutterPlatformView {
+final class NativeAdPlatformView: NSObject, FlutterPlatformView {
 
     private let container = NativeAdContainer()
     let adId: Int64
@@ -113,7 +113,7 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
     init(viewId: Int64, messenger: FlutterBinaryMessenger, store: NativeAdStore, args: [String: Any]) {
         adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_flutter/native_ad_\(viewId)",
+            name: "prebid_mobile_sdk/native_ad_\(viewId)",
             binaryMessenger: messenger
         )
         self.store = store
@@ -285,7 +285,7 @@ class NativeAdPlatformView: NSObject, FlutterPlatformView {
 /// from the same IAB viewability rule Prebid applies before firing its
 /// trackers (at least half the view on screen for 1 s, checked every 0.25 s),
 /// with the delegate as a fallback.
-class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
+final class NativeAdEventForwarder: NSObject, NativeAdEventDelegate {
     private let adId: Int64
     private let flutterApi: AdFlutterApi
 

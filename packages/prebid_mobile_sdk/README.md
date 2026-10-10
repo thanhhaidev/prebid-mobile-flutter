@@ -125,7 +125,7 @@ void main() async {
     prebidServerUrl: 'https://prebid-server-test-j.prebid.org/openrtb2/auction',
     accountId: '0689a263-318d-448b-a3d4-b02e8a709d9d',
     completion: (status, error) {
-      if (status == InitializationStatus.succeeded) {
+      if (status == PrebidInitializationStatus.succeeded) {
         debugPrint('Prebid SDK initialized successfully');
       } else {
         debugPrint('Prebid SDK init failed: $error');
@@ -159,7 +159,7 @@ PrebidBannerAd(
 ```dart
 final interstitial = PrebidInterstitialAd(
   configId: 'prebid-demo-display-interstitial-320-480',
-  adFormats: {AdFormat.banner, AdFormat.video},
+  adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
   videoParameters: const VideoParameters(
     mimes: ['video/mp4'],
     protocols: [VideoProtocol.vast2_0, VideoProtocol.vast3_0],
@@ -357,7 +357,7 @@ A Flutter `StatefulWidget` that renders a Prebid banner ad using a native `Platf
 | `isVideo` | `bool` | `false` | Set to `true` for outstream video banners. |
 | `autoLoad` | `bool` | `true` | Auto-load on widget creation. |
 | `refreshIntervalSeconds` | `int?` | `null` | Auto-refresh interval in seconds (Prebid clamps to 30–120 on Android, 15–120 on iOS). `null` or `0` disables it. |
-| `adFormats` | `Set<AdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
+| `adFormats` | `Set<PrebidAdFormat>?` | `null` | Multiformat banner (banner and/or video). Overrides `isVideo`. |
 | `videoPlacementType` | `VideoPlacementType?` | `inBanner` | Outstream video placement. |
 | `pbAdSlot` / `impOrtbConfig` | `String?` | `null` | Ad slot and impression-level OpenRTB JSON. |
 | `adPosition` | `PrebidAdPosition?` | `null` | Ad position on screen (`imp.banner.pos`). |
@@ -375,7 +375,7 @@ A fullscreen interstitial ad with a load → show → destroy lifecycle.
 | Property / Method | Type | Description |
 |---|---|---|
 | `configId` | `String` | **Required.** Prebid Server config ID. |
-| `adFormats` | `Set<AdFormat>?` | Specify `{AdFormat.banner}`, `{AdFormat.video}`, or both. |
+| `adFormats` | `Set<PrebidAdFormat>?` | Specify `{PrebidAdFormat.banner}`, `{PrebidAdFormat.video}`, or both. |
 | `videoParameters` | `VideoParameters?` | Video playback configuration (protocols, playback methods, etc.). |
 | `impOrtbConfig` | `String?` | Impression-level OpenRTB JSON. |
 | `controls` | `PrebidFullscreenControls?` | Close / skip button area and position, skip delay, mute, sound button, auto-close (iOS), minimum size. |
@@ -564,7 +564,7 @@ await PrebidMobile.setExternalUserIds([
 
 ### Enums
 
-#### `AdFormat`
+#### `PrebidAdFormat`
 
 | Value | Description |
 |---|---|
@@ -582,7 +582,7 @@ await PrebidMobile.setExternalUserIds([
 | `error` | Errors that may impact functionality. |
 | `severe` | Critical errors only. |
 
-#### `InitializationStatus`
+#### `PrebidInitializationStatus`
 
 | Value | Description |
 |---|---|

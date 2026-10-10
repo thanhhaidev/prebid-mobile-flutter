@@ -75,7 +75,7 @@ rewarded = PrebidMaxRewardedAd(
 await rewarded.loadAd();
 ```
 
-`PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`. The interstitial takes `isVideo`, or `adFormats` (for example `{AdFormat.banner, AdFormat.video}`), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`.
+`PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`. The interstitial takes `isVideo`, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}`), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`.
 
 :::note[One rewarded ad per MAX ad unit]
 MAX shares one rewarded ad object per ad unit. Loading a second `PrebidMaxRewardedAd` on the same `maxAdUnitId` takes it over, and the previous one receives `onAdFailed` ("Replaced by another ad on the same MAX ad unit"). While an ad on that unit is on screen, the new load fails instead ("Another ad for this MAX ad unit is showing…"), so the visible ad keeps its reward: load the next one from `onAdClosed`.

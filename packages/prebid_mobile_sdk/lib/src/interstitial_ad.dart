@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
-import 'ad_event_router.dart';
 import 'ad_listener.dart';
 import 'fullscreen_controls.dart';
 import 'generated/prebid_api.g.dart';
+import 'internal/ad_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'video_parameters.dart';
 
@@ -17,6 +17,18 @@ import 'video_parameters.dart';
 /// stays usable: calling [loadAd] after [destroy] loads a fresh ad and its
 /// events reach [listener] again.
 class PrebidInterstitialAd {
+  /// Creates a [PrebidInterstitialAd].
+  PrebidInterstitialAd({
+    required this.configId,
+    this.adFormats,
+    this.videoParameters,
+    this.impOrtbConfig,
+    this.controls,
+    this.listener,
+  }) : _adId = _nextId++ {
+    AdEventRouter.instance.register(_adId, _handleEvent);
+  }
+
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static InterstitialAdHostApi api = InterstitialAdHostApi();
@@ -28,11 +40,11 @@ class PrebidInterstitialAd {
   final String configId;
 
   /// The ad formats to request (banner, video, or both).
-  final Set<AdFormat>? adFormats;
+  final Set<PrebidAdFormat>? adFormats;
 
   /// Video playback parameters (protocols, playback methods, etc.).
   ///
-  /// Only used when [adFormats] includes [AdFormat.video]. On Android the
+  /// Only used when [adFormats] includes [PrebidAdFormat.video]. On Android the
   /// rendering API has no video-parameters setter: the request carries the
   /// SDK's defaults and `maxDuration` only caps the rendered video's length.
   final VideoParameters? videoParameters;
@@ -46,18 +58,6 @@ class PrebidInterstitialAd {
 
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
-
-  /// Creates a [PrebidInterstitialAd].
-  PrebidInterstitialAd({
-    required this.configId,
-    this.adFormats,
-    this.videoParameters,
-    this.impOrtbConfig,
-    this.controls,
-    this.listener,
-  }) : _adId = _nextId++ {
-    AdEventRouter.instance.register(_adId, _handleEvent);
-  }
 
   void _handleEvent(AdEvent event) {
     final l = listener;
@@ -116,6 +116,16 @@ class PrebidInterstitialAd {
 /// stays usable: calling [loadAd] after [destroy] loads a fresh ad and its
 /// events reach [listener] again.
 class PrebidRewardedAd {
+  /// Creates a [PrebidRewardedAd].
+  PrebidRewardedAd({
+    required this.configId,
+    this.impOrtbConfig,
+    this.controls,
+    this.listener,
+  }) : _adId = _nextId++ {
+    AdEventRouter.instance.register(_adId, _handleEvent);
+  }
+
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static RewardedAdHostApi api = RewardedAdHostApi();
@@ -134,16 +144,6 @@ class PrebidRewardedAd {
 
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
-
-  /// Creates a [PrebidRewardedAd].
-  PrebidRewardedAd({
-    required this.configId,
-    this.impOrtbConfig,
-    this.controls,
-    this.listener,
-  }) : _adId = _nextId++ {
-    AdEventRouter.instance.register(_adId, _handleEvent);
-  }
 
   void _handleEvent(AdEvent event) {
     final l = listener;

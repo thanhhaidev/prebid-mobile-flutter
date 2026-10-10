@@ -3,7 +3,6 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
 import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
-import '../../../platform/pending_api.dart';
 import '../../demo_screen.dart';
 import '../shared/native_request.dart';
 
@@ -59,13 +58,22 @@ class _MediationBannerScreenState
 
   void _stopRefresh() => _controller.stopRefresh();
 
-  PrebidBannerAdListener get _listener => PrebidBannerAdListener(
+  PrebidBannerAdListener get _adMobListener => PrebidBannerAdListener(
     onAdLoaded: () => events.fire('onAdLoaded'),
     onAdFailed: (e) => events.fire(_failedRow, e),
     onAdClicked: () => events.fire(_clickedRow),
-    onAdImpression: _max ? null : () => events.fire('onAdImpression'),
-    onAdDisplayed: _max ? null : () => events.fire('onAdOpened'),
-    onAdClosed: _max ? null : () => events.fire('onAdClosed'),
+    onAdImpression: () => events.fire('onAdImpression'),
+    onAdDisplayed: () => events.fire('onAdOpened'),
+    onAdClosed: () => events.fire('onAdClosed'),
+  );
+
+  PrebidMaxBannerAdListener get _maxListener => PrebidMaxBannerAdListener(
+    onAdLoaded: () => events.fire('onAdLoaded'),
+    onAdFailed: (e) => events.fire(_failedRow, e),
+    onAdClicked: () => events.fire(_clickedRow),
+    onAdExpanded: () => events.fire('onAdExpanded called'),
+    onAdCollapsed: () => events.fire('onAdCollapsed called'),
+    onAdDisplayFailed: (e) => events.fire('onAdDisplayFailed called', e),
   );
 
   Widget _ad() {
@@ -73,30 +81,27 @@ class _MediationBannerScreenState
     final adaptive = item.has(DemoFlag.adaptiveBanner);
     final key = ValueKey(_generation);
     if (_max) {
-      return PendingApi.maxBanner(
+      return PrebidMaxBannerAd(
         key: key,
         configId: config.configId,
         maxAdUnitId: item.adUnitId ?? '',
         width: config.width,
         height: config.height,
         controller: _controller,
-        listener: _listener,
+        listener: _maxListener,
         refreshIntervalSeconds: refresh,
         adaptive: adaptive,
         additionalSizes: item.additionalSizes,
-        onAdExpanded: () => events.fire('onAdExpanded called'),
-        onAdCollapsed: () => events.fire('onAdCollapsed called'),
-        onAdDisplayFailed: (e) => events.fire('onAdDisplayFailed called', e),
       );
     }
-    return PendingApi.adMobBanner(
+    return PrebidAdMobBannerAd(
       key: key,
       configId: config.configId,
       adMobAdUnitId: item.adUnitId ?? '',
       width: config.width,
       height: config.height,
       controller: _controller,
-      listener: _listener,
+      listener: _adMobListener,
       refreshIntervalSeconds: refresh,
       adaptive: adaptive,
       additionalSizes: item.additionalSizes,
@@ -222,9 +227,14 @@ class _MediationFullscreenScreenState
     }
   }
 
-  Size? get _minSize => item.size.isMinSizePercentage
-      ? Size(config.width.toDouble(), config.height.toDouble())
-      : item.minSizePercentage;
+  PrebidFullscreenControls? get _controls {
+    final minSize = item.size.isMinSizePercentage
+        ? Size(config.width.toDouble(), config.height.toDouble())
+        : item.minSizePercentage;
+    return minSize == null
+        ? null
+        : PrebidFullscreenControls(minSizePercentage: minSize);
+  }
 
   Future<void> _load() async {
     await _destroy?.call();
@@ -273,22 +283,22 @@ class _MediationFullscreenScreenState
         onAdClicked: () => events.fire(_clickedRow),
         onAdImpression: _max ? null : () => events.fire('onAdImpression'),
       );
-      final formats = item.adFormats ?? const {AdFormat.banner};
+      final formats = item.adFormats ?? const {PrebidAdFormat.banner};
       if (_max) {
-        final ad = PendingApi.maxInterstitial(
+        final ad = PrebidMaxInterstitialAd(
           configId: config.configId,
           maxAdUnitId: adUnitId,
           adFormats: formats,
-          minSizePercentage: _minSize,
+          controls: _controls,
           listener: listener,
         );
         _bind(ad.loadAd, ad.show, ad.destroy);
       } else {
-        final ad = PendingApi.adMobInterstitial(
+        final ad = PrebidAdMobInterstitialAd(
           configId: config.configId,
           adMobAdUnitId: adUnitId,
           adFormats: formats,
-          minSizePercentage: _minSize,
+          controls: _controls,
           listener: listener,
         );
         _bind(ad.loadAd, ad.show, ad.destroy);

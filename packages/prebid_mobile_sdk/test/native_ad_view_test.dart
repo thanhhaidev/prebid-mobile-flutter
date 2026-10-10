@@ -6,7 +6,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'fake_platform_views.dart';
 import 'mock_host_api.mocks.dart';
 
-const _prefix = 'prebid_mobile_flutter/native_ad';
+const _prefix = 'prebid_mobile_sdk/native_ad';
 final _ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
 Widget _host(Widget child) =>
@@ -253,7 +253,7 @@ void main() {
                 controller: controller,
                 children: [
                   const SizedBox(height: 240),
-                  PrebidNativeAdView(ad: ad, height: 320),
+                  PrebidNativeAdView(ad: ad),
                   const SizedBox(height: 800),
                 ],
               ),

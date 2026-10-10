@@ -13,6 +13,14 @@ import 'max_rewarded_ad.dart';
 /// didPayRevenueForAd:`), passed to the `onAdRevenuePaid` callbacks of the
 /// MAX listeners.
 class PrebidMaxAdRevenue {
+  /// Creates a [PrebidMaxAdRevenue].
+  const PrebidMaxAdRevenue({
+    required this.revenue,
+    this.revenuePrecision = '',
+    this.networkName = '',
+    this.placement,
+  });
+
   /// The impression's revenue in USD; `0` when MAX has no value (e.g. in test
   /// mode).
   final double revenue;
@@ -27,14 +35,6 @@ class PrebidMaxAdRevenue {
 
   /// The placement name set for the ad in MAX, if any.
   final String? placement;
-
-  /// Creates a [PrebidMaxAdRevenue].
-  const PrebidMaxAdRevenue({
-    required this.revenue,
-    this.revenuePrecision = '',
-    this.networkName = '',
-    this.placement,
-  });
 
   @override
   String toString() =>
@@ -55,19 +55,6 @@ PrebidMaxAdRevenue maxAdRevenueFrom(Map? args) => PrebidMaxAdRevenue(
 /// (`MaxAdViewAdListener` / `MAAdViewAdDelegate` and the revenue callback).
 /// Pass it as the banner's `listener`.
 class PrebidMaxBannerAdListener extends PrebidBannerAdListener {
-  /// The banner expanded to fullscreen content (e.g. an MRAID expand).
-  final void Function()? onAdExpanded;
-
-  /// The expanded banner collapsed back to its slot.
-  final void Function()? onAdCollapsed;
-
-  /// MAX loaded the banner but failed to display it. Also reported through
-  /// [onAdFailed].
-  final void Function(String error)? onAdDisplayFailed;
-
-  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
-  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
-
   /// Creates a [PrebidMaxBannerAdListener].
   const PrebidMaxBannerAdListener({
     super.onAdLoaded,
@@ -82,14 +69,24 @@ class PrebidMaxBannerAdListener extends PrebidBannerAdListener {
     this.onAdDisplayFailed,
     this.onAdRevenuePaid,
   });
+
+  /// The banner expanded to fullscreen content (e.g. an MRAID expand).
+  final void Function()? onAdExpanded;
+
+  /// The expanded banner collapsed back to its slot.
+  final void Function()? onAdCollapsed;
+
+  /// MAX loaded the banner but failed to display it. Also reported through
+  /// [onAdFailed].
+  final void Function(String error)? onAdDisplayFailed;
+
+  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
+  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
 }
 
 /// A [PrebidInterstitialAdListener] with the revenue callback of a
 /// [PrebidMaxInterstitialAd]. Pass it as the interstitial's `listener`.
 class PrebidMaxInterstitialAdListener extends PrebidInterstitialAdListener {
-  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
-  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
-
   /// Creates a [PrebidMaxInterstitialAdListener].
   const PrebidMaxInterstitialAdListener({
     super.onAdLoaded,
@@ -101,14 +98,14 @@ class PrebidMaxInterstitialAdListener extends PrebidInterstitialAdListener {
     super.onAdImpression,
     this.onAdRevenuePaid,
   });
+
+  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
+  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
 }
 
 /// A [PrebidRewardedAdListener] with the revenue callback of a
 /// [PrebidMaxRewardedAd]. Pass it as the rewarded ad's `listener`.
 class PrebidMaxRewardedAdListener extends PrebidRewardedAdListener {
-  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
-  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
-
   /// Creates a [PrebidMaxRewardedAdListener].
   const PrebidMaxRewardedAdListener({
     super.onAdLoaded,
@@ -121,4 +118,7 @@ class PrebidMaxRewardedAdListener extends PrebidRewardedAdListener {
     super.onAdImpression,
     this.onAdRevenuePaid,
   });
+
+  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
+  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
 }

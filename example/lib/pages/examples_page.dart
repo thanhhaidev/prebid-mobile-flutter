@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 
 import '../data/demo_item.dart';
 import '../data/demo_items.dart';
 import '../demo/demo_router.dart';
 import '../demo/demo_screen.dart' show ConfigurationMode;
-import '../platform/iab_consent_store.dart';
-import '../platform/pending_api.dart';
+import '../services/iab_consent_store.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common.dart';
+import '../widgets/plain_list_row.dart';
+import '../widgets/segmented_row.dart';
 
 /// App title of the Examples screen ("Prebid Rendering Kotlin Demo" in the
 /// original).
@@ -41,7 +42,7 @@ class _ExamplesPageState extends State<ExamplesPage> {
     IabConsentStore.isGdprEnabled().then((v) {
       if (mounted) setState(() => _gdpr = v);
     });
-    PendingApi.getUseCacheForReportingWithRenderingApi().then((v) {
+    PrebidMobile.getUseCacheForReportingWithRenderingApi().then((v) {
       if (mounted) setState(() => _caching = v);
     });
   }
@@ -141,7 +142,7 @@ class _ExamplesPageState extends State<ExamplesPage> {
                   const SizedBox(width: 8),
                   _switch('Enable Caching', _caching, (v) {
                     setState(() => _caching = v);
-                    PendingApi.setUseCacheForReportingWithRenderingApi(v);
+                    PrebidMobile.setUseCacheForReportingWithRenderingApi(v);
                   }),
                 ],
               ),

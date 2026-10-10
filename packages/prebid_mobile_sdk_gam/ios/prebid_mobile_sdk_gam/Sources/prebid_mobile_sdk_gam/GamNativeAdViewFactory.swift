@@ -7,7 +7,7 @@ import PrebidMobile
 /// unified). Prebid runs the auction, GAM resolves the line item, and
 /// `Utils.shared.findNative` extracts the Prebid winning bid for app-side
 /// rendering — matching Prebid's reference GAM native integration.
-class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -32,7 +32,7 @@ class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class GamNativePlatformView: NSObject, FlutterPlatformView,
+final class GamNativePlatformView: NSObject, FlutterPlatformView,
     AdLoaderDelegate, CustomNativeAdLoaderDelegate, NativeAdLoaderDelegate,
     PrebidMobile.NativeAdDelegate, PrebidMobile.NativeAdEventDelegate,
     GoogleMobileAds.NativeAdDelegate {

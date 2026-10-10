@@ -1,15 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+import 'package:prebid_mobile_sdk_admob/prebid_mobile_sdk_admob.dart';
+import 'package:prebid_mobile_sdk_max/prebid_mobile_sdk_max.dart';
 
 import '../data/demo_item.dart';
-import '../platform/pending_api.dart';
+import '../services/app_settings.dart';
+import '../services/custom_renderer.dart';
 import '../theme/app_theme.dart';
-import '../utils/app_settings.dart';
 import 'configure_ad_dialog.dart';
 
-export '../data/demo_item.dart';
-export 'configure_ad_dialog.dart';
-export 'event_counter.dart';
+export 'package:prebid_mobile_sdk_example/data/demo_item.dart';
+export 'package:prebid_mobile_sdk_example/demo/configure_ad_dialog.dart';
+export 'package:prebid_mobile_sdk_example/demo/event_counter.dart';
 
 /// The Examples screen's configuration toggle (`ConfigurationViewSettings`):
 /// in memory, default off. When on, demo screens show "Configure the Ad"
@@ -42,9 +46,8 @@ abstract final class ConfigurationMode {
 ///
 /// Register the screen in `lib/demo/demo_router.dart`.
 abstract class DemoScreen extends StatefulWidget {
-  final DemoItem item;
-
   const DemoScreen({super.key, required this.item});
+  final DemoItem item;
 }
 
 /// Lifecycle of a demo screen (spec §1.2), in order:
@@ -53,7 +56,7 @@ abstract class DemoScreen extends StatefulWidget {
 ///    `storedAuctionResponse ?: ""` on every screen);
 /// 2. per-item overrides: account ([DemoItem.accountId]), server
 ///    ([DemoItem.serverUrl]), app name ([DemoItem.appName]), random bid drop
-///    and custom renderer flags — via `lib/platform/pending_api.dart`;
+///    and custom renderer flags;
 /// 3. [onBeforeStart] hook;
 /// 4. if configuration mode is on and the item has a
 ///    [DemoItem.configuratorMode], "Configure the Ad" → [config] (cancel
@@ -128,35 +131,36 @@ abstract class DemoScreenState<T extends DemoScreen> extends State<T> {
 
   Future<void> _applyOverrides() async {
     final account = item.accountId;
-    if (account != null) await PendingApi.setPrebidServerAccountId(account);
+    if (account != null) await PrebidMobile.setPrebidServerAccountId(account);
     final server = item.serverUrl;
-    if (server != null) await PendingApi.setPrebidServerUrl(server);
-    if (item.appName != null) await PendingApi.setAppName(item.appName);
-    if (item.has(DemoFlag.randomBidDrop)) {
-      await PendingApi.setDebugBidDropProbability(0.5);
-    }
-    if (item.has(DemoFlag.customRenderer)) {
-      await PendingApi.registerCustomRenderer(
-        withEventListener: item.has(DemoFlag.pluginEventListener),
-      );
-    }
+    if (server != null) await PrebidMobile.setPrebidServerUrl(server);
+    if (item.appName != null) await PrebidTargeting.setAppName(item.appName);
+    if (item.has(DemoFlag.randomBidDrop)) _setBidDropProbability(0.5);
+    // The "PluginEventListener" variants run the renderer alone: the plugin
+    // owns the ad view, so the app can't attach a native listener to it.
+    if (item.has(DemoFlag.customRenderer)) await CustomRenderer.register();
     // Left before the overrides landed: undo them right away.
     if (!mounted) _restoreOverrides();
   }
 
   void _restoreOverrides() {
     // The original restores the production account on every exit.
-    PendingApi.setPrebidServerAccountId(AppSettings.accountId);
+    unawaited(PrebidMobile.setPrebidServerAccountId(AppSettings.accountId));
     if (item.serverUrl != null) {
-      PendingApi.setPrebidServerUrl(AppSettings.serverUrl);
+      unawaited(PrebidMobile.setPrebidServerUrl(AppSettings.serverUrl));
     }
-    if (item.appName != null) PendingApi.setAppName(null);
-    if (item.has(DemoFlag.randomBidDrop)) {
-      PendingApi.setDebugBidDropProbability(0);
-    }
+    if (item.appName != null) unawaited(PrebidTargeting.setAppName(null));
+    if (item.has(DemoFlag.randomBidDrop)) _setBidDropProbability(0);
     if (item.has(DemoFlag.customRenderer)) {
-      PendingApi.unregisterCustomRenderer();
+      unawaited(CustomRenderer.unregister());
     }
+  }
+
+  /// The AdMob / MAX testing hook behind the "Random" cases: withholds the
+  /// Prebid bid from the ad server with [probability].
+  static void _setBidDropProbability(double probability) {
+    PrebidAdMob.debugDropBidProbability = probability;
+    PrebidMax.debugDropBidProbability = probability;
   }
 
   @override
@@ -176,18 +180,17 @@ abstract class DemoScreenState<T extends DemoScreen> extends State<T> {
 /// indeterminate progress overlay of App settings → "Show Progress Dialog"
 /// (never dismissed, touches pass through, as the original's ProgressBar).
 class DemoScaffold extends StatelessWidget {
-  final String title;
-  final Widget child;
-
-  /// Whether the "Show Progress Dialog" overlay may appear (demo screens).
-  final bool progressOverlay;
-
   const DemoScaffold({
     super.key,
     required this.title,
     required this.child,
     this.progressOverlay = true,
   });
+  final String title;
+  final Widget child;
+
+  /// Whether the "Show Progress Dialog" overlay may appear (demo screens).
+  final bool progressOverlay;
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +222,8 @@ class DemoScaffold extends StatelessWidget {
 /// `AdUnitId: <configId>` (the original `label_auid` — it shows the config
 /// id). Show it only when [DemoItem.showsAdUnitLabel].
 class AdUnitIdLabel extends StatelessWidget {
-  final String configId;
-
   const AdUnitIdLabel(this.configId, {super.key});
+  final String configId;
 
   @override
   Widget build(BuildContext context) {
@@ -244,10 +246,9 @@ class AdUnitIdLabel extends StatelessWidget {
 /// A demo action button ("Load", "Stop refresh", "Show", ...). `null`
 /// [onPressed] = disabled, as the original's `isEnabled = false`.
 class DemoButton extends StatelessWidget {
+  const DemoButton(this.label, {super.key, this.onPressed});
   final String label;
   final VoidCallback? onPressed;
-
-  const DemoButton(this.label, {super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) => FilledButton(
@@ -259,9 +260,8 @@ class DemoButton extends StatelessWidget {
 
 /// Buttons side by side with equal widths.
 class DemoButtonRow extends StatelessWidget {
-  final List<Widget> children;
-
   const DemoButtonRow({super.key, required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -278,9 +278,8 @@ class DemoButtonRow extends StatelessWidget {
 /// horizontally scrollable when wider than the screen (728x90). No
 /// placeholder, as the original.
 class AdContainer extends StatelessWidget {
-  final Widget? child;
-
   const AdContainer({super.key, this.child});
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {

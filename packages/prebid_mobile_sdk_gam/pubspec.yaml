@@ -35,7 +35,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.prebid.prebid_mobile_sdk_gam
+        package: io.github.thanhhaidev.prebid_mobile_sdk_gam
         pluginClass: PrebidMobileSdkGamPlugin
       ios:
         pluginClass: PrebidMobileSdkGamPlugin

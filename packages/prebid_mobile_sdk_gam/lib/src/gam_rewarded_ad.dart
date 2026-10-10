@@ -31,6 +31,16 @@ class _GamRewardedRouter {
 
 /// A fullscreen rewarded ad rendered by Google Ad Manager with Prebid demand.
 class PrebidGamRewardedAd {
+  /// Creates a [PrebidGamRewardedAd]. Call [loadAd] to request it.
+  PrebidGamRewardedAd({
+    required this.configId,
+    required this.gamAdUnitId,
+    this.customTargeting,
+    this.controls,
+    this.impOrtbConfig,
+    this.videoParameters,
+    this.listener,
+  }) : _adId = _nextId++;
   static int _nextId = 6000000;
 
   final int _adId;
@@ -68,17 +78,6 @@ class PrebidGamRewardedAd {
 
   /// Whether the rewarded ad has loaded and is ready to [show].
   bool get isLoaded => _loaded;
-
-  /// Creates a [PrebidGamRewardedAd]. Call [loadAd] to request it.
-  PrebidGamRewardedAd({
-    required this.configId,
-    required this.gamAdUnitId,
-    this.customTargeting,
-    this.controls,
-    this.impOrtbConfig,
-    this.videoParameters,
-    this.listener,
-  }) : _adId = _nextId++;
 
   /// Requests a rewarded ad; the result arrives on the listener.
   Future<void> loadAd() async {

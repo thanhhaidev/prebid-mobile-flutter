@@ -13,6 +13,23 @@ import 'admob_testing.dart';
 /// Prebid creative or a competing AdMob creative. Contrast with the core
 /// `PrebidBannerAd`, where the Prebid SDK renders directly.
 class PrebidAdMobBannerAd extends StatefulWidget {
+  /// Creates a [PrebidAdMobBannerAd] widget.
+  const PrebidAdMobBannerAd({
+    super.key,
+    required this.configId,
+    required this.adMobAdUnitId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.adaptive = false,
+    this.refreshIntervalSeconds,
+    this.autoLoad = true,
+    this.controller,
+    this.adPosition,
+    this.impOrtbConfig,
+    this.listener,
+  });
+
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
@@ -65,23 +82,6 @@ class PrebidAdMobBannerAd extends StatefulWidget {
 
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
-
-  /// Creates a [PrebidAdMobBannerAd] widget.
-  const PrebidAdMobBannerAd({
-    super.key,
-    required this.configId,
-    required this.adMobAdUnitId,
-    required this.width,
-    required this.height,
-    this.additionalSizes,
-    this.adaptive = false,
-    this.refreshIntervalSeconds,
-    this.autoLoad = true,
-    this.controller,
-    this.adPosition,
-    this.impOrtbConfig,
-    this.listener,
-  });
 
   @override
   State<PrebidAdMobBannerAd> createState() => _PrebidAdMobBannerAdState();

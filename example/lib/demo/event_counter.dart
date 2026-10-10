@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/logger.dart';
 import '../theme/app_theme.dart';
-import '../utils/logger.dart';
 
 /// State of one event row — the original `EventCounterView`.
 class EventCounterState {
@@ -26,6 +26,9 @@ class EventCounterState {
 ///
 /// Every fire is also written to the developer-tools log.
 class EventCounters extends ChangeNotifier {
+  EventCounters(this.labels, {this.tag = 'Ad'})
+    : _states = {for (final l in labels) l: EventCounterState()};
+
   /// Row labels, in display order (exact original strings).
   final List<String> labels;
 
@@ -33,9 +36,6 @@ class EventCounters extends ChangeNotifier {
   final String tag;
 
   final Map<String, EventCounterState> _states;
-
-  EventCounters(this.labels, {this.tag = 'Ad'})
-    : _states = {for (final l in labels) l: EventCounterState()};
 
   /// The original `resetEventButtons()` row set.
   static const standardRows = {
@@ -92,9 +92,8 @@ class EventCounters extends ChangeNotifier {
 
 /// All rows of [counters], top to bottom.
 class EventCounterList extends StatelessWidget {
-  final EventCounters counters;
-
   const EventCounterList({super.key, required this.counters});
+  final EventCounters counters;
 
   @override
   Widget build(BuildContext context) {
@@ -118,16 +117,15 @@ class EventCounterList extends StatelessWidget {
 /// One row: `"<label>  -  <total> ( +<delta> )"`, JetBrains Mono. Greyed
 /// while disabled, highlighted (mint background, orange accent) once fired.
 class EventCounterRow extends StatelessWidget {
-  final String label;
-  final EventCounterState state;
-  final VoidCallback? onTap;
-
   const EventCounterRow({
     super.key,
     required this.label,
     required this.state,
     this.onTap,
   });
+  final String label;
+  final EventCounterState state;
+  final VoidCallback? onTap;
 
   /// The row text, e.g. `onAdLoaded called  -  3 ( +1 )`.
   static String format(String label, EventCounterState s) =>
@@ -174,7 +172,6 @@ class EventCounterRow extends StatelessWidget {
                   child: Text(
                     format(label, state),
                     style: AppFonts.monoStyle(
-                      fontSize: 13,
                       fontWeight: enabled ? FontWeight.w700 : FontWeight.w400,
                       color: enabled ? accent : c.muted.withValues(alpha: 0.7),
                     ),

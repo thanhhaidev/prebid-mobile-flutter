@@ -53,6 +53,15 @@ class _AdMobRewardedRouter {
 /// await rewarded.loadAd();
 /// ```
 class PrebidAdMobRewardedAd {
+  /// Creates a [PrebidAdMobRewardedAd].
+  PrebidAdMobRewardedAd({
+    required this.configId,
+    required this.adMobAdUnitId,
+    this.controls,
+    this.impOrtbConfig,
+    this.videoParameters,
+    this.listener,
+  }) : _adId = _nextId++;
   static int _nextId = 6500000;
 
   final int _adId;
@@ -85,16 +94,6 @@ class PrebidAdMobRewardedAd {
 
   /// Whether the rewarded ad has loaded and is ready to [show].
   bool get isLoaded => _loaded;
-
-  /// Creates a [PrebidAdMobRewardedAd].
-  PrebidAdMobRewardedAd({
-    required this.configId,
-    required this.adMobAdUnitId,
-    this.controls,
-    this.impOrtbConfig,
-    this.videoParameters,
-    this.listener,
-  }) : _adId = _nextId++;
 
   /// Requests the ad. [PrebidRewardedAdListener.onAdLoaded] fires when it is
   /// ready to [show].

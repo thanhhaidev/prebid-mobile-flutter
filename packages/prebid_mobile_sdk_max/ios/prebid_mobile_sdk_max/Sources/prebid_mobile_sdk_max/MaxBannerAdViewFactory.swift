@@ -7,7 +7,7 @@ import AppLovinSDK
 /// PlatformView factory for AppLovin MAX-mediated banners. The rendered view is
 /// the MAX `MAAdView`; Prebid's `MediationBannerAdUnit` runs the auction and
 /// passes the winning bid to MAX via the Prebid MAX adapter.
-class MaxBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
+final class MaxBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
 
@@ -34,7 +34,7 @@ class MaxBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, MAAdRevenueDelegate {
+final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, MAAdRevenueDelegate {
 
     private let maxAdBannerView: MAAdView
     private let methodChannel: FlutterMethodChannel

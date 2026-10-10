@@ -18,7 +18,7 @@ import UIKit
   }
 
   /// The original's plugin renderer, registered while a "[Custom Renderer]"
-  /// screen is open (lib/platform/pending_api.dart).
+  /// screen is open (lib/services/custom_renderer.dart).
   private let customRenderer = SampleRenderer()
 
   private func registerCustomRenderer(messenger: FlutterBinaryMessenger) {

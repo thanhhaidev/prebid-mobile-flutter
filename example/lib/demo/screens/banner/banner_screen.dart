@@ -112,8 +112,8 @@ class _BannerScreenState extends DemoScreenState<BannerScreen> {
     );
   }
 
-  Set<AdFormat>? get _formats =>
-      item.adFormats ?? (_isVideo ? const {AdFormat.video} : null);
+  Set<PrebidAdFormat>? get _formats =>
+      item.adFormats ?? (_isVideo ? const {PrebidAdFormat.video} : null);
 
   Widget _ad() {
     switch (item.integration) {
@@ -166,7 +166,7 @@ class _BannerScreenState extends DemoScreenState<BannerScreen> {
     final load = DemoButton('Load', onPressed: _loadEnabled ? _load : null);
     final rows = EventCounterList(counters: events);
 
-    final List<Widget> children = switch (item.screen) {
+    final children = switch (item.screen) {
       // A5: Load, the ad inside a scroll view, label, rows.
       ScreenType.a5 => [
         load,

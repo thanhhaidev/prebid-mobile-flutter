@@ -85,14 +85,14 @@ const _multisize = [Size(728, 90)];
 /// Default banner auto-refresh (`PrebidMobile.AUTO_REFRESH_DELAY_MIN`).
 const _refresh = 30;
 
-const _banner = {AdFormat.banner};
-const _video = {AdFormat.video};
-const _bannerVideo = {AdFormat.banner, AdFormat.video};
+const _banner = {PrebidAdFormat.banner};
+const _video = {PrebidAdFormat.video};
+const _bannerVideo = {PrebidAdFormat.banner, PrebidAdFormat.video};
 const _mp4 = VideoParameters(mimes: ['video/mp4']);
 
 /// Formats of In-App / GAM / GAM Original interstitials: VIDEO when the title
 /// contains "Video Interstitial" and not "MRAID 2.0", else BANNER.
-Set<AdFormat> _titleRule(String label) =>
+Set<PrebidAdFormat> _titleRule(String label) =>
     label.contains('Video Interstitial') && !label.contains('MRAID 2.0')
     ? _video
     : _banner;
@@ -269,7 +269,9 @@ DemoItem _gamInterstitial(
     size: _min30,
     adFormats: formats,
     // Only display interstitials get setMinSizePercentage(30, 30).
-    minSizePercentage: formats.contains(AdFormat.banner) ? _minSize30 : null,
+    minSizePercentage: formats.contains(PrebidAdFormat.banner)
+        ? _minSize30
+        : null,
   );
 }
 

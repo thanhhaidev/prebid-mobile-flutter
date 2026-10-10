@@ -8,7 +8,7 @@ import PrebidMobileAdMobAdapters
 /// `prebid_mobile_sdk_admob/interstitial` method channel. Each ad is keyed by an
 /// `adId` allocated on the Dart side; native events are pushed back over the
 /// same channel.
-class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
+final class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
 
     private let channel: FlutterMethodChannel
 

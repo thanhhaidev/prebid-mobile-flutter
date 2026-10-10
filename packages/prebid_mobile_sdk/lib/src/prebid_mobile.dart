@@ -33,8 +33,8 @@ class PrebidMobile {
   static bool _initialized = false;
 
   /// Whether [initializeSdk] has completed with a usable status
-  /// ([InitializationStatus.succeeded] or
-  /// [InitializationStatus.serverStatusWarning]).
+  /// ([PrebidInitializationStatus.succeeded] or
+  /// [PrebidInitializationStatus.serverStatusWarning]).
   static bool get isSdkInitialized => _initialized;
 
   /// Initialize the Prebid Mobile SDK.
@@ -48,13 +48,13 @@ class PrebidMobile {
   /// - [nonTrackingUrl] — iOS only: the auction endpoint used when the user
   ///   has not authorized tracking (ATT), for a server that must not receive
   ///   identifiers.
-  /// - [completion] — Optional callback invoked with the [InitializationStatus]
+  /// - [completion] — Optional callback invoked with the [PrebidInitializationStatus]
   ///   and an error message (if any).
   static Future<void> initializeSdk({
     required String prebidServerUrl,
     required String accountId,
     String? nonTrackingUrl,
-    void Function(InitializationStatus status, String? error)? completion,
+    void Function(PrebidInitializationStatus status, String? error)? completion,
   }) async {
     final result = await api.initializeSdk(
       prebidServerUrl,
@@ -62,11 +62,11 @@ class PrebidMobile {
       nonTrackingUrl,
     );
     final status = switch (result.status) {
-      'succeeded' => InitializationStatus.succeeded,
-      'serverStatusWarning' => InitializationStatus.serverStatusWarning,
-      _ => InitializationStatus.failed,
+      'succeeded' => PrebidInitializationStatus.succeeded,
+      'serverStatusWarning' => PrebidInitializationStatus.serverStatusWarning,
+      _ => PrebidInitializationStatus.failed,
     };
-    _initialized = status != InitializationStatus.failed;
+    _initialized = status != PrebidInitializationStatus.failed;
     completion?.call(status, result.error);
   }
 
@@ -344,7 +344,7 @@ class PrebidMobile {
             source: u.source,
             identifier: u.identifier,
             atype: u.atype,
-            ext: u.ext?.map((k, v) => MapEntry(k, v)),
+            ext: u.ext?.map(MapEntry.new),
             inserter: u.inserter,
             matcher: u.matcher,
             mm: u.mm,

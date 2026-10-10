@@ -2,10 +2,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
-import 'package:prebid_mobile_sdk/src/ad_event_router.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
+import 'package:prebid_mobile_sdk/src/internal/ad_event_router.dart';
+import 'package:prebid_mobile_sdk/src/internal/multiformat_event_router.dart';
 import 'package:prebid_mobile_sdk/src/internal/pigeon_conversions.dart';
-import 'package:prebid_mobile_sdk/src/multiformat_event_router.dart';
 
 import 'mock_host_api.mocks.dart';
 
@@ -89,7 +89,7 @@ void main() {
     await ad.loadAd();
     final adId = verify(mockApi.loadAd(captureAny, any)).captured.single as int;
 
-    AdEventRouter.instance.onAdEvent(
+    await AdEventRouter.instance.onAdEvent(
       AdEvent(
         adId: adId,
         eventName: 'onAdLoaded',
@@ -238,7 +238,7 @@ void main() {
     test('native unit sends context, subtype and placement', () async {
       final unit = PrebidNativeAdUnit(
         configId: 'native',
-        assets: const [NativeAsset.title(length: 90)],
+        assets: const [NativeAsset.title()],
         context: NativeContextType.contentCentric,
         contextSubType: NativeContextSubType.article,
         placementType: NativePlacementType.inFeed,

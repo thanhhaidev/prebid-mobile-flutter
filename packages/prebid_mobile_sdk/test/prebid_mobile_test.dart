@@ -17,8 +17,9 @@ void main() {
   group('PrebidMobile Configuration API', () {
     test('initializeSdk calls api with correct args', () async {
       when(mockApi.initializeSdk(any, any, any)).thenAnswer(
-        (_) async =>
-            InitializationResult(status: InitializationStatus.succeeded.name),
+        (_) async => InitializationResult(
+          status: PrebidInitializationStatus.succeeded.name,
+        ),
       );
 
       await PrebidMobile.initializeSdk(

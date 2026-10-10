@@ -8,6 +8,13 @@ import 'video_parameters.dart';
 
 /// Result of an in-stream video bid request.
 class PrebidVideoAdBidResponse {
+  /// Creates a [PrebidVideoAdBidResponse].
+  const PrebidVideoAdBidResponse({
+    required this.resultCode,
+    this.targetingKeywords,
+    this.exp,
+  });
+
   /// The Prebid result code, the same string on Android and iOS:
   /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
   /// `prebidDemandNoCachedBids`, `prebidDemandTimedOut`,
@@ -25,13 +32,6 @@ class PrebidVideoAdBidResponse {
 
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
-
-  /// Creates a [PrebidVideoAdBidResponse].
-  const PrebidVideoAdBidResponse({
-    required this.resultCode,
-    this.targetingKeywords,
-    this.exp,
-  });
 }
 
 /// An in-stream video ad unit for original API integration.
@@ -52,6 +52,15 @@ class PrebidVideoAdBidResponse {
 /// }
 /// ```
 class PrebidInstreamVideoAd {
+  /// Creates a [PrebidInstreamVideoAd].
+  PrebidInstreamVideoAd({
+    required this.configId,
+    required this.size,
+    this.videoParameters,
+  }) : _adId = _nextId++ {
+    releasePreviousIsolateAds();
+  }
+
   /// The platform channel to the native SDK; tests replace it with a mock.
   @visibleForTesting
   static InstreamVideoAdHostApi api = InstreamVideoAdHostApi();
@@ -68,15 +77,6 @@ class PrebidInstreamVideoAd {
   /// Video signals for the request (mimes, protocols, `plcmt`, duration,
   /// start delay, ...). Buyers usually need at least mimes and protocols.
   final VideoParameters? videoParameters;
-
-  /// Creates a [PrebidInstreamVideoAd].
-  PrebidInstreamVideoAd({
-    required this.configId,
-    required this.size,
-    this.videoParameters,
-  }) : _adId = _nextId++ {
-    releasePreviousIsolateAds();
-  }
 
   /// Fetch demand for this in-stream video ad.
   ///

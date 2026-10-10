@@ -59,31 +59,36 @@ Every case runs a live auction against Prebid's public test server
 ```
 lib/
   main.dart, app.dart        entry point, MaterialApp, bottom-tab shell
-  theme/app_theme.dart       docs-website palette (DemoColors), fonts, themes
-  data/demo_item.dart        DemoItem model: integration, category, ScreenType,
+  data/
+    demo_item.dart           DemoItem model: integration, category, ScreenType,
                              config id (or random list), ad unit, size, flags…
-  data/demo_items.dart       the 187 items, in the original order
-  demo/demo_screen.dart      DemoScreen / DemoScreenState (the original
+    demo_items.dart          the 187 items, in the original order
+  demo/
+    demo_screen.dart         DemoScreen / DemoScreenState (the original
                              AdFragment), DemoScaffold, AdUnitIdLabel, buttons
-  demo/event_counter.dart    EventCounters + EventCounterList (event rows)
-  demo/configure_ad_dialog.dart  "Configure the Ad" (banner / interstitial)
-  demo/demo_router.dart      DemoItem -> screen (unmatched -> placeholder)
-  demo/screens/              screen families (A1 In-App banner, placeholder…)
+    event_counter.dart       EventCounters + EventCounterList (event rows)
+    configure_ad_dialog.dart "Configure the Ad" (banner / interstitial)
+    demo_router.dart         DemoItem -> screen, through the families
+    families/                one router per screen family
+    screens/                 banner/, fullscreen/, native/, mediation/,
+                             special/ (in-stream, multiformat, PUC), shared/
   pages/                     Examples, Utilities, IAB consent, App settings,
                              Versions, developer_tools/
-  platform/sdk_initializer.dart  start-up (Prebid, AppLovin MAX)
-  platform/iab_consent_store.dart  raw IAB keys (example method channel)
-  platform/pending_api.dart  every call to a plugin API that does not exist
-                             yet (TODO(pending-api) stubs)
+  services/                  app settings, SDK start-up, IAB consent store,
+                             custom renderer channel, bid inspector, logger
+  theme/app_theme.dart       docs-website palette (DemoColors), fonts, themes
+  widgets/                   shared widgets (segmented row, list row, header)
 ```
 
 ### Adding a screen
 
-1. Create `lib/demo/screens/<name>_screen.dart`: a `DemoScreen` with a
-   `DemoScreenState`. Implement `startAd()`, `destroyAd()` and `buildDemo()`,
-   and use `config` (the effective config id and size), `EventCounters` with
-   the exact row labels, `AdUnitIdLabel` and `DemoButton`.
-2. Route it in `lib/demo/demo_router.dart`.
+1. Create the screen under `lib/demo/screens/<family>/`: a `DemoScreen` with
+   a `DemoScreenState`. Implement `startAd()`, `destroyAd()` and
+   `buildDemo()`, and use `config` (the effective config id and size),
+   `EventCounters` with the exact row labels, `AdUnitIdLabel` and
+   `DemoButton`.
+2. Route it in the family's `lib/demo/families/<family>_family.dart`.
+   `test/demo_router_test.dart` fails while any item has no screen.
 
 The base state already does the shared work:
 
@@ -94,18 +99,19 @@ The base state already does the shared work:
 - shows the progress overlay;
 - restores the overrides on exit.
 
-## Status
+## Differences from the original
 
-- Done: the shell, Examples, Utilities and the framework. Of the screens,
-  **A1 for In-App banners** is done (25 cases).
-- Placeholder: every other screen type opens a page with the case's registry
-  data and "Screen type X — coming next".
-- Waiting for plugin APIs: runtime account / server switch, Enable Caching,
-  creative-factory getters, OMSDK version, app name, AdMob / MAX refresh,
-  adaptive banners, multiformat mediation interstitials, MAX extra callbacks
-  and the debug bid-drop hook. These calls go through stubs in
-  `platform/pending_api.dart`.
-- Custom renderer: these cases will be built in the example's native code.
+Where Flutter or `google_mobile_ads` can't match the native app, the screen
+says so in its doc comment:
+
+- **Reusable banner, RecyclerView and feeds:** one ad per slot. A platform
+  view can't be moved between parents.
+- **GAM Original custom native formats and the multiformat screen:**
+  `google_mobile_ads` has no custom native formats, so they use a GAM banner
+  request or `PrebidGamNativeAd`.
+- **PluginEventListener variants:** the plugin owns the ad view, so they run
+  the custom renderer alone.
+- **Native links (C3):** the four link buttons are listed under the ad.
 
 ## Running the app
 

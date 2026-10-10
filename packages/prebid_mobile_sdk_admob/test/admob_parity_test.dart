@@ -73,4 +73,83 @@ void main() {
     expect(views.creationParams?['contextSubType'], 11);
     expect(views.creationParams?['placementType'], 1);
   }, variant: android);
+
+  test('fullscreen ads send pbAdSlot and globalOrtbConfig', () async {
+    final i = ChannelHarness('prebid_mobile_sdk_admob/interstitial');
+    await PrebidAdMobInterstitialAd(
+      configId: 'c',
+      adMobAdUnitId: 'u',
+      pbAdSlot: '/slot',
+      globalOrtbConfig: '{"app":{}}',
+    ).loadAd();
+    expect(i.argsOf('load')['pbAdSlot'], '/slot');
+    expect(i.argsOf('load')['globalOrtbConfig'], '{"app":{}}');
+
+    final r = ChannelHarness('prebid_mobile_sdk_admob/rewarded');
+    await PrebidAdMobRewardedAd(
+      configId: 'c',
+      adMobAdUnitId: 'u',
+      pbAdSlot: '/slot',
+      globalOrtbConfig: '{"app":{}}',
+    ).loadAd();
+    expect(r.argsOf('load')['pbAdSlot'], '/slot');
+    expect(r.argsOf('load')['globalOrtbConfig'], '{"app":{}}');
+  });
+
+  testWidgets('banner sends pbAdSlot and globalOrtbConfig', (tester) async {
+    final views = PlatformViewHarness('prebid_mobile_sdk_admob/banner');
+    addTearDown(views.dispose);
+    await tester.pumpWidget(
+      _host(
+        const PrebidAdMobBannerAd(
+          configId: 'c',
+          adMobAdUnitId: 'u',
+          width: 320,
+          height: 50,
+          pbAdSlot: '/slot',
+          globalOrtbConfig: '{"app":{}}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(views.creationParams?['pbAdSlot'], '/slot');
+    expect(views.creationParams?['globalOrtbConfig'], '{"app":{}}');
+  }, variant: android);
+
+  testWidgets('native sends the request options', (tester) async {
+    final views = PlatformViewHarness('prebid_mobile_sdk_admob/native');
+    addTearDown(views.dispose);
+    await tester.pumpWidget(
+      _host(
+        const PrebidAdMobNativeAd(
+          configId: 'c',
+          adMobAdUnitId: 'u',
+          placementCount: 2,
+          sequence: 1,
+          assetUrlSupport: true,
+          dUrlSupport: false,
+          privacy: true,
+          ext: {'k': 1},
+          impOrtbConfig: _ortb,
+          globalOrtbConfig: '{"app":{}}',
+          assets: [
+            NativeAsset.image(mimes: ['image/png'], ext: {'a': 1}),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final p = views.creationParams;
+    expect(p?['placementCount'], 2);
+    expect(p?['sequence'], 1);
+    expect(p?['assetUrlSupport'], isTrue);
+    expect(p?['dUrlSupport'], isFalse);
+    expect(p?['privacy'], isTrue);
+    expect(p?['ext'], '{"k":1}');
+    expect(p?['impOrtbConfig'], _ortb);
+    expect(p?['globalOrtbConfig'], '{"app":{}}');
+    final asset = (p?['assets'] as List).single as Map;
+    expect(asset['imageMimes'], ['image/png']);
+    expect(asset['ext'], '{"a":1}');
+  }, variant: android);
 }

@@ -91,6 +91,13 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         if let gpid = args["gpid"] as? String { unit.setGPID(gpid) }
         if let pbAdSlot = args["pbAdSlot"] as? String { unit.pbAdSlot = pbAdSlot }
         if let config = args["impOrtbConfig"] as? String { unit.setImpORTBConfig(config) }
+        if let config = args["globalOrtbConfig"] as? String { unit.setGlobalOrtbConfig(config) } // AdUnit spells it Ortb.
+        if let v = intValue(args["placementCount"]) { unit.placementCount = v }
+        if let v = intValue(args["sequence"]) { unit.sequence = v }
+        if let v = args["assetUrlSupport"] as? Bool { unit.asseturlsupport = v ? 1 : 0 }
+        if let v = args["dUrlSupport"] as? Bool { unit.durlsupport = v ? 1 : 0 }
+        if let v = args["privacy"] as? Bool { unit.privacy = v ? 1 : 0 }
+        if let v = jsonDictionary(args["ext"]) { unit.ext = v }
         nativeUnit = unit
 
         unit.fetchDemand(adObject: gamRequest) { [weak self] resultCode in

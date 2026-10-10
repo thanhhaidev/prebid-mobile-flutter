@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -123,10 +125,17 @@ class PrebidGamNativeAd extends StatefulWidget {
     this.context,
     this.contextSubType,
     this.placementType,
+    this.placementCount,
+    this.sequence,
+    this.assetUrlSupport,
+    this.dUrlSupport,
+    this.privacy,
+    this.ext,
     this.customTargeting,
     this.gpid,
     this.pbAdSlot,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
     this.listener,
   });
 
@@ -163,6 +172,24 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
+  /// Number of identical placements (`plcmtcnt`).
+  final int? placementCount;
+
+  /// Native request `seq` (0 for the first ad of a sequence).
+  final int? sequence;
+
+  /// Native request `aurlsupport`: the app can load assets from a URL.
+  final bool? assetUrlSupport;
+
+  /// Native request `durlsupport`: the app supports DCO URLs.
+  final bool? dUrlSupport;
+
+  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
+  final bool? privacy;
+
+  /// Native request `ext`.
+  final Map<String, Object?>? ext;
+
   /// Custom key-values added to the Google Ad Manager request, next to
   /// Prebid's `hb_*` keys (which take precedence on conflict).
   final Map<String, String>? customTargeting;
@@ -176,6 +203,10 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
   /// `{"ext":{"data":{"section":"news"}}}`).
   final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
 
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
@@ -256,11 +287,21 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
         'contextSubType': widget.contextSubType!.value,
       if (widget.placementType != null)
         'placementType': widget.placementType!.value,
+      if (widget.placementCount != null)
+        'placementCount': widget.placementCount,
+      if (widget.sequence != null) 'sequence': widget.sequence,
+      if (widget.assetUrlSupport != null)
+        'assetUrlSupport': widget.assetUrlSupport,
+      if (widget.dUrlSupport != null) 'dUrlSupport': widget.dUrlSupport,
+      if (widget.privacy != null) 'privacy': widget.privacy,
+      if (widget.ext != null) 'ext': jsonEncode(widget.ext),
       if (widget.customTargeting != null)
         'customTargeting': widget.customTargeting,
       if (widget.gpid != null) 'gpid': widget.gpid,
       if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.globalOrtbConfig != null)
+        'globalOrtbConfig': widget.globalOrtbConfig,
     };
   }
 

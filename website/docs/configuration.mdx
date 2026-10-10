@@ -52,7 +52,9 @@ On iOS, `setPrebidServerUrl` throws a `PlatformException` for a malformed URL, a
 | `setShareGeoLocation(bool)` | Send the device location when the app has location permission. |
 | `setPbsDebug(bool)` | Ask Prebid Server for debug output (`test: 1`). |
 | `setCustomStatusEndpoint(String)` | Override the `/status` URL used at initialization. |
-| `setLogLevel(PrebidLogLevel)` | Native SDK log verbosity: `debug`, `verbose`, `info`, `warn`, `error`, `severe`. |
+| `setLogLevel(PrebidLogLevel)` | Native SDK log verbosity: `debug`, `verbose`, `info`, `warn`, `error`, `severe`, or `none`. |
+| `setLogListener(listener)` | Prebid's log messages to your code instead of the console (see [Debugging](/docs/debugging#native-logs)). |
+| `setLocationUpdatesEnabled(bool)`, `getLocationUpdatesEnabled()` <Only platform="ios" /> | Prebid's own Core Location updates for `device.geo` (default `true`). |
 | `setPrebidServerAccountId(String)`, `getPrebidServerAccountId()` | The Prebid Server account, switchable at runtime. |
 | `setPrebidServerUrl(String)`, `getPrebidServerUrl()` | The auction endpoint, switchable at runtime. |
 

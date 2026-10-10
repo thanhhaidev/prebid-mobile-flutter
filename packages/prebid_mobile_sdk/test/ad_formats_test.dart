@@ -34,6 +34,7 @@ void main() {
           '{"ext":{"gpid":"/1/i"}}',
           null,
           null,
+          any,
         ),
       ).called(1);
 
@@ -74,7 +75,16 @@ void main() {
       await ad.loadAd();
       final c =
           verify(
-                mockApi.loadAd(any, 'config-c', any, any, any, any, captureAny),
+                mockApi.loadAd(
+                  any,
+                  'config-c',
+                  any,
+                  any,
+                  any,
+                  any,
+                  captureAny,
+                  any,
+                ),
               ).captured.single
               as FullscreenControlsConfig;
       expect(c.closeButtonArea, 0.2);
@@ -108,7 +118,7 @@ void main() {
 
       await ad.loadAd();
       verify(
-        mockApi.loadAd(any, 'config-2', null, null, '{}', null, null),
+        mockApi.loadAd(any, 'config-2', null, null, '{}', null, null, any),
       ).called(1);
 
       await ad.show();

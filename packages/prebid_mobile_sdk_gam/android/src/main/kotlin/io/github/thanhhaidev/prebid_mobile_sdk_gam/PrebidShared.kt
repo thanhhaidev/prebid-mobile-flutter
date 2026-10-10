@@ -189,3 +189,22 @@ internal fun ResultCode.toDartCode(): String = when (this) {
     ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
     ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
 }
+
+/** The native request options of a native widget (`seq`, URL support, privacy, `ext`…). */
+internal class NativeRequestOptions(params: Map<*, *>) {
+    private val placementCount = params.int("placementCount")
+    private val sequence = params.int("sequence")
+    private val assetUrlSupport = params["assetUrlSupport"] as? Boolean
+    private val dUrlSupport = params["dUrlSupport"] as? Boolean
+    private val privacy = params["privacy"] as? Boolean
+    private val ext = params.json("ext")
+
+    fun applyTo(unit: NativeAdUnit) {
+        placementCount?.let(unit::setPlacementCount)
+        sequence?.let(unit::setSeq)
+        assetUrlSupport?.let(unit::setAUrlSupport)
+        dUrlSupport?.let(unit::setDUrlSupport)
+        privacy?.let(unit::setPrivacy)
+        ext?.let(unit::setExt)
+    }
+}

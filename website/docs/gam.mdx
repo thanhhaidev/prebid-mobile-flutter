@@ -37,7 +37,7 @@ PrebidGamBannerAd(
 )
 ```
 
-`PrebidGamBannerAd` takes the [core banner](/docs/banner) parameters (`additionalSizes`, `adFormats`, `isVideo`, `videoPlacementType`, `videoParameters` <Only platform="ios" />, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `refreshIntervalSeconds`, `autoLoad`, `controller`, `videoListener`) plus:
+`PrebidGamBannerAd` takes the [core banner](/docs/banner) parameters (`additionalSizes`, `adFormats`, `isVideo`, `videoPlacementType`, `videoParameters` <Only platform="ios" />, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig`, `refreshIntervalSeconds`, `autoLoad`, `controller`, `videoListener`) plus:
 
 | Parameter | Description |
 | --- | --- |
@@ -77,11 +77,11 @@ rewarded = PrebidGamRewardedAd(
 await rewarded.loadAd();
 ```
 
-Both take `customTargeting`, [`controls`](/docs/fullscreen#rendering-controls) (`supportSKOverlay` included <Only platform="ios" />), `videoParameters` and `impOrtbConfig`; the interstitial also takes `isVideo` (request a video creative) and `adFormats` (a multiformat interstitial; overrides `isVideo`). The lifecycle matches the [core fullscreen ads](/docs/fullscreen#lifecycle), with `isLoaded` to check readiness: `show()` on an ad that isn't loaded reports `onAdFailed` ("The ad is not loaded").
+Both take `customTargeting`, [`controls`](/docs/fullscreen#rendering-controls) (`supportSKOverlay` included <Only platform="ios" />), `videoParameters`, `impOrtbConfig`, `globalOrtbConfig` and `pbAdSlot` (on iOS sent in the `imp` JSON, since Prebid iOS has no setter on these units); the interstitial also takes `isVideo` (request a video creative) and `adFormats` (a multiformat interstitial; overrides `isVideo`). The lifecycle matches the [core fullscreen ads](/docs/fullscreen#lifecycle), with `isLoaded` to check readiness: `show()` on an ad that isn't loaded reports `onAdFailed` ("The ad is not loaded").
 
 <Only platform="android" /> Prebid Android drops a request made before the Prebid SDK finished initializing, so a banner, interstitial or rewarded ad loaded that early reports `onAdFailed` ("The Prebid SDK is not initialized") instead of never answering; the native ad reports `onFetchDemandFailed('prebidSdkNotInitialized')` and still requests the GAM ad.
 
-Set the GPID or ad slot of a fullscreen ad through `impOrtbConfig`, e.g. `'{"ext":{"gpid":"/1111/interstitial","data":{"pbadslot":"/1111/interstitial"}}}'`.
+Set the GPID of a fullscreen ad through `impOrtbConfig`, e.g. `'{"ext":{"gpid":"/1111/interstitial"}}'`.
 
 ## Native
 
@@ -112,7 +112,7 @@ PrebidGamNativeAd(
 | `onAdClicked` | The rendered ad was clicked. |
 | `onAdExpired` | The Prebid bid expired before an impression. |
 
-Without `customFormatId`, only unified native ads are requested. `assets` and `eventTrackers` change the requested native assets (default: title, icon, main image, sponsored, description, call to action); `context`, `contextSubType` and `placementType` default to social, general social and in-feed.
+Without `customFormatId`, only unified native ads are requested. `assets` and `eventTrackers` change the requested native assets (default: title, icon, main image, sponsored, description, call to action); `context`, `contextSubType` and `placementType` default to social, general social and in-feed. `placementCount`, `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy` and `ext` set the native request's `plcmtcnt`, `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`.
 
 | Parameter | Description |
 | --- | --- |
@@ -120,6 +120,7 @@ Without `customFormatId`, only unified native ads are requested. `assets` and `e
 | `gpid` | The Global Placement ID (`imp.ext.gpid`). |
 | `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). |
 | `impOrtbConfig` | Impression-level OpenRTB JSON merged into the `imp`. |
+| `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
 
 ## Compatibility
 

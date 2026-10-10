@@ -20,7 +20,8 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         videoConfig: VideoParametersConfig?,
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
-        controls: FullscreenControlsConfig?
+        controls: FullscreenControlsConfig?,
+        pbAdSlot: String?
     ) throws {
         // A reload replaces the previous unit, which must stop sending events
         // under this ad id.
@@ -31,7 +32,8 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         } else {
             adUnit = InterstitialRenderingAdUnit(configID: configId)
         }
-        if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        // Prebid iOS has no pbAdSlot setter on rendering units: send it in the imp.
+        if let config = impOrtb(impOrtbConfig, pbAdSlot: pbAdSlot) { adUnit.setImpORTBConfig(config) }
         if let globalOrtbConfig = globalOrtbConfig { adUnit.setGlobalORTBConfig(globalOrtbConfig) }
         controls?.apply(to: adUnit)
         if let formats = adFormatSet(adFormats) { adUnit.adFormats = formats }

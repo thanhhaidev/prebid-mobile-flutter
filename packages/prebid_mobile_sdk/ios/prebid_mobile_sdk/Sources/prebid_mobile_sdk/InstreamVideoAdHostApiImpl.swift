@@ -36,6 +36,22 @@ final class InstreamVideoAdHostApiImpl: InstreamVideoAdHostApi {
         adUnits.removeValue(forKey: adId)
     }
 
+    func generateInstreamUriForGam(adUnitId: String, sizes: [Int64], keywords: [String: String]) throws -> String {
+        let slotSizes = try stride(from: 0, to: sizes.count - 1, by: 2).map { i -> IMAAdSlotSize in
+            switch (sizes[i], sizes[i + 1]) {
+            case (400, 300): return .Size400x300
+            case (640, 480): return .Size640x480
+            case (320, 480): return .Size320x480
+            default:
+                throw PigeonError(code: "invalidSize",
+                                  message: "Prebid iOS supports 400x300, 640x480 and 320x480 only",
+                                  details: nil)
+            }
+        }
+        return try IMAUtils.shared.generateInstreamUriForGAM(
+            adUnitID: adUnitId, adSlotSizes: slotSizes, customKeywords: keywords)
+    }
+
     func destroyAll() {
         adUnits.removeAll()
     }

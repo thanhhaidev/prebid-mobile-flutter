@@ -62,9 +62,14 @@ internal class MultiformatAdHostApiImpl(
         val sizes = config.bannerSizes.orEmpty().filterNotNull().chunked(2)
             .filter { it.size == 2 }
             .map { (w, h) -> AdSize(w.toInt(), h.toInt()) }
-        if (sizes.isNotEmpty()) {
+        // A banner without sizes is an interstitial's display format (its
+        // minimum size and API frameworks still apply).
+        val interstitialBanner = config.isInterstitial &&
+            (config.bannerApi != null || config.interstitialMinWidthPercentage != null ||
+                config.interstitialMinHeightPercentage != null)
+        if (sizes.isNotEmpty() || interstitialBanner) {
             setBannerParameters(BannerParameters().apply {
-                adSizes = sizes.toSet()
+                if (sizes.isNotEmpty()) adSizes = sizes.toSet()
                 config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
                 config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
                 config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
@@ -77,7 +82,8 @@ internal class MultiformatAdHostApiImpl(
         config.adPosition?.let { pos ->
             AdPosition.values().firstOrNull { it.value.toLong() == pos }?.let(::setAdPosition)
         }
-        // supportSKOverlay: iOS only (SKAdNetwork).
+        // supportSKOverlay: iOS only (SKAdNetwork). pbAdSlot and the ORTB
+        // configs: iOS only too, PrebidAdUnit / PrebidRequest have no setters.
     }
 
     // Units with an auction running. Destroying one clears its result

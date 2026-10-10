@@ -32,6 +32,11 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
     override fun getPurposeConsent(index: Long): Boolean? = TargetingParams.getPurposeConsent(index.toInt())
     override fun getDeviceAccessConsent(): Boolean? = TargetingParams.getDeviceAccessConsent()
 
+    // Prebid's rule (UserConsentManager.canAccessDeviceData, not public API):
+    // without a device-access answer, allowed unless GDPR applies.
+    override fun isAllowedAccessDeviceData(): Boolean =
+        TargetingParams.getDeviceAccessConsent() ?: (TargetingParams.isSubjectToGDPR() != true)
+
     // US Privacy / CCPA. Prebid's UserConsentManager reads (and listens to)
     // IABUSPrivacy_String in the default shared preferences, the IAB location.
     override fun setUSPrivacyString(value: String?) {
@@ -64,6 +69,7 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
     override fun addAppKeywords(keywords: List<String>) = warnAppKeywordsUnsupported()
     override fun removeAppKeyword(keyword: String) = warnAppKeywordsUnsupported()
     override fun clearAppKeywords() = warnAppKeywordsUnsupported()
+    override fun getAppKeywords(): List<String> = emptyList()
 
     private fun warnAppKeywordsUnsupported() {
         Log.w(
@@ -142,12 +148,20 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
     // SKAdNetwork / iTunes IDs are iOS concepts; Android reads the package name.
     override fun setSourceApp(sourceApp: String?) {}
     override fun setItunesId(itunesId: String?) {}
+    override fun getSourceApp(): String? = null
+    override fun getItunesId(): String? = null
+
+    override fun setBundleName(bundleName: String?) { TargetingParams.setBundleName(bundleName) }
+    override fun getBundleName(): String? = TargetingParams.getBundleName()
 
     override fun setOmidPartnerName(name: String?) { TargetingParams.setOmidPartnerName(name) }
     override fun setOmidPartnerVersion(version: String?) { TargetingParams.setOmidPartnerVersion(version) }
 
     override fun setUserLatLng(latitude: Double, longitude: Double) {
         TargetingParams.setUserLatLng(latitude.toFloat(), longitude.toFloat())
+    }
+    override fun clearUserLatLng() {
+        TargetingParams.setUserLatLng(null, null)
     }
     override fun setLocationPrecision(precision: Long?) {
         TargetingParams.setLocationDecimalPrecision(precision?.toInt())

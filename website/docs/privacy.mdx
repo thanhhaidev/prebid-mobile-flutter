@@ -41,6 +41,7 @@ Pass `null` to any setter to clear the value. Explicit values take precedence ov
 | `setPurposeConsents(String?)` / `getPurposeConsents()` | TCF purpose consents as a binary string (`"101…"`). |
 | `getPurposeConsent(int index)` | Consent for one purpose, 0-based (purpose 1 is index 0). |
 | `getDeviceAccessConsent()` | TCF purpose 1: storing and reading information on the device. |
+| `isAllowedAccessDeviceData()` | Whether Prebid may read device data: purpose 1 consented, or unanswered while GDPR doesn't apply. |
 | `setUSPrivacyString(String?)` / `getUSPrivacyString()` | The IAB US Privacy string (`regs.us_privacy`). |
 | `setSubjectToCOPPA(bool?)` / `getSubjectToCOPPA()` | COPPA (`regs.coppa`). |
 

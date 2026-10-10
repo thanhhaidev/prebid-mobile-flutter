@@ -125,6 +125,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
         applyVideoParameters(args["videoParameters"], to: bannerView.videoParameters)
         if let pbAdSlot = pbAdSlot { bannerView.adUnitConfig.setPbAdSlot(pbAdSlot) }
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
+        if let config = args["globalOrtbConfig"] as? String { bannerView.setGlobalORTBConfig(config) }
 
         if let interval = refreshInterval, interval > 0 {
             bannerView.refreshInterval = TimeInterval(interval)

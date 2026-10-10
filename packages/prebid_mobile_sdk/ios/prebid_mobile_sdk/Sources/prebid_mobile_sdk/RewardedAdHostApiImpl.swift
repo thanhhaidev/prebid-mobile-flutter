@@ -20,7 +20,8 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         videoConfig: VideoParametersConfig?,
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
-        controls: FullscreenControlsConfig?
+        controls: FullscreenControlsConfig?,
+        pbAdSlot: String?
     ) throws {
         try destroy(adId: adId)
         let adUnit: RewardedAdUnit
@@ -29,7 +30,8 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         } else {
             adUnit = RewardedAdUnit(configID: configId)
         }
-        if let impOrtbConfig = impOrtbConfig { adUnit.setImpORTBConfig(impOrtbConfig) }
+        // Prebid iOS has no pbAdSlot setter on rendering units: send it in the imp.
+        if let config = impOrtb(impOrtbConfig, pbAdSlot: pbAdSlot) { adUnit.setImpORTBConfig(config) }
         if let globalOrtbConfig = globalOrtbConfig { adUnit.setGlobalORTBConfig(globalOrtbConfig) }
         if let formats = adFormatSet(adFormats) { adUnit.adFormats = formats }
         // videoParameters is get-only but returns the ad unit's live

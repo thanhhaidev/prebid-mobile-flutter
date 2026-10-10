@@ -14,9 +14,16 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `initializeSdk(nonTrackingUrl:)` | Ignored | ✓ |
 | `setSourceApp`, `setItunesId` (SKAdNetwork) | Ignored | ✓ |
 | `PrebidFullscreenControls.supportSKOverlay` | Ignored | ✓ (core and GAM) |
-| `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ |
+| `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ (interstitials only) |
 | Rewarded skip controls | ✓ | Ignored |
-| Rewarded `adFormats` and minimum size (`PrebidFullscreenControls.minSizePercentage`) | Ignored | ✓ |
+| Rewarded `adFormats` (core) and minimum size (`PrebidFullscreenControls.minSizePercentage`, core and GAM; AdMob and MAX rewarded have none) | Ignored | ✓ |
+| Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`, `PrebidMultiformatAd`) | Ignored: Prebid Android's `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig` | ✓ |
+| AdMob native `impOrtbConfig`, `globalOrtbConfig` | Ignored: no setter on Prebid's mediation native unit | ✓ |
+| Native response image `width` / `height` (`PrebidNativeImage`) | `null` | ✓ |
+| `PrebidTargeting.setBundleName` (`app.bundle` override) | ✓ | Ignored: iOS sends the bundle ID or the iTunes ID |
+| `PrebidMobile.setLocationUpdatesEnabled` | Ignored: Android reads the last known location | ✓ |
+| `PrebidTargeting.getAppKeywords`, `getSourceApp`, `getItunesId` | Empty / `null` | ✓ |
+| `PrebidInstreamVideoAd.generateInstreamUriForGam` sizes | Any | 400x300, 640x480 and 320x480 only (others throw) |
 | Banner `videoParameters` (core, GAM, AdMob, MAX) | SDK defaults | ✓ |
 | Interstitial / rewarded `videoParameters` | `maxDuration` caps the rendered video | ✓ every field |
 | App keywords (`PrebidTargeting.addAppKeyword` and the rest) | Logged and ignored: set `app.keywords` with `setGlobalOrtbConfig` | ✓ |
@@ -37,6 +44,9 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
 | `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
 | Creative factory timeouts | iOS stores seconds | Milliseconds on both |
+| `pbAdSlot` on interstitial / rewarded (every package) and on AdMob / MAX banners | Prebid iOS has no setter on these units | Set on both; on iOS through `imp.ext.data.pbadslot` in `impOrtbConfig` (yours wins) |
+| Log level `none` | Prebid iOS has no such level | Silent on both |
+| `PrebidMobile.setLogListener` | Android filters by level before its logger; iOS's logger replaces the console one | Messages at or above the log level, instead of the console, on both |
 
 ## Remaining differences
 
@@ -45,5 +55,7 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 - **Runtime server switch (iOS):** `setPrebidServerUrl` throws for a malformed URL and leaves the `nonTrackingUrl` from `initializeSdk` in place; `getPrebidServerUrl` returns the URL the current user's auctions use.
 - **Rendering API caching (iOS):** creating an Original API ad unit turns `useCacheForReportingWithRenderingApi` on.
 - **Native request `ext` fields:** an asset's `ext` (on its `title`, `img` or `data` object) is sent on both platforms; `NativeAsset.assetExt` and `NativeEventTracker.ext` only on Android, because Prebid iOS has no asset-level `ext` and doesn't serialize the tracker's.
+- **Log levels:** Android has no `verbose` or `severe`: they log at `debug` and `error`.
+- **Interstitial and rewarded "leaving the app":** iOS reports it separately from the click; the plugin reports the click (`onAdClicked`) on both and doesn't forward it.
 - **Result codes:** both platforms report the same names for the same outcome. A few exist on one platform only: `prebidInvalidContext`, `prebidInvalidAdObject` and `prebidInvalidNativeRequest` on Android; `prebidUnknownError`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData` and `prebidSDKMisuse` on iOS.
 - **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).

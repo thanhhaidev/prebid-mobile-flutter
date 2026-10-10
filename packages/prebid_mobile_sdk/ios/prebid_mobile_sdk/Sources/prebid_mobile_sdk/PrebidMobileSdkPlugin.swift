@@ -59,6 +59,7 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         // keep running for the rest of the process.
         releaseAllAds()
         prebidMobileApi?.clearEventDelegate()
+        prebidMobileApi?.clearLogger()
     }
 
     private func releaseAllAds() {

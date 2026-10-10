@@ -3,10 +3,12 @@ package io.github.thanhhaidev.prebid_mobile_sdk
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import org.json.JSONObject
 import org.prebid.mobile.EidsPlacement
 import org.prebid.mobile.ExternalUserId
 import org.prebid.mobile.Host
+import org.prebid.mobile.LogUtil
 import org.prebid.mobile.PrebidEventDelegate
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.TargetingParams
@@ -98,14 +100,15 @@ internal class PrebidMobileHostApiImpl(
     }
 
     override fun setLogLevel(level: Long) {
-        // Dart PrebidLogLevel order: debug, verbose, info, warn, error, severe.
-        // Android has no VERBOSE/SEVERE: verbose -> DEBUG, severe -> ERROR
-        // (closest levels; NONE would silence errors too).
+        // Dart PrebidLogLevel order: debug, verbose, info, warn, error,
+        // severe, none. Android has no VERBOSE/SEVERE: verbose -> DEBUG,
+        // severe -> ERROR (the closest levels).
         val logLevel = when (level.toInt()) {
             0, 1 -> PrebidMobile.LogLevel.DEBUG
             2 -> PrebidMobile.LogLevel.INFO
             3 -> PrebidMobile.LogLevel.WARN
             4, 5 -> PrebidMobile.LogLevel.ERROR
+            6 -> PrebidMobile.LogLevel.NONE
             else -> PrebidMobile.LogLevel.DEBUG
         }
         PrebidMobile.setLogLevel(logLevel)
@@ -198,6 +201,44 @@ internal class PrebidMobileHostApiImpl(
         }
         PrebidMobile.setEventDelegate(eventDelegate)
     }
+
+    private var logger: LogUtil.PrebidLogger? = null
+
+    /** Prebid's logger before this engine set its own, restored on disable. */
+    private var consoleLogger: LogUtil.PrebidLogger? = null
+
+    override fun setLogListenerEnabled(enabled: Boolean) {
+        if (!enabled) return clearLogger()
+        if (logger == null) consoleLogger = PrebidMobile.getCustomLogger()
+        val forwarder = object : LogUtil.PrebidLogger {
+            override fun println(priority: Int, tag: String, message: String) {
+                send(priority.toDartLogLevel(), message)
+            }
+
+            override fun e(tag: String, message: String, throwable: Throwable) {
+                send(4, throwable.message?.let { "$message: $it" } ?: message)
+            }
+        }
+        logger = forwarder
+        PrebidMobile.setCustomLogger(forwarder)
+    }
+
+    // Prebid logs from any thread; Flutter channels need main.
+    private fun send(level: Long, message: String) {
+        mainHandler.post { eventFlutterApi.onLog(level, message) {} }
+    }
+
+    /** Restores the console logger, while the current one is still this engine's. */
+    fun clearLogger() {
+        val own = logger ?: return
+        logger = null
+        if (PrebidMobile.getCustomLogger() === own) consoleLogger?.let(PrebidMobile::setCustomLogger)
+    }
+
+    // Location updates are an iOS setting: Prebid Android only reads the
+    // last known location (setShareGeoLocation).
+    override fun setLocationUpdatesEnabled(enabled: Boolean) {}
+    override fun getLocationUpdatesEnabled(): Boolean? = null
 
     /**
      * Drops this engine's delegate. Prebid has a single process-wide one, so
@@ -295,4 +336,14 @@ internal class PrebidMobileHostApiImpl(
     private companion object {
         val pendingInitCallbacks = mutableListOf<(Result<InitializationResult>) -> Unit>()
     }
+}
+
+/** An android.util.Log priority as a Dart PrebidLogLevel index. */
+private fun Int.toDartLogLevel(): Long = when (this) {
+    Log.VERBOSE -> 1
+    Log.INFO -> 2
+    Log.WARN -> 3
+    Log.ERROR -> 4
+    Log.ASSERT -> 5
+    else -> 0
 }

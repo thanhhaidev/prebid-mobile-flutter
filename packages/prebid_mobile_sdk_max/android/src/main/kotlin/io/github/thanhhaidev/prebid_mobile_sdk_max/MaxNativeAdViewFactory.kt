@@ -165,6 +165,9 @@ internal class MaxNativePlatformView(
             c.subType?.let { nativeAdUnit.setContextSubType(it) }
             c.placement?.let { nativeAdUnit.setPlacementType(it) }
         }
+        NativeRequestOptions(params).applyTo(nativeAdUnit)
+        (params["impOrtbConfig"] as? String)?.let { nativeAdUnit.setImpOrtbConfig(it) }
+        (params["globalOrtbConfig"] as? String)?.let { nativeAdUnit.setGlobalOrtbConfig(it) }
 
         (nativeAssetsFrom(params["assets"]) ?: defaultAssets()).forEach { nativeAdUnit.addAsset(it) }
         (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))

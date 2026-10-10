@@ -85,6 +85,8 @@ internal class GamNativePlatformView(
     private val gpid = params["gpid"] as? String
     private val pbAdSlot = params["pbAdSlot"] as? String
     private val impOrtbConfig = params["impOrtbConfig"] as? String
+    private val globalOrtbConfig = params["globalOrtbConfig"] as? String
+    private val requestOptions = NativeRequestOptions(params)
 
     private val methodChannel =
         MethodChannel(messenger, "prebid_mobile_sdk_gam/native_$channelId")
@@ -145,6 +147,8 @@ internal class GamNativePlatformView(
         gpid?.let { nativeAdUnit.setGpid(it) }
         pbAdSlot?.let { nativeAdUnit.setPbAdSlot(it) }
         impOrtbConfig?.let { nativeAdUnit.setImpOrtbConfig(it) }
+        globalOrtbConfig?.let { nativeAdUnit.setGlobalOrtbConfig(it) }
+        requestOptions.applyTo(nativeAdUnit)
         adUnit = nativeAdUnit
 
         val loader = buildAdLoader()

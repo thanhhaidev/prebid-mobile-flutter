@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -118,6 +120,15 @@ class PrebidMultiformatAd {
     this.bannerApi,
     this.interstitialMinSizePercentage,
     this.supportSKOverlay = false,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.nativePlacementCount,
+    this.nativeSequence,
+    this.nativeAssetUrlSupport,
+    this.nativeDUrlSupport,
+    this.nativePrivacy,
+    this.nativeExt,
     this.onDemandRefreshed,
   }) : _adId = _nextId++ {
     _register();
@@ -178,11 +189,43 @@ class PrebidMultiformatAd {
   final List<VideoApi>? bannerApi;
 
   /// Minimum interstitial creative size, in percent of the screen (width,
-  /// height), for an [isInterstitial] banner request.
+  /// height), for an [isInterstitial] banner request. With no [bannerSizes]
+  /// (e.g. a display + video interstitial), the display format is still
+  /// requested with this minimum size.
   final Size? interstitialMinSizePercentage;
 
   /// iOS only: show an SKOverlay for an SKAdNetwork interstitial win.
   final bool supportSKOverlay;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
+  /// Original API ad unit has no setter for it.
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
+  /// only, as [pbAdSlot].
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
+  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  final String? globalOrtbConfig;
+
+  /// Number of identical native placements (`plcmtcnt`).
+  final int? nativePlacementCount;
+
+  /// Native request `seq` (0 for the first ad of a sequence).
+  final int? nativeSequence;
+
+  /// Native request `aurlsupport`: the app can load assets from a URL.
+  final bool? nativeAssetUrlSupport;
+
+  /// Native request `durlsupport`: the app supports DCO URLs.
+  final bool? nativeDUrlSupport;
+
+  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
+  final bool? nativePrivacy;
+
+  /// Native request `ext`.
+  final Map<String, Object?>? nativeExt;
 
   /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).
   /// The first auction's result is returned by [fetchDemand].
@@ -216,6 +259,12 @@ class PrebidMultiformatAd {
         context: nativeContext?.value,
         contextSubType: nativeContextSubType?.value,
         placementType: nativePlacementType?.value,
+        placementCount: nativePlacementCount,
+        sequence: nativeSequence,
+        assetUrlSupport: nativeAssetUrlSupport,
+        dUrlSupport: nativeDUrlSupport,
+        privacy: nativePrivacy,
+        ext: nativeExt == null ? null : jsonEncode(nativeExt),
       );
     }
 
@@ -231,7 +280,15 @@ class PrebidMultiformatAd {
 
     // Build video config if parameters provided
     final videoConfig = videoParameters?.toConfig();
-    if (flatSizes == null && videoConfig == null && nativeConfig == null) {
+    // An interstitial's display format needs no size (see
+    // [interstitialMinSizePercentage]).
+    final interstitialBanner =
+        isInterstitial &&
+        (bannerApi != null || interstitialMinSizePercentage != null);
+    if (flatSizes == null &&
+        !interstitialBanner &&
+        videoConfig == null &&
+        nativeConfig == null) {
       throw ArgumentError(
         'Set banner sizes, video parameters or native assets: a request '
         'without any format gets no bids.',
@@ -256,6 +313,9 @@ class PrebidMultiformatAd {
       interstitialMinHeightPercentage: interstitialMinSizePercentage?.height
           .round(),
       supportSKOverlay: supportSKOverlay,
+      pbAdSlot: pbAdSlot,
+      impOrtbConfig: impOrtbConfig,
+      globalOrtbConfig: globalOrtbConfig,
     );
 
     return _toResponse(await api.fetchDemand(_adId, config));

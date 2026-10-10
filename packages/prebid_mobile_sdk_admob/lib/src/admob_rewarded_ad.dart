@@ -32,6 +32,8 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
     required this.adMobAdUnitId,
     this.controls,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.pbAdSlot,
     this.videoParameters,
     this.listener,
   }) : super(_channel);
@@ -42,7 +44,8 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
   /// The AdMob rewarded ad unit ID.
   final String adMobAdUnitId;
 
-  /// Close / skip button, sound and (interstitial) minimum-size controls.
+  /// Close / skip button and sound controls. The minimum size and auto-close
+  /// don't apply: Prebid's mediation rewarded ad unit has neither.
   final PrebidFullscreenControls? controls;
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. Also
@@ -50,6 +53,15 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
   /// slot (`{"ext":{"data":{"pbadslot":"..."}}}`), which these units have no
   /// separate setters for on iOS.
   final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter on
+  /// this ad unit, so on iOS it is added to [impOrtbConfig] (a `pbadslot`
+  /// already there wins).
+  final String? pbAdSlot;
 
   /// OpenRTB video parameters for a video rewarded. iOS applies every field;
   /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
@@ -66,6 +78,8 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
     'adMobAdUnitId': adMobAdUnitId,
     'controls': ?controls?.toMap(),
     'impOrtbConfig': ?impOrtbConfig,
+    'globalOrtbConfig': ?globalOrtbConfig,
+    'pbAdSlot': ?pbAdSlot,
     'videoParameters': ?videoParameters?.toMap(),
     ...debugDropBidArgs(),
   };

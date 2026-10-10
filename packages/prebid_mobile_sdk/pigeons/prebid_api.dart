@@ -179,9 +179,13 @@ class NativeAdData {
 
 /// A native response image asset (type: 1=icon, 3=main).
 class NativeAdImageData {
-  NativeAdImageData({required this.type, this.url});
+  NativeAdImageData({required this.type, this.url, this.width, this.height});
   final int type;
   final String? url;
+
+  /// iOS only: the image size the bid declares (Prebid Android drops it).
+  final int? width;
+  final int? height;
 }
 
 /// A native response data asset (OpenRTB native data asset type).
@@ -402,6 +406,15 @@ abstract class PrebidMobileHostApi {
   /// [PrebidEventFlutterApi.onBidResponse] (`PrebidEventDelegate`).
   void setEventDelegateEnabled(bool enabled);
 
+  /// Routes Prebid's log messages to [PrebidEventFlutterApi.onLog] instead of
+  /// the console (Prebid's custom logger), or restores the console.
+  void setLogListenerEnabled(bool enabled);
+
+  /// iOS only: Prebid's own location updates (`locationUpdatesEnabled`);
+  /// the getter returns null on Android.
+  void setLocationUpdatesEnabled(bool enabled);
+  bool? getLocationUpdatesEnabled();
+
   // SharedID
   void setSendSharedId(bool send);
   ExternalUserIdData? getSharedId();
@@ -465,6 +478,9 @@ abstract class TargetingHostApi {
   bool? getPurposeConsent(int index);
   bool? getDeviceAccessConsent();
 
+  /// Whether the consent signals allow reading device data (TCF purpose 1).
+  bool isAllowedAccessDeviceData();
+
   // US Privacy / CCPA
   void setUSPrivacyString(String? value);
   String? getUSPrivacyString();
@@ -481,6 +497,7 @@ abstract class TargetingHostApi {
   void addAppKeywords(List<String> keywords);
   void removeAppKeyword(String keyword);
   void clearAppKeywords();
+  List<String> getAppKeywords();
 
   // App Ext Data
   void addAppExtData(String key, String value);
@@ -517,11 +534,16 @@ abstract class TargetingHostApi {
   void setSourceApp(String? sourceApp);
   void setItunesId(String? itunesId);
 
+  /// Android only: overrides `app.bundle`; null restores the app's own.
+  void setBundleName(String? bundleName);
+  String? getBundleName();
+
   void setOmidPartnerName(String? name);
   void setOmidPartnerVersion(String? version);
 
   // Location
   void setUserLatLng(double latitude, double longitude);
+  void clearUserLatLng();
   void setLocationPrecision(int? precision);
 
   // Current values of the settings above.
@@ -537,6 +559,11 @@ abstract class TargetingHostApi {
   /// [latitude, longitude], or null when not set.
   List<double>? getUserLatLng();
   int? getLocationPrecision();
+
+  /// iOS only: the SKAdNetwork `sourceapp` and the iTunes ID (null on
+  /// Android).
+  String? getSourceApp();
+  String? getItunesId();
 }
 
 /// Interstitial ad operations (Dart → Native).
@@ -550,6 +577,7 @@ abstract class InterstitialAdHostApi {
     String? impOrtbConfig,
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   );
   void show(int adId);
   void destroy(int adId);
@@ -566,6 +594,7 @@ abstract class RewardedAdHostApi {
     String? impOrtbConfig,
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   );
   void show(int adId);
   void destroy(int adId);
@@ -602,9 +631,19 @@ class MultiformatAdRequestConfig {
     this.interstitialMinWidthPercentage,
     this.interstitialMinHeightPercentage,
     this.supportSKOverlay = false,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
   });
   final String configId;
   final String? gpid;
+
+  /// iOS only (Prebid Android's PrebidAdUnit has no setters for them):
+  /// `imp.ext.data.pbadslot`, impression-level and per-unit request-level
+  /// OpenRTB JSON.
+  final String? pbAdSlot;
+  final String? impOrtbConfig;
+  final String? globalOrtbConfig;
 
   /// Banner API frameworks (OpenRTB `banner.api`).
   final List<int?>? bannerApi;
@@ -730,6 +769,15 @@ abstract class InstreamVideoAdHostApi {
     InstreamVideoAdRequestConfig config,
   );
   void destroy(int adId);
+
+  /// The Google Ad Manager VAST tag URL for an IMA player, with the bid's
+  /// targeting keywords; sizes are [width, height, ...]. Throws for a size
+  /// iOS doesn't support (400x300, 640x480 and 320x480 only).
+  String generateInstreamUriForGam(
+    String adUnitId,
+    List<int> sizes,
+    Map<String, String> keywords,
+  );
 }
 
 // =============================================================================
@@ -748,4 +796,8 @@ abstract class AdFlutterApi {
 abstract class PrebidEventFlutterApi {
   @asyncCallback
   void onBidResponse(String? request, String? response);
+
+  /// A Prebid log message; level is a PrebidLogLevel index.
+  @asyncCallback
+  void onLog(int level, String message);
 }

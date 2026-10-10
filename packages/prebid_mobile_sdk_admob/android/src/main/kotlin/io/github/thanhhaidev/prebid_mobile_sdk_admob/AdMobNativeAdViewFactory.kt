@@ -98,6 +98,8 @@ internal class AdMobNativePlatformView(
             c.subType?.let { adUnit.setContextSubType(it) }
             c.placement?.let { adUnit.setPlacementType(it) }
         }
+        // MediationNativeAdUnit has no ORTB config setters: those are iOS only.
+        NativeRequestOptions(params).applyTo(adUnit)
         (nativeAssetsFrom(params["assets"]) ?: nativeAssets()).forEach { adUnit.addAsset(it) }
         val trackers = nativeTrackersFrom(params["eventTrackers"]) ?: listOf(
             NativeEventTracker(

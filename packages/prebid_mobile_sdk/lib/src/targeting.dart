@@ -115,6 +115,12 @@ class PrebidTargeting {
     return api.getDeviceAccessConsent();
   }
 
+  /// Whether the consent signals let Prebid read device data (IDFA / AAID):
+  /// true when TCF purpose 1 is consented, or unanswered while GDPR doesn't
+  /// apply.
+  static Future<bool> isAllowedAccessDeviceData() =>
+      api.isAllowedAccessDeviceData();
+
   // ---------------------------------------------------------------------------
   // User Keywords (user.keywords)
   // ---------------------------------------------------------------------------
@@ -175,6 +181,10 @@ class PrebidTargeting {
   static Future<void> clearAppKeywords() async {
     await api.clearAppKeywords();
   }
+
+  /// The app keywords. iOS only: always empty on Android, which has no app
+  /// keywords.
+  static Future<List<String>> getAppKeywords() => api.getAppKeywords();
 
   // ---------------------------------------------------------------------------
   // App Ext Data (app.ext.data) — First-Party Data
@@ -368,6 +378,22 @@ class PrebidTargeting {
     await api.setItunesId(itunesId);
   }
 
+  /// The SKAdNetwork `sourceapp` ([setSourceApp]); null on Android.
+  static Future<String?> getSourceApp() => api.getSourceApp();
+
+  /// The iTunes ID ([setItunesId]); null on Android.
+  static Future<String?> getItunesId() => api.getItunesId();
+
+  /// Android only: overrides `app.bundle` (e.g. to test against a Prebid
+  /// Server account set up for your production bundle); null restores the
+  /// package name. iOS sends the bundle ID, or [setItunesId] when set.
+  static Future<void> setBundleName(String? bundleName) async {
+    await api.setBundleName(bundleName);
+  }
+
+  /// The `app.bundle` override ([setBundleName]); null on iOS.
+  static Future<String?> getBundleName() => api.getBundleName();
+
   /// OM SDK partner name sent in `source.ext.omidpn`.
   static Future<void> setOmidPartnerName(String? name) async {
     await api.setOmidPartnerName(name);
@@ -385,6 +411,11 @@ class PrebidTargeting {
   /// Sets the user's location (`user.geo`).
   static Future<void> setUserLatLng(double latitude, double longitude) async {
     await api.setUserLatLng(latitude, longitude);
+  }
+
+  /// Removes the location set with [setUserLatLng].
+  static Future<void> clearUserLatLng() async {
+    await api.clearUserLatLng();
   }
 
   /// Number of decimal places kept when rounding device / user coordinates.

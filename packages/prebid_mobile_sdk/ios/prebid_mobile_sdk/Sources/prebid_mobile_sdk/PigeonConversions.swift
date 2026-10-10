@@ -23,7 +23,7 @@ extension FullscreenControlsConfig {
         if let v = supportSKOverlay { adUnit.supportSKOverlay = v }
     }
 
-    // Prebid iOS rewarded has no skip-button controls.
+    // Prebid iOS rewarded has no skip-button or auto-close controls.
     func apply(to adUnit: RewardedAdUnit) {
         if let v = closeButtonArea { adUnit.closeButtonArea = v }
         if let v = closeButtonPosition.flatMap(prebidPosition) { adUnit.closeButtonPosition = v }
@@ -130,6 +130,19 @@ func adFormatSet(_ names: [String]?) -> Set<AdFormat>? {
 }
 
 // MARK: - Native
+
+/// Impression-level ORTB JSON with `ext.data.pbadslot` set to [pbAdSlot]
+/// (unless the JSON already sets one), for units without a pbAdSlot setter.
+func impOrtb(_ json: String?, pbAdSlot: String?) -> String? {
+    guard let pbAdSlot = pbAdSlot else { return json }
+    var imp = jsonObject(json) ?? [:]
+    var ext = imp["ext"] as? [String: Any] ?? [:]
+    var data = ext["data"] as? [String: Any] ?? [:]
+    if data["pbadslot"] == nil { data["pbadslot"] = pbAdSlot }
+    ext["data"] = data
+    imp["ext"] = ext
+    return (try? JSONSerialization.data(withJSONObject: imp)).flatMap { String(data: $0, encoding: .utf8) } ?? json
+}
 
 /// A JSON object string from Dart as a dictionary; nil when invalid.
 func jsonObject(_ json: String?) -> [String: Any]? {
@@ -244,7 +257,14 @@ extension NativeAd {
             privacyUrl: privacyUrl,
             titles: titles.map { $0.text },
             images: images.compactMap { image in
-                image.type.map { NativeAdImageData(type: Int64($0), url: image.url) }
+                image.type.map {
+                    NativeAdImageData(
+                        type: Int64($0),
+                        url: image.url,
+                        width: image.width.map(Int64.init),
+                        height: image.height.map(Int64.init)
+                    )
+                }
             },
             dataAssets: dataObjects.compactMap { data in
                 data.type.map { NativeAdDataAssetData(type: Int64($0), value: data.value) }

@@ -155,6 +155,8 @@ internal class MaxBannerPlatformView(
                 ?.let { adUnit?.setAdPosition(it) }
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
+        (params["globalOrtbConfig"] as? String)?.let { adUnit?.setGlobalOrtbConfig(it) }
+        (params["pbAdSlot"] as? String)?.let { adUnit?.setPbAdSlot(it) }
         // The mediation banner has no video-parameters setter on Android, so a
         // video format is requested with the SDK's default video signals.
         adUnitFormatsFrom(params["adFormats"])?.let { adUnit?.setAdUnitFormats(it) }

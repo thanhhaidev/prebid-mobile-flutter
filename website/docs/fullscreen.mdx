@@ -33,6 +33,7 @@ await interstitial.loadAd();
 | `controls` | [Rendering controls](#rendering-controls). |
 | `impOrtbConfig` | OpenRTB JSON merged into the impression. |
 | `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
+| `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter here, so on iOS the plugin adds it to the `imp` JSON (a `pbadslot` in `impOrtbConfig` wins). |
 | `listener` | `PrebidInterstitialAdListener`. |
 
 ## Rewarded
@@ -52,7 +53,7 @@ rewarded = PrebidRewardedAd(
 await rewarded.loadAd();
 ```
 
-`PrebidRewardedAd` takes the same `videoParameters`, `controls`, `impOrtbConfig` and `globalOrtbConfig` as the interstitial, plus `adFormats` (iOS only: Prebid Android's rewarded unit always asks for both). On Android only `videoParameters.maxDuration` applies, as for the interstitial.
+`PrebidRewardedAd` takes the same `videoParameters`, `controls`, `impOrtbConfig`, `globalOrtbConfig` and `pbAdSlot` as the interstitial, plus `adFormats` (iOS only: Prebid Android's rewarded unit always asks for both). On Android only `videoParameters.maxDuration` applies, as for the interstitial.
 
 `PrebidReward` carries `type`, `count` and the creative's optional `ext` map. The reward rules (after a playback event, after a time, on completion) come from the bid's `rewarded` configuration on Prebid Server.
 
@@ -96,8 +97,8 @@ PrebidInterstitialAd(
 | `closeButtonArea`, `closeButtonPosition` | Close button size (fraction of the screen, `0..1`) and corner. | Both |
 | `skipButtonArea`, `skipButtonPosition`, `skipDelay` | Skip button size, corner, and the seconds before it appears. | Interstitial: both. Rewarded: Android |
 | `isMuted`, `isSoundButtonVisible` | Start muted; show the mute button. | Both |
-| `minSizePercentage` | Minimum creative size as a percentage of the screen. | Interstitial: both. Rewarded: iOS |
-| `isAutoCloseOnCompletionEnabled` | Close when the video completes. | <Only platform="ios" /> |
+| `minSizePercentage` | Minimum creative size as a percentage of the screen. | Interstitial: both. Rewarded: iOS (core and GAM; AdMob and MAX rewarded have none) |
+| `isAutoCloseOnCompletionEnabled` | Close when the video completes. | iOS interstitials (Prebid has no such setting for rewarded) |
 | `supportSKOverlay` | Present an SKOverlay (App Store sheet) for SKAdNetwork ads. | <Only platform="ios" /> |
 
 Every field is optional: `null` keeps the SDK default.

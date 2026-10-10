@@ -99,6 +99,8 @@ internal class MaxRewardedManager(
 
         val adUnit = MediationRewardedVideoAdUnit(activity, configId, MaxMediationRewardedUtils(rewarded))
         (args["impOrtbConfig"] as? String)?.let { adUnit.setImpOrtbConfig(it) }
+        (args["globalOrtbConfig"] as? String)?.let { adUnit.setGlobalOrtbConfig(it) }
+        (args["pbAdSlot"] as? String)?.let { adUnit.setPbAdSlot(it) }
         FullscreenControls.from(args["controls"])?.applyTo(adUnit)
         videoMaxDurationFrom(args["videoParameters"])?.let { adUnit.setMaxVideoDuration(it) }
         return Ad(adUnit, rewarded, debugDropBidProbability(args["debugDropBidProbability"]))

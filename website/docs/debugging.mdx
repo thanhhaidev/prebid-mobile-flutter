@@ -52,6 +52,16 @@ await PrebidMobile.setLogLevel(PrebidLogLevel.debug);
 - **Android:** `adb logcat | grep -i prebid`. At the debug level, every request and response body is logged (`PrebidBaseNetworkTask`).
 - **iOS:** the Xcode console, or Console.app filtered on your app.
 
+To collect them in your app (a crash reporter, an in-app console), route them to a listener; they no longer reach the console until you pass `null`:
+
+```dart
+await PrebidMobile.setLogListener((level, message) {
+  if (level.index >= PrebidLogLevel.warn.index) myReporter.log(message);
+});
+```
+
+`PrebidLogLevel.none` silences Prebid entirely. Android has no `verbose` or `severe` level: those log at `debug` and `error`.
+
 ## Versions
 
 ```dart

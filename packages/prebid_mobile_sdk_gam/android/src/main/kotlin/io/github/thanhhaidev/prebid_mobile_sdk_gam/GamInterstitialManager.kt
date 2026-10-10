@@ -42,6 +42,8 @@ internal class GamInterstitialManager(
         )
         videoMaxDurationFrom(args["videoParameters"])?.let { adUnit.setMaxVideoDuration(it) }
         (args["impOrtbConfig"] as? String)?.let { adUnit.setImpOrtbConfig(it) }
+        (args["globalOrtbConfig"] as? String)?.let { adUnit.setGlobalOrtbConfig(it) }
+        (args["pbAdSlot"] as? String)?.let { adUnit.setPbAdSlot(it) }
         FullscreenControls.from(args["controls"])?.let { controls ->
             controls.applyTo(adUnit)
             if (controls.minWidthPercentage != null && controls.minHeightPercentage != null) {

@@ -35,6 +35,7 @@ class PrebidGamBannerAd extends StatefulWidget {
     this.adFormats,
     this.pbAdSlot,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
     this.videoParameters,
     this.autoLoad = true,
     this.refreshIntervalSeconds,
@@ -78,6 +79,10 @@ class PrebidGamBannerAd extends StatefulWidget {
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
   /// `{"ext":{"gpid":"/1111/home"}}`).
   final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
 
   /// OpenRTB video parameters for an outstream video banner. **iOS only**:
   /// Prebid Android's `BannerView` has no video-parameters setter (use
@@ -177,6 +182,8 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd> {
         'adFormats': widget.adFormats!.map((f) => f.name).toList(),
       if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.globalOrtbConfig != null)
+        'globalOrtbConfig': widget.globalOrtbConfig,
       if (widget.videoParameters != null)
         'videoParameters': widget.videoParameters!.toMap(),
       if (widget.refreshIntervalSeconds != null)

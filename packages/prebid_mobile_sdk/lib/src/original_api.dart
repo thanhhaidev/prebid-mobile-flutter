@@ -106,12 +106,18 @@ class PrebidBannerAdUnit with _AutoRefresh {
     required this.sizes,
     this.adPosition,
     this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
          adPosition: adPosition,
          gpid: gpid,
+         pbAdSlot: pbAdSlot,
+         impOrtbConfig: impOrtbConfig,
+         globalOrtbConfig: globalOrtbConfig,
          onDemandRefreshed: onDemandRefreshed == null
              ? null
              : (r) => onDemandRefreshed(_bidResponse(r)),
@@ -128,6 +134,18 @@ class PrebidBannerAdUnit with _AutoRefresh {
 
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
+  /// Original API ad unit has no setter for it.
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
+  /// only, as [pbAdSlot].
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
+  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  final String? globalOrtbConfig;
 
   @override
   final PrebidMultiformatAd _delegate;
@@ -175,12 +193,20 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
     this.videoParameters,
     this.trackImpression = false,
     this.gpid,
+    this.minSizePercentage,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
          videoParameters: videoParameters,
          gpid: gpid,
+         interstitialMinSizePercentage: minSizePercentage,
+         pbAdSlot: pbAdSlot,
+         impOrtbConfig: impOrtbConfig,
+         globalOrtbConfig: globalOrtbConfig,
          isInterstitial: true,
          trackInterstitialImpression: trackImpression,
          onDemandRefreshed: onDemandRefreshed == null
@@ -203,6 +229,22 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
 
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
+
+  /// Minimum display creative size, in percent of the screen (width,
+  /// height). Requests the display format even without [sizes].
+  final Size? minSizePercentage;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
+  /// Original API ad unit has no setter for it.
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
+  /// only, as [pbAdSlot].
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
+  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  final String? globalOrtbConfig;
 
   @override
   final PrebidMultiformatAd _delegate;
@@ -227,16 +269,34 @@ class PrebidNativeAdUnit with _AutoRefresh {
     this.context,
     this.contextSubType,
     this.placementType,
+    this.placementCount,
+    this.sequence,
+    this.assetUrlSupport,
+    this.dUrlSupport,
+    this.privacy,
+    this.ext,
     this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
     void Function(PrebidNativeBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          gpid: gpid,
+         pbAdSlot: pbAdSlot,
+         impOrtbConfig: impOrtbConfig,
+         globalOrtbConfig: globalOrtbConfig,
          nativeAssets: assets,
          nativeEventTrackers: eventTrackers,
          nativeContext: context,
          nativeContextSubType: contextSubType,
          nativePlacementType: placementType,
+         nativePlacementCount: placementCount,
+         nativeSequence: sequence,
+         nativeAssetUrlSupport: assetUrlSupport,
+         nativeDUrlSupport: dUrlSupport,
+         nativePrivacy: privacy,
+         nativeExt: ext,
          onDemandRefreshed: onDemandRefreshed == null
              ? null
              : (r) => onDemandRefreshed(_nativeResponse(r)),
@@ -260,8 +320,38 @@ class PrebidNativeAdUnit with _AutoRefresh {
   /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
+  /// Number of identical placements (`plcmtcnt`).
+  final int? placementCount;
+
+  /// Native request `seq` (0 for the first ad of a sequence).
+  final int? sequence;
+
+  /// Native request `aurlsupport`: the app can load assets from a URL.
+  final bool? assetUrlSupport;
+
+  /// Native request `durlsupport`: the app supports DCO URLs.
+  final bool? dUrlSupport;
+
+  /// Native request `privacy`: the layout shows the privacy (AdChoices) link.
+  final bool? privacy;
+
+  /// Native request `ext`.
+  final Map<String, Object?>? ext;
+
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
+  /// Original API ad unit has no setter for it.
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
+  /// only, as [pbAdSlot].
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
+  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  final String? globalOrtbConfig;
 
   @override
   final PrebidMultiformatAd _delegate;

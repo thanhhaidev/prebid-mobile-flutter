@@ -20,6 +20,7 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     ) {
         adUnits[adId]?.stopAutoRefresh()
         let adUnit = PrebidAdUnit(configId: config.configId)
+        adUnit.pbAdSlot = config.pbAdSlot
         adUnits[adId] = adUnit
 
         let request = Self.makeRequest(config)
@@ -53,10 +54,16 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     private static func makeRequest(_ config: MultiformatAdRequestConfig) -> PrebidRequest {
         var bannerParameters: BannerParameters?
         let sizes = (config.bannerSizes ?? []).compactMap { $0 }
-        if sizes.count >= 2 {
+        // A banner without sizes is an interstitial's display format (its
+        // minimum size and API frameworks still apply).
+        let interstitialBanner = config.isInterstitial && (config.bannerApi != nil
+            || config.interstitialMinWidthPercentage != nil || config.interstitialMinHeightPercentage != nil)
+        if sizes.count >= 2 || interstitialBanner {
             let parameters = BannerParameters()
-            parameters.adSizes = stride(from: 0, to: sizes.count - 1, by: 2).map {
-                CGSize(width: Int(sizes[$0]), height: Int(sizes[$0 + 1]))
+            if sizes.count >= 2 {
+                parameters.adSizes = stride(from: 0, to: sizes.count - 1, by: 2).map {
+                    CGSize(width: Int(sizes[$0]), height: Int(sizes[$0 + 1]))
+                }
             }
             parameters.api = config.bannerApi?.compactMap { $0 }.map { Signals.Api(integerLiteral: Int($0)) }
             parameters.interstitialMinWidthPerc = config.interstitialMinWidthPercentage.map { Int($0) }
@@ -71,6 +78,8 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
             isRewarded: config.isRewarded
         )
         if let gpid = config.gpid { request.setGPID(gpid) }
+        if let v = config.impOrtbConfig { request.setImpORTBConfig(v) }
+        if let v = config.globalOrtbConfig { request.setGlobalORTBConfig(v) }
         if let pos = config.adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) {
             request.adPosition = pos
         }

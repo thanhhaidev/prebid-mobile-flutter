@@ -101,13 +101,25 @@ class PrebidNativeAdResponse {
 /// An image asset of a native response.
 class PrebidNativeImage {
   /// Creates a [PrebidNativeImage].
-  const PrebidNativeImage({required this.type, this.url});
+  const PrebidNativeImage({
+    required this.type,
+    this.url,
+    this.width,
+    this.height,
+  });
 
   /// The OpenRTB image type (see [NativeImageType]).
   final int type;
 
   /// The image URL.
   final String? url;
+
+  /// The image width the bid declares, in pixels. iOS only: Prebid Android
+  /// doesn't keep it.
+  final int? width;
+
+  /// The image height the bid declares, in pixels. iOS only, as [width].
+  final int? height;
 }
 
 /// A data asset of a native response.
@@ -434,7 +446,12 @@ class PrebidNativeAd {
                 for (final i
                     in event.nativeAd!.images?.nonNulls ??
                         <NativeAdImageData>[])
-                  PrebidNativeImage(type: i.type, url: i.url),
+                  PrebidNativeImage(
+                    type: i.type,
+                    url: i.url,
+                    width: i.width,
+                    height: i.height,
+                  ),
               ],
               dataAssets: [
                 for (final d

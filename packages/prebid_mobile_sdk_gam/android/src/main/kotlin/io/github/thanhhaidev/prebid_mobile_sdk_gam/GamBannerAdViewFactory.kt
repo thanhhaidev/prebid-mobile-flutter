@@ -107,6 +107,7 @@ internal class GamBannerPlatformView(
         }
         pbAdSlot?.let { bannerView.setPbAdSlot(it) }
         impOrtbConfig?.let { bannerView.setImpOrtbConfig(it) }
+        (params["globalOrtbConfig"] as? String)?.let { bannerView.setGlobalOrtbConfig(it) }
         // `videoParameters` is iOS only: Prebid Android's BannerView has no
         // video-parameters setter.
 

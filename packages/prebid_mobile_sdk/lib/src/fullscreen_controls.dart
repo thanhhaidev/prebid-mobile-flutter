@@ -28,8 +28,10 @@ enum PrebidButtonPosition {
 /// ```
 ///
 /// Platform notes: the skip options apply to interstitials on both platforms
-/// and to rewarded ads on Android only; [isAutoCloseOnCompletionEnabled] is
-/// iOS only; [minSizePercentage] applies to interstitials only.
+/// and to rewarded ads on Android only; [isAutoCloseOnCompletionEnabled]
+/// applies to iOS interstitials only (Prebid has no such setting for rewarded
+/// ads); [minSizePercentage] applies to interstitials, and to iOS rewarded
+/// ads of the core and GAM packages.
 class PrebidFullscreenControls {
   /// Creates [PrebidFullscreenControls].
   const PrebidFullscreenControls({
@@ -66,11 +68,13 @@ class PrebidFullscreenControls {
   /// Whether the mute / unmute button is shown on video.
   final bool? isSoundButtonVisible;
 
-  /// Whether the ad closes itself when the video completes (iOS only).
+  /// Whether the ad closes itself when the video completes (iOS
+  /// interstitials only).
   final bool? isAutoCloseOnCompletionEnabled;
 
   /// Minimum creative size as a percentage of the screen (width, height in
-  /// `0..100`). Interstitials only.
+  /// `0..100`). Interstitials, and iOS rewarded ads of the core and GAM
+  /// packages.
   final Size? minSizePercentage;
 
   /// iOS only: present an SKOverlay (App Store sheet) for SKAdNetwork ads.

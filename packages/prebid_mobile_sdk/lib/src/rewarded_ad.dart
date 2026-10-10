@@ -24,6 +24,7 @@ class PrebidRewardedAd {
     this.videoParameters,
     this.impOrtbConfig,
     this.globalOrtbConfig,
+    this.pbAdSlot,
     this.controls,
     this.listener,
   }) : _adId = _nextId++ {
@@ -54,6 +55,11 @@ class PrebidRewardedAd {
   /// Request-level OpenRTB JSON for this ad unit only (merged over
   /// [PrebidTargeting.setGlobalOrtbConfig]).
   final String? globalOrtbConfig;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter on
+  /// this ad unit, so on iOS the plugin adds it to [impOrtbConfig] (a
+  /// `pbadslot` already there wins).
+  final String? pbAdSlot;
 
   /// Close button, sound and minimum-size controls. Skip controls apply on
   /// Android only; the minimum size on iOS only.
@@ -115,6 +121,7 @@ class PrebidRewardedAd {
       impOrtbConfig,
       globalOrtbConfig,
       controls?.toConfig(),
+      pbAdSlot,
     );
   }
 

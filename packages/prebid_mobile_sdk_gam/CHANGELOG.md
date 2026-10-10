@@ -29,3 +29,7 @@ through Prebid's GAM event handlers. Built on Prebid Mobile SDK 3.4; requires
   `onAdFailed` ("The Prebid SDK is not initialized"; native:
   `onFetchDemandFailed('prebidSdkNotInitialized')`) instead of never
   answering.
+
+- Prebid ad slot (`pbAdSlot`) on interstitial and rewarded ads, per-unit
+  global OpenRTB configuration on every format, and native request options
+  (placement count, sequence, URL support, privacy, `ext`).

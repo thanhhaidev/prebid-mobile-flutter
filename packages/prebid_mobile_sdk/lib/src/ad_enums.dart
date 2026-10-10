@@ -20,7 +20,8 @@ enum PrebidLogLevel {
   /// Most verbose. Logs all SDK internal messages including request/response details.
   debug,
 
-  /// Detailed information useful for debugging bidding flows.
+  /// Detailed information useful for debugging bidding flows. Android has
+  /// no such level and logs at [debug].
   verbose,
 
   /// General informational messages about SDK lifecycle events.
@@ -32,8 +33,12 @@ enum PrebidLogLevel {
   /// Errors that may impact functionality (failed requests, parse errors).
   error,
 
-  /// Critical errors only (SDK crashes, unrecoverable states).
+  /// Critical errors only (SDK crashes, unrecoverable states). Android has
+  /// no such level and logs errors.
   severe,
+
+  /// No Prebid logs at all.
+  none,
 }
 
 /// SDK initialization status returned by [PrebidMobile.initializeSdk].

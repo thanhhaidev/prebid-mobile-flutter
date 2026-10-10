@@ -31,7 +31,7 @@ void main() {
     Future<int> load(PrebidInterstitialAd ad) async {
       await ad.loadAd();
       return verify(
-            api.loadAd(captureAny, any, any, any, any, any, any),
+            api.loadAd(captureAny, any, any, any, any, any, any, any),
           ).captured.last
           as int;
     }
@@ -87,7 +87,7 @@ void main() {
       );
       await ad.loadAd();
       final captured = verify(
-        api.loadAd(any, any, captureAny, captureAny, any, any, captureAny),
+        api.loadAd(any, any, captureAny, captureAny, any, any, captureAny, any),
       ).captured;
       expect(captured[0], ['video']);
       expect((captured[1] as VideoParametersConfig).maxDuration, 15);
@@ -155,7 +155,7 @@ void main() {
     Future<int> load(PrebidRewardedAd ad) async {
       await ad.loadAd();
       return verify(
-            api.loadAd(captureAny, any, any, any, any, any, any),
+            api.loadAd(captureAny, any, any, any, any, any, any, any),
           ).captured.last
           as int;
     }
@@ -243,7 +243,7 @@ void main() {
       await ad.loadAd();
       final c =
           verify(
-                api.loadAd(any, 'r', any, any, '{}', any, captureAny),
+                api.loadAd(any, 'r', any, any, '{}', any, captureAny, any),
               ).captured.single
               as FullscreenControlsConfig;
       expect(c.isMuted, isTrue);

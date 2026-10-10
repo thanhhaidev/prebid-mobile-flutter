@@ -17,6 +17,7 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func getPurposeConsents() throws -> String? { Targeting.shared.purposeConsents }
     func getPurposeConsent(index: Int64) throws -> Bool? { Targeting.shared.getPurposeConsent(index: Int(index)) }
     func getDeviceAccessConsent() throws -> Bool? { Targeting.shared.getDeviceAccessConsent() }
+    func isAllowedAccessDeviceData() throws -> Bool { Targeting.shared.isAllowedAccessDeviceData() }
 
     // US Privacy / CCPA
     func setUSPrivacyString(value: String?) throws {
@@ -40,6 +41,7 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func addAppKeywords(keywords: [String]) throws { Targeting.shared.addAppKeywords(Set(keywords)) }
     func removeAppKeyword(keyword: String) throws { Targeting.shared.removeAppKeyword(keyword) }
     func clearAppKeywords() throws { Targeting.shared.clearAppKeywords() }
+    func getAppKeywords() throws -> [String] { Targeting.shared.getAppKeywords() }
 
     func addAppExtData(key: String, value: String) throws { Targeting.shared.addAppExtData(key: key, value: value) }
     func updateAppExtData(key: String, value: [String]) throws { Targeting.shared.updateAppExtData(key: key, value: Set(value)) }
@@ -133,6 +135,12 @@ final class TargetingHostApiImpl: TargetingHostApi {
 
     func setSourceApp(sourceApp: String?) throws { Targeting.shared.sourceapp = sourceApp }
     func setItunesId(itunesId: String?) throws { Targeting.shared.itunesID = itunesId }
+    func getSourceApp() throws -> String? { Targeting.shared.sourceapp }
+    func getItunesId() throws -> String? { Targeting.shared.itunesID }
+
+    // Android only: Prebid iOS sends the bundle ID (or itunesID) as app.bundle.
+    func setBundleName(bundleName: String?) throws {}
+    func getBundleName() throws -> String? { nil }
 
     func setOmidPartnerName(name: String?) throws { Targeting.shared.omidPartnerName = name }
     func setOmidPartnerVersion(version: String?) throws { Targeting.shared.omidPartnerVersion = version }
@@ -140,6 +148,7 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func setUserLatLng(latitude: Double, longitude: Double) throws {
         Targeting.shared.setLatitude(latitude, longitude: longitude)
     }
+    func clearUserLatLng() throws { Targeting.shared.coordinate = nil }
     func setLocationPrecision(precision: Int64?) throws {
         Targeting.shared.locationPrecision = precision.map { NSNumber(value: $0) }
     }

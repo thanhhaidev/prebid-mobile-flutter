@@ -25,7 +25,7 @@ void main() {
       );
       await ad.loadAd();
       final captured = verify(
-        api.loadAd(any, 'r', captureAny, captureAny, any, captureAny, any),
+        api.loadAd(any, 'r', captureAny, captureAny, any, captureAny, any, any),
       ).captured;
       expect(captured[0], ['video']);
       final video = captured[1] as VideoParametersConfig;
@@ -71,6 +71,103 @@ void main() {
       });
       when(api.getUserLatLng()).thenAnswer((_) async => null);
       expect(await PrebidTargeting.getUserLatLng(), isNull);
+    });
+  });
+
+  group('settings added for parity', () {
+    test(
+      'PrebidMobile log listener, log level none, location updates',
+      () async {
+        final api = MockPrebidMobileHostApi();
+        PrebidMobile.api = api;
+        final logs = <(PrebidLogLevel, String)>[];
+        await PrebidMobile.setLogListener((l, m) => logs.add((l, m)));
+        verify(api.setLogListenerEnabled(true)).called(1);
+
+        const codec = PrebidEventFlutterApi.pigeonChannelCodec;
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        Future<void> log(
+          int level,
+          String message,
+        ) => messenger.handlePlatformMessage(
+          'dev.flutter.pigeon.prebid_mobile_sdk.PrebidEventFlutterApi.onLog',
+          codec.encodeMessage([level, message]),
+          (_) {},
+        );
+        await log(4, 'boom');
+        await log(99, 'ignored');
+        expect(logs, [(PrebidLogLevel.error, 'boom')]);
+
+        await PrebidMobile.setLogListener(null);
+        verify(api.setLogListenerEnabled(false)).called(1);
+        await log(2, 'after');
+        expect(logs, hasLength(1));
+
+        await PrebidMobile.setLogLevel(PrebidLogLevel.none);
+        verify(api.setLogLevel(6)).called(1);
+
+        when(api.getLocationUpdatesEnabled()).thenAnswer((_) async => false);
+        await PrebidMobile.setLocationUpdatesEnabled(false);
+        verify(api.setLocationUpdatesEnabled(false)).called(1);
+        expect(await PrebidMobile.getLocationUpdatesEnabled(), isFalse);
+      },
+    );
+
+    test('PrebidTargeting parity calls', () async {
+      final api = MockTargetingHostApi();
+      PrebidTargeting.api = api;
+      when(api.isAllowedAccessDeviceData()).thenAnswer((_) async => true);
+      when(api.getAppKeywords()).thenAnswer((_) async => ['news']);
+      when(api.getBundleName()).thenAnswer((_) async => 'com.prod');
+      when(api.getSourceApp()).thenAnswer((_) async => '123');
+      when(api.getItunesId()).thenAnswer((_) async => '456');
+      expect(await PrebidTargeting.isAllowedAccessDeviceData(), isTrue);
+      expect(await PrebidTargeting.getAppKeywords(), ['news']);
+      await PrebidTargeting.setBundleName('com.prod');
+      verify(api.setBundleName('com.prod')).called(1);
+      expect(await PrebidTargeting.getBundleName(), 'com.prod');
+      expect(await PrebidTargeting.getSourceApp(), '123');
+      expect(await PrebidTargeting.getItunesId(), '456');
+      await PrebidTargeting.clearUserLatLng();
+      verify(api.clearUserLatLng()).called(1);
+    });
+
+    test('fullscreen ads send pbAdSlot', () async {
+      final interstitial = MockInterstitialAdHostApi();
+      PrebidInterstitialAd.api = interstitial;
+      await PrebidInterstitialAd(configId: 'i', pbAdSlot: '/i').loadAd();
+      verify(
+        interstitial.loadAd(any, 'i', any, any, any, any, any, '/i'),
+      ).called(1);
+
+      final rewarded = MockRewardedAdHostApi();
+      PrebidRewardedAd.api = rewarded;
+      await PrebidRewardedAd(configId: 'r', pbAdSlot: '/r').loadAd();
+      verify(
+        rewarded.loadAd(any, 'r', any, any, any, any, any, '/r'),
+      ).called(1);
+    });
+
+    test('generateInstreamUriForGam flattens the sizes', () async {
+      final api = MockInstreamVideoAdHostApi();
+      PrebidInstreamVideoAd.api = api;
+      when(
+        api.generateInstreamUriForGam(any, any, any),
+      ).thenAnswer((_) async => 'https://pubads');
+      final url = await PrebidInstreamVideoAd.generateInstreamUriForGam(
+        gamAdUnitId: '/1/video',
+        sizes: const [Size(640, 480)],
+        targetingKeywords: const {'hb_pb': '1.00'},
+      );
+      expect(url, 'https://pubads');
+      verify(
+        api.generateInstreamUriForGam(
+          '/1/video',
+          [640, 480],
+          {'hb_pb': '1.00'},
+        ),
+      ).called(1);
     });
   });
 
@@ -125,6 +222,61 @@ void main() {
       expect(config.interstitialMinWidthPercentage, 50);
       expect(config.interstitialMinHeightPercentage, 70);
       expect(config.supportSKOverlay, isTrue);
+    });
+
+    test('sends pbAdSlot, ORTB configs and native options', () async {
+      when(api.fetchDemand(any, any)).thenAnswer(
+        (_) async => MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+      );
+      await PrebidNativeAdUnit(
+        configId: 'n',
+        assets: const [NativeAsset.title()],
+        placementCount: 2,
+        sequence: 1,
+        assetUrlSupport: true,
+        dUrlSupport: false,
+        privacy: true,
+        ext: const {'k': 1},
+        pbAdSlot: '/slot',
+        impOrtbConfig: '{"imp":1}',
+        globalOrtbConfig: '{"app":{}}',
+      ).fetchDemand();
+      final config =
+          verify(api.fetchDemand(any, captureAny)).captured.single
+              as MultiformatAdRequestConfig;
+      expect(config.pbAdSlot, '/slot');
+      expect(config.impOrtbConfig, '{"imp":1}');
+      expect(config.globalOrtbConfig, '{"app":{}}');
+      final native = config.nativeConfig!;
+      expect(native.placementCount, 2);
+      expect(native.sequence, 1);
+      expect(native.assetUrlSupport, isTrue);
+      expect(native.dUrlSupport, isFalse);
+      expect(native.privacy, isTrue);
+      expect(native.ext, '{"k":1}');
+    });
+
+    test('an interstitial with a minimum size needs no banner size', () async {
+      when(api.fetchDemand(any, any)).thenAnswer(
+        (_) async => MultiformatBidResult(resultCode: 'prebidDemandNoBids'),
+      );
+      await PrebidInterstitialAdUnit(
+        configId: 'i',
+        minSizePercentage: const Size(50, 60),
+        pbAdSlot: '/i',
+      ).fetchDemand();
+      final config =
+          verify(api.fetchDemand(any, captureAny)).captured.single
+              as MultiformatAdRequestConfig;
+      expect(config.bannerSizes, isNull);
+      expect(config.isInterstitial, isTrue);
+      expect(config.interstitialMinWidthPercentage, 50);
+      expect(config.interstitialMinHeightPercentage, 60);
+      expect(config.pbAdSlot, '/i');
+      expect(
+        () => PrebidMultiformatAd(configId: 'x').fetchDemand(),
+        throwsArgumentError,
+      );
     });
 
     test('findPrebidCreativeSize converts the size', () async {

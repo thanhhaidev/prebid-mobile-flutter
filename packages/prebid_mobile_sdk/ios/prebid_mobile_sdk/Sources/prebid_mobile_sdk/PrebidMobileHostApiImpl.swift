@@ -94,13 +94,14 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
     }
 
     func setLogLevel(level: Int64) throws {
+        configureLogger { $0.silenced = level == 6 }
         switch level {
         case 0: Prebid.shared.logLevel = .debug
         case 1: Prebid.shared.logLevel = .verbose
         case 2: Prebid.shared.logLevel = .info
         case 3: Prebid.shared.logLevel = .warn
         case 4: Prebid.shared.logLevel = .error
-        case 5: Prebid.shared.logLevel = .severe
+        case 5, 6: Prebid.shared.logLevel = .severe // 6 = none: PluginLogger drops everything.
         default: Prebid.shared.logLevel = .debug // As Android.
         }
     }
@@ -191,6 +192,38 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         eventDelegate = forwarder
         Prebid.shared.eventDelegate = forwarder
     }
+
+    // Prebid iOS has no "none" level and logs through one replaceable logger:
+    // a PluginLogger stands in while logs go to Dart or nowhere.
+    private var logger: PluginLogger?
+
+    func setLogListenerEnabled(enabled: Bool) throws {
+        configureLogger { [eventFlutterApi] in $0.api = enabled ? eventFlutterApi : nil }
+    }
+
+    /// Stops sending logs to this engine's Dart side (plugin detach).
+    func clearLogger() {
+        configureLogger { $0.api = nil }
+    }
+
+    private func configureLogger(_ change: (PluginLogger) -> Void) {
+        let logger = self.logger ?? PluginLogger()
+        change(logger)
+        if logger.api == nil && !logger.silenced {
+            // Back to Prebid's console logger (only if this engine replaced it).
+            if self.logger != nil { Log.setCustomLogger(SDKConsoleLogger()) }
+            self.logger = nil
+        } else {
+            if self.logger == nil { Log.setCustomLogger(logger) }
+            self.logger = logger
+        }
+    }
+
+    func setLocationUpdatesEnabled(enabled: Bool) throws {
+        Prebid.shared.locationUpdatesEnabled = enabled
+    }
+
+    func getLocationUpdatesEnabled() throws -> Bool? { Prebid.shared.locationUpdatesEnabled }
 
     /// Drops this engine's delegate. Prebid has a single process-wide one, so
     /// it's only cleared there while it is still this engine's: another
@@ -288,6 +321,31 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
 
     func getOmsdkVersion() throws -> String {
         Prebid.shared.omsdkVersion
+    }
+}
+
+/// Prebid's logger while the plugin routes its logs: to Dart (`api`) or
+/// nowhere (`silenced`, PrebidLogLevel.none).
+final class PluginLogger: NSObject, PrebidLogger {
+    var api: PrebidEventFlutterApi?
+    var silenced = false
+
+    func error(_ object: Any, filename: String, line: Int, function: String) { send(object, .error) }
+    func info(_ object: Any, filename: String, line: Int, function: String) { send(object, .info) }
+    func debug(_ object: Any, filename: String, line: Int, function: String) { send(object, .debug) }
+    func verbose(_ object: Any, filename: String, line: Int, function: String) { send(object, .verbose) }
+    func warn(_ object: Any, filename: String, line: Int, function: String) { send(object, .warn) }
+    func severe(_ object: Any, filename: String, line: Int, function: String) { send(object, .severe) }
+    func whereAmI(filename: String, line: Int, function: String) {}
+
+    /// Prebid logs from any queue; Flutter channels need main. The LogLevel
+    /// raw values match the Dart PrebidLogLevel indexes.
+    private func send(_ object: Any, _ level: LogLevel) {
+        guard !silenced, let api = api, level.rawValue >= Log.logLevel.rawValue else { return }
+        let message = "\(object)"
+        DispatchQueue.main.async {
+            api.onLog(level: Int64(level.rawValue), message: message) { _ in }
+        }
     }
 }
 

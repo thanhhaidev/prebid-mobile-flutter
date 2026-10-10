@@ -36,6 +36,8 @@ class PrebidMaxInterstitialAd extends CompanionFullscreenAd {
     this.adFormats,
     this.controls,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.pbAdSlot,
     this.videoParameters,
     this.listener,
   }) : super(_channel);
@@ -66,6 +68,15 @@ class PrebidMaxInterstitialAd extends CompanionFullscreenAd {
   /// separate setters for on iOS.
   final String? impOrtbConfig;
 
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter on
+  /// this ad unit, so on iOS it is added to [impOrtbConfig] (a `pbadslot`
+  /// already there wins).
+  final String? pbAdSlot;
+
   /// OpenRTB video parameters for a video interstitial. iOS applies every field;
   /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
   /// [VideoParameters.maxDuration] only caps the rendered video there (nothing
@@ -82,6 +93,8 @@ class PrebidMaxInterstitialAd extends CompanionFullscreenAd {
     'maxAdUnitId': maxAdUnitId,
     'controls': ?controls?.toMap(),
     'impOrtbConfig': ?impOrtbConfig,
+    'globalOrtbConfig': ?globalOrtbConfig,
+    'pbAdSlot': ?pbAdSlot,
     'videoParameters': ?videoParameters?.toMap(),
     'isVideo': isVideo,
     'adFormats': ?adFormats?.map((f) => f.name).toList(),

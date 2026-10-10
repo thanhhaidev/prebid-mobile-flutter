@@ -55,5 +55,16 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   (`findPrebidCreativeSize`), bid event URLs, banner API frameworks, the
   interstitial minimum size, GPID on every ad unit, and SKAdNetwork StoreKit
   flows and SKOverlay on iOS.
+- Original API: native request options on native and multiformat units, a
+  display interstitial requested by minimum size alone, and `pbAdSlot` plus
+  per-unit OpenRTB configuration (iOS).
+- Prebid ad slot (`pbAdSlot`) on interstitial and rewarded ads.
+- Prebid's log messages delivered to the app (`PrebidMobile.setLogListener`)
+  and a `none` log level.
+- The Google Ad Manager VAST tag URL for IMA players
+  (`PrebidInstreamVideoAd.generateInstreamUriForGam`).
+- Native response image sizes (iOS), the device-data consent check, an
+  `app.bundle` override (Android), Prebid's own location updates switch
+  (iOS), and clearing the user location.
 - Getters for the SDK settings and targeting values.
 - The same events and result codes on Android and iOS.

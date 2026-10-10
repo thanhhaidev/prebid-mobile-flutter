@@ -82,6 +82,14 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         if let v = args["context"] as? Int { adUnit.setContextType(ContextType(integerLiteral: v)) }
         if let v = args["contextSubType"] as? Int { adUnit.setContextSubType(ContextSubType(integerLiteral: v)) }
         if let v = args["placementType"] as? Int { adUnit.setPlacementType(PlacementType(integerLiteral: v)) }
+        if let v = intValue(args["placementCount"]) { adUnit.setPlacementCount(v) }
+        if let v = intValue(args["sequence"]) { adUnit.setSequence(v) }
+        if let v = args["assetUrlSupport"] as? Bool { adUnit.setAssetURLSupport(v ? 1 : 0) }
+        if let v = args["dUrlSupport"] as? Bool { adUnit.setDURLSupport(v ? 1 : 0) }
+        if let v = args["privacy"] as? Bool { adUnit.setPrivacy(v ? 1 : 0) }
+        if let v = jsonDictionary(args["ext"]) { adUnit.setExt(v) }
+        if let v = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(v) }
+        if let v = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(v) }
         adUnit.addEventTracker(nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: .Impression, methods: [.Image, .js])
         ])

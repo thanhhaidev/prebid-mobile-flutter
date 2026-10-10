@@ -14,6 +14,7 @@ import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.data.Position
 import org.prebid.mobile.api.mediation.MediationBaseFullScreenAdUnit
 import org.prebid.mobile.api.mediation.MediationInterstitialAdUnit
+import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 import org.prebid.mobile.rendering.bidding.display.BidResponseCache
 
 // Helpers for the values the Dart side sends over method channels:
@@ -197,5 +198,24 @@ internal class NativeContext(
                 id("placementType")?.let { v -> NativeAdUnit.PLACEMENTTYPE.values().firstOrNull { it.id == v } },
             )
         }
+    }
+}
+
+/** The native request options of a native widget (`seq`, URL support, privacy, `ext`…). */
+internal class NativeRequestOptions(params: Map<*, *>) {
+    private val placementCount = params.int("placementCount")
+    private val sequence = params.int("sequence")
+    private val assetUrlSupport = params["assetUrlSupport"] as? Boolean
+    private val dUrlSupport = params["dUrlSupport"] as? Boolean
+    private val privacy = params["privacy"] as? Boolean
+    private val ext = params.json("ext")
+
+    fun applyTo(unit: MediationNativeAdUnit) {
+        placementCount?.let(unit::setPlacementCount)
+        sequence?.let(unit::setSeq)
+        assetUrlSupport?.let(unit::setAUrlSupport)
+        dUrlSupport?.let(unit::setDUrlSupport)
+        privacy?.let(unit::setPrivacy)
+        ext?.let(unit::setExt)
     }
 }

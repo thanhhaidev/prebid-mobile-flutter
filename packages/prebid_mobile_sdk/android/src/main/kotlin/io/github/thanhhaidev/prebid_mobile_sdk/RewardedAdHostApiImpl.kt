@@ -23,6 +23,7 @@ internal class RewardedAdHostApiImpl(
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
+        pbAdSlot: String?,
     ) {
         rewardedAds.remove(adId)?.destroy()
         if (!PrebidMobile.isSdkInitialized()) {
@@ -36,6 +37,7 @@ internal class RewardedAdHostApiImpl(
         videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
         impOrtbConfig?.let(adUnit::setImpOrtbConfig)
         globalOrtbConfig?.let(adUnit::setGlobalOrtbConfig)
+        pbAdSlot?.let(adUnit::setPbAdSlot)
         controls?.applyTo(adUnit)
 
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {

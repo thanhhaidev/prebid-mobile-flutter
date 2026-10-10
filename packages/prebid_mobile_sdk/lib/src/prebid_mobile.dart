@@ -5,6 +5,10 @@ import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/pigeon_conversions.dart';
 
+/// Receives each Prebid SDK log message at or above the log level, while
+/// registered with [PrebidMobile.setLogListener].
+typedef PrebidLogListener = void Function(PrebidLogLevel level, String message);
+
 /// Receives each Prebid Server bid request and response (JSON strings)
 /// while registered with [PrebidMobile.setEventListener].
 typedef PrebidBidResponseListener =
@@ -296,6 +300,26 @@ class PrebidMobile {
     await api.setEventDelegateEnabled(listener != null);
   }
 
+  /// Sends the Prebid SDK's log messages (at or above [setLogLevel]) to
+  /// [listener] instead of the console, e.g. to your crash reporter. Pass
+  /// `null` to log to the console again.
+  static Future<void> setLogListener(PrebidLogListener? listener) async {
+    _PrebidEventReceiver.instance.logListener = listener;
+    await api.setLogListenerEnabled(listener != null);
+  }
+
+  /// iOS only: whether Prebid runs its own location updates (Core Location)
+  /// to fill `device.geo`, when the app has location permission. Default
+  /// `true`. No effect on Android, which reads the last known location
+  /// ([setShareGeoLocation]).
+  static Future<void> setLocationUpdatesEnabled(bool enabled) async {
+    await api.setLocationUpdatesEnabled(enabled);
+  }
+
+  /// Whether Prebid's own location updates run; null on Android.
+  static Future<bool?> getLocationUpdatesEnabled() =>
+      api.getLocationUpdatesEnabled();
+
   // ---------------------------------------------------------------------------
   // SharedID
   // ---------------------------------------------------------------------------
@@ -436,10 +460,17 @@ class _PrebidEventReceiver implements PrebidEventFlutterApi {
   static final _PrebidEventReceiver instance = _PrebidEventReceiver._();
 
   PrebidBidResponseListener? listener;
+  PrebidLogListener? logListener;
 
   @override
   Future<void> onBidResponse(String? request, String? response) async {
     listener?.call(request, response);
+  }
+
+  @override
+  Future<void> onLog(int level, String message) async {
+    if (level < 0 || level >= PrebidLogLevel.values.length) return;
+    logListener?.call(PrebidLogLevel.values[level], message);
   }
 }
 

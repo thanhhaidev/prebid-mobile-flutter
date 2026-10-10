@@ -1,7 +1,9 @@
 package io.github.thanhhaidev.prebid_mobile_sdk
 
+import org.prebid.mobile.AdSize
 import org.prebid.mobile.InStreamVideoAdUnit
 import org.prebid.mobile.PrebidMobile
+import org.prebid.mobile.Util
 
 /** InstreamVideoAdHostApi: Original API in-stream video demand. */
 internal class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
@@ -51,6 +53,16 @@ internal class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
 
     override fun destroy(adId: Long) {
         adUnits.remove(adId)?.let(::release)
+    }
+
+    override fun generateInstreamUriForGam(
+        adUnitId: String,
+        sizes: List<Long>,
+        keywords: Map<String, String>,
+    ): String {
+        val adSizes = sizes.chunked(2).filter { it.size == 2 }
+            .mapTo(HashSet()) { (w, h) -> AdSize(w.toInt(), h.toInt()) }
+        return Util.generateInstreamUriForGam(adUnitId, adSizes, keywords)
     }
 
     fun destroyAll() {

@@ -40,6 +40,18 @@ await video.destroy();
 
 `PrebidInstreamVideoAd` also takes `gpid`, `pbAdSlot`, `impOrtbConfig` and `globalOrtbConfig`.
 
+For the IMA SDK, Prebid builds the Google Ad Manager VAST tag URL from the keywords:
+
+```dart
+final adTagUrl = await PrebidInstreamVideoAd.generateInstreamUriForGam(
+  gamAdUnitId: '/1234567/your-video',
+  sizes: const [Size(640, 480)],
+  targetingKeywords: bid.targetingKeywords ?? const {},
+);
+```
+
+<Only platform="ios" /> Prebid iOS only accepts 400x300, 640x480 and 320x480 there; other sizes throw a `PlatformException`.
+
 ## Video parameters
 
 `VideoParameters` describes what your player supports. The same class configures interstitial, rewarded, outstream, multiformat, Original API and in-stream requests.

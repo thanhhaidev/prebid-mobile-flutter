@@ -108,7 +108,11 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
             adUnit.adPosition = pos
         }
-        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
+        if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
+            adUnit.setImpORTBConfig(config)
+        }
+        if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
         if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
         if args["adFormats"] != nil {
             adUnit.adFormats = adFormatsFrom(args["adFormats"], isVideo: false)

@@ -228,7 +228,9 @@ Static class for SDK initialization, global configuration, and identity manageme
 | `setTimeoutMillis(int timeout)` | `Future<void>` | Set the bid request timeout in milliseconds. |
 | `setShareGeoLocation(bool share)` | `Future<void>` | Enable or disable sharing the device's geo location. |
 | `setPbsDebug(bool enabled)` | `Future<void>` | Enable PBS debug mode (`"test": 1` in bid requests). |
-| `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set SDK log verbosity. |
+| `setLogLevel(PrebidLogLevel level)` | `Future<void>` | Set SDK log verbosity (`none` silences Prebid). |
+| `setLogListener(PrebidLogListener? listener)` | `Future<void>` | Receive Prebid's log messages instead of the console; `null` restores the console. |
+| `setLocationUpdatesEnabled(bool)` / `getLocationUpdatesEnabled()` | `Future<void>` / `Future<bool?>` | iOS only: Prebid's own location updates. |
 | `setCustomHeaders(Map<String, String> headers)` | `Future<void>` | Set custom HTTP headers for bid requests. |
 | `setStoredAuctionResponse(String response)` | `Future<void>` | Set a stored auction response ID for testing. |
 | `clearStoredAuctionResponse()` | `Future<void>` | Clear stored auction response. |
@@ -277,6 +279,7 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `getPurposeConsents()` | `Future<String?>` | Get TCFv2 purpose consents. |
 | `getPurposeConsent(int index)` | `Future<bool?>` | Consent for one TCF purpose (0-based index). |
 | `getDeviceAccessConsent()` | `Future<bool?>` | Get device access consent (TCFv2 Purpose 1). |
+| `isAllowedAccessDeviceData()` | `Future<bool>` | Whether the consent signals let Prebid read device data. |
 | `setUSPrivacyString(String? usPrivacy)` | `Future<void>` | Set IAB US Privacy String for CCPA (`"1YNN"`). |
 | `getUSPrivacyString()` | `Future<String?>` | Get current US Privacy String. |
 
@@ -339,7 +342,8 @@ Static class for managing privacy consent, first-party data, and targeting param
 | `setAppName(String? name)` | `Future<void>` | Override `app.name`; `null` restores the app's own name (iOS: sent through the global OpenRTB config). |
 | `setOmidPartnerName(String? name)` / `setOmidPartnerVersion(String? version)` | `Future<void>` | OM SDK partner sent in `source.ext.omidpn` / `omidpv`. |
 | `setSourceApp(String?)` / `setItunesId(String?)` | `Future<void>` | iOS only: SKAdNetwork `sourceapp` and your app's iTunes ID (needed for SKAdNetwork bids when Info.plist lists `SKAdNetworkItems`). |
-| `setUserLatLng(double lat, double lng)` | `Future<void>` | User location (`user.geo`). |
+| `setBundleName(String?)` / `getBundleName()` | `Future<void>` / `Future<String?>` | Android only: overrides `app.bundle`. |
+| `setUserLatLng(double lat, double lng)` / `clearUserLatLng()` | `Future<void>` | User location (`user.geo`). |
 | `setLocationPrecision(int? precision)` | `Future<void>` | Decimal places kept for coordinates; `null` = full precision. |
 
 ---
@@ -602,6 +606,7 @@ await PrebidMobile.setExternalUserIds([
 | `warn` | Potential issues and warnings. |
 | `error` | Errors that may impact functionality. |
 | `severe` | Critical errors only. |
+| `none` | No Prebid logs. |
 
 #### `PrebidInitializationStatus`
 

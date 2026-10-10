@@ -72,6 +72,7 @@ Prebid iOS has no app-name setter, so on iOS `setAppName` merges `{"app":{"name"
 Prebid 3.4 has no setter for `app.content.url`; send it with `setGlobalOrtbConfig('{"app":{"content":{"url":"https://example.com/article"}}}')`.
 | `setSourceApp(String?)` <Only platform="ios" /> | SKAdNetwork `sourceapp` |
 | `setItunesId(String?)` <Only platform="ios" /> | Your app's iTunes ID, needed for SKAdNetwork bids when `Info.plist` lists `SKAdNetworkItems` |
+| `setBundleName(String?)` <Only platform="android" /> | `app.bundle`, by default the package name; e.g. to test against a Prebid Server account set up for your production app |
 
 ## Location
 
@@ -81,11 +82,11 @@ await PrebidTargeting.setUserLatLng(37.7749, -122.4194);
 await PrebidTargeting.setLocationPrecision(2); // decimal places, null = full
 ```
 
-`setUserLatLng` sets `user.geo`; `setShareGeoLocation` lets the SDK send the device's location (`device.geo`) when the app has location permission.
+`setUserLatLng` sets `user.geo` and `clearUserLatLng` removes it; `setShareGeoLocation` lets the SDK send the device's location (`device.geo`) when the app has location permission.
 
 ## Reading the values
 
-`PrebidTargeting` has getters for what you set: `getAppExtData()`, `getAccessControlList()`, `getPublisherName()`, `getStoreUrl()`, `getDomain()`, `getOmidPartnerName()`, `getOmidPartnerVersion()`, `getSendSharedId()`, `getUserLatLng()` (a `(latitude, longitude)` record) and `getLocationPrecision()`, next to the existing consent and keyword getters.
+`PrebidTargeting` has getters for what you set: `getAppExtData()`, `getAccessControlList()`, `getPublisherName()`, `getStoreUrl()`, `getDomain()`, `getOmidPartnerName()`, `getOmidPartnerVersion()`, `getSendSharedId()`, `getUserLatLng()` (a `(latitude, longitude)` record), `getLocationPrecision()`, `getBundleName()` (Android), and `getAppKeywords()`, `getSourceApp()` and `getItunesId()` (iOS), next to the existing consent and keyword getters.
 
 ## User IDs
 

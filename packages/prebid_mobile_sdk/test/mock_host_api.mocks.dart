@@ -338,6 +338,32 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setLogListenerEnabled(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLogListenerEnabled, [enabled]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> setLocationUpdatesEnabled(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLocationUpdatesEnabled, [enabled]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool?> getLocationUpdatesEnabled() =>
+      (super.noSuchMethod(
+            Invocation.method(#getLocationUpdatesEnabled, []),
+            returnValue: _i4.Future<bool?>.value(),
+          )
+          as _i4.Future<bool?>);
+
+  @override
   _i4.Future<void> setSendSharedId(bool? send) =>
       (super.noSuchMethod(
             Invocation.method(#setSendSharedId, [send]),
@@ -652,6 +678,14 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
           as _i4.Future<bool?>);
 
   @override
+  _i4.Future<bool> isAllowedAccessDeviceData() =>
+      (super.noSuchMethod(
+            Invocation.method(#isAllowedAccessDeviceData, []),
+            returnValue: _i4.Future<bool>.value(false),
+          )
+          as _i4.Future<bool>);
+
+  @override
   _i4.Future<void> setUSPrivacyString(String? value) =>
       (super.noSuchMethod(
             Invocation.method(#setUSPrivacyString, [value]),
@@ -747,6 +781,14 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<String>> getAppKeywords() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAppKeywords, []),
+            returnValue: _i4.Future<List<String>>.value(<String>[]),
+          )
+          as _i4.Future<List<String>>);
 
   @override
   _i4.Future<void> addAppExtData(String? key, String? value) =>
@@ -919,6 +961,23 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setBundleName(String? bundleName) =>
+      (super.noSuchMethod(
+            Invocation.method(#setBundleName, [bundleName]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String?> getBundleName() =>
+      (super.noSuchMethod(
+            Invocation.method(#getBundleName, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
   _i4.Future<void> setOmidPartnerName(String? name) =>
       (super.noSuchMethod(
             Invocation.method(#setOmidPartnerName, [name]),
@@ -940,6 +999,15 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
   _i4.Future<void> setUserLatLng(double? latitude, double? longitude) =>
       (super.noSuchMethod(
             Invocation.method(#setUserLatLng, [latitude, longitude]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> clearUserLatLng() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearUserLatLng, []),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
@@ -1035,6 +1103,22 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
             returnValue: _i4.Future<int?>.value(),
           )
           as _i4.Future<int?>);
+
+  @override
+  _i4.Future<String?> getSourceApp() =>
+      (super.noSuchMethod(
+            Invocation.method(#getSourceApp, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
+  _i4.Future<String?> getItunesId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getItunesId, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
 }
 
 /// A class which mocks [InterstitialAdHostApi].
@@ -1066,6 +1150,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
     String? impOrtbConfig,
     String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -1076,6 +1161,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
               impOrtbConfig,
               globalOrtbConfig,
               controls,
+              pbAdSlot,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
@@ -1129,6 +1215,7 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
     String? impOrtbConfig,
     String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -1139,6 +1226,7 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
               impOrtbConfig,
               globalOrtbConfig,
               controls,
+              pbAdSlot,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
@@ -1387,4 +1475,29 @@ class MockInstreamVideoAdHostApi extends _i1.Mock
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+
+  @override
+  _i4.Future<String> generateInstreamUriForGam(
+    String? adUnitId,
+    List<int>? sizes,
+    Map<String, String>? keywords,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#generateInstreamUriForGam, [
+              adUnitId,
+              sizes,
+              keywords,
+            ]),
+            returnValue: _i4.Future<String>.value(
+              _i3.dummyValue<String>(
+                this,
+                Invocation.method(#generateInstreamUriForGam, [
+                  adUnitId,
+                  sizes,
+                  keywords,
+                ]),
+              ),
+            ),
+          )
+          as _i4.Future<String>);
 }

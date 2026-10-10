@@ -144,6 +144,8 @@ internal class AdMobBannerPlatformView(
                 ?.let { adUnit?.setAdPosition(it) }
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
+        (params["globalOrtbConfig"] as? String)?.let { adUnit?.setGlobalOrtbConfig(it) }
+        (params["pbAdSlot"] as? String)?.let { adUnit?.setPbAdSlot(it) }
         if (additionalSizes.isNotEmpty()) adUnit?.addAdditionalSizes(*additionalSizes.toTypedArray())
         // `videoParameters` has no counterpart here: Prebid Android's
         // mediation banner has no video-parameters setter, so a video banner

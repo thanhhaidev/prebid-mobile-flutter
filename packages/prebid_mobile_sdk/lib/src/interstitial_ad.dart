@@ -24,6 +24,7 @@ class PrebidInterstitialAd {
     this.videoParameters,
     this.impOrtbConfig,
     this.globalOrtbConfig,
+    this.pbAdSlot,
     this.controls,
     this.listener,
   }) : _adId = _nextId++ {
@@ -57,6 +58,11 @@ class PrebidInterstitialAd {
   /// Request-level OpenRTB JSON for this ad unit only (merged over
   /// [PrebidTargeting.setGlobalOrtbConfig]).
   final String? globalOrtbConfig;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter on
+  /// this ad unit, so on iOS the plugin adds it to [impOrtbConfig] (a
+  /// `pbadslot` already there wins).
+  final String? pbAdSlot;
 
   /// Close / skip button, sound and minimum-size controls.
   final PrebidFullscreenControls? controls;
@@ -106,6 +112,7 @@ class PrebidInterstitialAd {
       impOrtbConfig,
       globalOrtbConfig,
       controls?.toConfig(),
+      pbAdSlot,
     );
   }
 

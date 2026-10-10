@@ -101,7 +101,7 @@ If a creative references assets by ID, call `PrebidMobile.setShouldAssignNativeA
 | `iconUrl`, `imageUrl` | Icon and main image URLs. |
 | `clickUrl` | The click-through URL. |
 | `privacyUrl` | The AdChoices link, when the bid has one. |
-| `titles`, `images`, `dataAssets` | Every asset of each kind (`PrebidNativeImage.type`, `PrebidNativeData.type`). |
+| `titles`, `images`, `dataAssets` | Every asset of each kind (`PrebidNativeImage.type`, `PrebidNativeData.type`). On iOS, `PrebidNativeImage.width` and `height` give the size the bid declares, to keep the aspect ratio in your own layout; Prebid Android doesn't keep it. |
 | `dataOf(NativeDataType)` | The values of one data type, e.g. `dataOf(NativeDataType.rating)`. |
 
 Impressions and clicks are only tracked for an ad shown through `PrebidNativeAdView`: the native layout above, or your own layout in `PrebidNativeAdView.custom`.

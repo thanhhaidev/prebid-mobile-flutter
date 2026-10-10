@@ -25,6 +25,7 @@ internal class InterstitialAdHostApiImpl(
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
+        pbAdSlot: String?,
     ) {
         // A reload replaces the previous unit; destroy it so it stops sending
         // events under this ad id.
@@ -52,6 +53,7 @@ internal class InterstitialAdHostApiImpl(
         videoConfig?.maxDuration?.let { adUnit.setMaxVideoDuration(it.toInt()) }
         impOrtbConfig?.let { adUnit.setImpOrtbConfig(it) }
         globalOrtbConfig?.let { adUnit.setGlobalOrtbConfig(it) }
+        pbAdSlot?.let { adUnit.setPbAdSlot(it) }
         controls?.let { c ->
             c.applyTo(adUnit)
             if (c.minWidthPercentage != null && c.minHeightPercentage != null) {

@@ -126,4 +126,16 @@ class PrebidInstreamVideoAd {
   Future<void> destroy() async {
     await api.destroy(_adId);
   }
+
+  /// The Google Ad Manager VAST tag URL for an IMA player: [gamAdUnitId],
+  /// [sizes] and the bid's targeting keywords (from [fetchDemand]). iOS only
+  /// accepts 400x300, 640x480 and 320x480 and throws a `PlatformException`
+  /// for other sizes.
+  static Future<String> generateInstreamUriForGam({
+    required String gamAdUnitId,
+    required List<Size> sizes,
+    required Map<String, String> targetingKeywords,
+  }) => api.generateInstreamUriForGam(gamAdUnitId, [
+    for (final s in sizes) ...[s.width.round(), s.height.round()],
+  ], targetingKeywords);
 }

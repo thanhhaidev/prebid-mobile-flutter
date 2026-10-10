@@ -48,6 +48,8 @@ PrebidAdMobBannerAd(
 | `refreshIntervalSeconds` | Prebid auto-refresh. Each refresh runs a new auction and reloads the AdMob view. `null` or `0` (default) turns it off on both platforms. Prebid clamps other values to 30–120 s on Android and 15–120 s on iOS. Turn off the AdMob unit's own refresh so the two don't stack. |
 | `autoLoad`, `controller` | Load on demand, or stop Prebid's refresh, with a [`PrebidBannerAdController`](/docs/banner#load-on-demand) (`stopRefresh()`). |
 | `adPosition`, `impOrtbConfig` | Ad position and impression-level OpenRTB JSON. |
+| `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
+| `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`); on iOS sent in the `imp` JSON, since Prebid iOS has no setter on mediation units. |
 
 An adaptive banner with an extra Prebid size, as in Prebid's test app:
 
@@ -79,7 +81,7 @@ interstitial = PrebidAdMobInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
+`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent), `impOrtbConfig`, `globalOrtbConfig` and `pbAdSlot`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the interstitial's display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`; rewarded ads have no minimum size or auto-close in Prebid's mediation units. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
 
 ## Native
 
@@ -95,7 +97,7 @@ PrebidAdMobNativeAd(
 )
 ```
 
-Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `assets` and `eventTrackers` change the requested assets; `context`, `contextSubType` and `placementType` default to social, general social and in-feed on both platforms.
+Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `assets` and `eventTrackers` change the requested assets; `context`, `contextSubType` and `placementType` default to social, general social and in-feed on both platforms. `placementCount`, `sequence`, `assetUrlSupport`, `dUrlSupport`, `privacy` and `ext` set the native request's `plcmtcnt`, `seq`, `aurlsupport`, `durlsupport`, `privacy` and `ext`. `impOrtbConfig` and `globalOrtbConfig` apply on iOS only: Prebid Android's mediation native unit has no setters for them.
 
 ## Events
 

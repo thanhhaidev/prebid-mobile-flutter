@@ -10,7 +10,7 @@ import PrebidMobileAdMobAdapters
 // `PrebidFullscreenControls.toMap()` and `VideoParameters.toMap()` from
 // prebid_mobile_sdk.
 
-private func intValue(_ raw: Any?) -> Int? { (raw as? NSNumber)?.intValue }
+func intValue(_ raw: Any?) -> Int? { (raw as? NSNumber)?.intValue }
 
 /// Formats SDK errors for Dart, appending `localizedFailureReason` (the real
 /// server response) which Prebid hides behind a generic
@@ -138,9 +138,13 @@ func nativeAssetsFrom(_ raw: Any?) -> [NativeAsset]? {
 }
 
 /// A JSON object string (`jsonEncode` in Dart) as a dictionary, or nil.
-private func jsonValue(_ raw: Any?) -> AnyObject? {
+func jsonDictionary(_ raw: Any?) -> [String: Any]? {
     guard let data = (raw as? String)?.data(using: .utf8) else { return nil }
-    return (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
+    return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+}
+
+private func jsonValue(_ raw: Any?) -> AnyObject? {
+    jsonDictionary(raw) as NSDictionary?
 }
 
 /// Native event trackers, or nil when the widget uses the defaults. Their
@@ -262,4 +266,18 @@ extension FullscreenControls {
             if let v = isAutoCloseOnCompletionEnabled { interstitial.isAutoCloseOnCompletionEnabled = v }
         }
     }
+}
+
+/// Impression-level ORTB JSON with `ext.data.pbadslot` set to [pbAdSlot]
+/// (unless the JSON already sets one), for ad units without a pbAdSlot setter.
+func impOrtb(_ json: String?, pbAdSlot: String?) -> String? {
+    guard let pbAdSlot = pbAdSlot else { return json }
+    let data = json.flatMap { $0.data(using: .utf8) }
+    var imp = data.flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] } ?? [:]
+    var ext = imp["ext"] as? [String: Any] ?? [:]
+    var extData = ext["data"] as? [String: Any] ?? [:]
+    if extData["pbadslot"] == nil { extData["pbadslot"] = pbAdSlot }
+    ext["data"] = extData
+    imp["ext"] = ext
+    return (try? JSONSerialization.data(withJSONObject: imp)).flatMap { String(data: $0, encoding: .utf8) } ?? json
 }

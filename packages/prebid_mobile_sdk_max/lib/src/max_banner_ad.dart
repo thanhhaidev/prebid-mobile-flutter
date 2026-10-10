@@ -36,6 +36,8 @@ class PrebidMaxBannerAd extends StatefulWidget {
     this.controller,
     this.adPosition,
     this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.pbAdSlot,
     this.listener,
   });
 
@@ -102,6 +104,15 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// how to set the GPID: `{"ext":{"gpid":"/1111/home"}}`).
   final String? impOrtbConfig;
 
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Prebid iOS has no setter on
+  /// this ad unit, so on iOS it is added to [impOrtbConfig] (a `pbadslot`
+  /// already there wins).
+  final String? pbAdSlot;
+
   /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
   /// also get MAX's expand / collapse, display-failure and revenue events.
   final PrebidBannerAdListener? listener;
@@ -164,6 +175,9 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
       'autoLoad': widget.autoLoad,
       if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.globalOrtbConfig != null)
+        'globalOrtbConfig': widget.globalOrtbConfig,
+      if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
       if (widget.additionalSizes != null)
         'additionalSizes': [
           for (final size in widget.additionalSizes!) ...[

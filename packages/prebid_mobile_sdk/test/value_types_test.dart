@@ -12,18 +12,16 @@ void main() {
 
   group('PrebidLogLevel', () {
     test('has all log levels', () {
-      expect(PrebidLogLevel.values.length, 6);
-      expect(
-        PrebidLogLevel.values,
-        containsAll([
-          PrebidLogLevel.debug,
-          PrebidLogLevel.verbose,
-          PrebidLogLevel.info,
-          PrebidLogLevel.warn,
-          PrebidLogLevel.error,
-          PrebidLogLevel.severe,
-        ]),
-      );
+      // The index is the wire value: native maps 0..6 in this order.
+      expect(PrebidLogLevel.values, [
+        PrebidLogLevel.debug,
+        PrebidLogLevel.verbose,
+        PrebidLogLevel.info,
+        PrebidLogLevel.warn,
+        PrebidLogLevel.error,
+        PrebidLogLevel.severe,
+        PrebidLogLevel.none,
+      ]);
     });
   });
 

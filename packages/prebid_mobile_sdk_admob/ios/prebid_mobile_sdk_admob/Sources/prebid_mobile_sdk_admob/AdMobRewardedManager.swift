@@ -25,7 +25,11 @@ final class AdMobRewarded: FullscreenAd {
         )
         FullscreenControls(args["controls"])?.apply(to: adUnit)
         applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
-        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
+        if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
+            adUnit.setImpORTBConfig(config)
+        }
+        if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
         self.request = request
         self.mediationDelegate = mediationDelegate
         self.adUnit = adUnit

@@ -61,6 +61,7 @@ class PrebidMobileSdkPlugin : FlutterPlugin, ActivityAware {
         MultiformatAdHostApi.setUp(messenger, null)
         InstreamVideoAdHostApi.setUp(messenger, null)
         prebidMobileApi.clearEventDelegate()
+        prebidMobileApi.clearLogger()
         // Stop auto-refresh timers and viewability polls, which would
         // otherwise keep running (and the engine's objects alive) for the
         // rest of the process.

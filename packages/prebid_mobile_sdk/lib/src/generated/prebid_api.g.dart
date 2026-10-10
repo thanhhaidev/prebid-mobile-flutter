@@ -706,14 +706,19 @@ class NativeAdData {
 
 /// A native response image asset (type: 1=icon, 3=main).
 class NativeAdImageData {
-  NativeAdImageData({required this.type, this.url});
+  NativeAdImageData({required this.type, this.url, this.width, this.height});
 
   int type;
 
   String? url;
 
+  /// iOS only: the image size the bid declares (Prebid Android drops it).
+  int? width;
+
+  int? height;
+
   List<Object?> _toList() {
-    return <Object?>[type, url];
+    return <Object?>[type, url, width, height];
   }
 
   Object encode() {
@@ -725,6 +730,8 @@ class NativeAdImageData {
     return NativeAdImageData(
       type: result[0]! as int,
       url: result[1] as String?,
+      width: result[2] as int?,
+      height: result[3] as int?,
     );
   }
 
@@ -737,7 +744,10 @@ class NativeAdImageData {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(type, other.type) && _deepEquals(url, other.url);
+    return _deepEquals(type, other.type) &&
+        _deepEquals(url, other.url) &&
+        _deepEquals(width, other.width) &&
+        _deepEquals(height, other.height);
   }
 
   @override
@@ -746,7 +756,7 @@ class NativeAdImageData {
 
   @override
   String toString() {
-    return 'NativeAdImageData(type: $type, url: $url)';
+    return 'NativeAdImageData(type: $type, url: $url, width: $width, height: $height)';
   }
 }
 
@@ -1203,6 +1213,9 @@ class MultiformatAdRequestConfig {
   MultiformatAdRequestConfig({
     required this.configId,
     this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
     this.bannerApi,
     this.interstitialMinWidthPercentage,
     this.interstitialMinHeightPercentage,
@@ -1219,6 +1232,15 @@ class MultiformatAdRequestConfig {
   String configId;
 
   String? gpid;
+
+  /// iOS only (Prebid Android's PrebidAdUnit has no setters for them):
+  /// `imp.ext.data.pbadslot`, impression-level and per-unit request-level
+  /// OpenRTB JSON.
+  String? pbAdSlot;
+
+  String? impOrtbConfig;
+
+  String? globalOrtbConfig;
 
   /// Banner API frameworks (OpenRTB `banner.api`).
   List<int?>? bannerApi;
@@ -1253,6 +1275,9 @@ class MultiformatAdRequestConfig {
     return <Object?>[
       configId,
       gpid,
+      pbAdSlot,
+      impOrtbConfig,
+      globalOrtbConfig,
       bannerApi,
       interstitialMinWidthPercentage,
       interstitialMinHeightPercentage,
@@ -1276,17 +1301,20 @@ class MultiformatAdRequestConfig {
     return MultiformatAdRequestConfig(
       configId: result[0]! as String,
       gpid: result[1] as String?,
-      bannerApi: (result[2] as List<Object?>?)?.cast<int?>(),
-      interstitialMinWidthPercentage: result[3] as int?,
-      interstitialMinHeightPercentage: result[4] as int?,
-      supportSKOverlay: result[5]! as bool,
-      adPosition: result[6] as int?,
-      trackInterstitialImpression: result[7]! as bool,
-      bannerSizes: (result[8] as List<Object?>?)?.cast<int?>(),
-      videoConfig: result[9] as VideoParametersConfig?,
-      nativeConfig: result[10] as NativeAdRequestConfig?,
-      isInterstitial: result[11]! as bool,
-      isRewarded: result[12]! as bool,
+      pbAdSlot: result[2] as String?,
+      impOrtbConfig: result[3] as String?,
+      globalOrtbConfig: result[4] as String?,
+      bannerApi: (result[5] as List<Object?>?)?.cast<int?>(),
+      interstitialMinWidthPercentage: result[6] as int?,
+      interstitialMinHeightPercentage: result[7] as int?,
+      supportSKOverlay: result[8]! as bool,
+      adPosition: result[9] as int?,
+      trackInterstitialImpression: result[10]! as bool,
+      bannerSizes: (result[11] as List<Object?>?)?.cast<int?>(),
+      videoConfig: result[12] as VideoParametersConfig?,
+      nativeConfig: result[13] as NativeAdRequestConfig?,
+      isInterstitial: result[14]! as bool,
+      isRewarded: result[15]! as bool,
     );
   }
 
@@ -1302,6 +1330,9 @@ class MultiformatAdRequestConfig {
     }
     return _deepEquals(configId, other.configId) &&
         _deepEquals(gpid, other.gpid) &&
+        _deepEquals(pbAdSlot, other.pbAdSlot) &&
+        _deepEquals(impOrtbConfig, other.impOrtbConfig) &&
+        _deepEquals(globalOrtbConfig, other.globalOrtbConfig) &&
         _deepEquals(bannerApi, other.bannerApi) &&
         _deepEquals(
           interstitialMinWidthPercentage,
@@ -1330,7 +1361,7 @@ class MultiformatAdRequestConfig {
 
   @override
   String toString() {
-    return 'MultiformatAdRequestConfig(configId: $configId, gpid: $gpid, bannerApi: $bannerApi, interstitialMinWidthPercentage: $interstitialMinWidthPercentage, interstitialMinHeightPercentage: $interstitialMinHeightPercentage, supportSKOverlay: $supportSKOverlay, adPosition: $adPosition, trackInterstitialImpression: $trackInterstitialImpression, bannerSizes: $bannerSizes, videoConfig: $videoConfig, nativeConfig: $nativeConfig, isInterstitial: $isInterstitial, isRewarded: $isRewarded)';
+    return 'MultiformatAdRequestConfig(configId: $configId, gpid: $gpid, pbAdSlot: $pbAdSlot, impOrtbConfig: $impOrtbConfig, globalOrtbConfig: $globalOrtbConfig, bannerApi: $bannerApi, interstitialMinWidthPercentage: $interstitialMinWidthPercentage, interstitialMinHeightPercentage: $interstitialMinHeightPercentage, supportSKOverlay: $supportSKOverlay, adPosition: $adPosition, trackInterstitialImpression: $trackInterstitialImpression, bannerSizes: $bannerSizes, videoConfig: $videoConfig, nativeConfig: $nativeConfig, isInterstitial: $isInterstitial, isRewarded: $isRewarded)';
   }
 }
 
@@ -2215,6 +2246,69 @@ class PrebidMobileHostApi {
     );
   }
 
+  /// Routes Prebid's log messages to [PrebidEventFlutterApi.onLog] instead of
+  /// the console (Prebid's custom logger), or restores the console.
+  Future<void> setLogListenerEnabled(bool enabled) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setLogListenerEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[enabled],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// iOS only: Prebid's own location updates (`locationUpdatesEnabled`);
+  /// the getter returns null on Android.
+  Future<void> setLocationUpdatesEnabled(bool enabled) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setLocationUpdatesEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[enabled],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<bool?> getLocationUpdatesEnabled() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getLocationUpdatesEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as bool?;
+  }
+
   Future<void> setSendSharedId(bool send) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setSendSharedId$pigeonVar_messageChannelSuffix';
@@ -2876,6 +2970,26 @@ class TargetingHostApi {
     return pigeonVar_replyValue as bool?;
   }
 
+  /// Whether the consent signals allow reading device data (TCF purpose 1).
+  Future<bool> isAllowedAccessDeviceData() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.isAllowedAccessDeviceData$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
   Future<void> setUSPrivacyString(String? value) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUSPrivacyString$pigeonVar_messageChannelSuffix';
@@ -3088,6 +3202,25 @@ class TargetingHostApi {
       pigeonVar_channelName,
       isNullValid: true,
     );
+  }
+
+  Future<List<String>> getAppKeywords() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getAppKeywords$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<String>();
   }
 
   Future<void> addAppExtData(String key, String value) async {
@@ -3466,6 +3599,46 @@ class TargetingHostApi {
     );
   }
 
+  /// Android only: overrides `app.bundle`; null restores the app's own.
+  Future<void> setBundleName(String? bundleName) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setBundleName$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[bundleName],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String?> getBundleName() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getBundleName$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
   Future<void> setOmidPartnerName(String? name) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setOmidPartnerName$pigeonVar_messageChannelSuffix';
@@ -3517,6 +3690,24 @@ class TargetingHostApi {
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[latitude, longitude],
     );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<void> clearUserLatLng() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.clearUserLatLng$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
@@ -3737,6 +3928,46 @@ class TargetingHostApi {
     );
     return pigeonVar_replyValue as int?;
   }
+
+  /// iOS only: the SKAdNetwork `sourceapp` and the iTunes ID (null on
+  /// Android).
+  Future<String?> getSourceApp() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getSourceApp$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
+  Future<String?> getItunesId() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getItunesId$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
 }
 
 /// Interstitial ad operations (Dart → Native).
@@ -3765,6 +3996,7 @@ class InterstitialAdHostApi {
     String? impOrtbConfig,
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -3782,6 +4014,7 @@ class InterstitialAdHostApi {
           impOrtbConfig,
           globalOrtbConfig,
           controls,
+          pbAdSlot,
         ]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -3859,6 +4092,7 @@ class RewardedAdHostApi {
     String? impOrtbConfig,
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
+    String? pbAdSlot,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -3876,6 +4110,7 @@ class RewardedAdHostApi {
           impOrtbConfig,
           globalOrtbConfig,
           controls,
+          pbAdSlot,
         ]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -4392,6 +4627,34 @@ class InstreamVideoAdHostApi {
       isNullValid: true,
     );
   }
+
+  /// The Google Ad Manager VAST tag URL for an IMA player, with the bid's
+  /// targeting keywords; sizes are [width, height, ...]. Throws for a size
+  /// iOS doesn't support (400x300, 640x480 and 320x480 only).
+  Future<String> generateInstreamUriForGam(
+    String adUnitId,
+    List<int> sizes,
+    Map<String, String> keywords,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.InstreamVideoAdHostApi.generateInstreamUriForGam$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[adUnitId, sizes, keywords],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
+  }
 }
 
 /// Callbacks for ad events from native to Flutter.
@@ -4442,6 +4705,9 @@ abstract class PrebidEventFlutterApi {
 
   Future<void> onBidResponse(String? request, String? response);
 
+  /// A Prebid log message; level is a PrebidLogLevel index.
+  Future<void> onLog(int level, String message);
+
   static void setUp(
     PrebidEventFlutterApi? api, {
     BinaryMessenger? binaryMessenger,
@@ -4465,6 +4731,32 @@ abstract class PrebidEventFlutterApi {
           final String? arg_response = args[1] as String?;
           try {
             await api.onBidResponse(arg_request, arg_response);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidEventFlutterApi.onLog$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final int arg_level = args[0]! as int;
+          final String arg_message = args[1]! as String;
+          try {
+            await api.onLog(arg_level, arg_message);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

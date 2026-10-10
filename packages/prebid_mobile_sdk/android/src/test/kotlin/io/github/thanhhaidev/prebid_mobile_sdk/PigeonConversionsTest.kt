@@ -1,6 +1,5 @@
 package io.github.thanhhaidev.prebid_mobile_sdk
 
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -149,7 +148,6 @@ internal class PigeonConversionsTest {
     // Prebid's constructor is NativeImageAsset(w, h, wmin, hmin); the
     // conversion passes (wmin, hmin, w, h), so the request swaps the sizes and
     // their minimums.
-    @Ignore("w/h and wmin/hmin are swapped: fix the NativeImageAsset argument order")
     @Test
     fun toPrebidAsset_requestsTheImageSizesAndTheirMinimums() {
         val img = NativeAssetConfig(

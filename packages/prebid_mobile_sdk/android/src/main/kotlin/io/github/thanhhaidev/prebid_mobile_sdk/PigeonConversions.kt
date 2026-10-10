@@ -116,11 +116,12 @@ internal fun NativeAssetConfig.toPrebidAsset(): NativeAsset? = when (assetType) 
         jsonObject(this@toPrebidAsset.ext)?.let(::setTitleExt)
         jsonObject(this@toPrebidAsset.assetExt)?.let(::setAssetExt)
     }
+    // Prebid's argument order: w, h, wmin, hmin.
     "image" -> NativeImageAsset(
-        imageWidthMin?.toInt() ?: 0,
-        imageHeightMin?.toInt() ?: 0,
         imageWidth?.toInt() ?: 0,
         imageHeight?.toInt() ?: 0,
+        imageWidthMin?.toInt() ?: 0,
+        imageHeightMin?.toInt() ?: 0,
     ).apply {
         imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { it.id.toLong() == this@toPrebidAsset.imageType }
         imageMimes?.filterNotNull()?.forEach(::addMime)

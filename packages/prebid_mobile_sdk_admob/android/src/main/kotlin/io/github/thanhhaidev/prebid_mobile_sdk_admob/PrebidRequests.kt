@@ -35,11 +35,12 @@ internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
                 m.json("ext")?.let(::setTitleExt)
                 m.json("assetExt")?.let(::setAssetExt)
             }
+            // Prebid's argument order: w, h, wmin, hmin.
             "image" -> NativeImageAsset(
-                m.int("imageWidthMin") ?: 0,
-                m.int("imageHeightMin") ?: 0,
                 m.int("imageWidth") ?: 0,
                 m.int("imageHeight") ?: 0,
+                m.int("imageWidthMin") ?: 0,
+                m.int("imageHeightMin") ?: 0,
             ).apply {
                 val type = m.int("imageType")
                 imageType = NativeImageAsset.IMAGE_TYPE.values().firstOrNull { it.id == type }

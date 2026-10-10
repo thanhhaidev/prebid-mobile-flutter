@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         NativeAsset,
@@ -47,6 +48,10 @@ class PrebidGamNativeAdListener {
   /// `prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`,
   /// `prebidServerURLInvalid`, `prebidServerNotSpecified`,
   /// `prebidDemandNoCachedBids` or `prebidInvalidRequest` (any other code).
+  ///
+  /// On Android it is also `prebidSdkNotInitialized` when the view is created
+  /// before the Prebid SDK finished initializing: Prebid Android drops such
+  /// requests, so no auction runs (the GAM request still does).
   final void Function(String reason)? onFetchDemandFailed;
 
   /// Google Ad Manager returned a **custom-format** ad.
@@ -67,7 +72,15 @@ class PrebidGamNativeAdListener {
   /// No Prebid creative in the unified ad — the GAM unified native ad wins.
   final VoidCallback? onPrimaryAdWinUnified;
 
-  /// An impression was tracked on the rendered native ad.
+  /// An impression was recorded on the rendered native ad.
+  ///
+  /// For a Prebid creative ([onNativeAdLoaded]) this is Prebid's own
+  /// impression-tracker callback: it fires once Prebid's impression tracker
+  /// request succeeds (reported once, though Prebid calls back per tracker
+  /// URL). That differs from the core `PrebidNativeAdView`, whose
+  /// `onAdImpression` is viewability-based (the ad on screen for about a
+  /// second). For a GAM ad that wins ([onPrimaryAdWinUnified]) it is the
+  /// Google Mobile Ads SDK's impression callback.
   final VoidCallback? onAdImpression;
 
   /// The rendered native ad was clicked.
@@ -110,6 +123,10 @@ class PrebidGamNativeAd extends StatefulWidget {
     this.context,
     this.contextSubType,
     this.placementType,
+    this.customTargeting,
+    this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
     this.listener,
   });
 
@@ -146,6 +163,20 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// Native placement type (`plcmttype`).
   final NativePlacementType? placementType;
 
+  /// Custom key-values added to the Google Ad Manager request, next to
+  /// Prebid's `hb_*` keys (which take precedence on conflict).
+  final Map<String, String>? customTargeting;
+
+  /// The Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`.
+  final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
+  /// `{"ext":{"data":{"section":"news"}}}`).
+  final String? impOrtbConfig;
+
   /// Listener for the native ad flow events.
   final PrebidGamNativeAdListener? listener;
 
@@ -154,26 +185,15 @@ class PrebidGamNativeAd extends StatefulWidget {
 }
 
 class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
-  static int _nextViewId = 7000000;
-
-  /// Identifies the native view's event channel. The native side starts the
-  /// auction as soon as it is created, before `onPlatformViewCreated`, so the
-  /// channel is named by an id chosen here rather than the platform view id.
-  /// A configuration change gets a new id (and a new native view), so late
-  /// events from the old view never reach the new one.
-  late int _logicalId = _nextViewId++;
-  late MethodChannel _channel;
+  /// The current native view's channel. The native side starts the auction
+  /// as soon as it is created, before `onPlatformViewCreated`, so the channel
+  /// is listened to first. A configuration change gets a new channel (and a
+  /// new native view), so late events from the old view never reach it.
+  late AdViewChannel _view = _newView();
   late double _height = widget.height;
 
-  @override
-  void initState() {
-    super.initState();
-    _channel = _listen(_logicalId);
-  }
-
-  MethodChannel _listen(int logicalId) =>
-      MethodChannel('prebid_mobile_sdk_gam/native_$logicalId')
-        ..setMethodCallHandler(_onNativeEvent);
+  AdViewChannel _newView() =>
+      AdViewChannel('prebid_mobile_sdk_gam/native', _onNativeEvent);
 
   @override
   void didUpdateWidget(PrebidGamNativeAd oldWidget) {
@@ -181,9 +201,8 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
     if (_config(oldWidget).toString() != _config(widget).toString()) {
       // The native view reads its configuration once, so a changed config
       // gets a new view (keyed below) on a new channel, at the initial height.
-      _channel.setMethodCallHandler(null);
-      _logicalId = _nextViewId++;
-      _channel = _listen(_logicalId);
+      _view.dispose();
+      _view = _newView();
       _height = widget.height;
     }
   }
@@ -237,26 +256,31 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
         'contextSubType': widget.contextSubType!.value,
       if (widget.placementType != null)
         'placementType': widget.placementType!.value,
+      if (widget.customTargeting != null)
+        'customTargeting': widget.customTargeting,
+      if (widget.gpid != null) 'gpid': widget.gpid,
+      if (widget.pbAdSlot != null) 'pbAdSlot': widget.pbAdSlot,
+      if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = <String, Object?>{
-      'logicalId': _logicalId,
-      ..._config(widget),
-    };
-
     return SizedBox(
       width: widget.width,
       height: _height,
-      child: _buildPlatformView(creationParams),
+      child: _buildPlatformView(),
     );
   }
 
-  Widget _buildPlatformView(Map<String, Object?> creationParams) {
-    // Recreate the native view when its configuration changes.
-    final key = ValueKey(creationParams.toString());
+  Widget _buildPlatformView() {
+    final view = _view;
+    final creationParams = <String, Object?>{
+      'channelId': view.id,
+      ..._config(widget),
+    };
+    // A new channel means a new native view (the config changed).
+    final key = ValueKey(view.id);
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
@@ -278,7 +302,7 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd> {
 
   @override
   void dispose() {
-    _channel.setMethodCallHandler(null);
+    _view.dispose();
     super.dispose();
   }
 }

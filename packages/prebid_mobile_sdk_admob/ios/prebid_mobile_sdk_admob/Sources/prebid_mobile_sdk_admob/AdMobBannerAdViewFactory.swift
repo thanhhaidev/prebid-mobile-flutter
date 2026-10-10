@@ -34,6 +34,9 @@ final class AdMobBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One AdMob banner: a Google Mobile Ads `BannerView` loaded after each Prebid
+/// auction of its `MediationBannerAdUnit`, reporting to Dart over
+/// `prebid_mobile_sdk_admob/banner_<channelId>`.
 final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.BannerViewDelegate {
 
     private let gadBanner: GoogleMobileAds.BannerView
@@ -71,7 +74,7 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
 
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/banner_\(viewId)",
+            name: "prebid_mobile_sdk_admob/banner_\(viewChannelId(args, viewId: viewId))",
             binaryMessenger: messenger
         )
 
@@ -91,7 +94,7 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         super.init()
 
         gadBanner.delegate = self
-        gadBanner.rootViewController = topViewController()
+        gadBanner.rootViewController = PrebidPresenter.topViewController()
 
         // 2. Prebid mediation utils + ad unit.
         let mediationDelegate = AdMobMediationBannerUtils(gadRequest: gadRequest, bannerView: gadBanner)
@@ -107,6 +110,11 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         }
         if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
         if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
+        if args["adFormats"] != nil {
+            adUnit.adFormats = adFormatsFrom(args["adFormats"], isVideo: false)
+        }
+        // Prebid exposes the parameters get-only: they are configured in place.
+        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
         if let interval = refreshInterval, interval > 0 {
             // Clamped by Prebid to 15–120 s.
             adUnit.refreshInterval = TimeInterval(interval)
@@ -140,10 +148,12 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
     /// capture skips the load when the view was disposed meanwhile.
     private func load() {
         mediationAdUnit?.fetchDemand { [weak self] _ in
-            guard let self = self else { return }
-            maybeDropBid(self.dropBidProbability, from: self.gadRequest)
-            self.gadBanner.rootViewController = topViewController()
-            self.gadBanner.load(self.gadRequest)
+            onMain {
+                guard let self = self else { return }
+                maybeDropBid(self.dropBidProbability, from: self.gadRequest)
+                self.gadBanner.rootViewController = PrebidPresenter.topViewController()
+                self.gadBanner.load(self.gadRequest)
+            }
         }
     }
 
@@ -158,6 +168,11 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         return gadBanner
     }
 
+    /// Sends `event` to the widget on the main thread.
+    private func send(_ event: String, _ arguments: Any? = nil) {
+        onMain { [methodChannel] in methodChannel.invokeMethod(event, arguments: arguments) }
+    }
+
     // MARK: - BannerViewDelegate
 
     func bannerViewDidReceiveAd(_ bannerView: GoogleMobileAds.BannerView) {
@@ -170,12 +185,12 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
                 : GoogleMobileAds.cgSize(for: bannerView.adSize)
             if loaded.width > 0 && loaded.height > 0 { size = loaded }
         }
-        methodChannel.invokeMethod("onAdSize", arguments: [
+        send("onAdSize", [
             "width": Double(size.width),
             "height": Double(size.height),
         ])
-        methodChannel.invokeMethod("onAdLoaded", arguments: nil)
-        methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
+        send("onAdLoaded")
+        send("onAdDisplayed")
     }
 
     func bannerView(
@@ -183,18 +198,18 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         didFailToReceiveAdWithError error: Error
     ) {
         mediationAdUnit?.adObjectDidFailToLoadAd(adObject: gadBanner, with: error)
-        methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
+        send("onAdFailed", PrebidErrorFormatter.describe(error))
     }
 
     func bannerViewDidRecordImpression(_ bannerView: GoogleMobileAds.BannerView) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        send("onAdImpression")
     }
 
     func bannerViewDidRecordClick(_ bannerView: GoogleMobileAds.BannerView) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked")
     }
 
     func bannerViewDidDismissScreen(_ bannerView: GoogleMobileAds.BannerView) {
-        methodChannel.invokeMethod("onAdClosed", arguments: nil)
+        send("onAdClosed")
     }
 }

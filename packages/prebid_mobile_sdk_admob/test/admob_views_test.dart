@@ -38,7 +38,39 @@ void main() {
         'height': 250,
         'autoLoad': true,
       });
+      // The native view names its channel after the `channelId` param.
+      final channelId = views.channelIds.single;
+      expect(channelId, isA<int>());
+      expect(views.viewChannel, 'prebid_mobile_sdk_admob/banner_$channelId');
     }, variant: android);
+
+    testWidgets('sends adFormats and videoParameters', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_admob/banner');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidAdMobBannerAd(
+            configId: 'c',
+            adMobAdUnitId: 'u',
+            width: 300,
+            height: 250,
+            adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
+            videoParameters: VideoParameters(
+              mimes: ['video/mp4'],
+              plcmt: VideoPlcmt.instream,
+              maxDuration: 30,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(views.creationParams?['adFormats'], ['banner', 'video']);
+      expect(views.creationParams?['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'maxDuration': 30,
+        'plcmt': 1,
+      });
+    }, variant: ios);
 
     testWidgets('every event reaches its callback; onAdSize resizes', (
       tester,
@@ -142,6 +174,7 @@ void main() {
 
       await controller.stopRefresh();
       expect(views.calls.last.method, 'stopRefresh');
+      expect(views.channelIds.toSet(), hasLength(2));
     }, variant: android);
   });
 
@@ -154,6 +187,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(views.creationParams, {'configId': 'c', 'adMobAdUnitId': 'u'});
+      final channelId = views.channelIds.single;
+      expect(views.viewChannel, 'prebid_mobile_sdk_admob/native_$channelId');
     }, variant: android);
 
     testWidgets('sends assets and trackers', (tester) async {

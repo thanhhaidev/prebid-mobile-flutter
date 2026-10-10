@@ -4,169 +4,96 @@ import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
 
-/// Handles AdMob-mediated rewarded ads over the
-/// `prebid_mobile_sdk_admob/rewarded` method channel. Each ad is keyed by an
-/// `adId` allocated on the Dart side; native events (including the reward) are
-/// pushed back over the same channel.
-final class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
+/// One AdMob-mediated rewarded ad: the Prebid ad unit that runs the auction
+/// and, once loaded, the AdMob ad.
+final class AdMobRewarded: FullscreenAd {
+    let adUnit: MediationRewardedAdUnit
+    let request: GoogleMobileAds.Request
+    let adMobAdUnitId: String
+    let dropBidProbability: Double
+    // Retained for the ad's lifetime: the auction runs through it.
+    private let mediationDelegate: AdMobMediationRewardedUtils
+    var rewarded: GoogleMobileAds.RewardedAd?
+    var events: FullScreenEvents?
 
-    private let channel: FlutterMethodChannel
-
-    private var adUnits: [Int: MediationRewardedAdUnit] = [:]
-    private var mediationDelegates: [Int: AdMobMediationRewardedUtils] = [:]
-    private var rewardedAds: [Int: RewardedAd] = [:]
-    private var adIdByAd: [ObjectIdentifier: Int] = [:]
-
-    init(messenger: FlutterBinaryMessenger) {
-        channel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/rewarded",
-            binaryMessenger: messenger
+    init(args: [String: Any]) {
+        let request = GoogleMobileAds.Request()
+        let mediationDelegate = AdMobMediationRewardedUtils(gadRequest: request)
+        let adUnit = MediationRewardedAdUnit(
+            configId: args["configId"] as? String ?? "",
+            mediationDelegate: mediationDelegate
         )
-        super.init()
-        channel.setMethodCallHandler { [weak self] call, result in
-            self?.handle(call, result)
-        }
+        FullscreenControls(args["controls"])?.apply(to: adUnit)
+        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
+        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        self.request = request
+        self.mediationDelegate = mediationDelegate
+        self.adUnit = adUnit
+        adMobAdUnitId = args["adMobAdUnitId"] as? String ?? ""
+        dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
     }
 
-    private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let args = call.arguments as? [String: Any]
-        let adId = args?["adId"] as? Int
+    var isLoaded: Bool { rewarded != nil }
 
-        switch call.method {
-        case "load":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            // Reloading an adId replaces its previous ad.
-            release(adId)
-            let configId = args?["configId"] as? String ?? ""
-            let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
+    func destroy() {
+        rewarded?.fullScreenContentDelegate = nil
+        rewarded = nil
+        events = nil
+    }
+}
 
-            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
-            let request = Request()
-            let mediationDelegate = AdMobMediationRewardedUtils(gadRequest: request)
-            let adUnit = MediationRewardedAdUnit(
-                configId: configId,
-                mediationDelegate: mediationDelegate
-            )
-            FullscreenControls(args?["controls"])?.apply(to: adUnit)
-            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
-            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
-            adUnits[adId] = adUnit
-            mediationDelegates[adId] = mediationDelegate
+/// AdMob-mediated rewarded ads over the `prebid_mobile_sdk_admob/rewarded`
+/// method channel: Prebid's `MediationRewardedAdUnit` runs the auction and the
+/// winning bid reaches AdMob's `RewardedAd` through the Prebid adapter. The
+/// reward is sent as `onUserEarnedReward`.
+final class AdMobRewardedManager: FullscreenAdManager<AdMobRewarded> {
 
-            adUnit.fetchDemand { [weak self, weak adUnit] _ in
+    init(messenger: FlutterBinaryMessenger) {
+        super.init(name: "prebid_mobile_sdk_admob/rewarded", messenger: messenger)
+    }
+
+    override func makeAd(adId: Int, args: [String: Any]) -> AdMobRewarded {
+        AdMobRewarded(args: args)
+    }
+
+    override func load(_ ad: AdMobRewarded, adId: Int) {
+        ad.adUnit.fetchDemand { [weak self, weak ad] _ in
+            onMain {
                 // Destroyed / replaced while the auction ran: skip the load.
-                guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
-                maybeDropBid(dropBidProbability, from: request)
-                RewardedAd.load(with: adMobAdUnitId, request: request) { [weak self, weak adUnit] ad, error in
-                    // A late load must not re-insert an ad for a released adId.
-                    guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
-                    if let error = error {
-                        self.send(adId, "onAdFailed", error: error.localizedDescription)
-                        return
+                guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                maybeDropBid(ad.dropBidProbability, from: ad.request)
+                GoogleMobileAds.RewardedAd.load(
+                    with: ad.adMobAdUnitId,
+                    request: ad.request
+                ) { [weak self, weak ad] rewarded, error in
+                    guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                    guard let rewarded = rewarded else {
+                        return self.send(adId, "onAdFailed", error: PrebidErrorFormatter.describe(error))
                     }
-                    guard let ad = ad else { return }
-                    ad.fullScreenContentDelegate = self
-                    self.rewardedAds[adId] = ad
-                    self.adIdByAd[ObjectIdentifier(ad)] = adId
+                    let events = FullScreenEvents { [weak self, weak ad] event, error in
+                        guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                        self.send(adId, event, error: error.map { PrebidErrorFormatter.describe($0) })
+                    }
+                    ad.events = events
+                    rewarded.fullScreenContentDelegate = events
+                    ad.rewarded = rewarded
                     self.send(adId, "onAdLoaded")
                 }
             }
-            result(nil)
-
-        case "show":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            guard let ad = rewardedAds[adId] else {
-                send(adId, "onAdFailed", error: "The rewarded ad is not ready to show; wait for onAdLoaded")
-                result(nil)
-                return
-            }
-            guard let controller = topViewController() else {
-                send(adId, "onAdFailed", error: "No view controller to present the rewarded ad from")
-                result(nil)
-                return
-            }
-            ad.present(from: controller) { [weak self, weak ad] in
-                guard let reward = ad?.adReward else { return }
-                // Same reward keys as the GAM / MAX packages.
-                self?.send(
-                    adId,
-                    "onUserEarnedReward",
-                    extra: ["rewardType": reward.type, "rewardCount": reward.amount.intValue]
-                )
-            }
-            result(nil)
-
-        case "destroy":
-            if let adId = adId {
-                release(adId)
-            }
-            result(nil)
-
-        default:
-            result(FlutterMethodNotImplemented)
         }
     }
 
-    /// Drops everything held for `adId` (including the reverse map), so late
-    /// callbacks from the released ad are no longer forwarded.
-    private func release(_ adId: Int) {
-        if let ad = rewardedAds.removeValue(forKey: adId) {
-            ad.fullScreenContentDelegate = nil
-            adIdByAd.removeValue(forKey: ObjectIdentifier(ad))
-        }
-        adUnits.removeValue(forKey: adId)
-        mediationDelegates.removeValue(forKey: adId)
-    }
-
-    private func send(_ adId: Int, _ event: String, error: String? = nil, extra: [String: Any]? = nil) {
-        var payload: [String: Any] = ["adId": adId]
-        if let error = error {
-            payload["error"] = error
-        }
-        if let extra = extra {
-            payload.merge(extra) { _, new in new }
-        }
-        channel.invokeMethod(event, arguments: payload)
-    }
-
-    // MARK: - FullScreenContentDelegate
-
-    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdDisplayed")
-        }
-    }
-
-    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdClosed")
-        }
-    }
-
-    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdImpression")
-        }
-    }
-
-    func adDidRecordClick(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdClicked")
-        }
-    }
-
-    func ad(
-        _ ad: FullScreenPresentingAd,
-        didFailToPresentFullScreenContentWithError error: Error
-    ) {
-        if let adId = adIdByAd[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdFailed", error: error.localizedDescription)
+    override func present(_ ad: AdMobRewarded, adId: Int, from controller: UIViewController) {
+        guard let rewarded = ad.rewarded else { return }
+        rewarded.present(from: controller) { [weak self, weak ad, weak rewarded] in
+            guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId),
+                  let reward = rewarded?.adReward else { return }
+            // Same reward keys as the GAM / MAX packages.
+            self.send(
+                adId,
+                "onUserEarnedReward",
+                extra: ["rewardType": reward.type, "rewardCount": reward.amount.intValue]
+            )
         }
     }
 }

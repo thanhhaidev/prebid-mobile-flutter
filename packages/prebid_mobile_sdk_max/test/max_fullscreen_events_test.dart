@@ -121,7 +121,7 @@ void main() {
         'clicked',
         'closed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     });
 
@@ -137,9 +137,27 @@ void main() {
       // (no PlatformException), as on iOS.
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the interstitial',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the interstitial']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
+      expect(ad.isLoaded, isFalse);
+    });
+
+    test('a load before Prebid init fails through the listener', () async {
+      // Android: Prebid drops requests made before init without calling
+      // back, so the plugin fails the load instead of letting it hang.
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidMaxInterstitialAd(
+        configId: 'c',
+        maxAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      await ad.loadAd();
+      await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
+        'error': 'The Prebid SDK is not initialized',
+      });
+      expect(fired, ['failed:The Prebid SDK is not initialized']);
       expect(ad.isLoaded, isFalse);
     });
 
@@ -325,9 +343,9 @@ void main() {
       );
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the rewarded ad',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the rewarded ad']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
       expect(ad.isLoaded, isFalse);
     });
 

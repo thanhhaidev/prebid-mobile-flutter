@@ -4,166 +4,88 @@ import GoogleMobileAds
 import PrebidMobile
 import PrebidMobileAdMobAdapters
 
-/// Handles AdMob-mediated interstitials over the
-/// `prebid_mobile_sdk_admob/interstitial` method channel. Each ad is keyed by an
-/// `adId` allocated on the Dart side; native events are pushed back over the
-/// same channel.
-final class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
+/// One AdMob-mediated interstitial: the Prebid ad unit that runs the auction
+/// and, once loaded, the AdMob ad.
+final class AdMobInterstitial: FullscreenAd {
+    let adUnit: MediationInterstitialAdUnit
+    let request: GoogleMobileAds.Request
+    let adMobAdUnitId: String
+    let dropBidProbability: Double
+    // Retained for the ad's lifetime: the auction runs through it.
+    private let mediationDelegate: AdMobMediationInterstitialUtils
+    var interstitial: GoogleMobileAds.InterstitialAd?
+    var events: FullScreenEvents?
 
-    private let channel: FlutterMethodChannel
-
-    private var adUnits: [Int: MediationInterstitialAdUnit] = [:]
-    private var mediationDelegates: [Int: AdMobMediationInterstitialUtils] = [:]
-    private var interstitials: [Int: GoogleMobileAds.InterstitialAd] = [:]
-    private var adIdByInterstitial: [ObjectIdentifier: Int] = [:]
-
-    init(messenger: FlutterBinaryMessenger) {
-        channel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/interstitial",
-            binaryMessenger: messenger
+    init(args: [String: Any]) {
+        let request = GoogleMobileAds.Request()
+        let mediationDelegate = AdMobMediationInterstitialUtils(gadRequest: request)
+        let controls = FullscreenControls(args["controls"])
+        let adUnit = MediationInterstitialAdUnit(
+            configId: args["configId"] as? String ?? "",
+            minSizePercentage: controls?.minSizePercentage,
+            mediationDelegate: mediationDelegate
         )
-        super.init()
-        channel.setMethodCallHandler { [weak self] call, result in
-            self?.handle(call, result)
-        }
+        controls?.apply(to: adUnit)
+        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
+        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        adUnit.adFormats = adFormatsFrom(args["adFormats"], isVideo: args["isVideo"] as? Bool ?? false)
+        self.request = request
+        self.mediationDelegate = mediationDelegate
+        self.adUnit = adUnit
+        adMobAdUnitId = args["adMobAdUnitId"] as? String ?? ""
+        dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
     }
 
-    private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let args = call.arguments as? [String: Any]
-        let adId = args?["adId"] as? Int
+    var isLoaded: Bool { interstitial != nil }
 
-        switch call.method {
-        case "load":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            // Reloading an adId replaces its previous ad.
-            release(adId)
-            let configId = args?["configId"] as? String ?? ""
-            let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
-            let isVideo = args?["isVideo"] as? Bool ?? false
-            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
+    func destroy() {
+        interstitial?.fullScreenContentDelegate = nil
+        interstitial = nil
+        events = nil
+    }
+}
 
-            // 1. GMA request + Prebid mediation utils + ad unit.
-            let gadRequest = Request()
-            let mediationDelegate = AdMobMediationInterstitialUtils(gadRequest: gadRequest)
-            let controls = FullscreenControls(args?["controls"])
-            let adUnit = MediationInterstitialAdUnit(
-                configId: configId,
-                minSizePercentage: controls?.minSizePercentage,
-                mediationDelegate: mediationDelegate
-            )
-            controls?.apply(to: adUnit)
-            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
-            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
-            adUnit.adFormats = adFormatsFrom(args?["adFormats"], isVideo: isVideo)
+/// AdMob-mediated interstitials over the `prebid_mobile_sdk_admob/interstitial`
+/// method channel: Prebid's `MediationInterstitialAdUnit` runs the auction and
+/// the winning bid reaches AdMob's `InterstitialAd` through the Prebid adapter.
+final class AdMobInterstitialManager: FullscreenAdManager<AdMobInterstitial> {
 
-            adUnits[adId] = adUnit
-            mediationDelegates[adId] = mediationDelegate
+    init(messenger: FlutterBinaryMessenger) {
+        super.init(name: "prebid_mobile_sdk_admob/interstitial", messenger: messenger)
+    }
 
-            // 2. Fetch demand, then load the AdMob interstitial.
-            adUnit.fetchDemand { [weak self, weak adUnit] _ in
+    override func makeAd(adId: Int, args: [String: Any]) -> AdMobInterstitial {
+        AdMobInterstitial(args: args)
+    }
+
+    override func load(_ ad: AdMobInterstitial, adId: Int) {
+        ad.adUnit.fetchDemand { [weak self, weak ad] _ in
+            onMain {
                 // Destroyed / replaced while the auction ran: skip the load.
-                guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
-                maybeDropBid(dropBidProbability, from: gadRequest)
+                guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                maybeDropBid(ad.dropBidProbability, from: ad.request)
                 GoogleMobileAds.InterstitialAd.load(
-                    with: adMobAdUnitId,
-                    request: gadRequest
-                ) { [weak self, weak adUnit] ad, error in
-                    // A late load must not re-insert an ad for a released adId.
-                    guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
-                    if let error = error {
-                        self.send(adId, "onAdFailed", error: error.localizedDescription)
-                        return
+                    with: ad.adMobAdUnitId,
+                    request: ad.request
+                ) { [weak self, weak ad] interstitial, error in
+                    guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                    guard let interstitial = interstitial else {
+                        return self.send(adId, "onAdFailed", error: PrebidErrorFormatter.describe(error))
                     }
-                    guard let ad = ad else { return }
-                    ad.fullScreenContentDelegate = self
-                    self.interstitials[adId] = ad
-                    self.adIdByInterstitial[ObjectIdentifier(ad)] = adId
+                    let events = FullScreenEvents { [weak self, weak ad] event, error in
+                        guard let self = self, let ad = ad, self.isCurrent(ad, adId: adId) else { return }
+                        self.send(adId, event, error: error.map { PrebidErrorFormatter.describe($0) })
+                    }
+                    ad.events = events
+                    interstitial.fullScreenContentDelegate = events
+                    ad.interstitial = interstitial
                     self.send(adId, "onAdLoaded")
                 }
             }
-            result(nil)
-
-        case "show":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            if let ad = interstitials[adId] {
-                if let controller = topViewController() {
-                    ad.present(from: controller)
-                } else {
-                    send(adId, "onAdFailed", error: "No view controller to present the interstitial from")
-                }
-            } else {
-                send(adId, "onAdFailed", error: "The interstitial is not ready to show; wait for onAdLoaded")
-            }
-            result(nil)
-
-        case "destroy":
-            if let adId = adId {
-                release(adId)
-            }
-            result(nil)
-
-        default:
-            result(FlutterMethodNotImplemented)
         }
     }
 
-    /// Drops everything held for `adId` (including the reverse map), so late
-    /// callbacks from the released ad are no longer forwarded.
-    private func release(_ adId: Int) {
-        if let ad = interstitials.removeValue(forKey: adId) {
-            ad.fullScreenContentDelegate = nil
-            adIdByInterstitial.removeValue(forKey: ObjectIdentifier(ad))
-        }
-        adUnits.removeValue(forKey: adId)
-        mediationDelegates.removeValue(forKey: adId)
-    }
-
-    private func send(_ adId: Int, _ event: String, error: String? = nil) {
-        var payload: [String: Any] = ["adId": adId]
-        if let error = error {
-            payload["error"] = error
-        }
-        channel.invokeMethod(event, arguments: payload)
-    }
-
-    // MARK: - FullScreenContentDelegate
-
-    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdDisplayed")
-        }
-    }
-
-    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdClosed")
-        }
-    }
-
-    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdImpression")
-        }
-    }
-
-    func adDidRecordClick(_ ad: FullScreenPresentingAd) {
-        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdClicked")
-        }
-    }
-
-    func ad(
-        _ ad: FullScreenPresentingAd,
-        didFailToPresentFullScreenContentWithError error: Error
-    ) {
-        if let adId = adIdByInterstitial[ObjectIdentifier(ad as AnyObject)] {
-            send(adId, "onAdFailed", error: error.localizedDescription)
-        }
+    override func present(_ ad: AdMobInterstitial, adId: Int, from controller: UIViewController) {
+        ad.interstitial?.present(from: controller)
     }
 }

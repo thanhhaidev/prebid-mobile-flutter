@@ -117,7 +117,22 @@ PrebidMaxBannerAd(
     onAdRevenuePaid: (revenue) => debugPrint('${revenue.revenue} USD'),
   ),
 );
+
+// Multiformat MREC: Prebid bids display and outstream video.
+PrebidMaxBannerAd(
+  configId: 'prebid-demo-banner-300-250',
+  maxAdUnitId: 'YOUR_MAX_MREC_AD_UNIT_ID',
+  width: 300,
+  height: 250,
+  adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
+  videoParameters: const VideoParameters(mimes: ['video/mp4']),
+);
 ```
+
+`adFormats` sets the formats Prebid bids on (`MediationBannerAdUnit`'s ad
+unit formats; display only by default). `videoParameters` applies on iOS only:
+Prebid Android's mediation banner has no video-parameters setter, so Android
+sends the SDK's default video signals.
 
 ### Interstitial
 
@@ -183,6 +198,11 @@ foreground Activity / view controller is available, reports `onAdFailed`
 instead of failing silently; `isLoaded` turns false after `show()`,
 `onAdClosed` and `onAdFailed`.
 
+On Android, a load before `PrebidMobile.initializeSdk` completes reports
+`onAdFailed` ("The Prebid SDK is not initialized") on every format: Prebid
+Android drops such requests without calling back, so the load would otherwise
+never finish. Prebid iOS runs them, so iOS has no such check.
+
 > **AppLovin SDK initialization:** MAX only loads ads after the AppLovin SDK is
 > initialized with your SDK key. This package does not initialize it; do it at
 > startup (for example with the `applovin_max` package) before loading ads.
@@ -232,7 +252,7 @@ the rendered video's length but isn't sent in the request.
 
 | Class | Description |
 |---|---|
-| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adPosition`, `impOrtbConfig`. |
+| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adFormats`, `videoParameters` (iOS), `adPosition`, `impOrtbConfig`. |
 | `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener` (with `onAdRevenuePaid`); `context` / `contextSubType` / `placementType`. |

@@ -124,7 +124,7 @@ void main() {
         'clicked',
         'closed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
       ]);
     });
 
@@ -140,9 +140,9 @@ void main() {
       // (no PlatformException), as on iOS.
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the interstitial',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the interstitial']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
       expect(ad.isLoaded, isFalse);
     });
 
@@ -328,9 +328,9 @@ void main() {
       );
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the rewarded ad',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the rewarded ad']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
       expect(ad.isLoaded, isFalse);
     });
 

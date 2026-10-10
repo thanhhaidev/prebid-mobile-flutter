@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         NativeAsset,
@@ -44,6 +45,10 @@ class PrebidAdMobNativeAdListener {
 /// register — so this widget hosts a native `NativeAdView` (a PlatformView)
 /// that the plugin populates. Prebid's `MediationNativeAdUnit` runs the auction
 /// and hands the winning bid to AdMob via the Prebid native adapter.
+///
+/// On Android a native ad created before the Prebid SDK finished initializing
+/// reports `onAdFailed` ("The Prebid SDK is not initialized"): Prebid Android
+/// drops such requests, so AdMob's waterfall would never run.
 class PrebidAdMobNativeAd extends StatefulWidget {
   /// Creates a [PrebidAdMobNativeAd] widget.
   const PrebidAdMobNativeAd({
@@ -96,14 +101,24 @@ class PrebidAdMobNativeAd extends StatefulWidget {
 class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
   late double _height = widget.height;
 
+  /// The current native view's channel. Each view gets its own, so events of
+  /// a replaced view can't reach this widget.
+  late AdViewChannel _view = _newView();
+
+  AdViewChannel _newView() =>
+      AdViewChannel('prebid_mobile_sdk_admob/native', _onCall);
+
   @override
   void didUpdateWidget(PrebidAdMobNativeAd oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_creationParams(oldWidget).toString() !=
         _creationParams(widget).toString()) {
       // The native view reads its configuration once, so a changed config
-      // gets a new view (keyed below) that starts at the requested height.
+      // gets a new view (keyed by its channel) that starts at the requested
+      // height.
       _height = widget.height;
+      _view.dispose();
+      _view = _newView();
     }
   }
 
@@ -125,18 +140,17 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = _creationParams(widget);
-
     return SizedBox(
       width: double.infinity,
       height: _height,
-      child: _buildPlatformView(creationParams),
+      child: _buildPlatformView(),
     );
   }
 
-  Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    // Recreate the native view when its configuration changes.
-    final key = ValueKey(creationParams.toString());
+  Widget _buildPlatformView() {
+    final creationParams = {..._creationParams(widget), 'channelId': _view.id};
+    // A new channel means a new native view (the config changed).
+    final key = ValueKey(_view.id);
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
@@ -144,7 +158,6 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
         viewType: 'prebid_mobile_sdk_admob/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onCreated,
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
@@ -152,43 +165,33 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd> {
         viewType: 'prebid_mobile_sdk_admob/native',
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onCreated,
       );
     }
     return const SizedBox.shrink();
   }
 
-  void _onCreated(int viewId) {
-    final channel = MethodChannel('prebid_mobile_sdk_admob/native_$viewId');
-    // A re-created view (changed config) replaces the previous one: stop
-    // listening to the old view's channel.
-    _channel?.setMethodCallHandler(null);
-    _channel = channel;
-    channel.setMethodCallHandler((call) async {
-      final l = widget.listener;
-      switch (call.method) {
-        case 'onAdSize':
-          final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
-          if (h != null && h > 0 && mounted) setState(() => _height = h);
-        case 'onAdLoaded':
-          l?.onAdLoaded?.call();
-        case 'onAdImpression':
-          l?.onAdImpression?.call();
-        case 'onAdClicked':
-          l?.onAdClicked?.call();
-        case 'onAdOpened':
-          l?.onAdOpened?.call();
-        case 'onAdFailed':
-          l?.onAdFailed?.call(call.arguments as String? ?? '');
-      }
-    });
+  Future<dynamic> _onCall(MethodCall call) async {
+    final l = widget.listener;
+    switch (call.method) {
+      case 'onAdSize':
+        final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
+        if (h != null && h > 0 && mounted) setState(() => _height = h);
+      case 'onAdLoaded':
+        l?.onAdLoaded?.call();
+      case 'onAdImpression':
+        l?.onAdImpression?.call();
+      case 'onAdClicked':
+        l?.onAdClicked?.call();
+      case 'onAdOpened':
+        l?.onAdOpened?.call();
+      case 'onAdFailed':
+        l?.onAdFailed?.call(call.arguments as String? ?? '');
+    }
   }
-
-  MethodChannel? _channel;
 
   @override
   void dispose() {
-    _channel?.setMethodCallHandler(null);
+    _view.dispose();
     super.dispose();
   }
 }

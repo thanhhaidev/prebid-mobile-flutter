@@ -24,7 +24,15 @@ MAX adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
   platforms), adaptive banners (`adaptive`) and extra Prebid request sizes
   (`additionalSizes`).
 - Multiformat interstitials (`adFormats`).
+- Banner `adFormats` (outstream video and multiformat banners) and
+  `videoParameters` (iOS only; Android's mediation banner has no
+  video-parameters setter and sends the SDK's defaults).
 - MAX listeners with revenue events (`onAdRevenuePaid`) and, on banners,
   expand, collapse and display-failure events.
 - `PrebidMax.debugDropBidProbability`, a testing-only hook that withholds the
   Prebid bid from MAX to exercise the adapter fallback.
+- On Android, a load before the Prebid SDK finishes initializing reports
+  `onAdFailed` ("The Prebid SDK is not initialized") on every format, instead
+  of never completing (Prebid Android drops such requests silently, so the
+  MAX waterfall never ran).
+- Interstitials and rewarded ads left from before a hot restart are released.

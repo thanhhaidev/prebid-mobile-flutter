@@ -7,8 +7,8 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
 /**
  * Companion plugin that adds Google AdMob mediation on top of the core
- * prebid_mobile_sdk plugin. Registers the AdMob banner PlatformView factory and
- * the AdMob interstitial method channel.
+ * prebid_mobile_sdk plugin. Registers the AdMob banner and native platform
+ * views and the interstitial and rewarded method channels.
  */
 class PrebidMobileSdkAdmobPlugin : FlutterPlugin, ActivityAware {
 
@@ -30,6 +30,8 @@ class PrebidMobileSdkAdmobPlugin : FlutterPlugin, ActivityAware {
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // Flutter disposes the platform views itself; the fullscreen ads
+        // would otherwise outlive the engine.
         interstitialManager?.dispose()
         interstitialManager = null
         rewardedManager?.dispose()

@@ -35,6 +35,9 @@ final class AdMobNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One AdMob native ad: the `NativeAdView` populated with the ad AdMob loads
+/// after the Prebid auction, reporting to Dart over
+/// `prebid_mobile_sdk_admob/native_<channelId>`.
 final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoaderDelegate,
     GoogleMobileAds.NativeAdDelegate {
 
@@ -56,7 +59,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         let adMobAdUnitId = args["adMobAdUnitId"] as? String ?? ""
 
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_admob/native_\(viewId)",
+            name: "prebid_mobile_sdk_admob/native_\(viewChannelId(args, viewId: viewId))",
             binaryMessenger: messenger
         )
 
@@ -85,21 +88,28 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         self.adUnit = adUnit
 
         adUnit.fetchDemand { [weak self] _ in
-            guard let self = self else { return }
-            let loader = AdLoader(
-                adUnitID: adMobAdUnitId,
-                rootViewController: topViewController(),
-                adTypes: [.native],
-                options: nil
-            )
-            loader.delegate = self
-            self.adLoader = loader
-            loader.load(request)
+            onMain {
+                guard let self = self else { return }
+                let loader = AdLoader(
+                    adUnitID: adMobAdUnitId,
+                    rootViewController: PrebidPresenter.topViewController(),
+                    adTypes: [.native],
+                    options: nil
+                )
+                loader.delegate = self
+                self.adLoader = loader
+                loader.load(request)
+            }
         }
     }
 
     func view() -> UIView {
         return nativeAdView
+    }
+
+    /// Sends `event` to the widget on the main thread.
+    private func send(_ event: String, _ arguments: Any? = nil) {
+        onMain { [methodChannel] in methodChannel.invokeMethod(event, arguments: arguments) }
     }
 
     private func buildLayout() {
@@ -170,30 +180,30 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         nativeAd.delegate = self
         nativeAdView.nativeAd = nativeAd
 
-        methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+        send("onAdLoaded")
         let height = nativeAdView.systemLayoutSizeFitting(
             UIView.layoutFittingCompressedSize
         ).height
         if height > 0 {
-            methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
+            send("onAdSize", ["height": Double(height)])
         }
     }
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
-        methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
+        send("onAdFailed", PrebidErrorFormatter.describe(error))
     }
 
     // MARK: - GoogleMobileAds.NativeAdDelegate
 
     func nativeAdDidRecordImpression(_ nativeAd: GoogleMobileAds.NativeAd) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        send("onAdImpression")
     }
 
     func nativeAdDidRecordClick(_ nativeAd: GoogleMobileAds.NativeAd) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked")
     }
 
     func nativeAdWillPresentScreen(_ nativeAd: GoogleMobileAds.NativeAd) {
-        methodChannel.invokeMethod("onAdOpened", arguments: nil)
+        send("onAdOpened")
     }
 }

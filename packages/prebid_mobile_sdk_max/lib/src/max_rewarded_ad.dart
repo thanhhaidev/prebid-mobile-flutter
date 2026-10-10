@@ -1,40 +1,13 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show
-        PrebidFullscreenControls,
-        PrebidReward,
-        PrebidRewardedAdListener,
-        VideoParameters;
+    show PrebidFullscreenControls, PrebidRewardedAdListener, VideoParameters;
 
 import 'max_listeners.dart';
 import 'max_testing.dart';
 
-const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_max/rewarded');
-
-/// Routes native rewarded events (delivered over the shared method channel) to
-/// the [PrebidMaxRewardedAd] that owns each `adId`.
-class _MaxRewardedRouter {
-  _MaxRewardedRouter._() {
-    _channel.setMethodCallHandler(_onCall);
-  }
-
-  static final _MaxRewardedRouter instance = _MaxRewardedRouter._();
-
-  final Map<int, PrebidMaxRewardedAd> _ads = {};
-
-  void register(int adId, PrebidMaxRewardedAd ad) => _ads[adId] = ad;
-
-  void unregister(int adId) => _ads.remove(adId);
-
-  Future<dynamic> _onCall(MethodCall call) async {
-    final args = call.arguments as Map?;
-    final adId = (args?['adId'] as num?)?.toInt();
-    if (adId == null) return;
-    _ads[adId]?._handleEvent(call.method, args);
-  }
-}
+final CompanionAdChannel _channel = CompanionAdChannel(
+  'prebid_mobile_sdk_max/rewarded',
+);
 
 /// A fullscreen rewarded ad mediated by **AppLovin MAX** with Prebid demand,
 /// via Prebid's MAX rewarded adapter.
@@ -51,7 +24,7 @@ class _MaxRewardedRouter {
 /// );
 /// await rewarded.loadAd();
 /// ```
-class PrebidMaxRewardedAd {
+class PrebidMaxRewardedAd extends CompanionFullscreenAd {
   /// Creates a [PrebidMaxRewardedAd].
   PrebidMaxRewardedAd({
     required this.configId,
@@ -60,10 +33,7 @@ class PrebidMaxRewardedAd {
     this.impOrtbConfig,
     this.videoParameters,
     this.listener,
-  }) : _adId = _nextId++;
-  static int _nextId = 7500000;
-
-  final int _adId;
+  }) : super(_channel);
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
@@ -90,89 +60,41 @@ class PrebidMaxRewardedAd {
   /// to also get MAX's revenue events.
   final PrebidRewardedAdListener? listener;
 
-  bool _loaded = false;
-
-  /// Whether the rewarded ad has loaded and is ready to [show].
-  bool get isLoaded => _loaded;
+  @override
+  Map<String, Object?> get loadArguments => {
+    'configId': configId,
+    'maxAdUnitId': maxAdUnitId,
+    'controls': ?controls?.toMap(),
+    'impOrtbConfig': ?impOrtbConfig,
+    'videoParameters': ?videoParameters?.toMap(),
+    ...debugDropBidArgs(),
+  };
 
   /// Requests the ad. [PrebidRewardedAdListener.onAdLoaded] fires when it is
-  /// ready to [show].
-  Future<void> loadAd() async {
-    _loaded = false;
-    _MaxRewardedRouter.instance.register(_adId, this);
-    await _channel.invokeMethod('load', {
-      'adId': _adId,
-      'configId': configId,
-      'maxAdUnitId': maxAdUnitId,
-      'controls': ?controls?.toMap(),
-      'impOrtbConfig': ?impOrtbConfig,
-      'videoParameters': ?videoParameters?.toMap(),
-      ...debugDropBidArgs(),
-    });
-  }
+  /// ready to [show]; [PrebidRewardedAdListener.onAdFailed] fires instead when
+  /// it can't load (on Android also when the Prebid SDK isn't initialized
+  /// yet).
+  @override
+  Future<void> loadAd() => super.loadAd();
 
   /// Presents the loaded rewarded ad fullscreen. An ad shows once, so [isLoaded]
   /// turns false; if it cannot be shown (not loaded yet, no foreground
   /// activity / view controller) the listener's `onAdFailed` fires.
-  Future<void> show() {
-    _loaded = false;
-    return _channel.invokeMethod('show', {'adId': _adId});
-  }
+  @override
+  Future<void> show() => super.show();
 
-  /// Releases native resources held by this ad.
-  Future<void> destroy() async {
-    _loaded = false;
-    _MaxRewardedRouter.instance.unregister(_adId);
-    await _channel.invokeMethod('destroy', {'adId': _adId});
-  }
+  /// Releases native resources held by this ad. [loadAd] may be called again
+  /// afterwards.
+  @override
+  Future<void> destroy() => super.destroy();
 
-  void _handleEvent(String event, Map? args) {
-    switch (event) {
-      case 'onAdLoaded':
-        _loaded = true;
-        listener?.onAdLoaded?.call();
-      case 'onAdFailed':
-        _loaded = false;
-        listener?.onAdFailed?.call(args?['error'] as String? ?? '');
-      case 'onAdDisplayed':
-        listener?.onAdDisplayed?.call();
-      case 'onAdClosed':
-        _loaded = false;
-        listener?.onAdClosed?.call();
-      case 'onAdClicked':
-        listener?.onAdClicked?.call();
-      case 'onAdImpression':
-        listener?.onAdImpression?.call();
-      case 'onAdRevenuePaid':
-        final listener = this.listener;
-        if (listener is PrebidMaxRewardedAdListener) {
-          listener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
-        }
-      case 'onUserEarnedReward':
-        listener?.onUserEarnedReward?.call(_rewardFrom(args));
+  @override
+  void onEvent(String event, Map? args) {
+    if (dispatchRewardedEvent(listener, event, args)) return;
+    final maxListener = listener;
+    if (event == 'onAdRevenuePaid' &&
+        maxListener is PrebidMaxRewardedAdListener) {
+      maxListener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
     }
   }
-}
-
-/// Builds the [PrebidReward] from an `onUserEarnedReward` payload. Every
-/// companion package sends the same keys (`rewardType`, `rewardCount` and,
-/// when the SDK provides one, `rewardExt` as a JSON string), so rewards look
-/// identical whichever ad server renders them.
-PrebidReward _rewardFrom(Map? args) => PrebidReward(
-  type: args?['rewardType'] as String? ?? 'reward',
-  count: (args?['rewardCount'] as num?)?.toInt() ?? 1,
-  ext: _decodeExt(args?['rewardExt']),
-);
-
-Map<String, dynamic>? _decodeExt(Object? raw) {
-  if (raw is Map) return Map<String, dynamic>.from(raw);
-  if (raw is! String || raw.isEmpty) return null;
-  // A malformed ext must not cost the app the reward callback itself.
-  final Object? decoded;
-  try {
-    decoded = jsonDecode(raw);
-  } on FormatException {
-    return null;
-  }
-  return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
 }

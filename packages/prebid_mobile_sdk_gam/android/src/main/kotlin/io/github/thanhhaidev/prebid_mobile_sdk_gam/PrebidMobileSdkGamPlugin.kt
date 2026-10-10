@@ -7,8 +7,8 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
 /**
  * Companion plugin that adds Google Ad Manager (GAM) rendering on top of the
- * core prebid_mobile_sdk plugin. Registers the GAM banner PlatformView factory
- * and the GAM interstitial method channel.
+ * core prebid_mobile_sdk plugin. Registers the GAM banner and native platform
+ * view factories and the GAM interstitial and rewarded method channels.
  */
 class PrebidMobileSdkGamPlugin : FlutterPlugin, ActivityAware {
 
@@ -30,6 +30,7 @@ class PrebidMobileSdkGamPlugin : FlutterPlugin, ActivityAware {
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // The engine disposes the platform views; the managers own their ads.
         interstitialManager?.dispose()
         interstitialManager = null
         rewardedManager?.dispose()

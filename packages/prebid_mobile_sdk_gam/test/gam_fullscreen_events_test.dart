@@ -40,21 +40,34 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('PrebidGamInterstitialAd', () {
-    test('minimal load sends exactly adId, ids and default formats', () async {
+    test('minimal load sends exactly adId, ids and isVideo', () async {
       final h = ChannelHarness(_interstitialChannel);
       await PrebidGamInterstitialAd(configId: 'c', gamAdUnitId: 'u').loadAd();
 
       final call = h.calls.single;
       expect(call.method, 'load');
       final args = call.arguments as Map;
+      // No explicit null `adFormats`: the native side picks the format from
+      // `isVideo` when it is absent.
       expect(
         args.keys,
-        unorderedEquals(['adId', 'configId', 'gamAdUnitId', 'adFormats']),
+        unorderedEquals(['adId', 'configId', 'gamAdUnitId', 'isVideo']),
       );
       expect(args['adId'], isA<int>());
       expect(args['configId'], 'c');
       expect(args['gamAdUnitId'], 'u');
-      expect(args['adFormats'], isNull); // native side defaults to banner
+      expect(args['isVideo'], isFalse);
+    });
+
+    test('sends isVideo', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      await PrebidGamInterstitialAd(
+        configId: 'c',
+        gamAdUnitId: 'u',
+        isVideo: true,
+      ).loadAd();
+      expect(h.argsOf('load')['isVideo'], isTrue);
+      expect(h.argsOf('load').containsKey('adFormats'), isFalse);
     });
 
     test('sends every format name', () async {
@@ -106,6 +119,7 @@ void main() {
       await h.emit('onAdLoaded', adId);
       await h.emit('onAdExpired', adId);
       expect(ad.isLoaded, isFalse);
+      await h.emit('onAdImpression', adId);
       await h.emit('onSomethingElse', adId); // unknown: ignored
 
       expect(fired, [
@@ -114,10 +128,28 @@ void main() {
         'clicked',
         'closed',
         'failed:no fill',
-        'failed:',
+        'failed:Unknown error',
         'loaded',
         'expired',
+        'impression',
       ]);
+    });
+
+    test('a load before SDK init fails through the listener', () async {
+      final h = ChannelHarness(_interstitialChannel);
+      final fired = <String>[];
+      final ad = PrebidGamInterstitialAd(
+        configId: 'c',
+        gamAdUnitId: 'u',
+        listener: _interstitialListener(fired),
+      );
+      // Android reports it as an event rather than dropping the request.
+      await expectLater(ad.loadAd(), completes);
+      await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
+        'error': 'The Prebid SDK is not initialized',
+      });
+      expect(fired, ['failed:The Prebid SDK is not initialized']);
+      expect(ad.isLoaded, isFalse);
     });
 
     test('a load without an Activity fails through the listener', () async {
@@ -132,9 +164,9 @@ void main() {
       // (no PlatformException), as on iOS.
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the interstitial',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the interstitial']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
       expect(ad.isLoaded, isFalse);
     });
 
@@ -322,9 +354,9 @@ void main() {
       );
       await expectLater(ad.loadAd(), completes);
       await h.emit('onAdFailed', h.argsOf('load')['adId'] as int, {
-        'error': 'No attached Activity to load the rewarded ad',
+        'error': 'No Activity is attached to the Flutter engine',
       });
-      expect(fired, ['failed:No attached Activity to load the rewarded ad']);
+      expect(fired, ['failed:No Activity is attached to the Flutter engine']);
       expect(ad.isLoaded, isFalse);
     });
 

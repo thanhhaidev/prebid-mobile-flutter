@@ -34,11 +34,20 @@ final class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One GAM-rendered banner. Its event channel is
+/// `prebid_mobile_sdk_gam/banner_<channelId>`, named by the Dart widget before
+/// the view exists so no early event is lost.
 final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.BannerViewDelegate,
     BannerViewVideoPlaybackDelegate {
 
     private let bannerView: PrebidMobile.BannerView
     private let methodChannel: FlutterMethodChannel
+
+    /// Between willPresentModal and didDismissModal (see willLeaveApplication).
+    private var isModalOpen = false
+
+    /// When the last click was reported (see `reportClick`).
+    private var lastClick: Date?
 
     init(
         frame: CGRect,
@@ -65,8 +74,9 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
             CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
         }
 
+        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_gam/banner_\(viewId)",
+            name: "prebid_mobile_sdk_gam/banner_\(channelId)",
             binaryMessenger: messenger
         )
 
@@ -161,7 +171,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
     // MARK: - BannerViewDelegate
 
     func bannerViewPresentationController() -> UIViewController? {
-        return topViewController()
+        return PrebidPresenter.topViewController()
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didReceiveAdWithAdSize adSize: CGSize) {
@@ -169,22 +179,46 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
             "width": Double(adSize.width),
             "height": Double(adSize.height),
         ])
-        // iOS reports load and render as one event; Android splits them into
-        // onAdLoaded + onAdDisplayed, so emit both here for cross-platform parity.
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+    }
+
+    // Fired once the creative is on screen and its impression is tracked
+    // (Prebid's impression for its creative, GMA's for a GAM ad), like
+    // Android's onAdDisplayed. Same timing as the core banner.
+    func bannerViewDidDisplay(_ bannerView: PrebidMobile.BannerView) {
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didFailToReceiveAdWith error: Error) {
-        methodChannel.invokeMethod("onAdFailed", arguments: error.localizedDescription)
+        methodChannel.invokeMethod("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
     }
 
     func bannerViewWillPresentModal(_ bannerView: PrebidMobile.BannerView) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        isModalOpen = true
+        reportClick()
     }
 
     func bannerViewDidDismissModal(_ bannerView: PrebidMobile.BannerView) {
+        isModalOpen = false
         methodChannel.invokeMethod("onAdClosed", arguments: nil)
+    }
+
+    // Prebid reports leaving the app from a modal it opened (in-app browser
+    // "Open in Safari", expanded MRAID ad), whose click willPresentModal has
+    // already reported; only a leave with no modal open is a new click.
+    func bannerViewWillLeaveApplication(_ bannerView: PrebidMobile.BannerView) {
+        guard !isModalOpen else { return }
+        reportClick()
+    }
+
+    /// Reports `onAdClicked` once per click. Besides the core banner's modal
+    /// rule, a GAM ad reports one click twice: GMA's recorded click arrives as
+    /// willLeaveApplication, then its in-app screen as willPresentModal.
+    private func reportClick() {
+        let now = Date()
+        if let last = lastClick, now.timeIntervalSince(last) < 1 { return }
+        lastClick = now
+        methodChannel.invokeMethod("onAdClicked", arguments: nil)
     }
 
     func bannerViewDidExpire(_ bannerView: PrebidMobile.BannerView) {

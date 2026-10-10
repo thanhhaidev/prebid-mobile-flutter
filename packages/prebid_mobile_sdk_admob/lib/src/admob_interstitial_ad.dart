@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         PrebidAdFormat,
@@ -8,35 +8,7 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
 
 import 'admob_testing.dart';
 
-const MethodChannel _channel = MethodChannel(
-  'prebid_mobile_sdk_admob/interstitial',
-);
-
-/// Routes native interstitial events (delivered over the shared method channel)
-/// to the [PrebidAdMobInterstitialAd] that owns each `adId`.
-///
-/// One handler is installed per channel, so a single router owns it and
-/// dispatches by `adId` — mirroring the core plugin's event router.
-class _AdMobInterstitialRouter {
-  _AdMobInterstitialRouter._() {
-    _channel.setMethodCallHandler(_onCall);
-  }
-
-  static final _AdMobInterstitialRouter instance = _AdMobInterstitialRouter._();
-
-  final Map<int, PrebidAdMobInterstitialAd> _ads = {};
-
-  void register(int adId, PrebidAdMobInterstitialAd ad) => _ads[adId] = ad;
-
-  void unregister(int adId) => _ads.remove(adId);
-
-  Future<dynamic> _onCall(MethodCall call) async {
-    final args = call.arguments as Map?;
-    final adId = (args?['adId'] as num?)?.toInt();
-    if (adId == null) return;
-    _ads[adId]?._handleEvent(call.method, args);
-  }
-}
+final _channel = CompanionAdChannel('prebid_mobile_sdk_admob/interstitial');
 
 /// A fullscreen interstitial ad mediated by **Google AdMob** with Prebid
 /// demand, via Prebid's AdMob interstitial adapter.
@@ -52,7 +24,11 @@ class _AdMobInterstitialRouter {
 /// );
 /// await interstitial.loadAd();
 /// ```
-class PrebidAdMobInterstitialAd {
+///
+/// On Android a [loadAd] made before the Prebid SDK finished initializing
+/// reports `onAdFailed` ("The Prebid SDK is not initialized"): Prebid Android
+/// drops such requests, so AdMob's waterfall would never run.
+class PrebidAdMobInterstitialAd extends CompanionFullscreenAd {
   /// Creates a [PrebidAdMobInterstitialAd].
   PrebidAdMobInterstitialAd({
     required this.configId,
@@ -63,10 +39,7 @@ class PrebidAdMobInterstitialAd {
     this.impOrtbConfig,
     this.videoParameters,
     this.listener,
-  }) : _adId = _nextId++;
-  static int _nextId = 6000000;
-
-  final int _adId;
+  }) : super(_channel);
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
@@ -103,61 +76,19 @@ class PrebidAdMobInterstitialAd {
   /// Listener for interstitial ad events.
   final PrebidInterstitialAdListener? listener;
 
-  bool _loaded = false;
+  @override
+  Map<String, Object?> get loadArguments => {
+    'configId': configId,
+    'adMobAdUnitId': adMobAdUnitId,
+    'controls': ?controls?.toMap(),
+    'impOrtbConfig': ?impOrtbConfig,
+    'videoParameters': ?videoParameters?.toMap(),
+    'isVideo': isVideo,
+    'adFormats': ?adFormats?.map((f) => f.name).toList(),
+    ...debugDropBidArgs(),
+  };
 
-  /// Whether the interstitial has loaded and is ready to [show].
-  bool get isLoaded => _loaded;
-
-  /// Requests the ad. [PrebidInterstitialAdListener.onAdLoaded] fires when it is
-  /// ready to [show].
-  Future<void> loadAd() async {
-    _loaded = false;
-    _AdMobInterstitialRouter.instance.register(_adId, this);
-    await _channel.invokeMethod('load', {
-      'adId': _adId,
-      'configId': configId,
-      'adMobAdUnitId': adMobAdUnitId,
-      'controls': ?controls?.toMap(),
-      'impOrtbConfig': ?impOrtbConfig,
-      'videoParameters': ?videoParameters?.toMap(),
-      'isVideo': isVideo,
-      'adFormats': ?adFormats?.map((f) => f.name).toList(),
-      ...debugDropBidArgs(),
-    });
-  }
-
-  /// Presents the loaded interstitial fullscreen. An ad shows once, so [isLoaded]
-  /// turns false; if it cannot be shown (not loaded yet, no foreground
-  /// activity / view controller) the listener's `onAdFailed` fires.
-  Future<void> show() {
-    _loaded = false;
-    return _channel.invokeMethod('show', {'adId': _adId});
-  }
-
-  /// Releases native resources held by this ad.
-  Future<void> destroy() async {
-    _loaded = false;
-    _AdMobInterstitialRouter.instance.unregister(_adId);
-    await _channel.invokeMethod('destroy', {'adId': _adId});
-  }
-
-  void _handleEvent(String event, Map? args) {
-    switch (event) {
-      case 'onAdLoaded':
-        _loaded = true;
-        listener?.onAdLoaded?.call();
-      case 'onAdFailed':
-        _loaded = false;
-        listener?.onAdFailed?.call(args?['error'] as String? ?? '');
-      case 'onAdDisplayed':
-        listener?.onAdDisplayed?.call();
-      case 'onAdClosed':
-        _loaded = false;
-        listener?.onAdClosed?.call();
-      case 'onAdClicked':
-        listener?.onAdClicked?.call();
-      case 'onAdImpression':
-        listener?.onAdImpression?.call();
-    }
-  }
+  @override
+  void onEvent(String event, Map? args) =>
+      dispatchInterstitialEvent(listener, event, args);
 }

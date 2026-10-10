@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         PrebidAdFormat,
@@ -9,35 +9,9 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
 import 'max_listeners.dart';
 import 'max_testing.dart';
 
-const MethodChannel _channel = MethodChannel(
+final CompanionAdChannel _channel = CompanionAdChannel(
   'prebid_mobile_sdk_max/interstitial',
 );
-
-/// Routes native interstitial events (delivered over the shared method channel)
-/// to the [PrebidMaxInterstitialAd] that owns each `adId`.
-///
-/// One handler is installed per channel, so a single router owns it and
-/// dispatches by `adId` — mirroring the core plugin's event router.
-class _MaxInterstitialRouter {
-  _MaxInterstitialRouter._() {
-    _channel.setMethodCallHandler(_onCall);
-  }
-
-  static final _MaxInterstitialRouter instance = _MaxInterstitialRouter._();
-
-  final Map<int, PrebidMaxInterstitialAd> _ads = {};
-
-  void register(int adId, PrebidMaxInterstitialAd ad) => _ads[adId] = ad;
-
-  void unregister(int adId) => _ads.remove(adId);
-
-  Future<dynamic> _onCall(MethodCall call) async {
-    final args = call.arguments as Map?;
-    final adId = (args?['adId'] as num?)?.toInt();
-    if (adId == null) return;
-    _ads[adId]?._handleEvent(call.method, args);
-  }
-}
 
 /// A fullscreen interstitial ad mediated by **AppLovin MAX** with Prebid
 /// demand, via Prebid's MAX interstitial adapter.
@@ -53,7 +27,7 @@ class _MaxInterstitialRouter {
 /// );
 /// await interstitial.loadAd();
 /// ```
-class PrebidMaxInterstitialAd {
+class PrebidMaxInterstitialAd extends CompanionFullscreenAd {
   /// Creates a [PrebidMaxInterstitialAd].
   PrebidMaxInterstitialAd({
     required this.configId,
@@ -64,10 +38,7 @@ class PrebidMaxInterstitialAd {
     this.impOrtbConfig,
     this.videoParameters,
     this.listener,
-  }) : _adId = _nextId++;
-  static int _nextId = 7000000;
-
-  final int _adId;
+  }) : super(_channel);
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
@@ -105,66 +76,43 @@ class PrebidMaxInterstitialAd {
   /// [PrebidMaxInterstitialAdListener] to also get MAX's revenue events.
   final PrebidInterstitialAdListener? listener;
 
-  bool _loaded = false;
-
-  /// Whether the interstitial has loaded and is ready to [show].
-  bool get isLoaded => _loaded;
+  @override
+  Map<String, Object?> get loadArguments => {
+    'configId': configId,
+    'maxAdUnitId': maxAdUnitId,
+    'controls': ?controls?.toMap(),
+    'impOrtbConfig': ?impOrtbConfig,
+    'videoParameters': ?videoParameters?.toMap(),
+    'isVideo': isVideo,
+    'adFormats': ?adFormats?.map((f) => f.name).toList(),
+    ...debugDropBidArgs(),
+  };
 
   /// Requests the ad. [PrebidInterstitialAdListener.onAdLoaded] fires when it is
-  /// ready to [show].
-  Future<void> loadAd() async {
-    _loaded = false;
-    _MaxInterstitialRouter.instance.register(_adId, this);
-    await _channel.invokeMethod('load', {
-      'adId': _adId,
-      'configId': configId,
-      'maxAdUnitId': maxAdUnitId,
-      'controls': ?controls?.toMap(),
-      'impOrtbConfig': ?impOrtbConfig,
-      'videoParameters': ?videoParameters?.toMap(),
-      'isVideo': isVideo,
-      'adFormats': ?adFormats?.map((f) => f.name).toList(),
-      ...debugDropBidArgs(),
-    });
-  }
+  /// ready to [show]; [PrebidInterstitialAdListener.onAdFailed] fires instead
+  /// when it can't load (on Android also when the Prebid SDK isn't
+  /// initialized yet).
+  @override
+  Future<void> loadAd() => super.loadAd();
 
   /// Presents the loaded interstitial fullscreen. An ad shows once, so [isLoaded]
   /// turns false; if it cannot be shown (not loaded yet, no foreground
   /// activity / view controller) the listener's `onAdFailed` fires.
-  Future<void> show() {
-    _loaded = false;
-    return _channel.invokeMethod('show', {'adId': _adId});
-  }
+  @override
+  Future<void> show() => super.show();
 
-  /// Releases native resources held by this ad.
-  Future<void> destroy() async {
-    _loaded = false;
-    _MaxInterstitialRouter.instance.unregister(_adId);
-    await _channel.invokeMethod('destroy', {'adId': _adId});
-  }
+  /// Releases native resources held by this ad. [loadAd] may be called again
+  /// afterwards.
+  @override
+  Future<void> destroy() => super.destroy();
 
-  void _handleEvent(String event, Map? args) {
-    switch (event) {
-      case 'onAdLoaded':
-        _loaded = true;
-        listener?.onAdLoaded?.call();
-      case 'onAdFailed':
-        _loaded = false;
-        listener?.onAdFailed?.call(args?['error'] as String? ?? '');
-      case 'onAdDisplayed':
-        listener?.onAdDisplayed?.call();
-      case 'onAdClosed':
-        _loaded = false;
-        listener?.onAdClosed?.call();
-      case 'onAdClicked':
-        listener?.onAdClicked?.call();
-      case 'onAdImpression':
-        listener?.onAdImpression?.call();
-      case 'onAdRevenuePaid':
-        final listener = this.listener;
-        if (listener is PrebidMaxInterstitialAdListener) {
-          listener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
-        }
+  @override
+  void onEvent(String event, Map? args) {
+    if (dispatchInterstitialEvent(listener, event, args)) return;
+    final maxListener = listener;
+    if (event == 'onAdRevenuePaid' &&
+        maxListener is PrebidMaxInterstitialAdListener) {
+      maxListener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
     }
   }
 }

@@ -3,17 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Records method calls sent to [channel] and lets a test push native events
 /// back over it, as the plugin's Kotlin / Swift side does.
+///
+/// The one-time `releaseAll` (hot-restart cleanup) is counted in
+/// [releaseAllCalls], not recorded in [calls].
 class ChannelHarness {
   ChannelHarness(this.channel) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel(channel), (call) async {
-          calls.add(call);
+          if (call.method == 'releaseAll') {
+            releaseAllCalls++;
+          } else {
+            calls.add(call);
+          }
           return null;
         });
   }
 
   final String channel;
   final List<MethodCall> calls = [];
+  int releaseAllCalls = 0;
 
   Map<Object?, Object?> argsOf(String method) =>
       calls.lastWhere((c) => c.method == method).arguments as Map;
@@ -32,7 +40,8 @@ class ChannelHarness {
 
 /// Fakes the engine side of platform views so `AndroidView` / `UiKitView`
 /// actually get created in widget tests, and mocks the created view's method
-/// channel (`<channelPrefix>_<viewId>`) to record what the widget sends.
+/// channel (`<channelPrefix>_<channelId>`, the `channelId` creation param) to
+/// record what the widget sends.
 class PlatformViewHarness {
   PlatformViewHarness(this.channelPrefix) {
     for (final channel in _engineChannels) {
@@ -49,14 +58,24 @@ class PlatformViewHarness {
                       )
                       as Map?;
             }
+            // Named as the native view names it; kept out of
+            // [creationParams] so tests can compare the configuration.
+            final channelId = creationParams?.remove('channelId') as int?;
+            channelIds.add(channelId);
             createdParams.add(creationParams);
-            final name = '${channelPrefix}_$id';
+            createdIds.add(id);
+            final name = '${channelPrefix}_${channelId ?? id}';
             viewChannel = name;
             viewChannels.add(name);
             _messenger.setMockMethodCallHandler(MethodChannel(name), (c) async {
               calls.add(c);
               return null;
             });
+            // As a native view that fails at once, before the engine reports
+            // the view as created.
+            for (final (method, arguments) in eventsOnCreate) {
+              await emit(method, arguments);
+            }
             return 0;
           case 'dispose':
             final args = call.arguments;
@@ -84,8 +103,18 @@ class PlatformViewHarness {
   /// The created view's channel name, once the platform view exists.
   String? viewChannel;
 
-  /// The decoded `creationParams` the widget passed to the platform view.
+  /// The decoded `creationParams` the widget passed to the platform view,
+  /// without `channelId`.
   Map<Object?, Object?>? creationParams;
+
+  /// Events each view sends while it is being created.
+  final List<(String, Object?)> eventsOnCreate = [];
+
+  /// Platform view ids of the views created so far, oldest first.
+  final List<int> createdIds = [];
+
+  /// The `channelId` creation param of every view created so far.
+  final List<int?> channelIds = [];
 
   /// The `creationParams` of every view created so far, oldest first.
   final List<Map<Object?, Object?>?> createdParams = [];

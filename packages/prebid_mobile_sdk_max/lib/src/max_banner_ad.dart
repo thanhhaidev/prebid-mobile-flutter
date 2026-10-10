@@ -1,8 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show PrebidAdPosition, PrebidBannerAdController, PrebidBannerAdListener;
+    show
+        PrebidAdFormat,
+        PrebidAdPosition,
+        PrebidBannerAdController,
+        PrebidBannerAdListener,
+        VideoParameters;
 
 import 'max_listeners.dart';
 import 'max_testing.dart';
@@ -23,6 +29,8 @@ class PrebidMaxBannerAd extends StatefulWidget {
     required this.height,
     this.additionalSizes,
     this.adaptive = false,
+    this.adFormats,
+    this.videoParameters,
     this.refreshIntervalSeconds,
     this.autoLoad = true,
     this.controller,
@@ -57,6 +65,19 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// layout. Ignored for a 300x250 (MREC) banner.
   final bool adaptive;
 
+  /// Formats Prebid bids on for this slot — e.g. `{PrebidAdFormat.video}` for
+  /// an outstream video banner or `{PrebidAdFormat.banner,
+  /// PrebidAdFormat.video}` for a multiformat one (the winning bid decides
+  /// the creative, which MAX renders through the Prebid adapter). `null` or
+  /// empty keeps Prebid's default, a display banner
+  /// (`MediationBannerAdUnit.setAdUnitFormats` / `adFormats`).
+  final Set<PrebidAdFormat>? adFormats;
+
+  /// Video signals for a video or multiformat banner (see [adFormats]). iOS
+  /// only: Prebid Android's `MediationBannerAdUnit` has no video-parameters
+  /// setter, so Android sends the SDK's defaults.
+  final VideoParameters? videoParameters;
+
   /// Prebid auto-refresh interval in seconds; each refresh runs a new auction
   /// and reloads the MAX view. `null` (default) or `0` disables Prebid's
   /// auto-refresh on both platforms; positive values are clamped by Prebid to
@@ -90,6 +111,8 @@ class PrebidMaxBannerAd extends StatefulWidget {
 }
 
 class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
+  static const _viewType = 'prebid_mobile_sdk_max/banner';
+
   /// Current slot size. Starts at the requested size and adopts the actual
   /// rendered creative size once the native SDK reports it via `onAdSize`.
   late double _width = widget.width.toDouble();
@@ -102,30 +125,37 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
   /// [PrebidMax.debugDropBidProbability] as read when the view was created.
   Map<String, Object> _debugArgs = debugDropBidArgs();
 
+  /// The current native view's channel; a new view gets a new one.
+  late AdViewChannel _viewChannel = AdViewChannel(_viewType, _onCall);
+
+  /// The channel [PrebidMaxBannerAd.controller] is attached to: the current
+  /// view's, once that view exists.
+  MethodChannel? _attached;
+
   @override
   void didUpdateWidget(PrebidMaxBannerAd oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final channel = _channel;
-    if (channel != null &&
+    final attached = _attached;
+    if (attached != null &&
         !identical(oldWidget.controller, widget.controller)) {
-      oldWidget.controller?.detachChannel(channel);
-      widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
+      oldWidget.controller?.detachChannel(attached);
+      widget.controller?.attachChannel(attached, autoLoaded: widget.autoLoad);
     }
     if (_creationParams(oldWidget).toString() !=
         _creationParams(widget).toString()) {
       // The native view reads its configuration once, so a changed config
-      // gets a new view (keyed below) that starts at the requested size.
+      // gets a new view (keyed by its channel below) that starts at the
+      // requested size.
       _width = widget.width.toDouble();
       _height = widget.height.toDouble();
       _adaptiveWidth = null;
       _debugArgs = debugDropBidArgs();
+      _releaseChannel();
+      _viewChannel = AdViewChannel(_viewType, _onCall);
     }
   }
 
-  static Map<String, dynamic> _creationParams(
-    PrebidMaxBannerAd widget, {
-    double? adaptiveWidth,
-  }) {
+  static Map<String, dynamic> _creationParams(PrebidMaxBannerAd widget) {
     return <String, dynamic>{
       'configId': widget.configId,
       'maxAdUnitId': widget.maxAdUnitId,
@@ -142,7 +172,10 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
           ],
         ],
       if (widget.adaptive) 'adaptive': true,
-      if (adaptiveWidth != null) 'adaptiveWidth': adaptiveWidth.round(),
+      if (widget.adFormats != null)
+        'adFormats': widget.adFormats!.map((f) => f.name).toList(),
+      if (widget.videoParameters != null)
+        'videoParameters': widget.videoParameters!.toMap(),
       if (widget.refreshIntervalSeconds != null)
         'refreshIntervalSeconds': widget.refreshIntervalSeconds,
     };
@@ -158,7 +191,7 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
       return SizedBox(
         width: _width,
         height: _height,
-        child: _buildPlatformView({..._creationParams(widget), ..._debugArgs}),
+        child: _buildPlatformView(),
       );
     }
     return LayoutBuilder(
@@ -169,102 +202,110 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
         return SizedBox(
           width: width,
           height: _height,
-          child: _buildPlatformView({
-            ..._creationParams(widget, adaptiveWidth: width),
-            ..._debugArgs,
-          }),
+          child: _buildPlatformView(adaptiveWidth: width),
         );
       },
     );
   }
 
-  Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    // Recreate the native view when its configuration changes.
-    final key = ValueKey(creationParams.toString());
+  Widget _buildPlatformView({double? adaptiveWidth}) {
+    final channel = _viewChannel;
+    final creationParams = {
+      ..._creationParams(widget),
+      if (adaptiveWidth != null) 'adaptiveWidth': adaptiveWidth.round(),
+      ..._debugArgs,
+      'channelId': channel.id,
+    };
+    // Each view has its own channel, so the channel id keys the view.
+    final key = ValueKey(channel.id);
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         key: key,
-        viewType: 'prebid_mobile_sdk_max/banner',
+        viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onPlatformViewCreated,
+        onPlatformViewCreated: (_) => _onPlatformViewCreated(channel),
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         key: key,
-        viewType: 'prebid_mobile_sdk_max/banner',
+        viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onPlatformViewCreated,
+        onPlatformViewCreated: (_) => _onPlatformViewCreated(channel),
       );
     }
     return const SizedBox.shrink();
   }
 
-  void _onPlatformViewCreated(int viewId) {
-    final channel = MethodChannel('prebid_mobile_sdk_max/banner_$viewId');
-    final previous = _channel;
-    if (previous != null) {
-      previous.setMethodCallHandler(null);
-      widget.controller?.detachChannel(previous);
-    }
-    _channel = channel;
-    widget.controller?.attachChannel(channel, autoLoaded: widget.autoLoad);
-    channel.setMethodCallHandler((call) async {
-      switch (call.method) {
-        case 'onAdSize':
-          final args = call.arguments as Map?;
-          final w = (args?['width'] as num?)?.toDouble();
-          final h = (args?['height'] as num?)?.toDouble();
-          if (w != null && h != null && w > 0 && h > 0 && mounted) {
-            setState(() {
-              _width = w;
-              _height = h;
-            });
-          }
-        case 'onAdLoaded':
-          widget.listener?.onAdLoaded?.call();
-        case 'onAdDisplayed':
-          widget.listener?.onAdDisplayed?.call();
-        case 'onAdFailed':
-          widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
-        case 'onAdClicked':
-          widget.listener?.onAdClicked?.call();
-        case 'onAdImpression':
-          widget.listener?.onAdImpression?.call();
-        case 'onAdClosed':
-          widget.listener?.onAdClosed?.call();
-        case 'onAdDisplayFailed':
-          final error = call.arguments as String? ?? '';
-          widget.listener?.onAdFailed?.call(error);
-          _maxListener?.onAdDisplayFailed?.call(error);
-        case 'onAdExpanded':
-          _maxListener?.onAdExpanded?.call();
-        case 'onAdCollapsed':
-          _maxListener?.onAdCollapsed?.call();
-        case 'onAdRevenuePaid':
-          _maxListener?.onAdRevenuePaid?.call(
-            maxAdRevenueFrom(call.arguments as Map?),
-          );
-      }
-    });
+  void _onPlatformViewCreated(AdViewChannel channel) {
+    // A view replaced before the engine created it: its channel is gone.
+    if (!identical(channel, _viewChannel)) return;
+    // Attached only now: a queued PrebidBannerAdController.loadAd needs the
+    // native view to answer it.
+    _attached = channel.methodChannel;
+    widget.controller?.attachChannel(
+      channel.methodChannel,
+      autoLoaded: widget.autoLoad,
+    );
   }
 
-  MethodChannel? _channel;
+  Future<dynamic> _onCall(MethodCall call) async {
+    switch (call.method) {
+      case 'onAdSize':
+        final args = call.arguments as Map?;
+        final w = (args?['width'] as num?)?.toDouble();
+        final h = (args?['height'] as num?)?.toDouble();
+        if (w != null && h != null && w > 0 && h > 0 && mounted) {
+          setState(() {
+            _width = w;
+            _height = h;
+          });
+        }
+      case 'onAdLoaded':
+        widget.listener?.onAdLoaded?.call();
+      case 'onAdDisplayed':
+        widget.listener?.onAdDisplayed?.call();
+      case 'onAdFailed':
+        widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
+      case 'onAdClicked':
+        widget.listener?.onAdClicked?.call();
+      case 'onAdImpression':
+        widget.listener?.onAdImpression?.call();
+      case 'onAdClosed':
+        widget.listener?.onAdClosed?.call();
+      case 'onAdDisplayFailed':
+        final error = call.arguments as String? ?? '';
+        widget.listener?.onAdFailed?.call(error);
+        _maxListener?.onAdDisplayFailed?.call(error);
+      case 'onAdExpanded':
+        _maxListener?.onAdExpanded?.call();
+      case 'onAdCollapsed':
+        _maxListener?.onAdCollapsed?.call();
+      case 'onAdRevenuePaid':
+        _maxListener?.onAdRevenuePaid?.call(
+          maxAdRevenueFrom(call.arguments as Map?),
+        );
+    }
+  }
 
   PrebidMaxBannerAdListener? get _maxListener {
     final listener = widget.listener;
     return listener is PrebidMaxBannerAdListener ? listener : null;
   }
 
+  /// Stops listening to the current view and detaches the controller from it.
+  void _releaseChannel() {
+    _viewChannel.dispose();
+    final attached = _attached;
+    if (attached != null) widget.controller?.detachChannel(attached);
+    _attached = null;
+  }
+
   @override
   void dispose() {
-    final channel = _channel;
-    if (channel != null) {
-      channel.setMethodCallHandler(null);
-      widget.controller?.detachChannel(channel);
-    }
+    _releaseChannel();
     super.dispose();
   }
 }

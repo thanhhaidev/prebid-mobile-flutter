@@ -77,7 +77,9 @@ rewarded = PrebidGamRewardedAd(
 await rewarded.loadAd();
 ```
 
-Both take `customTargeting`, [`controls`](/docs/fullscreen#rendering-controls) (`supportSKOverlay` included <Only platform="ios" />), `videoParameters` and `impOrtbConfig`; the interstitial also takes `adFormats`. The lifecycle matches the [core fullscreen ads](/docs/fullscreen#lifecycle), with `isLoaded` to check readiness.
+Both take `customTargeting`, [`controls`](/docs/fullscreen#rendering-controls) (`supportSKOverlay` included <Only platform="ios" />), `videoParameters` and `impOrtbConfig`; the interstitial also takes `isVideo` (request a video creative) and `adFormats` (a multiformat interstitial; overrides `isVideo`). The lifecycle matches the [core fullscreen ads](/docs/fullscreen#lifecycle), with `isLoaded` to check readiness: `show()` on an ad that isn't loaded reports `onAdFailed` ("The ad is not loaded").
+
+<Only platform="android" /> Prebid Android drops a request made before the Prebid SDK finished initializing, so a banner, interstitial or rewarded ad loaded that early reports `onAdFailed` ("The Prebid SDK is not initialized") instead of never answering; the native ad reports `onFetchDemandFailed('prebidSdkNotInitialized')` and still requests the GAM ad.
 
 Set the GPID or ad slot of a fullscreen ad through `impOrtbConfig`, e.g. `'{"ext":{"gpid":"/1111/interstitial","data":{"pbadslot":"/1111/interstitial"}}}'`.
 
@@ -101,15 +103,23 @@ PrebidGamNativeAd(
 
 | Callback | When |
 | --- | --- |
-| `onFetchDemandSuccess` / `onFetchDemandFailed(reason)` | The Prebid auction returned a bid / no bid or failed; `reason` is the result code, e.g. `prebidDemandNoBids` or `prebidDemandTimedOut` (the same strings as the core package). |
+| `onFetchDemandSuccess` / `onFetchDemandFailed(reason)` | The Prebid auction returned a bid / no bid or failed; `reason` is the result code, e.g. `prebidDemandNoBids` or `prebidDemandTimedOut` (the same strings as the core package), or `prebidSdkNotInitialized` <Only platform="android" />. The GAM request runs either way. |
 | `onCustomAdLoaded` / `onUnifiedAdLoaded` | GAM returned a custom-format / unified native ad. |
 | `onPrimaryAdFailed(String)` | The GAM request failed. |
 | `onNativeAdLoaded` | A Prebid native creative was found and rendered. |
 | `onPrimaryAdWinCustom` / `onPrimaryAdWinUnified` | No Prebid creative: the GAM ad renders. |
-| `onAdImpression`, `onAdClicked` | Tracked on the rendered ad. |
+| `onAdImpression` | For a Prebid creative, Prebid's own impression tracker request succeeded (reported once). That differs from the core [`PrebidNativeAdView`](/docs/native), whose impression is viewability-based. For a GAM unified ad, the Google Mobile Ads impression. |
+| `onAdClicked` | The rendered ad was clicked. |
 | `onAdExpired` | The Prebid bid expired before an impression. |
 
 Without `customFormatId`, only unified native ads are requested. `assets` and `eventTrackers` change the requested native assets (default: title, icon, main image, sponsored, description, call to action); `context`, `contextSubType` and `placementType` default to social, general social and in-feed.
+
+| Parameter | Description |
+| --- | --- |
+| `customTargeting` | Key-values added to the GAM request; Prebid's `hb_*` keys win on conflict. |
+| `gpid` | The Global Placement ID (`imp.ext.gpid`). |
+| `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`). |
+| `impOrtbConfig` | Impression-level OpenRTB JSON merged into the `imp`. |
 
 ## Compatibility
 

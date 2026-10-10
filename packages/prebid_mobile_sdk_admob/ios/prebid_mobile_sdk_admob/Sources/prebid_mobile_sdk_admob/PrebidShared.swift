@@ -12,19 +12,95 @@ import PrebidMobileAdMobAdapters
 
 private func intValue(_ raw: Any?) -> Int? { (raw as? NSNumber)?.intValue }
 
-/// The view controller to present fullscreen ads / modals from: the top-most
-/// presented controller of the key window in the foreground-active scene
-/// (avoids the deprecated `UIApplication.keyWindow`). `nil` when the app has
-/// no foreground window yet.
-func topViewController() -> UIViewController? {
-    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-    let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
-    let window = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
-    var top = window?.rootViewController
-    while let presented = top?.presentedViewController, !presented.isBeingDismissed {
-        top = presented
+/// Formats SDK errors for Dart, appending `localizedFailureReason` (the real
+/// server response) which Prebid hides behind a generic
+/// `localizedDescription`. A copy of the core plugin's formatter.
+enum PrebidErrorFormatter {
+    static func describe(_ error: Error?) -> String {
+        guard let error = error else { return "Unknown error" }
+        let nsError = error as NSError
+        let description = nsError.localizedDescription
+        if let reason = nsError.localizedFailureReason,
+           !reason.isEmpty,
+           reason != description {
+            return "\(description): \(reason)"
+        }
+        return description
     }
-    return top
+}
+
+/// Finds the view controller to present fullscreen ads from: the top-most
+/// presented controller of the foreground key window (scene-aware;
+/// `UIApplication.keyWindow` is deprecated and nil in multi-scene apps).
+/// A port of the core plugin's presenter.
+enum PrebidPresenter {
+    static func topViewController() -> UIViewController? {
+        // Prefer the active scene, but fall back to an inactive one: the
+        // scene is inactive while a system alert (e.g. ATT) or Notification
+        // Center is over the app, and when returning from the background.
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windows = (scenes.filter { $0.activationState == .foregroundActive }
+            + scenes.filter { $0.activationState == .foregroundInactive })
+            .flatMap { $0.windows }
+        let window = windows.first { $0.isKeyWindow } ?? windows.first
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
+    }
+
+    /// Calls `present` with a controller that can present now, or `fail`
+    /// with the reason. A controller still presenting or dismissing another
+    /// makes UIKit drop the presentation with only a console warning, after
+    /// the ad has already been reported as displayed; so that case waits
+    /// once for the running transition (or the next run loop), then fails.
+    static func whenReady(
+        retry: Bool = true,
+        fail: @escaping (String) -> Void,
+        present: @escaping (UIViewController) -> Void
+    ) {
+        guard let top = topViewController() else { return fail(noViewController) }
+        guard isBusy(top) else { return present(top) }
+        guard retry else { return fail(busy) }
+        let again = {
+            DispatchQueue.main.async {
+                PrebidPresenter.whenReady(retry: false, fail: fail, present: present)
+            }
+        }
+        if let coordinator = (top.presentedViewController ?? top).transitionCoordinator {
+            _ = coordinator.animate(alongsideTransition: nil) { _ in again() }
+        } else {
+            again()
+        }
+    }
+
+    private static func isBusy(_ controller: UIViewController) -> Bool {
+        controller.presentedViewController != nil
+            || controller.isBeingPresented
+            || controller.isBeingDismissed
+    }
+
+    static let noViewController = "No view controller to present the ad from"
+    static let notReady = "The ad is not loaded"
+    static let busy = "Another view controller is being presented; try again after it is dismissed"
+}
+
+/// Runs `block` on the main thread: method channels must be called there,
+/// and some SDK completions arrive on background queues.
+func onMain(_ block: @escaping () -> Void) {
+    if Thread.isMainThread {
+        block()
+    } else {
+        DispatchQueue.main.async(execute: block)
+    }
+}
+
+/// The method-channel suffix of a platform view: the `channelId` creation
+/// param the Dart widget listens on before the view exists (falls back to the
+/// platform view id).
+func viewChannelId(_ args: [String: Any], viewId: Int64) -> Int64 {
+    (args["channelId"] as? NSNumber)?.int64Value ?? viewId
 }
 
 /// Native request assets, or nil when the widget uses the defaults.
@@ -107,7 +183,7 @@ func maybeDropBid(_ probability: Double, from request: GoogleMobileAds.Request) 
     request.register(extras)
 }
 
-/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+/// Ad unit formats: `adFormats` (`PrebidAdFormat` names) when it names any,
 /// else video or banner from `isVideo`.
 func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
     let names = raw as? [String] ?? []

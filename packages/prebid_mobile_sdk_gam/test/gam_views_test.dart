@@ -29,6 +29,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(views.channelIds.single, isA<int>());
+      expect(
+        views.viewChannel,
+        'prebid_mobile_sdk_gam/banner_${views.channelIds.single}',
+      );
       expect(views.creationParams, {
         'configId': 'c',
         'gamAdUnitId': 'u',
@@ -191,8 +196,8 @@ void main() {
   });
 
   group('PrebidGamNativeAd', () {
-    String channelOf(Map<Object?, Object?>? params) =>
-        'prebid_mobile_sdk_gam/native_${params!['logicalId']}';
+    String channelOf(PlatformViewHarness views) =>
+        'prebid_mobile_sdk_gam/native_${views.channelIds.last}';
 
     testWidgets('default creation params', (tester) async {
       final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
@@ -204,14 +209,9 @@ void main() {
       final p = views.creationParams!;
       expect(
         p.keys,
-        unorderedEquals([
-          'logicalId',
-          'configId',
-          'gamAdUnitId',
-          'customFormatId',
-        ]),
+        unorderedEquals(['configId', 'gamAdUnitId', 'customFormatId']),
       );
-      expect(p['logicalId'], isA<int>());
+      expect(views.channelIds.single, isA<int>());
       expect(p['configId'], 'c');
       expect(p['gamAdUnitId'], 'u');
       expect(p['customFormatId'], '');
@@ -254,6 +254,55 @@ void main() {
       ]);
     }, variant: android);
 
+    testWidgets('sends targeting, GPID, ad slot and ORTB', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidGamNativeAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            customTargeting: {'section': 'news'},
+            gpid: '/1111/home',
+            pbAdSlot: '/1111/home-slot',
+            impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final p = views.creationParams!;
+      expect(p['customTargeting'], {'section': 'news'});
+      expect(p['gpid'], '/1111/home');
+      expect(p['pbAdSlot'], '/1111/home-slot');
+      expect(p['impOrtbConfig'], '{"ext":{"data":{"k":"v"}}}');
+    }, variant: android);
+
+    testWidgets('an event sent while the view is created is delivered', (
+      tester,
+    ) async {
+      // The native side may fail (e.g. Prebid SDK not initialized) before
+      // `onPlatformViewCreated`; the channel already listens by then.
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      final fired = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidGamNativeAd(
+            configId: 'c',
+            gamAdUnitId: 'u',
+            listener: PrebidGamNativeAdListener(onFetchDemandFailed: fired.add),
+          ),
+        ),
+      );
+      final channel = channelOf(views);
+      await PlatformViewHarness.emitOn(
+        channel,
+        'fetchDemandFailed',
+        'prebidSdkNotInitialized',
+      );
+      expect(fired, ['prebidSdkNotInitialized']);
+    }, variant: android);
+
     testWidgets('every event reaches its callback, with reasons', (
       tester,
     ) async {
@@ -284,7 +333,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final channel = channelOf(views.creationParams);
+      final channel = channelOf(views);
       final native = find.byType(PrebidGamNativeAd);
       expect(tester.getSize(native), const Size(300, 100));
 
@@ -352,7 +401,7 @@ void main() {
 
         await tester.pumpWidget(native('a'));
         await tester.pumpAndSettle();
-        final first = channelOf(views.creationParams);
+        final first = channelOf(views);
         await PlatformViewHarness.emitOn(first, 'onAdSize', {'height': 300.0});
         await tester.pump();
         await PlatformViewHarness.emitOn(first, 'nativeAdLoaded');
@@ -367,7 +416,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(views.createdParams, hasLength(2));
         expect(views.disposedIds, hasLength(1));
-        final second = channelOf(views.creationParams);
+        final second = channelOf(views);
         expect(second, isNot(first));
         expect(views.creationParams?['configId'], 'b');
         expect(tester.getSize(find.byType(PrebidGamNativeAd)).height, 100);

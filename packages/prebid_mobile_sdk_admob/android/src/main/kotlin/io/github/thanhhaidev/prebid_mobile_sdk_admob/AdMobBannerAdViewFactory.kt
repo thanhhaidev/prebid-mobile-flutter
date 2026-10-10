@@ -15,6 +15,7 @@ import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import org.prebid.mobile.AdSize
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.admob.AdMobMediationBannerUtils
 import org.prebid.mobile.admob.PrebidBannerAdapter
 import org.prebid.mobile.api.mediation.MediationBannerAdUnit
@@ -25,7 +26,7 @@ import org.prebid.mobile.rendering.models.AdPosition
  * Google Mobile Ads [AdView]; Prebid's [MediationBannerAdUnit] runs the auction
  * and passes the winning bid to AdMob via the Prebid AdMob adapter.
  */
-class AdMobBannerAdViewFactory(
+internal class AdMobBannerAdViewFactory(
     private val messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -41,7 +42,12 @@ class AdMobBannerAdViewFactory(
     }
 }
 
-class AdMobBannerPlatformView(
+/**
+ * One AdMob banner: a Google Mobile Ads [AdView] loaded after each Prebid
+ * auction of its [MediationBannerAdUnit], reporting to Dart over
+ * `prebid_mobile_sdk_admob/banner_<channelId>`.
+ */
+internal class AdMobBannerPlatformView(
     context: Context,
     viewId: Int,
     messenger: BinaryMessenger,
@@ -75,7 +81,10 @@ class AdMobBannerPlatformView(
             .map { (w, h) -> AdSize(w, h) }
         dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_admob/banner_$viewId")
+        methodChannel = MethodChannel(
+            messenger,
+            "prebid_mobile_sdk_admob/banner_${viewChannelId(params, viewId)}",
+        )
 
         if (adaptive) {
             // Landscape inline adaptive size for the width Flutter measured
@@ -102,7 +111,7 @@ class AdMobBannerPlatformView(
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
-                methodChannel.invokeMethod("onAdFailed", error.message)
+                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
             }
 
             override fun onAdClicked() {
@@ -136,6 +145,12 @@ class AdMobBannerPlatformView(
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
         if (additionalSizes.isNotEmpty()) adUnit?.addAdditionalSizes(*additionalSizes.toTypedArray())
+        // `videoParameters` has no counterpart here: Prebid Android's
+        // mediation banner has no video-parameters setter, so a video banner
+        // sends the SDK's defaults.
+        if (params["adFormats"] != null) {
+            adUnit?.setAdUnitFormats(adUnitFormats(params["adFormats"], isVideo = false))
+        }
         // 0 means a single request without auto-refresh (also Prebid's
         // default); positive values are clamped by Prebid to 30–120 s.
         refreshInterval?.let { adUnit?.setRefreshInterval(if (it > 0) it else 0) }
@@ -155,6 +170,12 @@ class AdMobBannerPlatformView(
     }
 
     private fun load() {
+        // Prebid Android drops requests made before initialization without
+        // calling back, so AdMob's waterfall would never run.
+        if (!PrebidMobile.isSdkInitialized()) {
+            methodChannel.invokeMethod("onAdFailed", SDK_NOT_INITIALIZED)
+            return
+        }
         adUnit?.fetchDemand {
             if (disposed) return@fetchDemand
             maybeDropBid(dropBidProbability, extras, PrebidBannerAdapter.EXTRA_RESPONSE_ID)

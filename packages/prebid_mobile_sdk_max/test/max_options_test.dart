@@ -53,6 +53,32 @@ void main() {
       });
     }, variant: android);
 
+    testWidgets('sends ad formats and video parameters', (tester) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/banner');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const PrebidMaxBannerAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            width: 300,
+            height: 250,
+            adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
+            videoParameters: VideoParameters(
+              mimes: ['video/mp4'],
+              plcmt: VideoPlcmt.accompanyingContent,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(views.creationParams?['adFormats'], ['banner', 'video']);
+      expect(views.creationParams?['videoParameters'], {
+        'mimes': ['video/mp4'],
+        'plcmt': 2,
+      });
+    }, variant: android);
+
     testWidgets('adaptive spans the available width and adopts the height', (
       tester,
     ) async {

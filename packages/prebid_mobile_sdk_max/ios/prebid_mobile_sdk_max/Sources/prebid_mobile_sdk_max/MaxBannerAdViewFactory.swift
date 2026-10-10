@@ -34,6 +34,9 @@ final class MaxBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One MAX banner: a `MAAdView` that the Prebid `MediationBannerAdUnit`'s
+/// auction bids into. Events go to the widget over
+/// `prebid_mobile_sdk_max/banner_<channelId>`.
 final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, MAAdRevenueDelegate {
 
     private let maxAdBannerView: MAAdView
@@ -79,9 +82,8 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
         }
         dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
 
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_max/banner_\(viewId)",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_max/banner", args: args, viewId: viewId, messenger: messenger
         )
 
         // 1. Create and configure the MAX ad view.
@@ -115,6 +117,9 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
             adUnit.adPosition = pos
         }
         if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        if let formats = adFormatsFrom(args["adFormats"]) { adUnit.adFormats = formats }
+        // `videoParameters` is a live, get-only reference: configured in place.
+        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
         if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
         if let interval = refreshInterval, interval > 0 {
             // Clamped by Prebid to 15–120 s.
@@ -173,12 +178,12 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
     // MARK: - MAAdViewAdDelegate
 
     func didLoad(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdSize", arguments: [
+        send("onAdSize", arguments: [
             "width": Double(viewSize.width),
             "height": Double(viewSize.height),
         ])
-        methodChannel.invokeMethod("onAdLoaded", arguments: nil)
-        methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
+        send("onAdLoaded", arguments: nil)
+        send("onAdDisplayed", arguments: nil)
     }
 
     func didFailToLoadAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
@@ -188,35 +193,40 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
             userInfo: [NSLocalizedDescriptionKey: error.message]
         )
         mediationAdUnit?.adObjectDidFailToLoadAd(adObject: maxAdBannerView, with: nsError)
-        methodChannel.invokeMethod("onAdFailed", arguments: error.message)
+        send("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
     }
 
     func didFail(toDisplay ad: MAAd, withError error: MAError) {
         // Dart reports it through onAdFailed too.
-        methodChannel.invokeMethod("onAdDisplayFailed", arguments: error.message)
+        send("onAdDisplayFailed", arguments: PrebidErrorFormatter.describe(error))
     }
 
     func didClick(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked", arguments: nil)
     }
 
     func didHide(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdClosed", arguments: nil)
+        send("onAdClosed", arguments: nil)
     }
 
     // MAX reports revenue when the impression is recorded.
     func didPayRevenue(for ad: MAAd) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
-        methodChannel.invokeMethod("onAdRevenuePaid", arguments: revenuePayload(ad))
+        send("onAdImpression", arguments: nil)
+        send("onAdRevenuePaid", arguments: revenuePayload(ad))
     }
 
     func didExpand(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdExpanded", arguments: nil)
+        send("onAdExpanded", arguments: nil)
     }
 
     func didCollapse(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdCollapsed", arguments: nil)
+        send("onAdCollapsed", arguments: nil)
     }
 
     func didDisplay(_ ad: MAAd) {}
+
+    /// Calls the widget on the main thread.
+    private func send(_ method: String, arguments: Any?) {
+        onMain { [methodChannel] in methodChannel.invokeMethod(method, arguments: arguments) }
+    }
 }

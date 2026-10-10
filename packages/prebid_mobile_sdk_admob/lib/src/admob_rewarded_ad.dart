@@ -1,41 +1,10 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
-    show
-        PrebidFullscreenControls,
-        PrebidReward,
-        PrebidRewardedAdListener,
-        VideoParameters;
+    show PrebidFullscreenControls, PrebidRewardedAdListener, VideoParameters;
 
 import 'admob_testing.dart';
 
-const MethodChannel _channel = MethodChannel(
-  'prebid_mobile_sdk_admob/rewarded',
-);
-
-/// Routes native rewarded events (delivered over the shared method channel) to
-/// the [PrebidAdMobRewardedAd] that owns each `adId`.
-class _AdMobRewardedRouter {
-  _AdMobRewardedRouter._() {
-    _channel.setMethodCallHandler(_onCall);
-  }
-
-  static final _AdMobRewardedRouter instance = _AdMobRewardedRouter._();
-
-  final Map<int, PrebidAdMobRewardedAd> _ads = {};
-
-  void register(int adId, PrebidAdMobRewardedAd ad) => _ads[adId] = ad;
-
-  void unregister(int adId) => _ads.remove(adId);
-
-  Future<dynamic> _onCall(MethodCall call) async {
-    final args = call.arguments as Map?;
-    final adId = (args?['adId'] as num?)?.toInt();
-    if (adId == null) return;
-    _ads[adId]?._handleEvent(call.method, args);
-  }
-}
+final _channel = CompanionAdChannel('prebid_mobile_sdk_admob/rewarded');
 
 /// A fullscreen rewarded ad mediated by **Google AdMob** with Prebid demand,
 /// via Prebid's AdMob rewarded adapter.
@@ -52,7 +21,11 @@ class _AdMobRewardedRouter {
 /// );
 /// await rewarded.loadAd();
 /// ```
-class PrebidAdMobRewardedAd {
+///
+/// On Android a [loadAd] made before the Prebid SDK finished initializing
+/// reports `onAdFailed` ("The Prebid SDK is not initialized"): Prebid Android
+/// drops such requests, so AdMob's waterfall would never run.
+class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
   /// Creates a [PrebidAdMobRewardedAd].
   PrebidAdMobRewardedAd({
     required this.configId,
@@ -61,10 +34,7 @@ class PrebidAdMobRewardedAd {
     this.impOrtbConfig,
     this.videoParameters,
     this.listener,
-  }) : _adId = _nextId++;
-  static int _nextId = 6500000;
-
-  final int _adId;
+  }) : super(_channel);
 
   /// The Prebid Server stored impression configuration ID.
   final String configId;
@@ -90,84 +60,17 @@ class PrebidAdMobRewardedAd {
   /// Listener for rewarded ad events.
   final PrebidRewardedAdListener? listener;
 
-  bool _loaded = false;
+  @override
+  Map<String, Object?> get loadArguments => {
+    'configId': configId,
+    'adMobAdUnitId': adMobAdUnitId,
+    'controls': ?controls?.toMap(),
+    'impOrtbConfig': ?impOrtbConfig,
+    'videoParameters': ?videoParameters?.toMap(),
+    ...debugDropBidArgs(),
+  };
 
-  /// Whether the rewarded ad has loaded and is ready to [show].
-  bool get isLoaded => _loaded;
-
-  /// Requests the ad. [PrebidRewardedAdListener.onAdLoaded] fires when it is
-  /// ready to [show].
-  Future<void> loadAd() async {
-    _loaded = false;
-    _AdMobRewardedRouter.instance.register(_adId, this);
-    await _channel.invokeMethod('load', {
-      'adId': _adId,
-      'configId': configId,
-      'adMobAdUnitId': adMobAdUnitId,
-      'controls': ?controls?.toMap(),
-      'impOrtbConfig': ?impOrtbConfig,
-      'videoParameters': ?videoParameters?.toMap(),
-      ...debugDropBidArgs(),
-    });
-  }
-
-  /// Presents the loaded rewarded ad fullscreen. An ad shows once, so [isLoaded]
-  /// turns false; if it cannot be shown (not loaded yet, no foreground
-  /// activity / view controller) the listener's `onAdFailed` fires.
-  Future<void> show() {
-    _loaded = false;
-    return _channel.invokeMethod('show', {'adId': _adId});
-  }
-
-  /// Releases native resources held by this ad.
-  Future<void> destroy() async {
-    _loaded = false;
-    _AdMobRewardedRouter.instance.unregister(_adId);
-    await _channel.invokeMethod('destroy', {'adId': _adId});
-  }
-
-  void _handleEvent(String event, Map? args) {
-    switch (event) {
-      case 'onAdLoaded':
-        _loaded = true;
-        listener?.onAdLoaded?.call();
-      case 'onAdFailed':
-        _loaded = false;
-        listener?.onAdFailed?.call(args?['error'] as String? ?? '');
-      case 'onAdDisplayed':
-        listener?.onAdDisplayed?.call();
-      case 'onAdClosed':
-        _loaded = false;
-        listener?.onAdClosed?.call();
-      case 'onAdClicked':
-        listener?.onAdClicked?.call();
-      case 'onAdImpression':
-        listener?.onAdImpression?.call();
-      case 'onUserEarnedReward':
-        listener?.onUserEarnedReward?.call(_rewardFrom(args));
-    }
-  }
-}
-
-/// Builds the [PrebidReward] from an `onUserEarnedReward` payload. Every
-/// companion package sends the same keys (`rewardType`, `rewardCount` and,
-/// when the SDK provides one, `rewardExt` as a JSON string), so rewards look
-/// identical whichever ad server renders them.
-PrebidReward _rewardFrom(Map? args) => PrebidReward(
-  type: args?['rewardType'] as String? ?? 'reward',
-  count: (args?['rewardCount'] as num?)?.toInt() ?? 1,
-  ext: _decodeExt(args?['rewardExt']),
-);
-
-Map<String, dynamic>? _decodeExt(Object? raw) {
-  if (raw is Map) return Map<String, dynamic>.from(raw);
-  if (raw is! String || raw.isEmpty) return null;
-  // A malformed ext must not cost the app the reward callback itself.
-  final Object? decoded;
-  try {
-    decoded = jsonDecode(raw);
-  } on FormatException {
-    return null;
-  }
-  return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+  @override
+  void onEvent(String event, Map? args) =>
+      dispatchRewardedEvent(listener, event, args);
 }

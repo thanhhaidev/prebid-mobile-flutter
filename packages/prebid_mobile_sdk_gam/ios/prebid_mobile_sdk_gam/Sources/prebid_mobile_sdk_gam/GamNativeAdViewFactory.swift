@@ -32,6 +32,9 @@ final class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One GAM native ad view. It starts the auction as soon as it is created;
+/// its events go over `prebid_mobile_sdk_gam/native_<channelId>`, which the
+/// Dart widget listens to before creating the view.
 final class GamNativePlatformView: NSObject, FlutterPlatformView,
     AdLoaderDelegate, CustomNativeAdLoaderDelegate, NativeAdLoaderDelegate,
     PrebidMobile.NativeAdDelegate, PrebidMobile.NativeAdEventDelegate,
@@ -53,18 +56,27 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     private var unifiedNativeAd: GoogleMobileAds.NativeAd?
     private var customNativeAd: CustomNativeAd?
 
+    // Prebid calls adDidLogImpression once per impression tracker URL;
+    // report one impression.
+    private var prebidImpressionReported = false
+
     init(messenger: FlutterBinaryMessenger, args: [String: Any]) {
-        let logicalId = args["logicalId"] as? Int ?? 0
+        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? 0
         self.gamAdUnitId = args["gamAdUnitId"] as? String ?? ""
         self.configId = args["configId"] as? String ?? ""
         self.customFormatId = args["customFormatId"] as? String ?? ""
 
         methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_gam/native_\(logicalId)",
+            name: "prebid_mobile_sdk_gam/native_\(channelId)",
             binaryMessenger: messenger
         )
 
         super.init()
+
+        // Prebid merges its hb_* keys over these, so they win on conflict.
+        if let targeting = gamCustomTargeting(args["customTargeting"]) {
+            gamRequest.customTargeting = targeting
+        }
 
         let unit = NativeRequest(configId: configId, assets: nativeAssetsFrom(args["assets"]) ?? Self.requestAssets)
         unit.context = ContextType.Social
@@ -76,14 +88,17 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         unit.eventtrackers = nativeTrackersFrom(args["eventTrackers"]) ?? [
             NativeEventTracker(event: EventType.Impression, methods: [EventTracking.Image, EventTracking.js])
         ]
+        if let gpid = args["gpid"] as? String { unit.setGPID(gpid) }
+        if let pbAdSlot = args["pbAdSlot"] as? String { unit.pbAdSlot = pbAdSlot }
+        if let config = args["impOrtbConfig"] as? String { unit.setImpORTBConfig(config) }
         nativeUnit = unit
 
         unit.fetchDemand(adObject: gamRequest) { [weak self] resultCode in
             guard let self = self else { return }
             if resultCode == ResultCode.prebidDemandFetchSuccess {
-                self.methodChannel.invokeMethod("fetchDemandSuccess", arguments: nil)
+                self.send("fetchDemandSuccess")
             } else {
-                self.methodChannel.invokeMethod("fetchDemandFailed", arguments: resultCode.dartCode)
+                self.send("fetchDemandFailed", resultCode.dartCode)
             }
 
             var adTypes: [AdLoaderAdType] = [.native]
@@ -92,7 +107,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             }
             let loader = AdLoader(
                 adUnitID: self.gamAdUnitId,
-                rootViewController: topViewController(),
+                rootViewController: PrebidPresenter.topViewController(),
                 adTypes: adTypes,
                 options: []
             )
@@ -104,6 +119,17 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
 
     func view() -> UIView {
         return container
+    }
+
+    /// Sends an event to Dart on the main thread: Prebid calls some delegate
+    /// methods (impressions) from a background queue, and a method channel
+    /// must only be used from the main thread.
+    private func send(_ method: String, _ arguments: Any? = nil) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.send(method, arguments) }
+            return
+        }
+        methodChannel.invokeMethod(method, arguments: arguments)
     }
 
     private static var requestAssets: [NativeAsset] {
@@ -126,76 +152,73 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
 
     func adLoader(_ adLoader: AdLoader, didReceive customNativeAd: CustomNativeAd) {
         self.customNativeAd = customNativeAd
-        methodChannel.invokeMethod("customAdLoaded", arguments: nil)
-        // Ask Prebid to extract its winning bid from the GAM custom-template ad.
-        Utils.shared.delegate = self
-        Utils.shared.findNative(adObject: customNativeAd)
+        send("customAdLoaded")
+        // Ask Prebid to extract its winning bid from the GAM custom-template
+        // ad; the finder routes the answer back to this view.
+        NativeAdFinder.shared.find(in: customNativeAd, for: self)
     }
 
     // MARK: - NativeAdLoaderDelegate (unified)
 
     func adLoader(_ adLoader: AdLoader, didReceive nativeAd: GoogleMobileAds.NativeAd) {
         unifiedNativeAd = nativeAd
-        methodChannel.invokeMethod("unifiedAdLoaded", arguments: nil)
+        send("unifiedAdLoaded")
         // Unified native ads are GAM's own demand — the primary ad server wins.
-        methodChannel.invokeMethod("primaryAdWinUnified", arguments: nil)
+        send("primaryAdWinUnified")
         renderUnified(nativeAd)
     }
 
     // MARK: - AdLoaderDelegate
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
-        methodChannel.invokeMethod("primaryAdFailed", arguments: error.localizedDescription)
+        send("primaryAdFailed", PrebidErrorFormatter.describe(error))
     }
 
     // MARK: - PrebidMobile.NativeAdDelegate
 
     func nativeAdLoaded(ad: PrebidMobile.NativeAd) {
         prebidNativeAd = ad
-        methodChannel.invokeMethod("nativeAdLoaded", arguments: nil)
+        send("nativeAdLoaded")
         ad.delegate = self
         renderPrebidNative(ad)
     }
 
     func nativeAdNotFound() {
-        methodChannel.invokeMethod("primaryAdWinCustom", arguments: nil)
+        send("primaryAdWinCustom")
         renderCustomTemplate()
     }
 
     func nativeAdNotValid() {
-        methodChannel.invokeMethod("primaryAdWinCustom", arguments: nil)
+        send("primaryAdWinCustom")
         renderCustomTemplate()
     }
 
     // MARK: - PrebidMobile.NativeAdEventDelegate
 
-    // Prebid calls this once per impression tracker URL; report one impression.
-    private var prebidImpressionReported = false
-
     func adDidLogImpression(ad: PrebidMobile.NativeAd) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, !self.prebidImpressionReported else { return }
             self.prebidImpressionReported = true
-            self.methodChannel.invokeMethod("onAdImpression", arguments: nil)
+            self.send("onAdImpression")
         }
     }
 
     func adWasClicked(ad: PrebidMobile.NativeAd) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked")
     }
 
     func adDidExpire(ad: PrebidMobile.NativeAd) {
-        methodChannel.invokeMethod("onAdExpired", arguments: nil)
+        send("onAdExpired")
     }
 
     // MARK: - GoogleMobileAds.NativeAdDelegate (unified)
 
     func nativeAdDidRecordImpression(_ nativeAd: GoogleMobileAds.NativeAd) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        send("onAdImpression")
     }
 
     func nativeAdDidRecordClick(_ nativeAd: GoogleMobileAds.NativeAd) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked")
     }
 
     // MARK: - Rendering
@@ -244,8 +267,16 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         ])
 
         let stack = mountStack([mainImageView, header, bodyLabel, ctaButton])
-        // Register the whole native container so Prebid tracks impressions/clicks.
-        ad.registerView(view: container, clickableViews: [ctaButton])
+        // Prebid tracks impressions on the whole container; the same views as
+        // on Android are clickable. Labels and images ignore touches unless
+        // enabled.
+        let clickableViews: [UIView] = [iconView, titleLabel, mainImageView, bodyLabel, ctaButton]
+        clickableViews.forEach { $0.isUserInteractionEnabled = true }
+        if !ad.registerView(view: container, clickableViews: clickableViews) {
+            // Prebid refuses an expired ad (the bid outlived `bid.exp` while
+            // GAM loaded); nothing would be tracked, so report the expiry.
+            send("onAdExpired")
+        }
         reportHeight(of: stack)
     }
 
@@ -353,10 +384,10 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     }
 
     private func reportHeight(of view: UIView) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
             let height = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
             if height > 0 {
-                self.methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
+                self?.send("onAdSize", ["height": Double(height)])
             }
         }
     }
@@ -367,5 +398,78 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             guard let data = data, let image = UIImage(data: data) else { return }
             DispatchQueue.main.async { imageView.image = image }
         }.resume()
+    }
+}
+
+/// Runs `Utils.shared.findNative` for native views one request at a time.
+///
+/// `Utils.shared` reports to a single, process-wide weak `delegate`, so two
+/// views asking at once would get each other's results. The finder is that
+/// delegate: it queues requests, keeps one in flight, routes each answer to
+/// the view that asked, and skips requests whose view is gone.
+final class NativeAdFinder: NSObject, PrebidMobile.NativeAdDelegate {
+
+    static let shared = NativeAdFinder()
+
+    private final class Request {
+        weak var owner: PrebidMobile.NativeAdDelegate?
+        let adObject: AnyObject
+
+        init(owner: PrebidMobile.NativeAdDelegate, adObject: AnyObject) {
+            self.owner = owner
+            self.adObject = adObject
+        }
+    }
+
+    private var queue: [Request] = []
+    private var current: Request?
+
+    /// Looks for a Prebid native ad in `adObject` (a GAM custom-format ad)
+    /// and reports the result to `owner`, on the main thread.
+    func find(in adObject: AnyObject, for owner: PrebidMobile.NativeAdDelegate) {
+        queue.append(Request(owner: owner, adObject: adObject))
+        next()
+    }
+
+    private func next() {
+        guard current == nil else { return }
+        while !queue.isEmpty {
+            let request = queue.removeFirst()
+            guard request.owner != nil else { continue }
+            current = request
+            // Set right before each call: another integration may have
+            // replaced the shared delegate meanwhile.
+            Utils.shared.delegate = self
+            Utils.shared.findNative(adObject: request.adObject)
+            if current === request {
+                // Prebid answers a custom-format ad synchronously today; if
+                // it ever doesn't answer, don't hold up the other views.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self, weak request] in
+                    guard let self = self, let request = request, self.current === request else { return }
+                    self.finish { $0.nativeAdNotFound() }
+                }
+            }
+            return
+        }
+    }
+
+    /// Hands the in-flight request's answer to its view, then starts the next.
+    private func finish(_ deliver: (PrebidMobile.NativeAdDelegate) -> Void) {
+        guard let request = current else { return }
+        current = nil
+        if let owner = request.owner { deliver(owner) }
+        next()
+    }
+
+    func nativeAdLoaded(ad: PrebidMobile.NativeAd) {
+        finish { $0.nativeAdLoaded(ad: ad) }
+    }
+
+    func nativeAdNotFound() {
+        finish { $0.nativeAdNotFound() }
+    }
+
+    func nativeAdNotValid() {
+        finish { $0.nativeAdNotValid() }
     }
 }

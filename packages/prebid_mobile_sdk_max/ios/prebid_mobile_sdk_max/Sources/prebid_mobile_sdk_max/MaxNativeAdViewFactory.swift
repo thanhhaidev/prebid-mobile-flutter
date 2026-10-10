@@ -34,6 +34,9 @@ final class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+/// One MAX native ad, rendered into a tag-bound `MANativeAdView` once the
+/// Prebid `MediationNativeAdUnit`'s auction has run. Events go to the widget
+/// over `prebid_mobile_sdk_max/native_<channelId>`.
 final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, MAAdRevenueDelegate {
 
     private let container = UIView()
@@ -50,9 +53,8 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
         let configId = args["configId"] as? String ?? ""
         let maxAdUnitId = args["maxAdUnitId"] as? String ?? ""
 
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_max/native_\(viewId)",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_max/native", args: args, viewId: viewId, messenger: messenger
         )
 
         super.init()
@@ -193,26 +195,31 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
             nativeAdLoader?.destroy(previous)
         }
         loadedNativeAd = ad
-        methodChannel.invokeMethod("onAdLoaded", arguments: nil)
+        send("onAdLoaded", arguments: nil)
         let height = container.systemLayoutSizeFitting(
             UIView.layoutFittingCompressedSize
         ).height
         if height > 0 {
-            methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
+            send("onAdSize", arguments: ["height": Double(height)])
         }
     }
 
     func didFailToLoadNativeAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {
-        methodChannel.invokeMethod("onAdFailed", arguments: error.message)
+        send("onAdFailed", arguments: PrebidErrorFormatter.describe(error))
     }
 
     // MAX reports revenue when the impression is recorded.
     func didPayRevenue(for ad: MAAd) {
-        methodChannel.invokeMethod("onAdImpression", arguments: nil)
-        methodChannel.invokeMethod("onAdRevenuePaid", arguments: revenuePayload(ad))
+        send("onAdImpression", arguments: nil)
+        send("onAdRevenuePaid", arguments: revenuePayload(ad))
     }
 
     func didClickNativeAd(_ ad: MAAd) {
-        methodChannel.invokeMethod("onAdClicked", arguments: nil)
+        send("onAdClicked", arguments: nil)
+    }
+
+    /// Calls the widget on the main thread.
+    private func send(_ method: String, arguments: Any?) {
+        onMain { [methodChannel] in methodChannel.invokeMethod(method, arguments: arguments) }
     }
 }

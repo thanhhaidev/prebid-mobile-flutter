@@ -144,11 +144,18 @@ PrebidGamNativeAd(
 
 Pass `assets` / `eventTrackers` to change the requested native assets (the
 default is title, icon, main image, sponsored, description and call to
-action).
+action). The native ad also takes `customTargeting` (added to the GAM
+request), `gpid`, `pbAdSlot` and `impOrtbConfig`.
+
+For a Prebid creative, `onAdImpression` is Prebid's own impression-tracker
+callback: it fires once Prebid's impression tracker request succeeds. That
+differs from the core `PrebidNativeAdView`, whose impression is
+viewability-based. For a GAM unified ad it is the Google Mobile Ads
+impression.
 
 ### GAM request targeting and banner controls
 
-Banner, interstitial and rewarded take `customTargeting`, added to the GAM
+Banner, interstitial, rewarded and native take `customTargeting`, added to the GAM
 request (Prebid's `hb_*` keys win on conflict). `PrebidGamBannerAd` also takes
 a `PrebidBannerAdController` (`loadAd()` with `autoLoad: false`,
 `stopRefresh()`), `videoPlacementType` and a `PrebidBannerVideoListener` for
@@ -166,10 +173,17 @@ The banner also mirrors the core `PrebidBannerAd` request options:
 | `impOrtbConfig` | Impression-level OpenRTB JSON merged into the `imp`. |
 | `videoParameters` | OpenRTB video parameters for outstream video. **iOS only** — Prebid Android's `BannerView` has no video-parameters setter. |
 
-`show()` on an interstitial / rewarded ad that is not loaded yet, or when no
-foreground Activity / view controller is available, reports `onAdFailed`
-instead of failing silently; `isLoaded` turns false after `show()`,
-`onAdClosed`, `onAdFailed` and `onAdExpired`.
+`show()` on an interstitial / rewarded ad that is not loaded yet ("The ad is
+not loaded"), or when no foreground Activity / view controller is available,
+reports `onAdFailed` instead of failing silently; `isLoaded` turns false after
+`show()`, `onAdClosed`, `onAdFailed` and `onAdExpired`. The interstitial takes
+`isVideo` to request a video creative (`adFormats` overrides it).
+
+On Android, Prebid drops a request made before the Prebid SDK finished
+initializing. A banner, interstitial or rewarded ad loaded that early reports
+`onAdFailed` ("The Prebid SDK is not initialized") instead of never
+answering; the native ad reports `onFetchDemandFailed('prebidSdkNotInitialized')`
+and still requests the GAM ad.
 
 `PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
 `PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
@@ -216,9 +230,9 @@ but isn't sent in the request.
 | Class | Description |
 |---|---|
 | `PrebidGamBannerAd` | Banner widget; GAM renders. Resizes to the rendered creative. `additionalSizes`, `adFormats`, `adPosition`, `pbAdSlot`, `impOrtbConfig`, `videoParameters` (iOS), controller, video events, `onAdExpired`. |
-| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
+| `PrebidGamInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidGamRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, reward incl. `ext`, `controls`, `videoParameters`, `impOrtbConfig`. |
-| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; `context` / `contextSubType` / `placementType`; events via `PrebidGamNativeAdListener`. |
+| `PrebidGamNativeAd` | Native widget for the GAM Original-API flow; `context` / `contextSubType` / `placementType`, `customTargeting`, `gpid`, `pbAdSlot`, `impOrtbConfig`; events via `PrebidGamNativeAdListener`. |
 
 ## License
 

@@ -1,5 +1,6 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
+import java.util.EnumSet
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeAsset
 import org.prebid.mobile.NativeDataAsset
@@ -7,6 +8,7 @@ import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.ResultCode
+import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.data.Position
 import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
 
@@ -16,6 +18,31 @@ import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
 // prebid_mobile_sdk.
 
 private fun Map<*, *>.int(key: String): Int? = (this[key] as? Number)?.toInt()
+
+/** The error messages and codes this plugin reports to Dart. */
+internal object PluginErrors {
+    const val NOT_INITIALIZED = "The Prebid SDK is not initialized"
+    /** [NOT_INITIALIZED] as a result-code name (the native view's reason). */
+    const val NOT_INITIALIZED_CODE = "prebidSdkNotInitialized"
+    const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
+    const val NOT_LOADED = "The ad is not loaded"
+    const val UNKNOWN = "Unknown error"
+}
+
+/**
+ * Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+ * else video or banner from `isVideo`.
+ */
+internal fun adUnitFormats(raw: Any?, isVideo: Boolean): EnumSet<AdUnitFormat> {
+    val names = (raw as? List<*>).orEmpty().filterIsInstance<String>()
+    val formats = EnumSet.noneOf(AdUnitFormat::class.java)
+    if ("banner" in names) formats.add(AdUnitFormat.BANNER)
+    if ("video" in names) formats.add(AdUnitFormat.VIDEO)
+    if (formats.isEmpty()) {
+        formats.add(if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER)
+    }
+    return formats
+}
 
 /** Native request assets, or null when the widget uses the defaults. */
 internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
@@ -144,5 +171,8 @@ internal fun ResultCode.toDartCode(): String = when (this) {
     ResultCode.NO_BIDS -> "prebidDemandNoBids"
     ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
     ResultCode.TIMEOUT -> "prebidDemandTimedOut"
-    else -> "prebidInvalidRequest"
+    ResultCode.INVALID_CONTEXT -> "prebidInvalidContext"
+    ResultCode.INVALID_AD_OBJECT -> "prebidInvalidAdObject"
+    ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
+    ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
 }

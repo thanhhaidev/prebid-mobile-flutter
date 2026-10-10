@@ -2,8 +2,8 @@ import Flutter
 import UIKit
 
 /// Companion plugin that adds Google AdMob mediation on top of the core
-/// prebid_mobile_sdk plugin. Registers the AdMob banner PlatformView factory and
-/// the AdMob interstitial method channel.
+/// prebid_mobile_sdk plugin. Registers the AdMob banner and native platform
+/// views and the interstitial and rewarded method channels.
 public final class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
 
     /// Each engine's managers, kept by its plugin instance (published to the
@@ -25,6 +25,15 @@ public final class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
         let nativeFactory = AdMobNativeAdViewFactory(messenger: registrar.messenger())
         registrar.register(nativeFactory, withId: "prebid_mobile_sdk_admob/native")
 
+        // Published so the engine keeps the instance and calls
+        // detachFromEngine(for:) on teardown.
         registrar.publish(PrebidMobileSdkAdmobPlugin(messenger: registrar.messenger()))
+    }
+
+    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+        // Flutter disposes the platform views itself; the fullscreen ads
+        // would otherwise outlive the engine (mirrors Android).
+        interstitialManager.dispose()
+        rewardedManager.dispose()
     }
 }

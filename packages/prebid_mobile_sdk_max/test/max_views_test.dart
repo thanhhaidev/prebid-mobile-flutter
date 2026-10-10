@@ -97,6 +97,40 @@ void main() {
       ]);
     }, variant: android);
 
+    for (final variant in [android, ios]) {
+      testWidgets('hears events the view sends while it is created', (
+        tester,
+      ) async {
+        final views = PlatformViewHarness('prebid_mobile_sdk_max/banner')
+          ..eventsOnCreate.add((
+            'onAdFailed',
+            'The Prebid SDK is not initialized',
+          ));
+        addTearDown(views.dispose);
+        final fired = <String>[];
+        await tester.pumpWidget(
+          _host(
+            PrebidMaxBannerAd(
+              configId: 'c',
+              maxAdUnitId: 'u',
+              width: 320,
+              height: 50,
+              listener: PrebidBannerAdListener(
+                onAdFailed: (e) => fired.add('failed:$e'),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(fired, ['failed:The Prebid SDK is not initialized']);
+        // Named by the channelId param, not the platform view id.
+        expect(
+          views.viewChannel,
+          isNot('prebid_mobile_sdk_max/banner_${views.createdIds.single}'),
+        );
+      }, variant: variant);
+    }
+
     testWidgets('a config change re-creates the view and its channel', (
       tester,
     ) async {
@@ -200,6 +234,31 @@ void main() {
           'methods': [1, 2],
         },
       ]);
+    }, variant: android);
+
+    testWidgets('hears events the view sends while it is created', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/native')
+        ..eventsOnCreate.add((
+          'onAdFailed',
+          'The Prebid SDK is not initialized',
+        ));
+      addTearDown(views.dispose);
+      final fired = <String>[];
+      await tester.pumpWidget(
+        _host(
+          PrebidMaxNativeAd(
+            configId: 'c',
+            maxAdUnitId: 'u',
+            listener: PrebidMaxNativeAdListener(
+              onAdFailed: (e) => fired.add('failed:$e'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(fired, ['failed:The Prebid SDK is not initialized']);
     }, variant: android);
 
     testWidgets('every event reaches its callback; onAdSize resizes', (

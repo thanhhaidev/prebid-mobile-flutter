@@ -11,6 +11,7 @@ import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import java.util.EnumSet
 import org.prebid.mobile.AdSize
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.data.VideoPlacementType
 import org.prebid.mobile.api.exceptions.AdException
@@ -25,7 +26,7 @@ import org.prebid.mobile.rendering.models.AdPosition
  * BannerAdViewFactory but builds the BannerView with a [GamBannerEventHandler]
  * so Google Ad Manager renders the ad.
  */
-class GamBannerAdViewFactory(
+internal class GamBannerAdViewFactory(
     private val messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -36,7 +37,12 @@ class GamBannerAdViewFactory(
     }
 }
 
-class GamBannerPlatformView(
+/**
+ * One GAM-rendered banner. Its event channel is
+ * `prebid_mobile_sdk_gam/banner_<channelId>`, named by the Dart widget
+ * before the view exists so no early event is lost.
+ */
+internal class GamBannerPlatformView(
     context: Context,
     viewId: Int,
     messenger: BinaryMessenger,
@@ -69,7 +75,8 @@ class GamBannerPlatformView(
             else -> VideoPlacementType.IN_BANNER
         }
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$viewId")
+        val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
+        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_gam/banner_$channelId")
 
         // The BannerView requests every size the GAM event handler accepts.
         val adSizes = (listOf(AdSize(width, height)) + additionalSizes).toTypedArray()
@@ -122,7 +129,7 @@ class GamBannerPlatformView(
             }
 
             override fun onAdFailed(view: BannerView, exception: AdException?) {
-                methodChannel.invokeMethod("onAdFailed", exception?.message ?: "Unknown error")
+                methodChannel.invokeMethod("onAdFailed", exception?.message ?: PluginErrors.UNKNOWN)
             }
 
             override fun onAdClicked(view: BannerView) {
@@ -149,15 +156,26 @@ class GamBannerPlatformView(
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "loadAd" -> { bannerView.loadAd(); result.success(null) }
+                "loadAd" -> { load(); result.success(null) }
                 "stopRefresh" -> { bannerView.stopRefresh(); result.success(null) }
                 else -> result.notImplemented()
             }
         }
 
         if (autoLoad) {
-            bannerView.loadAd()
+            load()
         }
+    }
+
+    private fun load() {
+        // Prebid Android drops a request made before the SDK has initialized
+        // without calling back; report it instead. The Dart side listens on
+        // this channel before creating the view, so nothing is missed.
+        if (!PrebidMobile.isSdkInitialized()) {
+            methodChannel.invokeMethod("onAdFailed", PluginErrors.NOT_INITIALIZED)
+            return
+        }
+        bannerView.loadAd()
     }
 
     /**

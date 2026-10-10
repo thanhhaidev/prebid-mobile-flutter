@@ -27,6 +27,7 @@ import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.admob.PrebidNativeAdapter
 import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 
@@ -37,7 +38,7 @@ import org.prebid.mobile.api.mediation.MediationNativeAdUnit
  * adapter. Rendering through the SDK's native view keeps impression/click
  * tracking intact.
  */
-class AdMobNativeAdViewFactory(
+internal class AdMobNativeAdViewFactory(
     private val messenger: BinaryMessenger,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
@@ -47,7 +48,12 @@ class AdMobNativeAdViewFactory(
     }
 }
 
-class AdMobNativePlatformView(
+/**
+ * One AdMob native ad: the [NativeAdView] populated with the ad AdMob loads
+ * after the Prebid auction, reporting to Dart over
+ * `prebid_mobile_sdk_admob/native_<channelId>`.
+ */
+internal class AdMobNativePlatformView(
     context: Context,
     viewId: Int,
     messenger: BinaryMessenger,
@@ -73,7 +79,10 @@ class AdMobNativePlatformView(
         val configId = params["configId"] as? String ?: ""
         val adMobAdUnitId = params["adMobAdUnitId"] as? String ?: ""
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_admob/native_$viewId")
+        methodChannel = MethodChannel(
+            messenger,
+            "prebid_mobile_sdk_admob/native_${viewChannelId(params, viewId)}",
+        )
 
         buildLayout(context)
 
@@ -129,7 +138,8 @@ class AdMobNativePlatformView(
             }
             .withAdListener(object : AdListener() {
                 override fun onAdFailedToLoad(error: LoadAdError) {
-                    methodChannel.invokeMethod("onAdFailed", error.message)
+                    if (disposed) return
+                    methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
                 }
 
                 override fun onAdImpression() {
@@ -151,9 +161,15 @@ class AdMobNativePlatformView(
             .addNetworkExtrasBundle(PrebidNativeAdapter::class.java, extras)
             .build()
 
-        adUnit.fetchDemand {
-            if (disposed) return@fetchDemand
-            adLoader.loadAd(request)
+        // Prebid Android drops requests made before initialization without
+        // calling back, so AdMob's waterfall would never run.
+        if (!PrebidMobile.isSdkInitialized()) {
+            methodChannel.invokeMethod("onAdFailed", SDK_NOT_INITIALIZED)
+        } else {
+            adUnit.fetchDemand {
+                if (disposed) return@fetchDemand
+                adLoader.loadAd(request)
+            }
         }
     }
 

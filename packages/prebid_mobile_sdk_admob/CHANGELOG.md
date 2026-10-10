@@ -23,5 +23,12 @@ AdMob adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
   platforms), adaptive banners (`adaptive`) and extra Prebid request sizes
   (`additionalSizes`).
 - Multiformat interstitials (`adFormats`).
+- Video and multiformat banners: `adFormats` and `videoParameters` on
+  `PrebidAdMobBannerAd` (`videoParameters` applies on iOS; Prebid Android's
+  mediation banner has no video setter, so Android sends the SDK's defaults).
+- On Android, ads loaded before the Prebid SDK finished initializing report
+  `onAdFailed` ("The Prebid SDK is not initialized") instead of never
+  finishing: Prebid Android drops such requests, so AdMob's waterfall never
+  ran.
 - `PrebidAdMob.debugDropBidProbability`, a testing-only hook that drops the
   Prebid bid before AdMob loads to exercise the adapter fallback.

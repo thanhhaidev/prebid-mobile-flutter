@@ -22,6 +22,21 @@ import org.prebid.mobile.rendering.bidding.display.BidResponseCache
 
 private fun Map<*, *>.int(key: String): Int? = (this[key] as? Number)?.toInt()
 
+/** What every ad reports when it loads before `PrebidMobile.initializeSdk` finished. */
+internal const val SDK_NOT_INITIALIZED = "The Prebid SDK is not initialized"
+
+/** An SDK error message for Dart; blank becomes "Unknown error". */
+internal fun errorMessage(message: String?): String =
+    message?.takeIf { it.isNotBlank() } ?: "Unknown error"
+
+/**
+ * The method-channel suffix of a platform view: the `channelId` creation
+ * param the Dart widget listens on before the view exists (falls back to the
+ * platform view id).
+ */
+internal fun viewChannelId(params: Map<*, *>, viewId: Int): Long =
+    (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
+
 /** Native request assets, or null when the widget uses the defaults. */
 internal fun nativeAssetsFrom(raw: Any?): List<NativeAsset>? {
     val list = raw as? List<*> ?: return null
@@ -97,7 +112,7 @@ internal fun maybeDropBid(probability: Double, extras: Bundle, responseIdKey: St
 }
 
 /**
- * Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+ * Ad unit formats: `adFormats` (`PrebidAdFormat` names) when it names any,
  * else video or banner from `isVideo`.
  */
 internal fun adUnitFormats(raw: Any?, isVideo: Boolean): EnumSet<AdUnitFormat> {

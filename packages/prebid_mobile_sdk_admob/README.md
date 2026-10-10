@@ -109,7 +109,20 @@ PrebidAdMobBannerAd(
   additionalSizes: const [Size(728, 90)],
   refreshIntervalSeconds: 30,
 );
+
+// Multiformat (display or outstream video) banner:
+PrebidAdMobBannerAd(
+  configId: 'prebid-demo-banner-300-250',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/6300978111',
+  width: 300,
+  height: 250,
+  adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
+  videoParameters: const VideoParameters(mimes: ['video/mp4']),
+);
 ```
+
+`videoParameters` on a banner applies on iOS only: Prebid Android's mediation
+banner has no video-parameters setter, so Android sends the SDK's defaults.
 
 ### Interstitial
 
@@ -168,6 +181,11 @@ foreground Activity / view controller is available, reports `onAdFailed`
 instead of failing silently; `isLoaded` turns false after `show()`,
 `onAdClosed` and `onAdFailed`.
 
+On Android, an ad that loads before `PrebidMobile.initializeSdk` has finished
+reports `onAdFailed` ("The Prebid SDK is not initialized"): Prebid Android
+drops such requests without calling back, so AdMob's waterfall would never
+run. Initialize Prebid before loading ads.
+
 `PrebidBannerAdListener`, `PrebidInterstitialAdListener`,
 `PrebidRewardedAdListener`, `PrebidFullscreenControls`, `NativeAsset` and
 `NativeEventTracker` come from the core
@@ -193,7 +211,7 @@ it is ignored.
 
 ### Video parameters
 
-Interstitial and rewarded ads take `videoParameters` (the core
+Interstitial, rewarded and banner ads take `videoParameters` (the core
 `VideoParameters`: mimes, protocols, playback methods, `plcmt`, start delay,
 linearity, skippable, `battr`, bitrates, durations, API frameworks):
 
@@ -207,13 +225,14 @@ videoParameters: const VideoParameters(
 
 iOS sends every field from the mediation ad unit. Prebid Android's mediation
 interstitial / rewarded ad units only expose `setMaxVideoDuration`, which caps
-the rendered video's length but isn't sent in the request.
+the rendered video's length but isn't sent in the request; its mediation
+banner has no video setter at all.
 
 ## API
 
 | Class | Description |
 |---|---|
-| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adPosition`, `impOrtbConfig`. |
+| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adFormats`, `videoParameters` (iOS), `adPosition`, `impOrtbConfig`. |
 | `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidAdMobRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`; `context` / `contextSubType` / `placementType`. |

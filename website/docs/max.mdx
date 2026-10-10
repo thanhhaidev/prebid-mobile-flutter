@@ -68,6 +68,19 @@ PrebidMaxBannerAd(
 )
 ```
 
+`adFormats` sets the formats Prebid bids on, as on the [core banner](/docs/banner): `{PrebidAdFormat.video}` for an outstream video banner, or `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat one. `null` keeps a display banner. `videoParameters` sends [video signals](/docs/video#where-each-field-is-sent) on iOS only: Prebid Android's mediation banner has no video-parameters setter, so Android sends the SDK's defaults.
+
+```dart
+PrebidMaxBannerAd(
+  configId: 'prebid-demo-banner-300-250',
+  maxAdUnitId: 'YOUR_MAX_MREC_AD_UNIT_ID',
+  width: 300,
+  height: 250,
+  adFormats: const {PrebidAdFormat.banner, PrebidAdFormat.video},
+  videoParameters: const VideoParameters(mimes: ['video/mp4']),
+)
+```
+
 ## Interstitial and rewarded
 
 ```dart
@@ -109,6 +122,8 @@ Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, 
 ## Events
 
 `onAdImpression` (banner, interstitial, rewarded, native) comes from MAX's revenue callback, which MAX fires when it records the impression. `show()` before the ad is loaded reports `onAdFailed`.
+
+On Android, an ad that loads before `PrebidMobile.initializeSdk` completes reports `onAdFailed` ("The Prebid SDK is not initialized"). This applies to every format. Prebid Android drops such requests without calling back, so the load would otherwise never finish and MAX would never run its waterfall. Prebid iOS runs these requests, so iOS skips this check.
 
 To get MAX-specific events, pass a MAX listener. Each one extends the core listener, so the core callbacks work as usual:
 

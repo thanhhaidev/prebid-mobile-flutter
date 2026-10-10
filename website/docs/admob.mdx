@@ -42,6 +42,8 @@ PrebidAdMobBannerAd(
 | `configId`, `adMobAdUnitId` | **Required.** Prebid stored impression ID and AdMob ad unit ID. |
 | `width`, `height` | **Required.** The Prebid request size. The slot resizes to the rendered creative. |
 | `additionalSizes` | Further Prebid request sizes, e.g. `[Size(728, 90)]`. The AdMob view keeps its own size. |
+| `adFormats` | Formats Prebid requests: `{PrebidAdFormat.video}` for an outstream video banner, `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat banner. `null` or an empty set requests a display banner. AdMob renders whichever creative wins. |
+| `videoParameters` | [Video signals](/docs/video#where-each-field-is-sent) for a video or multiformat banner. iOS only: Prebid Android's mediation banner has no video-parameters setter, so Android sends the SDK's defaults. |
 | `adaptive` | `true` gives the AdMob view a landscape inline adaptive size for the full available width. The slot takes AdMob's height once the ad loads. `width` x `height` stays the Prebid request size. |
 | `refreshIntervalSeconds` | Prebid auto-refresh. Each refresh runs a new auction and reloads the AdMob view. `null` or `0` (default) turns it off on both platforms. Prebid clamps other values to 30–120 s on Android and 15–120 s on iOS. Turn off the AdMob unit's own refresh so the two don't stack. |
 | `autoLoad`, `controller` | Load on demand, or stop Prebid's refresh, with a [`PrebidBannerAdController`](/docs/banner#load-on-demand) (`stopRefresh()`). |
@@ -98,6 +100,8 @@ Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `Pre
 ## Events
 
 Banner, interstitial and rewarded listeners receive AdMob's `onAdImpression` as well as the core callbacks. `show()` before the ad is loaded, or without a foreground Activity / view controller, reports `onAdFailed`; `isLoaded` turns false after `show()`, `onAdClosed` and `onAdFailed`.
+
+On Android, an ad that loads before `PrebidMobile.initializeSdk` has finished reports `onAdFailed` with "The Prebid SDK is not initialized". Prebid Android drops requests made before initialization without calling back, so the load would otherwise never finish and AdMob's waterfall never run. Initialize Prebid first, then load. Prebid iOS handles such requests itself.
 
 ## Testing the adapter fallback
 

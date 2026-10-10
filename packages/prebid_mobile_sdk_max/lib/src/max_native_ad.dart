@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prebid_mobile_sdk/companion.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
         NativeAsset,
@@ -95,7 +96,12 @@ class PrebidMaxNativeAd extends StatefulWidget {
 }
 
 class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
+  static const _viewType = 'prebid_mobile_sdk_max/native';
+
   late double _height = widget.height;
+
+  /// The current native view's channel; a new view gets a new one.
+  late AdViewChannel _viewChannel = AdViewChannel(_viewType, _onCall);
 
   @override
   void didUpdateWidget(PrebidMaxNativeAd oldWidget) {
@@ -103,8 +109,11 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
     if (_creationParams(oldWidget).toString() !=
         _creationParams(widget).toString()) {
       // The native view reads its configuration once, so a changed config
-      // gets a new view (keyed below) that starts at the requested height.
+      // gets a new view (keyed by its channel below) that starts at the
+      // requested height.
       _height = widget.height;
+      _viewChannel.dispose();
+      _viewChannel = AdViewChannel(_viewType, _onCall);
     }
   }
 
@@ -126,71 +135,63 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = _creationParams(widget);
-
     return SizedBox(
       width: double.infinity,
       height: _height,
-      child: _buildPlatformView(creationParams),
+      child: _buildPlatformView(),
     );
   }
 
-  Widget _buildPlatformView(Map<String, dynamic> creationParams) {
-    // Recreate the native view when its configuration changes.
-    final key = ValueKey(creationParams.toString());
+  Widget _buildPlatformView() {
+    final channel = _viewChannel;
+    final creationParams = {
+      ..._creationParams(widget),
+      'channelId': channel.id,
+    };
+    // Each view has its own channel, so the channel id keys the view.
+    final key = ValueKey(channel.id);
     // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidView(
         key: key,
-        viewType: 'prebid_mobile_sdk_max/native',
+        viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onCreated,
       );
     } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
         key: key,
-        viewType: 'prebid_mobile_sdk_max/native',
+        viewType: _viewType,
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onCreated,
       );
     }
     return const SizedBox.shrink();
   }
 
-  void _onCreated(int viewId) {
-    final channel = MethodChannel('prebid_mobile_sdk_max/native_$viewId');
-    // A re-created view (changed config) replaces the previous one: stop
-    // listening to the old view's channel.
-    _channel?.setMethodCallHandler(null);
-    _channel = channel;
-    channel.setMethodCallHandler((call) async {
-      switch (call.method) {
-        case 'onAdSize':
-          final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
-          if (h != null && h > 0 && mounted) setState(() => _height = h);
-        case 'onAdLoaded':
-          widget.listener?.onAdLoaded?.call();
-        case 'onAdFailed':
-          widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
-        case 'onAdClicked':
-          widget.listener?.onAdClicked?.call();
-        case 'onAdImpression':
-          widget.listener?.onAdImpression?.call();
-        case 'onAdRevenuePaid':
-          widget.listener?.onAdRevenuePaid?.call(
-            maxAdRevenueFrom(call.arguments as Map?),
-          );
-      }
-    });
+  Future<dynamic> _onCall(MethodCall call) async {
+    switch (call.method) {
+      case 'onAdSize':
+        final h = ((call.arguments as Map?)?['height'] as num?)?.toDouble();
+        if (h != null && h > 0 && mounted) setState(() => _height = h);
+      case 'onAdLoaded':
+        widget.listener?.onAdLoaded?.call();
+      case 'onAdFailed':
+        widget.listener?.onAdFailed?.call(call.arguments as String? ?? '');
+      case 'onAdClicked':
+        widget.listener?.onAdClicked?.call();
+      case 'onAdImpression':
+        widget.listener?.onAdImpression?.call();
+      case 'onAdRevenuePaid':
+        widget.listener?.onAdRevenuePaid?.call(
+          maxAdRevenueFrom(call.arguments as Map?),
+        );
+    }
   }
-
-  MethodChannel? _channel;
 
   @override
   void dispose() {
-    _channel?.setMethodCallHandler(null);
+    _viewChannel.dispose();
     super.dispose();
   }
 }

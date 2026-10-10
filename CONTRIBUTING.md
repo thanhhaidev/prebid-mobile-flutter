@@ -120,9 +120,10 @@ example/lib/
 - **Dart:** [Effective Dart](https://dart.dev/effective-dart) and
   `dart format`. Every package and the example use the same lint rules. A
   published package can't include a file outside itself, so each one keeps
-  its own copy of `analysis_options.yaml`, and `tool/check_lints.sh` (part of
+  its own copy of `analysis_options.yaml`, and `tool/check_copies.sh` (part of
   `melos run analyze`) fails when a copy drifts. Change the rules in every
-  copy at once.
+  copy at once; the same check keeps the companions'
+  `test/channel_harness.dart` copies identical.
 - **Kotlin:** [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html):
   imports instead of fully qualified names, KDoc (`/** */`) for declarations,
   `//` inside bodies.

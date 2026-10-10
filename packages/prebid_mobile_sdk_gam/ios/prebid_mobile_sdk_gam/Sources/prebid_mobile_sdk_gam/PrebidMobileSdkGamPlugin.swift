@@ -2,8 +2,8 @@ import Flutter
 import UIKit
 
 /// Companion plugin that adds Google Ad Manager (GAM) rendering on top of the
-/// core prebid_mobile_sdk plugin. Registers the GAM banner PlatformView factory
-/// and the GAM interstitial method channel.
+/// core prebid_mobile_sdk plugin. Registers the GAM banner and native platform
+/// view factories and the GAM interstitial and rewarded method channels.
 public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
     /// Each engine's managers, kept by its plugin instance (published to the
@@ -25,6 +25,15 @@ public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
         let nativeFactory = GamNativeAdViewFactory(messenger: registrar.messenger())
         registrar.register(nativeFactory, withId: "prebid_mobile_sdk_gam/native")
 
+        // Published so the engine keeps this instance and calls
+        // `detachFromEngine(for:)` on it.
         registrar.publish(PrebidMobileSdkGamPlugin(messenger: registrar.messenger()))
+    }
+
+    /// Stops answering the fullscreen channels and drops their ads, as the
+    /// Android plugin does in `onDetachedFromEngine`.
+    public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+        interstitialManager.dispose()
+        rewardedManager.dispose()
     }
 }

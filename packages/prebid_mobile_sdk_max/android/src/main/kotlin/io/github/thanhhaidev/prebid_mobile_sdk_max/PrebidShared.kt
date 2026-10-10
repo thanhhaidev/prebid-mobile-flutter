@@ -101,20 +101,36 @@ internal fun revenuePayload(ad: MaxAd): Map<String, Any?> = mapOf(
     "placement" to ad.placement,
 )
 
-/**
- * Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
- * else video or banner from `isVideo`.
- */
-internal fun adUnitFormats(raw: Any?, isVideo: Boolean): EnumSet<AdUnitFormat> {
+/** `adFormats` (`PrebidAdFormat` names), or null when it names none. */
+internal fun adUnitFormatsFrom(raw: Any?): EnumSet<AdUnitFormat>? {
     val names = (raw as? List<*>).orEmpty().filterIsInstance<String>()
     val formats = EnumSet.noneOf(AdUnitFormat::class.java)
     if ("banner" in names) formats.add(AdUnitFormat.BANNER)
     if ("video" in names) formats.add(AdUnitFormat.VIDEO)
-    if (formats.isEmpty()) {
-        formats.add(if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER)
-    }
-    return formats
+    return formats.takeIf { it.isNotEmpty() }
 }
+
+/**
+ * Interstitial formats: `adFormats` when it names any, else video or banner
+ * from `isVideo`.
+ */
+internal fun adUnitFormats(raw: Any?, isVideo: Boolean): EnumSet<AdUnitFormat> =
+    adUnitFormatsFrom(raw) ?: EnumSet.of(if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER)
+
+/** Sent when an SDK reports a failure without a message. */
+internal const val UNKNOWN_ERROR = "Unknown error"
+
+/** [message], or [UNKNOWN_ERROR] when it is null or empty. */
+internal fun errorMessage(message: String?): String =
+    message?.takeIf { it.isNotEmpty() } ?: UNKNOWN_ERROR
+
+/**
+ * The method channel name of a platform view: `<prefix>_<channelId>`, the id
+ * the Dart widget listens on before the view exists (so a failure reported
+ * during creation is not lost). Falls back to the platform view id.
+ */
+internal fun viewChannelName(prefix: String, params: Map<*, *>, viewId: Int): String =
+    "${prefix}_${(params["channelId"] as? Number)?.toLong() ?: viewId.toLong()}"
 
 /** Fullscreen rendering controls (`PrebidFullscreenControls`). */
 internal class FullscreenControls(m: Map<*, *>) {

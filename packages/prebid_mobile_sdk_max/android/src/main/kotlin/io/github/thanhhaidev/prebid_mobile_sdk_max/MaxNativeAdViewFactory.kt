@@ -17,10 +17,12 @@ import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import org.prebid.mobile.NativeAdUnit
+import org.prebid.mobile.NativeAsset
 import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
+import org.prebid.mobile.PrebidMobile
 
 /**
  * PlatformView factory for AppLovin MAX-mediated native ads. Prebid's
@@ -28,7 +30,7 @@ import org.prebid.mobile.NativeTitleAsset
  * [MaxNativeAdLoader], which renders into a [MaxNativeAdView] bound via
  * [MaxNativeAdViewBinder] (layout `prebid_max_native_ad`).
  */
-class MaxNativeAdViewFactory(
+internal class MaxNativeAdViewFactory(
     private val messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -44,7 +46,12 @@ class MaxNativeAdViewFactory(
     }
 }
 
-class MaxNativePlatformView(
+/**
+ * One MAX native ad, rendered into a [MaxNativeAdView] once the Prebid
+ * [NativeAdUnit]'s auction has run. Events go to the widget over
+ * `prebid_mobile_sdk_max/native_<channelId>`.
+ */
+internal class MaxNativePlatformView(
     private val context: Context,
     viewId: Int,
     messenger: BinaryMessenger,
@@ -65,7 +72,7 @@ class MaxNativePlatformView(
         val configId = params["configId"] as? String ?: ""
         val maxAdUnitId = params["maxAdUnitId"] as? String ?: ""
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_max/native_$viewId")
+        methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_max/native", params, viewId))
 
         nativeAdLoader = MaxNativeAdLoader(maxAdUnitId, context)
         nativeAdLoader.setNativeAdListener(object : MaxNativeAdListener() {
@@ -91,7 +98,7 @@ class MaxNativePlatformView(
             }
 
             override fun onNativeAdLoadFailed(adUnitId: String, error: MaxError) {
-                methodChannel.invokeMethod("onAdFailed", error.message)
+                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
             }
 
             override fun onNativeAdClicked(ad: MaxAd) {
@@ -108,8 +115,14 @@ class MaxNativePlatformView(
         nativeAdUnit = NativeAdUnit(configId)
         configureNativeAdUnit(nativeAdUnit, params)
 
-        nativeAdUnit.fetchDemand(nativeAdLoader) {
-            if (!disposed) nativeAdLoader.loadAd(createNativeAdView())
+        if (PrebidMobile.isSdkInitialized()) {
+            nativeAdUnit.fetchDemand(nativeAdLoader) {
+                if (!disposed) nativeAdLoader.loadAd(createNativeAdView())
+            }
+        } else {
+            // Prebid Android drops requests made before init without calling
+            // back: report it instead of leaving the slot empty and silent.
+            methodChannel.invokeMethod("onAdFailed", FullscreenAdManager.NOT_INITIALIZED)
         }
     }
 
@@ -153,45 +166,33 @@ class MaxNativePlatformView(
             c.placement?.let { nativeAdUnit.setPlacementType(it) }
         }
 
-        val customAssets = nativeAssetsFrom(params["assets"])
-        if (customAssets != null) {
-            customAssets.forEach { nativeAdUnit.addAsset(it) }
-            (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))
-                .forEach { nativeAdUnit.addEventTracker(it) }
-            return
-        }
-
-        val title = NativeTitleAsset().apply { setLength(90); isRequired = true }
-        nativeAdUnit.addAsset(title)
-
-        val icon = NativeImageAsset(20, 20, 20, 20).apply {
-            imageType = NativeImageAsset.IMAGE_TYPE.ICON
-            isRequired = true
-        }
-        nativeAdUnit.addAsset(icon)
-
-        val sponsored = NativeDataAsset().apply {
-            dataType = NativeDataAsset.DATA_TYPE.SPONSORED
-            isRequired = true
-        }
-        nativeAdUnit.addAsset(sponsored)
-
-        val body = NativeDataAsset().apply {
-            dataType = NativeDataAsset.DATA_TYPE.DESC
-            isRequired = true
-        }
-        nativeAdUnit.addAsset(body)
-
-        val cta = NativeDataAsset().apply {
-            dataType = NativeDataAsset.DATA_TYPE.CTATEXT
-            isRequired = true
-        }
-        nativeAdUnit.addAsset(cta)
-
+        (nativeAssetsFrom(params["assets"]) ?: defaultAssets()).forEach { nativeAdUnit.addAsset(it) }
         (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))
             .forEach { nativeAdUnit.addEventTracker(it) }
     }
 
+    /** Prebid's reference request: title, icon, sponsored, body and call to action. */
+    private fun defaultAssets(): List<NativeAsset> = listOf(
+        NativeTitleAsset().apply { setLength(90); isRequired = true },
+        NativeImageAsset(20, 20, 20, 20).apply {
+            imageType = NativeImageAsset.IMAGE_TYPE.ICON
+            isRequired = true
+        },
+        NativeDataAsset().apply {
+            dataType = NativeDataAsset.DATA_TYPE.SPONSORED
+            isRequired = true
+        },
+        NativeDataAsset().apply {
+            dataType = NativeDataAsset.DATA_TYPE.DESC
+            isRequired = true
+        },
+        NativeDataAsset().apply {
+            dataType = NativeDataAsset.DATA_TYPE.CTATEXT
+            isRequired = true
+        },
+    )
+
+    /** Image and JS impression trackers. */
     private fun defaultTracker() = NativeEventTracker(
         NativeEventTracker.EVENT_TYPE.IMPRESSION,
         arrayListOf(

@@ -16,6 +16,7 @@ import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import org.prebid.mobile.AdSize
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.api.mediation.MediationBannerAdUnit
 import org.prebid.mobile.rendering.models.AdPosition
 
@@ -24,7 +25,7 @@ import org.prebid.mobile.rendering.models.AdPosition
  * the MAX [MaxAdView]; Prebid's [MediationBannerAdUnit] runs the auction and
  * passes the winning bid to MAX via the Prebid MAX adapter.
  */
-class MaxBannerAdViewFactory(
+internal class MaxBannerAdViewFactory(
     private val messenger: BinaryMessenger,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
@@ -40,7 +41,12 @@ class MaxBannerAdViewFactory(
     }
 }
 
-class MaxBannerPlatformView(
+/**
+ * One MAX banner: a [MaxAdView] that the Prebid [MediationBannerAdUnit]'s
+ * auction bids into. Events go to the widget over
+ * `prebid_mobile_sdk_max/banner_<channelId>`.
+ */
+internal class MaxBannerPlatformView(
     context: Context,
     viewId: Int,
     messenger: BinaryMessenger,
@@ -71,7 +77,7 @@ class MaxBannerPlatformView(
             .map { (w, h) -> AdSize(w, h) }
         dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
-        methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_max/banner_$viewId")
+        methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_max/banner", params, viewId))
 
         // MaxAdView defaults to the banner format; an MREC ad unit needs the
         // MREC format or MAX rejects it.
@@ -104,12 +110,12 @@ class MaxBannerPlatformView(
             }
 
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) {
-                methodChannel.invokeMethod("onAdFailed", error.message)
+                methodChannel.invokeMethod("onAdFailed", errorMessage(error.message))
             }
 
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
                 // Dart reports it through onAdFailed too.
-                methodChannel.invokeMethod("onAdDisplayFailed", error.message)
+                methodChannel.invokeMethod("onAdDisplayFailed", errorMessage(error.message))
             }
 
             override fun onAdClicked(ad: MaxAd) {
@@ -149,6 +155,9 @@ class MaxBannerPlatformView(
                 ?.let { adUnit?.setAdPosition(it) }
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
+        // The mediation banner has no video-parameters setter on Android, so a
+        // video format is requested with the SDK's default video signals.
+        adUnitFormatsFrom(params["adFormats"])?.let { adUnit?.setAdUnitFormats(it) }
         if (additionalSizes.isNotEmpty()) adUnit?.addAdditionalSizes(*additionalSizes.toTypedArray())
         // 0 means a single request without auto-refresh (also Prebid's
         // default); positive values are clamped by Prebid to 30–120 s.
@@ -173,6 +182,12 @@ class MaxBannerPlatformView(
     }
 
     private fun load() {
+        // Prebid Android drops requests made before init without calling
+        // back: report it instead of leaving the slot empty and silent.
+        if (!PrebidMobile.isSdkInitialized()) {
+            methodChannel.invokeMethod("onAdFailed", FullscreenAdManager.NOT_INITIALIZED)
+            return
+        }
         adUnit?.fetchDemand {
             if (disposed) return@fetchDemand
             if (shouldDropBid(dropBidProbability)) {

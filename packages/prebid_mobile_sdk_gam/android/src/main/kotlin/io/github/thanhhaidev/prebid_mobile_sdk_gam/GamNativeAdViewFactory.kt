@@ -1,6 +1,7 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
@@ -27,7 +28,12 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
@@ -36,6 +42,7 @@ import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidNativeAd
 import org.prebid.mobile.PrebidNativeAdEventListener
+import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.PrebidNativeAdListener
 import org.prebid.mobile.ResultCode
 import org.prebid.mobile.addendum.AdViewUtils
@@ -46,7 +53,7 @@ import org.prebid.mobile.addendum.AdViewUtils
  * [AdViewUtils.findNative] extracts the Prebid winning bid for app-side
  * rendering — matching Prebid's reference GAM native integration.
  */
-class GamNativeAdViewFactory(
+internal class GamNativeAdViewFactory(
     private val messenger: BinaryMessenger,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
@@ -56,39 +63,54 @@ class GamNativeAdViewFactory(
     }
 }
 
-class GamNativePlatformView(
+/**
+ * One GAM native ad view. It starts the auction as soon as it is created;
+ * its events go over `prebid_mobile_sdk_gam/native_<channelId>`, which the
+ * Dart widget listens to before creating the view.
+ */
+internal class GamNativePlatformView(
     private val context: Context,
     messenger: BinaryMessenger,
     params: Map<*, *>,
 ) : PlatformView {
 
-    private val logicalId = (params["logicalId"] as? Number)?.toLong() ?: 0L
+    private val channelId = (params["channelId"] as? Number)?.toLong() ?: 0L
     private val configId = params["configId"] as? String ?: ""
     private val gamAdUnitId = params["gamAdUnitId"] as? String ?: ""
     private val customFormatId = params["customFormatId"] as? String ?: ""
     private val customAssets = nativeAssetsFrom(params["assets"])
     private val nativeContext = NativeContext.from(params)
     private val customTrackers = nativeTrackersFrom(params["eventTrackers"])
+    private val customTargeting = gamCustomTargeting(params["customTargeting"])
+    private val gpid = params["gpid"] as? String
+    private val pbAdSlot = params["pbAdSlot"] as? String
+    private val impOrtbConfig = params["impOrtbConfig"] as? String
 
     private val methodChannel =
-        MethodChannel(messenger, "prebid_mobile_sdk_gam/native_$logicalId")
+        MethodChannel(messenger, "prebid_mobile_sdk_gam/native_$channelId")
     private val root = FrameLayout(context)
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var adUnit: NativeAdUnit? = null
-    private var adLoader: AdLoader? = null
     private var unifiedNativeAd: NativeAd? = null
     private var customFormatAd: NativeCustomFormatAd? = null
+
+    /**
+     * Keep-alive reference to the rendered Prebid ad: its impression tracking
+     * and [nativeEventListener] (which it holds) must live as long as this
+     * view, not only as long as the views it set click listeners on.
+     */
     private var prebidNativeAd: PrebidNativeAd? = null
+
+    /** Image downloads of the rendered ad, cancelled on [dispose]. */
+    private val imageLoads = mutableListOf<Future<*>>()
 
     // Set once Flutter disposes the view: async SDK callbacks that land later
     // must not load, render or report anything.
     @Volatile
     private var disposed = false
 
-    // Held as a strong-referenced field: PrebidMobile keeps only a WeakReference
-    // to the event listener, so an inline/anonymous instance would be GC'd and
-    // impression/click callbacks would never fire.
+    // Prebid calls onAdImpression once per impression tracker URL; report one.
     private val prebidImpressionReported = AtomicBoolean(false)
 
     private val nativeEventListener = object : PrebidNativeAdEventListener {
@@ -96,7 +118,6 @@ class GamNativePlatformView(
             send("onAdClicked")
         }
 
-        // Prebid calls this once per impression tracker URL; report one.
         override fun onAdImpression() {
             if (prebidImpressionReported.compareAndSet(false, true)) send("onAdImpression")
         }
@@ -107,7 +128,11 @@ class GamNativePlatformView(
     }
 
     init {
-        val adRequest = AdManagerAdRequest.Builder().build()
+        // Prebid adds its hb_* keys to this request after the app's, so they
+        // win on conflict.
+        val adRequest = AdManagerAdRequest.Builder().apply {
+            customTargeting?.forEach { (k, v) -> addCustomTargeting(k, v) }
+        }.build()
 
         val nativeAdUnit = NativeAdUnit(configId)
         nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
@@ -117,23 +142,31 @@ class GamNativePlatformView(
         nativeContext.subType?.let { nativeAdUnit.setContextSubType(it) }
         nativeContext.placement?.let { nativeAdUnit.setPlacementType(it) }
         addNativeAssets(nativeAdUnit)
+        gpid?.let { nativeAdUnit.setGpid(it) }
+        pbAdSlot?.let { nativeAdUnit.setPbAdSlot(it) }
+        impOrtbConfig?.let { nativeAdUnit.setImpOrtbConfig(it) }
         adUnit = nativeAdUnit
 
         val loader = buildAdLoader()
-        adLoader = loader
-
-        nativeAdUnit.fetchDemand(adRequest) { resultCode: ResultCode ->
-            if (disposed) return@fetchDemand
-            // Prebid Android reports SUCCESS even when no bid won (iOS reports
-            // no-bids); without hb_* keys on the request there is no Prebid
-            // demand, so report it as no-bids on both platforms.
-            val hasBid = adRequest.customTargeting.keySet().any { it.startsWith("hb_") }
-            when {
-                resultCode != ResultCode.SUCCESS -> send("fetchDemandFailed", resultCode.toDartCode())
-                hasBid -> send("fetchDemandSuccess")
-                else -> send("fetchDemandFailed", "prebidDemandNoBids")
-            }
+        if (!PrebidMobile.isSdkInitialized()) {
+            // Prebid Android drops a fetch made before initialization without
+            // calling back, which would also hold back the GAM request.
+            send("fetchDemandFailed", PluginErrors.NOT_INITIALIZED_CODE)
             loader.loadAd(adRequest)
+        } else {
+            nativeAdUnit.fetchDemand(adRequest) { resultCode: ResultCode ->
+                if (disposed) return@fetchDemand
+                // Prebid Android reports SUCCESS even when no bid won (iOS
+                // reports no-bids); without hb_* keys on the request there is
+                // no Prebid demand, so report it as no-bids on both platforms.
+                val hasBid = adRequest.customTargeting.keySet().any { it.startsWith("hb_") }
+                when {
+                    resultCode != ResultCode.SUCCESS -> send("fetchDemandFailed", resultCode.toDartCode())
+                    hasBid -> send("fetchDemandSuccess")
+                    else -> send("fetchDemandFailed", "prebidDemandNoBids")
+                }
+                loader.loadAd(adRequest)
+            }
         }
     }
 
@@ -292,8 +325,8 @@ class GamNativePlatformView(
             ViewGroup.LayoutParams.MATCH_PARENT,
             420,
         )
-        downloadImage(ad.iconUrl, iconView)
-        downloadImage(ad.imageUrl, imageView)
+        downloadImage(ad.iconUrl, iconView, 96, 96)
+        downloadImage(ad.imageUrl, imageView, context.resources.displayMetrics.widthPixels, 420)
 
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -326,11 +359,14 @@ class GamNativePlatformView(
         }
 
         setContent(container)
-        ad.registerView(
+        val registered = ad.registerView(
             container,
             listOf(iconView, titleView, imageView, bodyView, ctaView),
             nativeEventListener,
         )
+        // Prebid refuses an expired ad (the bid outlived `bid.exp` while GAM
+        // loaded); nothing would be tracked, so report the expiry.
+        if (!registered) send("onAdExpired")
     }
 
     /** Renders a GAM unified native ad (no Prebid creative present). */
@@ -429,18 +465,13 @@ class GamNativePlatformView(
         }
     }
 
-    private fun downloadImage(url: String?, target: ImageView) {
+    /** Best-effort image load: the ad still renders without it. */
+    private fun downloadImage(url: String?, target: ImageView, width: Int, height: Int) {
         if (url.isNullOrEmpty()) return
-        Thread {
-            try {
-                val stream = URL(url).openStream()
-                val bitmap = BitmapFactory.decodeStream(stream)
-                stream.close()
-                if (bitmap != null) target.post { target.setImageBitmap(bitmap) }
-            } catch (e: Exception) {
-                // Best-effort image download for the demo; ignore failures.
-            }
-        }.start()
+        imageLoads += NativeImageLoader.executor.submit {
+            val bitmap = NativeImageLoader.load(url, width, height) ?: return@submit
+            mainHandler.post { if (!disposed) target.setImageBitmap(bitmap) }
+        }
     }
 
     /**
@@ -462,8 +493,68 @@ class GamNativePlatformView(
     override fun dispose() {
         disposed = true
         mainHandler.removeCallbacksAndMessages(null)
+        imageLoads.forEach { it.cancel(true) }
+        imageLoads.clear()
         adUnit?.destroy()
         unifiedNativeAd?.destroy()
         customFormatAd?.destroy()
     }
+}
+
+/** Downloads native ad images off the main thread, on a small shared pool. */
+internal object NativeImageLoader {
+    val executor: ExecutorService = Executors.newFixedThreadPool(2) { task ->
+        Thread(task, "PrebidGamNativeImage").apply { isDaemon = true }
+    }
+
+    private const val TIMEOUT_MS = 10_000
+    private const val MAX_BYTES = 10 * 1024 * 1024
+
+    /**
+     * Downloads and decodes [url], downsampled to about [width] x [height]
+     * pixels; null on any failure, past [MAX_BYTES], or when cancelled.
+     */
+    fun load(url: String, width: Int, height: Int): Bitmap? = try {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.connectTimeout = TIMEOUT_MS
+        connection.readTimeout = TIMEOUT_MS
+        val bytes = try {
+            connection.inputStream.use { input ->
+                val out = ByteArrayOutputStream()
+                val buffer = ByteArray(16 * 1024)
+                while (true) {
+                    if (Thread.currentThread().isInterrupted) return null
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    out.write(buffer, 0, n)
+                    if (out.size() > MAX_BYTES) return null
+                }
+                out.toByteArray()
+            }
+        } finally {
+            connection.disconnect()
+        }
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, width, height)
+        }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * The largest power-of-two `inSampleSize` that keeps a [width] x [height]
+ * image at least [reqWidth] x [reqHeight] (so it still fills a cropping
+ * view); 1 when either size is unknown.
+ */
+internal fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
+    if (width <= 0 || height <= 0 || reqWidth <= 0 || reqHeight <= 0) return 1
+    var sampleSize = 1
+    while (width / (sampleSize * 2) >= reqWidth && height / (sampleSize * 2) >= reqHeight) {
+        sampleSize *= 2
+    }
+    return sampleSize
 }

@@ -4,23 +4,40 @@ import PrebidMobile
 import PrebidMobileMAXAdapters
 import AppLovinSDK
 
-/// Handles MAX-mediated rewarded ads over the `prebid_mobile_sdk_max/rewarded`
-/// method channel. Each ad is keyed by an `adId` allocated on the Dart side;
-/// native events (including the reward) are pushed back over the same channel.
+/// One rewarded ad: the Prebid ad unit, the shared MAX ad it bids into, and
+/// what keeps the auction and the MAX delegates alive.
+final class MaxRewardedEntry {
+    let adUnit: MediationRewardedAdUnit
+    let mediationDelegate: MAXMediationRewardedUtils
+    let rewarded: MARewardedAd
+    let proxy: MaxAdEventProxy
+    let dropBidProbability: Double
+
+    init(
+        adUnit: MediationRewardedAdUnit,
+        mediationDelegate: MAXMediationRewardedUtils,
+        rewarded: MARewardedAd,
+        proxy: MaxAdEventProxy,
+        dropBidProbability: Double
+    ) {
+        self.adUnit = adUnit
+        self.mediationDelegate = mediationDelegate
+        self.rewarded = rewarded
+        self.proxy = proxy
+        self.dropBidProbability = dropBidProbability
+    }
+}
+
+/// MAX-mediated rewarded ads over the `prebid_mobile_sdk_max/rewarded` method
+/// channel.
 ///
 /// MAX hands out one shared `MARewardedAd` per ad unit, so at most one `adId`
 /// owns a unit at a time: a new load on the same unit takes it over (the
 /// previous owner gets `onAdFailed`), and only the owner's events are routed.
 /// While the owner's ad is on screen the unit cannot be handed over (its
 /// reward and close would reach the new owner), so a load on it fails.
-final class MaxRewardedManager: NSObject {
+final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
 
-    private let channel: FlutterMethodChannel
-
-    private var adUnits: [Int: MediationRewardedAdUnit] = [:]
-    private var mediationDelegates: [Int: MAXMediationRewardedUtils] = [:]
-    private var rewardedAds: [Int: MARewardedAd] = [:]
-    private var proxies: [Int: MaxAdEventProxy] = [:]
     /// MAX ad unit identifier → the `adId` that currently owns its shared ad.
     private var ownerByUnit: [String: Int] = [:]
     /// MAX ad units whose ad is on screen (from displayed until hidden or
@@ -31,136 +48,91 @@ final class MaxRewardedManager: NSObject {
         "Another ad for this MAX ad unit is showing; load the next one after onAdClosed"
 
     init(messenger: FlutterBinaryMessenger) {
-        channel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_max/rewarded",
-            binaryMessenger: messenger
+        super.init(name: "prebid_mobile_sdk_max/rewarded", messenger: messenger)
+    }
+
+    // Handing the shared instance over now would route the showing ad's
+    // reward and close to this ad; leave it alone.
+    override func refuseLoad(_ adId: Int, _ args: [String: Any]) -> String? {
+        showingUnits.contains(Self.maxAdUnitId(args)) ? Self.showingError : nil
+    }
+
+    override func create(_ adId: Int, _ args: [String: Any]) -> MaxRewardedEntry {
+        let configId = args["configId"] as? String ?? ""
+        let maxAdUnitId = Self.maxAdUnitId(args)
+
+        // The shared instance moves to this adId; the previous owner stops
+        // receiving events and is told why.
+        if let previous = ownerByUnit[maxAdUnitId], previous != adId {
+            release(previous)
+            send(previous, "onAdFailed", ["error": "Replaced by another ad on the same MAX ad unit"])
+        }
+
+        let rewarded = MARewardedAd.shared(withAdUnitIdentifier: maxAdUnitId)
+        let mediationDelegate = MAXMediationRewardedUtils(rewardedAd: rewarded)
+        let adUnit = MediationRewardedAdUnit(configId: configId, mediationDelegate: mediationDelegate)
+        FullscreenControls(args["controls"])?.apply(to: adUnit)
+        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
+        if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+
+        let proxy = MaxAdEventProxy { [weak self] event, payload in
+            guard let self = self else { return }
+            switch event {
+            case "onAdDisplayed":
+                self.showingUnits.insert(maxAdUnitId)
+            case "onAdClosed", "onAdFailed":
+                // Hidden, or failed to display (a load cannot fail while the
+                // unit shows: loads are refused meanwhile).
+                self.showingUnits.remove(maxAdUnitId)
+            default:
+                break
+            }
+            self.send(adId, event, payload)
+        }
+        rewarded.delegate = proxy
+        rewarded.revenueDelegate = proxy
+        ownerByUnit[maxAdUnitId] = adId
+        return MaxRewardedEntry(
+            adUnit: adUnit,
+            mediationDelegate: mediationDelegate,
+            rewarded: rewarded,
+            proxy: proxy,
+            dropBidProbability: debugDropBidProbability(args["debugDropBidProbability"])
         )
-        super.init()
-        channel.setMethodCallHandler { [weak self] call, result in
-            self?.handle(call, result)
+    }
+
+    override func start(_ adId: Int, _ ad: MaxRewardedEntry) {
+        ad.adUnit.fetchDemand { [weak self, weak ad] _ in
+            // Destroyed / replaced while the auction ran: skip the load.
+            guard let self = self, let ad = ad, self.ads[adId] === ad else { return }
+            if shouldDropBid(ad.dropBidProbability) {
+                ad.rewarded.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
+            }
+            ad.rewarded.load()
         }
     }
 
-    private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let args = call.arguments as? [String: Any]
-        let adId = args?["adId"] as? Int
-
-        switch call.method {
-        case "load":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            let configId = args?["configId"] as? String ?? ""
-            let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
-            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
-            if showingUnits.contains(maxAdUnitId) {
-                // Handing the shared instance over now would route the showing
-                // ad's reward and close to this ad; leave it alone.
-                send(adId, "onAdFailed", ["error": Self.showingError])
-                result(nil)
-                return
-            }
-            // Reloading an adId replaces its previous ad.
-            release(adId)
-
-            // The shared instance moves to this adId; the previous owner stops
-            // receiving events and is told why.
-            if let previous = ownerByUnit[maxAdUnitId], previous != adId {
-                release(previous)
-                send(previous, "onAdFailed", ["error": "Replaced by another ad on the same MAX ad unit"])
-            }
-
-            let rewarded = MARewardedAd.shared(withAdUnitIdentifier: maxAdUnitId)
-            let mediationDelegate = MAXMediationRewardedUtils(rewardedAd: rewarded)
-            let adUnit = MediationRewardedAdUnit(
-                configId: configId,
-                mediationDelegate: mediationDelegate
-            )
-            FullscreenControls(args?["controls"])?.apply(to: adUnit)
-            applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
-            if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
-            let proxy = MaxAdEventProxy { [weak self] event, payload in
-                guard let self = self else { return }
-                switch event {
-                case "onAdDisplayed":
-                    self.showingUnits.insert(maxAdUnitId)
-                case "onAdClosed", "onAdFailed":
-                    // Hidden, or failed to display (a load cannot fail while
-                    // the unit shows: loads are refused meanwhile).
-                    self.showingUnits.remove(maxAdUnitId)
-                default:
-                    break
-                }
-                self.send(adId, event, payload)
-            }
-            rewarded.delegate = proxy
-            rewarded.revenueDelegate = proxy
-            adUnits[adId] = adUnit
-            mediationDelegates[adId] = mediationDelegate
-            rewardedAds[adId] = rewarded
-            proxies[adId] = proxy
-            ownerByUnit[maxAdUnitId] = adId
-
-            adUnit.fetchDemand { [weak self, weak adUnit] _ in
-                // Destroyed / replaced while the auction ran: skip the load.
-                guard let self = self, let adUnit = adUnit,
-                      self.adUnits[adId] === adUnit else { return }
-                if shouldDropBid(dropBidProbability) {
-                    self.rewardedAds[adId]?.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
-                }
-                self.rewardedAds[adId]?.load()
-            }
-            result(nil)
-
-        case "show":
-            guard let adId = adId else {
-                result(FlutterError(code: "no_ad_id", message: "Missing adId", details: nil))
-                return
-            }
-            guard let rewarded = rewardedAds[adId], rewarded.isReady else {
-                send(adId, "onAdFailed", ["error": "The rewarded ad is not ready to show; wait for onAdLoaded"])
-                result(nil)
-                return
-            }
-            guard let controller = topViewController() else {
-                send(adId, "onAdFailed", ["error": "No view controller to present the rewarded ad from"])
-                result(nil)
-                return
-            }
-            rewarded.show(forPlacement: nil, customData: nil, viewController: controller)
-            result(nil)
-
-        case "destroy":
-            if let adId = adId {
-                release(adId)
-            }
-            result(nil)
-
-        default:
-            result(FlutterMethodNotImplemented)
-        }
+    override func isReady(_ ad: MaxRewardedEntry) -> Bool {
+        ad.rewarded.isReady
     }
 
-    /// Drops everything held for `adId`. The shared MAX ad is only detached
-    /// when `adId` still owns its unit — a replaced ad must not touch the
-    /// instance (and delegates) the new owner is using.
-    private func release(_ adId: Int) {
-        if let rewarded = rewardedAds.removeValue(forKey: adId),
-           ownerByUnit[rewarded.adUnitIdentifier] == adId {
-            ownerByUnit.removeValue(forKey: rewarded.adUnitIdentifier)
-            showingUnits.remove(rewarded.adUnitIdentifier)
-            rewarded.delegate = nil
-            rewarded.revenueDelegate = nil
-        }
-        proxies.removeValue(forKey: adId)
-        adUnits.removeValue(forKey: adId)
-        mediationDelegates.removeValue(forKey: adId)
+    override func show(_ ad: MaxRewardedEntry, from viewController: UIViewController) {
+        ad.rewarded.show(forPlacement: nil, customData: nil, viewController: viewController)
     }
 
-    private func send(_ adId: Int, _ event: String, _ extra: [String: Any] = [:]) {
-        var payload: [String: Any] = ["adId": adId]
-        payload.merge(extra) { _, new in new }
-        channel.invokeMethod(event, arguments: payload)
+    /// The shared MAX ad is only detached when `adId` still owns its unit: a
+    /// replaced ad must not touch the instance (and delegates) the new owner
+    /// is using.
+    override func destroy(_ adId: Int, _ ad: MaxRewardedEntry) {
+        let unitId = ad.rewarded.adUnitIdentifier
+        guard ownerByUnit[unitId] == adId else { return }
+        ownerByUnit.removeValue(forKey: unitId)
+        showingUnits.remove(unitId)
+        ad.rewarded.delegate = nil
+        ad.rewarded.revenueDelegate = nil
+    }
+
+    private static func maxAdUnitId(_ args: [String: Any]) -> String {
+        args["maxAdUnitId"] as? String ?? ""
     }
 }

@@ -320,6 +320,16 @@ class PrebidMobile {
   static Future<bool?> getLocationUpdatesEnabled() =>
       api.getLocationUpdatesEnabled();
 
+  /// iOS only: whether Prebid also writes its log to a file in the app's
+  /// documents (`debugLogFileEnabled`), for debugging. Default `false`. No
+  /// effect on Android.
+  static Future<void> setDebugLogFileEnabled(bool enabled) async {
+    await api.setDebugLogFileEnabled(enabled);
+  }
+
+  /// Whether Prebid writes its log to a file; null on Android.
+  static Future<bool?> getDebugLogFileEnabled() => api.getDebugLogFileEnabled();
+
   // ---------------------------------------------------------------------------
   // SharedID
   // ---------------------------------------------------------------------------
@@ -376,13 +386,18 @@ class PrebidMobile {
   }
 
   // ---------------------------------------------------------------------------
-  // SDK Version
+  // Current settings
   // ---------------------------------------------------------------------------
 
-  /// Get the native Prebid Mobile SDK version string.
-  ///
   /// The bid request timeout in milliseconds ([setTimeoutMillis]).
   static Future<int> getTimeoutMillis() => api.getTimeoutMillis();
+
+  /// iOS only: the timeout Prebid adopted from Prebid Server's response
+  /// (`ext.tmaxrequest`), or null while it uses [getTimeoutMillis]. Prebid
+  /// Android writes the server's value into [getTimeoutMillis] itself, so
+  /// this is always null there.
+  static Future<int?> getTimeoutMillisDynamic() =>
+      api.getTimeoutMillisDynamic();
 
   /// Whether Prebid Server debug is on ([setPbsDebug]).
   static Future<bool> getPbsDebug() => api.getPbsDebug();

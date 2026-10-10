@@ -35,6 +35,7 @@ void main() {
           null,
           null,
           any,
+          any,
         ),
       ).called(1);
 
@@ -84,6 +85,7 @@ void main() {
                   any,
                   captureAny,
                   any,
+                  any,
                 ),
               ).captured.single
               as FullscreenControlsConfig;
@@ -118,7 +120,7 @@ void main() {
 
       await ad.loadAd();
       verify(
-        mockApi.loadAd(any, 'config-2', null, null, '{}', null, null, any),
+        mockApi.loadAd(any, 'config-2', null, null, '{}', null, null, any, any),
       ).called(1);
 
       await ad.show();

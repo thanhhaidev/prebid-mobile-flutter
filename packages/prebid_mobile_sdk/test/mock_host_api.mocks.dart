@@ -364,6 +364,31 @@ class MockPrebidMobileHostApi extends _i1.Mock
           as _i4.Future<bool?>);
 
   @override
+  _i4.Future<void> setDebugLogFileEnabled(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setDebugLogFileEnabled, [enabled]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool?> getDebugLogFileEnabled() =>
+      (super.noSuchMethod(
+            Invocation.method(#getDebugLogFileEnabled, []),
+            returnValue: _i4.Future<bool?>.value(),
+          )
+          as _i4.Future<bool?>);
+
+  @override
+  _i4.Future<int?> getTimeoutMillisDynamic() =>
+      (super.noSuchMethod(
+            Invocation.method(#getTimeoutMillisDynamic, []),
+            returnValue: _i4.Future<int?>.value(),
+          )
+          as _i4.Future<int?>);
+
+  @override
   _i4.Future<void> setSendSharedId(bool? send) =>
       (super.noSuchMethod(
             Invocation.method(#setSendSharedId, [send]),
@@ -863,6 +888,23 @@ class MockTargetingHostApi extends _i1.Mock implements _i2.TargetingHostApi {
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> setUserExt(String? json) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUserExt, [json]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<String?> getUserExt() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUserExt, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
   _i4.Future<void> addBidderToAccessControlList(String? bidderName) =>
       (super.noSuchMethod(
             Invocation.method(#addBidderToAccessControlList, [bidderName]),
@@ -1151,6 +1193,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
     String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -1162,6 +1205,7 @@ class MockInterstitialAdHostApi extends _i1.Mock
               globalOrtbConfig,
               controls,
               pbAdSlot,
+              adPosition,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
@@ -1216,6 +1260,7 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
     String? globalOrtbConfig,
     _i2.FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#loadAd, [
@@ -1227,6 +1272,7 @@ class MockRewardedAdHostApi extends _i1.Mock implements _i2.RewardedAdHostApi {
               globalOrtbConfig,
               controls,
               pbAdSlot,
+              adPosition,
             ]),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),

@@ -31,6 +31,22 @@ class RewardData {
   final Map<String?, Object?>? ext;
 }
 
+/// The winning bid of a loaded Prebid-rendered ad.
+class WinningBidData {
+  WinningBidData({
+    required this.price,
+    this.bidder,
+    required this.width,
+    required this.height,
+    required this.targetingKeywords,
+  });
+  final double price;
+  final String? bidder;
+  final int width;
+  final int height;
+  final Map<String, String> targetingKeywords;
+}
+
 /// Ad event sent from native to Flutter.
 class AdEvent {
   AdEvent({
@@ -39,12 +55,17 @@ class AdEvent {
     this.error,
     this.reward,
     this.nativeAd,
+    this.winningBid,
   });
   final int adId;
   final String eventName;
   final String? error;
   final RewardData? reward;
   final NativeAdData? nativeAd;
+
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
+  /// the SDK exposes it (Android only).
+  final WinningBidData? winningBid;
 }
 
 /// Configuration for a native asset in a request.
@@ -415,6 +436,15 @@ abstract class PrebidMobileHostApi {
   void setLocationUpdatesEnabled(bool enabled);
   bool? getLocationUpdatesEnabled();
 
+  /// iOS only: writes Prebid's log to a file (`debugLogFileEnabled`); the
+  /// getter returns null on Android.
+  void setDebugLogFileEnabled(bool enabled);
+  bool? getDebugLogFileEnabled();
+
+  /// The timeout Prebid adopted from Prebid Server's response
+  /// (`timeoutMillisDynamic`), or null while it uses [getTimeoutMillis].
+  int? getTimeoutMillisDynamic();
+
   // SharedID
   void setSendSharedId(bool send);
   ExternalUserIdData? getSharedId();
@@ -511,6 +541,11 @@ abstract class TargetingHostApi {
   void removeUserExtData(String key);
   void clearUserExtData();
 
+  /// The whole `user.ext` object as JSON (null clears it); its `data` entry
+  /// gives way to the user ext data keys above when any is set.
+  void setUserExt(String? json);
+  String? getUserExt();
+
   // Access Control List
   void addBidderToAccessControlList(String bidderName);
   void removeBidderFromAccessControlList(String bidderName);
@@ -569,6 +604,8 @@ abstract class TargetingHostApi {
 /// Interstitial ad operations (Dart → Native).
 @HostApi()
 abstract class InterstitialAdHostApi {
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
   void loadAd(
     int adId,
     String configId,
@@ -578,6 +615,7 @@ abstract class InterstitialAdHostApi {
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   );
   void show(int adId);
   void destroy(int adId);
@@ -586,6 +624,8 @@ abstract class InterstitialAdHostApi {
 /// Rewarded ad operations (Dart → Native).
 @HostApi()
 abstract class RewardedAdHostApi {
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
   void loadAd(
     int adId,
     String configId,
@@ -595,6 +635,7 @@ abstract class RewardedAdHostApi {
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   );
   void show(int adId);
   void destroy(int adId);
@@ -638,9 +679,9 @@ class MultiformatAdRequestConfig {
   final String configId;
   final String? gpid;
 
-  /// iOS only (Prebid Android's PrebidAdUnit has no setters for them):
   /// `imp.ext.data.pbadslot`, impression-level and per-unit request-level
-  /// OpenRTB JSON.
+  /// OpenRTB JSON. On Android only for a single-format request (Prebid
+  /// Android's multiformat PrebidAdUnit has no setters for them).
   final String? pbAdSlot;
   final String? impOrtbConfig;
   final String? globalOrtbConfig;

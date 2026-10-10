@@ -337,4 +337,18 @@ void main() {
       verify(mockApi.setEventDelegateEnabled(false)).called(1);
     });
   });
+
+  group('iOS-only settings', () {
+    test('the debug log file is switched and read on the platform', () async {
+      await PrebidMobile.setDebugLogFileEnabled(true);
+      verify(mockApi.setDebugLogFileEnabled(true)).called(1);
+      when(mockApi.getDebugLogFileEnabled()).thenAnswer((_) async => null);
+      expect(await PrebidMobile.getDebugLogFileEnabled(), isNull);
+    });
+
+    test('the dynamic timeout is the platform value', () async {
+      when(mockApi.getTimeoutMillisDynamic()).thenAnswer((_) async => 1800);
+      expect(await PrebidMobile.getTimeoutMillisDynamic(), 1800);
+    });
+  });
 }

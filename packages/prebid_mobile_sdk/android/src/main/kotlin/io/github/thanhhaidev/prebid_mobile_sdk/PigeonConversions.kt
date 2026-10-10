@@ -17,6 +17,7 @@ import org.prebid.mobile.VideoParameters
 import org.prebid.mobile.api.data.BidInfo
 import org.prebid.mobile.api.data.Position
 import org.prebid.mobile.api.rendering.BaseInterstitialAdUnit
+import org.prebid.mobile.rendering.bidding.data.bid.BidResponse
 
 // Ad events sent to Dart, and conversions between Pigeon types and the Prebid SDK.
 
@@ -225,3 +226,16 @@ internal fun BidInfo.toMultiformatResult() = MultiformatBidResult(
     topBidFiltered = isTopBidFiltered,
     events = events?.takeIf { it.isNotEmpty() },
 )
+
+/** The winning bid of a loaded Prebid-rendered ad; null without one. */
+internal fun BidResponse.toWinningBidData(): WinningBidData? {
+    val bid = winningBid ?: return null
+    val keywords = targeting.orEmpty()
+    return WinningBidData(
+        price = bid.price,
+        bidder = keywords["hb_bidder"],
+        width = bid.width.toLong(),
+        height = bid.height.toLong(),
+        targetingKeywords = keywords,
+    )
+}

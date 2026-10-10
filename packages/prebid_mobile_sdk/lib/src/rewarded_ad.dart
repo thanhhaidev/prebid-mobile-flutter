@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
 import 'ad_listener.dart';
+import 'banner_ad.dart';
 import 'companion/companion_fullscreen_ad.dart';
 import 'fullscreen_controls.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/fullscreen_ad.dart';
+import 'internal/ortb.dart';
 import 'internal/pigeon_conversions.dart';
 import 'video_parameters.dart';
 
@@ -26,6 +28,8 @@ class PrebidRewardedAd {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
+    this.adPosition,
     this.controls,
     this.listener,
   }) {
@@ -63,6 +67,14 @@ class PrebidRewardedAd {
   /// `pbadslot` already there wins).
   final String? pbAdSlot;
 
+  /// Global Placement ID (`imp.ext.gpid`), added to [impOrtbConfig] (a
+  /// `gpid` already there wins).
+  final String? gpid;
+
+  /// Ad position on screen (`imp.pos`; fullscreen for an interstitial).
+  /// iOS only: Prebid Android's fullscreen ad units have no setter.
+  final PrebidAdPosition? adPosition;
+
   /// Close button, sound and minimum-size controls. Skip controls apply on
   /// Android only; the minimum size on iOS only.
   final PrebidFullscreenControls? controls;
@@ -73,6 +85,10 @@ class PrebidRewardedAd {
   /// Whether the ad has loaded and is ready to [show].
   bool get isLoaded => _ad.isLoaded;
 
+  /// The winning bid of the last load, for analytics. Android only (Prebid
+  /// iOS keeps it internal); null before a load and without a bid.
+  PrebidWinningBid? get winningBid => _ad.winningBid;
+
   /// Load the rewarded ad. Also valid after [destroy].
   Future<void> loadAd() async {
     _ad.loading();
@@ -81,10 +97,11 @@ class PrebidRewardedAd {
       configId,
       adFormats?.map((f) => f.name).toList(),
       videoParameters?.toConfig(),
-      impOrtbConfig,
+      impOrtbWithGpid(impOrtbConfig, gpid),
       globalOrtbConfig,
       controls?.toConfig(),
       pbAdSlot,
+      adPosition?.value,
     );
   }
 

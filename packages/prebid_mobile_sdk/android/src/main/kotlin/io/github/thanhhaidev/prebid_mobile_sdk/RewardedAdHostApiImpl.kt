@@ -24,6 +24,7 @@ internal class RewardedAdHostApiImpl(
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
         pbAdSlot: String?,
+        adPosition: Long?,
     ) {
         rewardedAds.remove(adId)?.destroy()
         if (!PrebidMobile.isSdkInitialized()) {
@@ -42,7 +43,8 @@ internal class RewardedAdHostApiImpl(
 
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
             override fun onAdLoaded(unit: RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded")) {}
+                val bid = unit.bidResponse?.toWinningBidData()
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded", winningBid = bid)) {}
             }
             override fun onAdFailed(unit: RewardedAdUnit, e: AdException?) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = e?.message)) {}

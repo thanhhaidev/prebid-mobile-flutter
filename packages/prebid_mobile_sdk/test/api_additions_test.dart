@@ -25,7 +25,17 @@ void main() {
       );
       await ad.loadAd();
       final captured = verify(
-        api.loadAd(any, 'r', captureAny, captureAny, any, captureAny, any, any),
+        api.loadAd(
+          any,
+          'r',
+          captureAny,
+          captureAny,
+          any,
+          captureAny,
+          any,
+          any,
+          any,
+        ),
       ).captured;
       expect(captured[0], ['video']);
       final video = captured[1] as VideoParametersConfig;
@@ -138,14 +148,14 @@ void main() {
       PrebidInterstitialAd.api = interstitial;
       await PrebidInterstitialAd(configId: 'i', pbAdSlot: '/i').loadAd();
       verify(
-        interstitial.loadAd(any, 'i', any, any, any, any, any, '/i'),
+        interstitial.loadAd(any, 'i', any, any, any, any, any, '/i', any),
       ).called(1);
 
       final rewarded = MockRewardedAdHostApi();
       PrebidRewardedAd.api = rewarded;
       await PrebidRewardedAd(configId: 'r', pbAdSlot: '/r').loadAd();
       verify(
-        rewarded.loadAd(any, 'r', any, any, any, any, any, '/r'),
+        rewarded.loadAd(any, 'r', any, any, any, any, any, '/r', any),
       ).called(1);
     });
 

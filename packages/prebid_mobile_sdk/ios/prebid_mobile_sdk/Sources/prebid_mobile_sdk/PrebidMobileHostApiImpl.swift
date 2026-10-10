@@ -40,16 +40,28 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
             }
         }
         do {
-            if let nonTrackingUrl = nonTrackingUrl {
-                // Used instead of serverURL when the user hasn't authorized
-                // tracking (ATT).
+            // With Google Mobile Ads linked, Prebid checks its version is one
+            // it supports (a warning in the log otherwise).
+            let gmaVersion = linkedGmaVersion()
+            switch (nonTrackingUrl, gmaVersion) {
+            // The non-tracking URL is used instead of serverURL when the user
+            // hasn't authorized tracking (ATT).
+            case let (nonTrackingUrl?, gmaVersion?):
                 try Prebid.initializeSDK(
                     serverURL: prebidServerUrl,
                     nonTrackingURLString: nonTrackingUrl,
-                    gadMobileAdsVersion: nil,
+                    gadMobileAdsVersion: gmaVersion,
                     callback
                 )
-            } else {
+            case let (nonTrackingUrl?, nil):
+                try Prebid.initializeSDK(
+                    serverURL: prebidServerUrl, nonTrackingURLString: nonTrackingUrl, callback
+                )
+            case let (nil, gmaVersion?):
+                try Prebid.initializeSDK(
+                    serverURL: prebidServerUrl, gadMobileAdsVersion: gmaVersion, callback
+                )
+            case (nil, nil):
                 try Prebid.initializeSDK(serverURL: prebidServerUrl, callback)
             }
         } catch {
@@ -225,6 +237,16 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
 
     func getLocationUpdatesEnabled() throws -> Bool? { Prebid.shared.locationUpdatesEnabled }
 
+    func setDebugLogFileEnabled(enabled: Bool) throws {
+        Prebid.shared.debugLogFileEnabled = enabled
+    }
+
+    func getDebugLogFileEnabled() throws -> Bool? { Prebid.shared.debugLogFileEnabled }
+
+    func getTimeoutMillisDynamic() throws -> Int64? {
+        Prebid.shared.timeoutMillisDynamic.map { $0.int64Value }
+    }
+
     /// Drops this engine's delegate. Prebid has a single process-wide one, so
     /// it's only cleared there while it is still this engine's: another
     /// engine (add-to-app) may have set its own since.
@@ -391,4 +413,22 @@ private extension Dictionary where Key == String?, Value == Any? {
 private extension Dictionary where Key == String, Value == Any {
     /// The map typed as a Pigeon map.
     var pigeonKeys: [String?: Any?] { reduce(into: [:]) { $0[$1.key] = $1.value } }
+}
+
+/// The version of the Google Mobile Ads SDK linked into the app ("12.2.0"),
+/// read through the Objective-C runtime so the plugin needn't depend on it;
+/// nil without it.
+func linkedGmaVersion() -> String? {
+    guard let mobileAds = NSClassFromString("GADMobileAds") as AnyObject?,
+          mobileAds.responds(to: NSSelectorFromString("sharedInstance")),
+          let shared = mobileAds.perform(NSSelectorFromString("sharedInstance"))?
+              .takeUnretainedValue() as? NSObject,
+          shared.responds(to: NSSelectorFromString("versionNumber")),
+          let value = shared.value(forKey: "versionNumber") as? NSValue,
+          // GADVersionNumber: major, minor and patch NSIntegers.
+          String(cString: value.objCType).hasSuffix("=qqq}")
+    else { return nil }
+    var version = (0, 0, 0)
+    value.getValue(&version, size: MemoryLayout<(Int, Int, Int)>.size)
+    return "\(version.0).\(version.1).\(version.2)"
 }

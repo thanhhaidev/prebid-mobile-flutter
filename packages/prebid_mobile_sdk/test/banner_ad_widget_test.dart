@@ -85,6 +85,25 @@ void main() {
       });
     }, variant: _ios);
 
+    testWidgets('sends the GPID inside the impression config', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const PrebidBannerAd(
+            configId: 'c',
+            width: 320,
+            height: 50,
+            gpid: '/1/home',
+            impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        platform.views.single.params?['impOrtbConfig'],
+        '{"ext":{"gpid":"/1/home","data":{"k":"v"}}}',
+      );
+    }, variant: _ios);
+
     testWidgets('creates an AndroidView on Android', (tester) async {
       await tester.pumpWidget(
         _host(const PrebidBannerAd(configId: 'and', width: 320, height: 50)),
@@ -492,6 +511,42 @@ void main() {
       await controller.stopRefresh();
       expect(view.calls, isEmpty);
       expect(platform.disposed, [view.id]);
+    }, variant: _ios);
+  });
+
+  group('PrebidBannerAdController.winningBid', () {
+    testWidgets('is null before a load and the loaded bid after it', (
+      tester,
+    ) async {
+      final controller = PrebidBannerAdController();
+      await tester.pumpWidget(
+        _host(
+          PrebidBannerAd(
+            configId: 'c',
+            width: 320,
+            height: 50,
+            controller: controller,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(controller.winningBid, isNull);
+
+      await platform.send(platform.views.single, 'onAdLoaded', {
+        'price': 0.5,
+        'bidder': 'rubicon',
+        'width': 300,
+        'height': 250,
+        'targetingKeywords': {'hb_pb': '0.50'},
+      });
+      final bid = controller.winningBid!;
+      expect(bid.price, 0.5);
+      expect(bid.bidder, 'rubicon');
+      expect(bid.size, const Size(300, 250));
+      expect(bid.targetingKeywords, {'hb_pb': '0.50'});
+
+      await platform.send(platform.views.single, 'onAdLoaded');
+      expect(controller.winningBid, isNull);
     }, variant: _ios);
   });
 }

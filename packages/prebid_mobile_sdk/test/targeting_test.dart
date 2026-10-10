@@ -230,4 +230,35 @@ void main() {
       verify(mockApi.setAppName(null)).called(1);
     });
   });
+
+  group('user ext', () {
+    test('is sent to the platform as JSON', () async {
+      await PrebidTargeting.setUserExt({
+        'consented_providers': [1, 2],
+        'segment': 'a',
+      });
+      verify(
+        mockApi.setUserExt('{"consented_providers":[1,2],"segment":"a"}'),
+      ).called(1);
+    });
+
+    test('null clears it', () async {
+      await PrebidTargeting.setUserExt(null);
+      verify(mockApi.setUserExt(null)).called(1);
+    });
+
+    test('is read back as a map, null when empty', () async {
+      when(
+        mockApi.getUserExt(),
+      ).thenAnswer((_) async => '{"data":{"k":["v"]},"segment":"a"}');
+      expect(await PrebidTargeting.getUserExt(), {
+        'data': {
+          'k': ['v'],
+        },
+        'segment': 'a',
+      });
+      when(mockApi.getUserExt()).thenAnswer((_) async => null);
+      expect(await PrebidTargeting.getUserExt(), isNull);
+    });
+  });
 }

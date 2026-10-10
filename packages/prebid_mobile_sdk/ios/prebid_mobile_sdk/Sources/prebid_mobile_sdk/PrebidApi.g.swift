@@ -277,6 +277,63 @@ struct RewardData: Hashable, CustomStringConvertible {
   }
 }
 
+/// The winning bid of a loaded Prebid-rendered ad.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct WinningBidData: Hashable, CustomStringConvertible {
+  var price: Double
+  var bidder: String? = nil
+  var width: Int64
+  var height: Int64
+  var targetingKeywords: [String: String]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> WinningBidData? {
+    let price = pigeonVar_list[0] as! Double
+    let bidder: String? = nilOrValue(pigeonVar_list[1])
+    let width = pigeonVar_list[2] as! Int64
+    let height = pigeonVar_list[3] as! Int64
+    let targetingKeywords = pigeonVar_list[4] as! [String: String]
+
+    return WinningBidData(
+      price: price,
+      bidder: bidder,
+      width: width,
+      height: height,
+      targetingKeywords: targetingKeywords
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      price,
+      bidder,
+      width,
+      height,
+      targetingKeywords,
+    ]
+  }
+  static func == (lhs: WinningBidData, rhs: WinningBidData) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return PrebidApiPigeonInternal.deepEquals(lhs.price, rhs.price) && PrebidApiPigeonInternal.deepEquals(lhs.bidder, rhs.bidder) && PrebidApiPigeonInternal.deepEquals(lhs.width, rhs.width) && PrebidApiPigeonInternal.deepEquals(lhs.height, rhs.height) && PrebidApiPigeonInternal.deepEquals(lhs.targetingKeywords, rhs.targetingKeywords)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("WinningBidData")
+    PrebidApiPigeonInternal.deepHash(value: price, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: bidder, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: width, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: height, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: targetingKeywords, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "WinningBidData(price: \(String(describing: price)), bidder: \(String(describing: bidder)), width: \(String(describing: width)), height: \(String(describing: height)), targetingKeywords: \(String(describing: targetingKeywords)))"
+  }
+}
+
 /// Ad event sent from native to Flutter.
 ///
 /// Generated class from Pigeon that represents data sent in messages.
@@ -286,6 +343,9 @@ struct AdEvent: Hashable, CustomStringConvertible {
   var error: String? = nil
   var reward: RewardData? = nil
   var nativeAd: NativeAdData? = nil
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
+  /// the SDK exposes it (Android only).
+  var winningBid: WinningBidData? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -295,13 +355,15 @@ struct AdEvent: Hashable, CustomStringConvertible {
     let error: String? = nilOrValue(pigeonVar_list[2])
     let reward: RewardData? = nilOrValue(pigeonVar_list[3])
     let nativeAd: NativeAdData? = nilOrValue(pigeonVar_list[4])
+    let winningBid: WinningBidData? = nilOrValue(pigeonVar_list[5])
 
     return AdEvent(
       adId: adId,
       eventName: eventName,
       error: error,
       reward: reward,
-      nativeAd: nativeAd
+      nativeAd: nativeAd,
+      winningBid: winningBid
     )
   }
   func toList() -> [Any?] {
@@ -311,13 +373,14 @@ struct AdEvent: Hashable, CustomStringConvertible {
       error,
       reward,
       nativeAd,
+      winningBid,
     ]
   }
   static func == (lhs: AdEvent, rhs: AdEvent) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrebidApiPigeonInternal.deepEquals(lhs.adId, rhs.adId) && PrebidApiPigeonInternal.deepEquals(lhs.eventName, rhs.eventName) && PrebidApiPigeonInternal.deepEquals(lhs.error, rhs.error) && PrebidApiPigeonInternal.deepEquals(lhs.reward, rhs.reward) && PrebidApiPigeonInternal.deepEquals(lhs.nativeAd, rhs.nativeAd)
+    return PrebidApiPigeonInternal.deepEquals(lhs.adId, rhs.adId) && PrebidApiPigeonInternal.deepEquals(lhs.eventName, rhs.eventName) && PrebidApiPigeonInternal.deepEquals(lhs.error, rhs.error) && PrebidApiPigeonInternal.deepEquals(lhs.reward, rhs.reward) && PrebidApiPigeonInternal.deepEquals(lhs.nativeAd, rhs.nativeAd) && PrebidApiPigeonInternal.deepEquals(lhs.winningBid, rhs.winningBid)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -327,10 +390,11 @@ struct AdEvent: Hashable, CustomStringConvertible {
     PrebidApiPigeonInternal.deepHash(value: error, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: reward, hasher: &hasher)
     PrebidApiPigeonInternal.deepHash(value: nativeAd, hasher: &hasher)
+    PrebidApiPigeonInternal.deepHash(value: winningBid, hasher: &hasher)
   }
 
   public var description: String {
-    return "AdEvent(adId: \(String(describing: adId)), eventName: \(String(describing: eventName)), error: \(String(describing: error)), reward: \(String(describing: reward)), nativeAd: \(String(describing: nativeAd)))"
+    return "AdEvent(adId: \(String(describing: adId)), eventName: \(String(describing: eventName)), error: \(String(describing: error)), reward: \(String(describing: reward)), nativeAd: \(String(describing: nativeAd)), winningBid: \(String(describing: winningBid)))"
   }
 }
 
@@ -1129,9 +1193,9 @@ struct FullscreenControlsConfig: Hashable, CustomStringConvertible {
 struct MultiformatAdRequestConfig: Hashable, CustomStringConvertible {
   var configId: String
   var gpid: String? = nil
-  /// iOS only (Prebid Android's PrebidAdUnit has no setters for them):
   /// `imp.ext.data.pbadslot`, impression-level and per-unit request-level
-  /// OpenRTB JSON.
+  /// OpenRTB JSON. On Android only for a single-format request (Prebid
+  /// Android's multiformat PrebidAdUnit has no setters for them).
   var pbAdSlot: String? = nil
   var impOrtbConfig: String? = nil
   var globalOrtbConfig: String? = nil
@@ -1397,32 +1461,34 @@ private class PrebidApiPigeonCodecReader: FlutterStandardReader {
     case 130:
       return RewardData.fromList(self.readValue() as! [Any?])
     case 131:
-      return AdEvent.fromList(self.readValue() as! [Any?])
+      return WinningBidData.fromList(self.readValue() as! [Any?])
     case 132:
-      return NativeAssetConfig.fromList(self.readValue() as! [Any?])
+      return AdEvent.fromList(self.readValue() as! [Any?])
     case 133:
-      return NativeEventTrackerConfig.fromList(self.readValue() as! [Any?])
+      return NativeAssetConfig.fromList(self.readValue() as! [Any?])
     case 134:
-      return NativeAdRequestConfig.fromList(self.readValue() as! [Any?])
+      return NativeEventTrackerConfig.fromList(self.readValue() as! [Any?])
     case 135:
-      return NativeAdData.fromList(self.readValue() as! [Any?])
+      return NativeAdRequestConfig.fromList(self.readValue() as! [Any?])
     case 136:
-      return NativeAdImageData.fromList(self.readValue() as! [Any?])
+      return NativeAdData.fromList(self.readValue() as! [Any?])
     case 137:
-      return NativeAdDataAssetData.fromList(self.readValue() as! [Any?])
+      return NativeAdImageData.fromList(self.readValue() as! [Any?])
     case 138:
-      return UserUniqueIdData.fromList(self.readValue() as! [Any?])
+      return NativeAdDataAssetData.fromList(self.readValue() as! [Any?])
     case 139:
-      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
+      return UserUniqueIdData.fromList(self.readValue() as! [Any?])
     case 140:
-      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
+      return ExternalUserIdData.fromList(self.readValue() as! [Any?])
     case 141:
-      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
+      return VideoParametersConfig.fromList(self.readValue() as! [Any?])
     case 142:
-      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
+      return FullscreenControlsConfig.fromList(self.readValue() as! [Any?])
     case 143:
-      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+      return MultiformatAdRequestConfig.fromList(self.readValue() as! [Any?])
     case 144:
+      return MultiformatBidResult.fromList(self.readValue() as! [Any?])
+    case 145:
       return InstreamVideoAdRequestConfig.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -1438,47 +1504,50 @@ private class PrebidApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? RewardData {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? AdEvent {
+    } else if let value = value as? WinningBidData {
       super.writeByte(131)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeAssetConfig {
+    } else if let value = value as? AdEvent {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeEventTrackerConfig {
+    } else if let value = value as? NativeAssetConfig {
       super.writeByte(133)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeAdRequestConfig {
+    } else if let value = value as? NativeEventTrackerConfig {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeAdData {
+    } else if let value = value as? NativeAdRequestConfig {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeAdImageData {
+    } else if let value = value as? NativeAdData {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? NativeAdDataAssetData {
+    } else if let value = value as? NativeAdImageData {
       super.writeByte(137)
       super.writeValue(value.toList())
-    } else if let value = value as? UserUniqueIdData {
+    } else if let value = value as? NativeAdDataAssetData {
       super.writeByte(138)
       super.writeValue(value.toList())
-    } else if let value = value as? ExternalUserIdData {
+    } else if let value = value as? UserUniqueIdData {
       super.writeByte(139)
       super.writeValue(value.toList())
-    } else if let value = value as? VideoParametersConfig {
+    } else if let value = value as? ExternalUserIdData {
       super.writeByte(140)
       super.writeValue(value.toList())
-    } else if let value = value as? FullscreenControlsConfig {
+    } else if let value = value as? VideoParametersConfig {
       super.writeByte(141)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatAdRequestConfig {
+    } else if let value = value as? FullscreenControlsConfig {
       super.writeByte(142)
       super.writeValue(value.toList())
-    } else if let value = value as? MultiformatBidResult {
+    } else if let value = value as? MultiformatAdRequestConfig {
       super.writeByte(143)
       super.writeValue(value.toList())
-    } else if let value = value as? InstreamVideoAdRequestConfig {
+    } else if let value = value as? MultiformatBidResult {
       super.writeByte(144)
+      super.writeValue(value.toList())
+    } else if let value = value as? InstreamVideoAdRequestConfig {
+      super.writeByte(145)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -1548,6 +1617,13 @@ protocol PrebidMobileHostApi {
   /// the getter returns null on Android.
   func setLocationUpdatesEnabled(enabled: Bool) throws
   func getLocationUpdatesEnabled() throws -> Bool?
+  /// iOS only: writes Prebid's log to a file (`debugLogFileEnabled`); the
+  /// getter returns null on Android.
+  func setDebugLogFileEnabled(enabled: Bool) throws
+  func getDebugLogFileEnabled() throws -> Bool?
+  /// The timeout Prebid adopted from Prebid Server's response
+  /// (`timeoutMillisDynamic`), or null while it uses [getTimeoutMillis].
+  func getTimeoutMillisDynamic() throws -> Int64?
   func setSendSharedId(send: Bool) throws
   func getSharedId() throws -> ExternalUserIdData?
   func resetSharedId() throws
@@ -2065,6 +2141,51 @@ class PrebidMobileHostApiSetup {
     } else {
       getLocationUpdatesEnabledChannel.setMessageHandler(nil)
     }
+    /// iOS only: writes Prebid's log to a file (`debugLogFileEnabled`); the
+    /// getter returns null on Android.
+    let setDebugLogFileEnabledChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setDebugLogFileEnabled\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setDebugLogFileEnabledChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let enabledArg = args[0] as! Bool
+        do {
+          try api.setDebugLogFileEnabled(enabled: enabledArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setDebugLogFileEnabledChannel.setMessageHandler(nil)
+    }
+    let getDebugLogFileEnabledChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getDebugLogFileEnabled\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getDebugLogFileEnabledChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getDebugLogFileEnabled()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getDebugLogFileEnabledChannel.setMessageHandler(nil)
+    }
+    /// The timeout Prebid adopted from Prebid Server's response
+    /// (`timeoutMillisDynamic`), or null while it uses [getTimeoutMillis].
+    let getTimeoutMillisDynamicChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getTimeoutMillisDynamic\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getTimeoutMillisDynamicChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getTimeoutMillisDynamic()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getTimeoutMillisDynamicChannel.setMessageHandler(nil)
+    }
     let setSendSharedIdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setSendSharedId\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setSendSharedIdChannel.setMessageHandler { message, reply in
@@ -2414,6 +2535,10 @@ protocol TargetingHostApi {
   func updateUserExtData(key: String, value: [String]) throws
   func removeUserExtData(key: String) throws
   func clearUserExtData() throws
+  /// The whole `user.ext` object as JSON (null clears it); its `data` entry
+  /// gives way to the user ext data keys above when any is set.
+  func setUserExt(json: String?) throws
+  func getUserExt() throws -> String?
   func addBidderToAccessControlList(bidderName: String) throws
   func removeBidderFromAccessControlList(bidderName: String) throws
   func clearAccessControlList() throws
@@ -2905,6 +3030,36 @@ class TargetingHostApiSetup {
     } else {
       clearUserExtDataChannel.setMessageHandler(nil)
     }
+    /// The whole `user.ext` object as JSON (null clears it); its `data` entry
+    /// gives way to the user ext data keys above when any is set.
+    let setUserExtChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUserExt\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setUserExtChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let jsonArg: String? = nilOrValue(args[0])
+        do {
+          try api.setUserExt(json: jsonArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setUserExtChannel.setMessageHandler(nil)
+    }
+    let getUserExtChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUserExt\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getUserExtChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getUserExt()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getUserExtChannel.setMessageHandler(nil)
+    }
     let addBidderToAccessControlListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addBidderToAccessControlList\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addBidderToAccessControlListChannel.setMessageHandler { message, reply in
@@ -3337,7 +3492,9 @@ class TargetingHostApiSetup {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol InterstitialAdHostApi {
-  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, globalOrtbConfig: String?, controls: FullscreenControlsConfig?, pbAdSlot: String?) throws
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
+  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, globalOrtbConfig: String?, controls: FullscreenControlsConfig?, pbAdSlot: String?, adPosition: Int64?) throws
   func show(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
@@ -3348,6 +3505,8 @@ class InterstitialAdHostApiSetup {
   /// Sets up an instance of `InterstitialAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: InterstitialAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+    /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+    /// units have no setter).
     let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       loadAdChannel.setMessageHandler { message, reply in
@@ -3360,8 +3519,9 @@ class InterstitialAdHostApiSetup {
         let globalOrtbConfigArg: String? = nilOrValue(args[5])
         let controlsArg: FullscreenControlsConfig? = nilOrValue(args[6])
         let pbAdSlotArg: String? = nilOrValue(args[7])
+        let adPositionArg: Int64? = nilOrValue(args[8])
         do {
-          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg, impOrtbConfig: impOrtbConfigArg, globalOrtbConfig: globalOrtbConfigArg, controls: controlsArg, pbAdSlot: pbAdSlotArg)
+          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg, impOrtbConfig: impOrtbConfigArg, globalOrtbConfig: globalOrtbConfigArg, controls: controlsArg, pbAdSlot: pbAdSlotArg, adPosition: adPositionArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))
@@ -3406,7 +3566,9 @@ class InterstitialAdHostApiSetup {
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol RewardedAdHostApi {
-  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, globalOrtbConfig: String?, controls: FullscreenControlsConfig?, pbAdSlot: String?) throws
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
+  func loadAd(adId: Int64, configId: String, adFormats: [String]?, videoConfig: VideoParametersConfig?, impOrtbConfig: String?, globalOrtbConfig: String?, controls: FullscreenControlsConfig?, pbAdSlot: String?, adPosition: Int64?) throws
   func show(adId: Int64) throws
   func destroy(adId: Int64) throws
 }
@@ -3417,6 +3579,8 @@ class RewardedAdHostApiSetup {
   /// Sets up an instance of `RewardedAdHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: RewardedAdHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+    /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+    /// units have no setter).
     let loadAdChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       loadAdChannel.setMessageHandler { message, reply in
@@ -3429,8 +3593,9 @@ class RewardedAdHostApiSetup {
         let globalOrtbConfigArg: String? = nilOrValue(args[5])
         let controlsArg: FullscreenControlsConfig? = nilOrValue(args[6])
         let pbAdSlotArg: String? = nilOrValue(args[7])
+        let adPositionArg: Int64? = nilOrValue(args[8])
         do {
-          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg, impOrtbConfig: impOrtbConfigArg, globalOrtbConfig: globalOrtbConfigArg, controls: controlsArg, pbAdSlot: pbAdSlotArg)
+          try api.loadAd(adId: adIdArg, configId: configIdArg, adFormats: adFormatsArg, videoConfig: videoConfigArg, impOrtbConfig: impOrtbConfigArg, globalOrtbConfig: globalOrtbConfigArg, controls: controlsArg, pbAdSlot: pbAdSlotArg, adPosition: adPositionArg)
           reply(wrapResult(nil))
         } catch {
           reply(wrapError(error))

@@ -174,16 +174,18 @@ class PrebidMultiformatAd {
   /// iOS only: show an SKOverlay for an SKAdNetwork interstitial win.
   final bool supportSKOverlay;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
-  /// Original API ad unit has no setter for it.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). On Android it applies when
+  /// the request has one format (banner, interstitial, rewarded video or
+  /// native); Prebid Android's multiformat ad unit has no setter for it.
   final String? pbAdSlot;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
-  /// only, as [pbAdSlot].
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. On
+  /// Android only for a single-format request, as [pbAdSlot].
   final String? impOrtbConfig;
 
-  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
-  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  /// Request-level OpenRTB JSON for this ad unit only. On Android only for a
+  /// single-format request, as [pbAdSlot]; `Targeting.setGlobalOrtbConfig`
+  /// applies to every request.
   final String? globalOrtbConfig;
 
   /// Called with each auto-refreshed result (see [setAutoRefreshInterval]).

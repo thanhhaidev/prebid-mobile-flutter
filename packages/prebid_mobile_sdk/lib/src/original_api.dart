@@ -135,16 +135,14 @@ class PrebidBannerAdUnit with _AutoRefresh {
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
-  /// Original API ad unit has no setter for it.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
-  /// only, as [pbAdSlot].
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
-  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
-  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
   final String? globalOrtbConfig;
 
   @override
@@ -234,16 +232,88 @@ class PrebidInterstitialAdUnit with _AutoRefresh {
   /// height). Requests the display format even without [sizes].
   final Size? minSizePercentage;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
-  /// Original API ad unit has no setter for it.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
-  /// only, as [pbAdSlot].
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
-  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
-  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
+  final String? globalOrtbConfig;
+
+  @override
+  final PrebidMultiformatAd _delegate;
+
+  /// Runs the Prebid auction and returns targeting keywords for your ad server.
+  Future<PrebidBidResponse> fetchDemand() async =>
+      _bidResponse(await _delegate.fetchDemand());
+}
+
+/// A rewarded video ad unit for the **Original API** integration: Prebid runs
+/// the auction and returns targeting keywords for your ad server to render
+/// the rewarded ad (use [PrebidRewardedAd] for Prebid rendering instead).
+///
+/// ```dart
+/// final adUnit = PrebidRewardedAdUnit(
+///   configId: 'your-config-id',
+///   videoParameters: const VideoParameters(mimes: ['video/mp4']),
+/// );
+/// final response = await adUnit.fetchDemand();
+/// // RewardedAd.loadWithAdManagerAdRequest(
+/// //   adManagerRequest: AdManagerAdRequest(customTargeting: response.targetingKeywords ?? {}),
+/// // );
+/// ```
+///
+/// Call [destroy] when the unit is no longer needed (e.g. from
+/// `State.dispose`); [fetchDemand] may be called again afterwards.
+class PrebidRewardedAdUnit with _AutoRefresh {
+  /// Creates a [PrebidRewardedAdUnit].
+  PrebidRewardedAdUnit({
+    required this.configId,
+    required this.videoParameters,
+    this.trackImpression = false,
+    this.gpid,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
+    void Function(PrebidBidResponse response)? onDemandRefreshed,
+  }) : _delegate = PrebidMultiformatAd(
+         configId: configId,
+         videoParameters: videoParameters,
+         gpid: gpid,
+         pbAdSlot: pbAdSlot,
+         impOrtbConfig: impOrtbConfig,
+         globalOrtbConfig: globalOrtbConfig,
+         isInterstitial: true,
+         isRewarded: true,
+         trackInterstitialImpression: trackImpression,
+         onDemandRefreshed: onDemandRefreshed == null
+             ? null
+             : (r) => onDemandRefreshed(_bidResponse(r)),
+       );
+
+  /// The Prebid Server stored impression config ID.
+  final String configId;
+
+  /// The rewarded video's OpenRTB parameters.
+  final VideoParameters videoParameters;
+
+  /// Lets Prebid track the impression (`burl`) when your ad server's
+  /// rewarded ad shows this bid's creative.
+  final bool trackImpression;
+
+  /// Global Placement ID (`imp.ext.gpid`).
+  final String? gpid;
+
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
+  final String? pbAdSlot;
+
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
+  final String? impOrtbConfig;
+
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
   final String? globalOrtbConfig;
 
   @override
@@ -292,16 +362,14 @@ class PrebidNativeAdUnit with _AutoRefresh {
   /// Global Placement ID (`imp.ext.gpid`).
   final String? gpid;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). iOS only: Prebid Android's
-  /// Original API ad unit has no setter for it.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
-  /// only, as [pbAdSlot].
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
-  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
-  /// [pbAdSlot]; `Targeting.setGlobalOrtbConfig` applies on both platforms.
+  /// Request-level OpenRTB JSON for this ad unit only (merged over
+  /// `PrebidTargeting.setGlobalOrtbConfig`).
   final String? globalOrtbConfig;
 
   @override

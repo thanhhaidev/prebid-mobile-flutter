@@ -115,9 +115,23 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
         syncUserExtData()
     }
 
+    // The whole user.ext (setUserExt); its `data` gives way to the user ext
+    // data keys when any is set. Until the first setUserExt, the keys already
+    // in TargetingParams.userExt are kept.
+    override fun setUserExt(json: String?) {
+        userExtBase = json?.let { runCatching { JSONObject(it) }.getOrNull() } ?: JSONObject()
+        syncUserExtData()
+    }
+    override fun getUserExt(): String? = TargetingParams.getUserExt()?.getJsonObject()?.toString()
+
     private fun syncUserExtData() {
-        val ext = TargetingParams.getUserExt() ?: org.prebid.mobile.rendering.models.openrtb.bidRequests.Ext()
-        ext.remove("data")
+        val base = userExtBase
+        val ext = if (base != null) {
+            org.prebid.mobile.rendering.models.openrtb.bidRequests.Ext().apply { put(base) }
+        } else {
+            TargetingParams.getUserExt() ?: org.prebid.mobile.rendering.models.openrtb.bidRequests.Ext()
+        }
+        if (base == null || userExtDataMap.isNotEmpty()) ext.remove("data")
         if (userExtDataMap.isNotEmpty()) {
             val data = JSONObject()
             userExtDataMap.forEach { (k, v) -> data.put(k, JSONArray(v.sorted())) }
@@ -182,6 +196,7 @@ internal class TargetingHostApiImpl(private val context: Context) : TargetingHos
 
     internal companion object {
         private val userExtDataMap = mutableMapOf<String, MutableSet<String>>()
+        private var userExtBase: JSONObject? = null
 
         /** Process-wide like AppInfoManager; reapplied after the first init. */
         var appNameOverride: String? = null

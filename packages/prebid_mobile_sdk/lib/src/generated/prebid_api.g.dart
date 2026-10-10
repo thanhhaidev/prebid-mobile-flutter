@@ -208,6 +208,72 @@ class RewardData {
   }
 }
 
+/// The winning bid of a loaded Prebid-rendered ad.
+class WinningBidData {
+  WinningBidData({
+    required this.price,
+    this.bidder,
+    required this.width,
+    required this.height,
+    required this.targetingKeywords,
+  });
+
+  double price;
+
+  String? bidder;
+
+  int width;
+
+  int height;
+
+  Map<String, String> targetingKeywords;
+
+  List<Object?> _toList() {
+    return <Object?>[price, bidder, width, height, targetingKeywords];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static WinningBidData decode(Object result) {
+    result as List<Object?>;
+    return WinningBidData(
+      price: result[0]! as double,
+      bidder: result[1] as String?,
+      width: result[2]! as int,
+      height: result[3]! as int,
+      targetingKeywords: (result[4]! as Map<Object?, Object?>)
+          .cast<String, String>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! WinningBidData || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(price, other.price) &&
+        _deepEquals(bidder, other.bidder) &&
+        _deepEquals(width, other.width) &&
+        _deepEquals(height, other.height) &&
+        _deepEquals(targetingKeywords, other.targetingKeywords);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'WinningBidData(price: $price, bidder: $bidder, width: $width, height: $height, targetingKeywords: $targetingKeywords)';
+  }
+}
+
 /// Ad event sent from native to Flutter.
 class AdEvent {
   AdEvent({
@@ -216,6 +282,7 @@ class AdEvent {
     this.error,
     this.reward,
     this.nativeAd,
+    this.winningBid,
   });
 
   int adId;
@@ -228,8 +295,12 @@ class AdEvent {
 
   NativeAdData? nativeAd;
 
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
+  /// the SDK exposes it (Android only).
+  WinningBidData? winningBid;
+
   List<Object?> _toList() {
-    return <Object?>[adId, eventName, error, reward, nativeAd];
+    return <Object?>[adId, eventName, error, reward, nativeAd, winningBid];
   }
 
   Object encode() {
@@ -244,6 +315,7 @@ class AdEvent {
       error: result[2] as String?,
       reward: result[3] as RewardData?,
       nativeAd: result[4] as NativeAdData?,
+      winningBid: result[5] as WinningBidData?,
     );
   }
 
@@ -260,7 +332,8 @@ class AdEvent {
         _deepEquals(eventName, other.eventName) &&
         _deepEquals(error, other.error) &&
         _deepEquals(reward, other.reward) &&
-        _deepEquals(nativeAd, other.nativeAd);
+        _deepEquals(nativeAd, other.nativeAd) &&
+        _deepEquals(winningBid, other.winningBid);
   }
 
   @override
@@ -269,7 +342,7 @@ class AdEvent {
 
   @override
   String toString() {
-    return 'AdEvent(adId: $adId, eventName: $eventName, error: $error, reward: $reward, nativeAd: $nativeAd)';
+    return 'AdEvent(adId: $adId, eventName: $eventName, error: $error, reward: $reward, nativeAd: $nativeAd, winningBid: $winningBid)';
   }
 }
 
@@ -1233,9 +1306,9 @@ class MultiformatAdRequestConfig {
 
   String? gpid;
 
-  /// iOS only (Prebid Android's PrebidAdUnit has no setters for them):
   /// `imp.ext.data.pbadslot`, impression-level and per-unit request-level
-  /// OpenRTB JSON.
+  /// OpenRTB JSON. On Android only for a single-format request (Prebid
+  /// Android's multiformat PrebidAdUnit has no setters for them).
   String? pbAdSlot;
 
   String? impOrtbConfig;
@@ -1557,47 +1630,50 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is RewardData) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is AdEvent) {
+    } else if (value is WinningBidData) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is NativeAssetConfig) {
+    } else if (value is AdEvent) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is NativeEventTrackerConfig) {
+    } else if (value is NativeAssetConfig) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
-    } else if (value is NativeAdRequestConfig) {
+    } else if (value is NativeEventTrackerConfig) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    } else if (value is NativeAdData) {
+    } else if (value is NativeAdRequestConfig) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    } else if (value is NativeAdImageData) {
+    } else if (value is NativeAdData) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    } else if (value is NativeAdDataAssetData) {
+    } else if (value is NativeAdImageData) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    } else if (value is UserUniqueIdData) {
+    } else if (value is NativeAdDataAssetData) {
       buffer.putUint8(138);
       writeValue(buffer, value.encode());
-    } else if (value is ExternalUserIdData) {
+    } else if (value is UserUniqueIdData) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    } else if (value is VideoParametersConfig) {
+    } else if (value is ExternalUserIdData) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
-    } else if (value is FullscreenControlsConfig) {
+    } else if (value is VideoParametersConfig) {
       buffer.putUint8(141);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatAdRequestConfig) {
+    } else if (value is FullscreenControlsConfig) {
       buffer.putUint8(142);
       writeValue(buffer, value.encode());
-    } else if (value is MultiformatBidResult) {
+    } else if (value is MultiformatAdRequestConfig) {
       buffer.putUint8(143);
       writeValue(buffer, value.encode());
-    } else if (value is InstreamVideoAdRequestConfig) {
+    } else if (value is MultiformatBidResult) {
       buffer.putUint8(144);
+      writeValue(buffer, value.encode());
+    } else if (value is InstreamVideoAdRequestConfig) {
+      buffer.putUint8(145);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -1612,32 +1688,34 @@ class _PigeonCodec extends StandardMessageCodec {
       case 130:
         return RewardData.decode(readValue(buffer)!);
       case 131:
-        return AdEvent.decode(readValue(buffer)!);
+        return WinningBidData.decode(readValue(buffer)!);
       case 132:
-        return NativeAssetConfig.decode(readValue(buffer)!);
+        return AdEvent.decode(readValue(buffer)!);
       case 133:
-        return NativeEventTrackerConfig.decode(readValue(buffer)!);
+        return NativeAssetConfig.decode(readValue(buffer)!);
       case 134:
-        return NativeAdRequestConfig.decode(readValue(buffer)!);
+        return NativeEventTrackerConfig.decode(readValue(buffer)!);
       case 135:
-        return NativeAdData.decode(readValue(buffer)!);
+        return NativeAdRequestConfig.decode(readValue(buffer)!);
       case 136:
-        return NativeAdImageData.decode(readValue(buffer)!);
+        return NativeAdData.decode(readValue(buffer)!);
       case 137:
-        return NativeAdDataAssetData.decode(readValue(buffer)!);
+        return NativeAdImageData.decode(readValue(buffer)!);
       case 138:
-        return UserUniqueIdData.decode(readValue(buffer)!);
+        return NativeAdDataAssetData.decode(readValue(buffer)!);
       case 139:
-        return ExternalUserIdData.decode(readValue(buffer)!);
+        return UserUniqueIdData.decode(readValue(buffer)!);
       case 140:
-        return VideoParametersConfig.decode(readValue(buffer)!);
+        return ExternalUserIdData.decode(readValue(buffer)!);
       case 141:
-        return FullscreenControlsConfig.decode(readValue(buffer)!);
+        return VideoParametersConfig.decode(readValue(buffer)!);
       case 142:
-        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
+        return FullscreenControlsConfig.decode(readValue(buffer)!);
       case 143:
-        return MultiformatBidResult.decode(readValue(buffer)!);
+        return MultiformatAdRequestConfig.decode(readValue(buffer)!);
       case 144:
+        return MultiformatBidResult.decode(readValue(buffer)!);
+      case 145:
         return InstreamVideoAdRequestConfig.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -2307,6 +2385,68 @@ class PrebidMobileHostApi {
       isNullValid: true,
     );
     return pigeonVar_replyValue as bool?;
+  }
+
+  /// iOS only: writes Prebid's log to a file (`debugLogFileEnabled`); the
+  /// getter returns null on Android.
+  Future<void> setDebugLogFileEnabled(bool enabled) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.setDebugLogFileEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[enabled],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<bool?> getDebugLogFileEnabled() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getDebugLogFileEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as bool?;
+  }
+
+  /// The timeout Prebid adopted from Prebid Server's response
+  /// (`timeoutMillisDynamic`), or null while it uses [getTimeoutMillis].
+  Future<int?> getTimeoutMillisDynamic() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.PrebidMobileHostApi.getTimeoutMillisDynamic$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as int?;
   }
 
   Future<void> setSendSharedId(bool send) async {
@@ -3379,6 +3519,47 @@ class TargetingHostApi {
     );
   }
 
+  /// The whole `user.ext` object as JSON (null clears it); its `data` entry
+  /// gives way to the user ext data keys above when any is set.
+  Future<void> setUserExt(String? json) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setUserExt$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[json],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  Future<String?> getUserExt() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.getUserExt$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
   Future<void> addBidderToAccessControlList(String bidderName) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.addBidderToAccessControlList$pigeonVar_messageChannelSuffix';
@@ -3988,6 +4169,8 @@ class InterstitialAdHostApi {
 
   final String pigeonVar_messageChannelSuffix;
 
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
   Future<void> loadAd(
     int adId,
     String configId,
@@ -3997,6 +4180,7 @@ class InterstitialAdHostApi {
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.InterstitialAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -4015,6 +4199,7 @@ class InterstitialAdHostApi {
           globalOrtbConfig,
           controls,
           pbAdSlot,
+          adPosition,
         ]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
@@ -4084,6 +4269,8 @@ class RewardedAdHostApi {
 
   final String pigeonVar_messageChannelSuffix;
 
+  /// [adPosition]: OpenRTB `pos`, iOS only (Prebid Android's fullscreen ad
+  /// units have no setter).
   Future<void> loadAd(
     int adId,
     String configId,
@@ -4093,6 +4280,7 @@ class RewardedAdHostApi {
     String? globalOrtbConfig,
     FullscreenControlsConfig? controls,
     String? pbAdSlot,
+    int? adPosition,
   ) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.RewardedAdHostApi.loadAd$pigeonVar_messageChannelSuffix';
@@ -4111,6 +4299,7 @@ class RewardedAdHostApi {
           globalOrtbConfig,
           controls,
           pbAdSlot,
+          adPosition,
         ]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 

@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'ad_enums.dart';
 import 'ad_listener.dart';
 import 'companion/ad_view_state.dart';
+import 'internal/ortb.dart';
 import 'video_parameters.dart';
 
 /// The winning bid of a loaded Prebid-rendered banner
@@ -138,6 +139,7 @@ class PrebidBannerAd extends StatefulWidget {
     this.isVideo = false,
     this.adFormats,
     this.pbAdSlot,
+    this.gpid,
     this.adPosition,
     this.videoParameters,
     this.impOrtbConfig,
@@ -175,6 +177,10 @@ class PrebidBannerAd extends StatefulWidget {
 
   /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
+
+  /// Global Placement ID (`imp.ext.gpid`), added to [impOrtbConfig] (a
+  /// `gpid` already there wins).
+  final String? gpid;
 
   /// Ad position on screen (`imp.banner.pos`).
   final PrebidAdPosition? adPosition;
@@ -247,7 +253,7 @@ class _PrebidBannerAdState extends State<PrebidBannerAd>
     'pbAdSlot': ?widget.pbAdSlot,
     'adPosition': ?widget.adPosition?.value,
     'videoParameters': ?widget.videoParameters?.toMap(),
-    'impOrtbConfig': ?widget.impOrtbConfig,
+    'impOrtbConfig': ?impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
     'globalOrtbConfig': ?widget.globalOrtbConfig,
     'videoPlacementType': ?widget.videoPlacementType?.name,
   };

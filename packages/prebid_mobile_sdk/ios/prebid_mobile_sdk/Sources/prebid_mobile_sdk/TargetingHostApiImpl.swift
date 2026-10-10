@@ -70,11 +70,28 @@ final class TargetingHostApiImpl: TargetingHostApi {
         syncUserExtData()
     }
 
+    // The whole user.ext (setUserExt); its `data` gives way to the user ext
+    // data keys when any is set. Until the first setUserExt, the keys already
+    // in Targeting.userExt are kept.
+    private static var userExtBase: [String: AnyHashable]?
+
+    func setUserExt(json: String?) throws {
+        Self.userExtBase = (jsonObject(json) as? [String: AnyHashable]) ?? [:]
+        syncUserExtData()
+    }
+
+    func getUserExt() throws -> String? {
+        guard let ext = Targeting.shared.userExt,
+              let data = try? JSONSerialization.data(withJSONObject: ext) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
     private func syncUserExtData() {
-        var ext = Targeting.shared.userExt ?? [:]
+        let base = Self.userExtBase
+        var ext = base ?? Targeting.shared.userExt ?? [:]
         let map = Self.userExtDataMap
         if map.isEmpty {
-            ext.removeValue(forKey: "data")
+            if base == nil { ext.removeValue(forKey: "data") }
         } else {
             ext["data"] = map.mapValues { Array($0).sorted() } as [String: [String]]
         }

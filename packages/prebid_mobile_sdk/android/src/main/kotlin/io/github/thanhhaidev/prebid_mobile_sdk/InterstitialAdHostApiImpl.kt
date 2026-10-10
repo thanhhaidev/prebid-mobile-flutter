@@ -26,6 +26,7 @@ internal class InterstitialAdHostApiImpl(
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
         pbAdSlot: String?,
+        adPosition: Long?,
     ) {
         // A reload replaces the previous unit; destroy it so it stops sending
         // events under this ad id.
@@ -65,7 +66,8 @@ internal class InterstitialAdHostApiImpl(
 
         adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
             override fun onAdLoaded(unit: InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded")) {}
+                val bid = unit.bidResponse?.toWinningBidData()
+                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded", winningBid = bid)) {}
             }
             override fun onAdFailed(unit: InterstitialAdUnit, e: AdException?) {
                 flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = e?.message)) {}

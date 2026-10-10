@@ -21,7 +21,8 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
-        pbAdSlot: String?
+        pbAdSlot: String?,
+        adPosition: Int64?
     ) throws {
         // A reload replaces the previous unit, which must stop sending events
         // under this ad id.
@@ -43,6 +44,7 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         videoConfig?.apply(to: adUnit.videoParameters)
 
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi)
+        if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
         delegates[adId] = delegate
 

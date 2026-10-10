@@ -64,7 +64,24 @@ internal class PrebidMobileHostApiImpl(
         }
         // The first init (synchronously) replaces app.name with the app label.
         TargetingHostApiImpl.appNameOverride?.let { AppInfoManager.setAppName(it) }
+        checkGmaCompatibility()
     }
+
+    /**
+     * With Google Mobile Ads linked (found by class name, so the core plugin
+     * needn't depend on it), lets Prebid check its version is one it
+     * supports: a warning in the log otherwise.
+     */
+    private fun checkGmaCompatibility() {
+        gmaVersion("com.google.android.gms.ads.MobileAds")
+            ?.let(PrebidMobile::checkGoogleMobileAdsCompatibility)
+        gmaVersion("com.google.android.libraries.ads.mobile.sdk.MobileAds")
+            ?.let(PrebidMobile::checkGoogleMobileAdsNextGenCompatibility)
+    }
+
+    private fun gmaVersion(mobileAds: String): String? = runCatching {
+        Class.forName(mobileAds).getMethod("getVersion").invoke(null)?.toString()
+    }.getOrNull()
 
 
     override fun setTimeoutMillis(timeoutMillis: Long) {
@@ -239,6 +256,14 @@ internal class PrebidMobileHostApiImpl(
     // last known location (setShareGeoLocation).
     override fun setLocationUpdatesEnabled(enabled: Boolean) {}
     override fun getLocationUpdatesEnabled(): Boolean? = null
+
+    // iOS only (Prebid Android has no log file).
+    override fun setDebugLogFileEnabled(enabled: Boolean) {}
+    override fun getDebugLogFileEnabled(): Boolean? = null
+
+    // Prebid Android writes Prebid Server's timeout into timeoutMillis itself
+    // (getTimeoutMillis) rather than keeping a separate dynamic value.
+    override fun getTimeoutMillisDynamic(): Long? = null
 
     /**
      * Drops this engine's delegate. Prebid has a single process-wide one, so

@@ -5,23 +5,58 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import java.util.EnumSet
 import org.prebid.mobile.AdSize
+import org.prebid.mobile.AdUnit
+import org.prebid.mobile.BannerAdUnit
 import org.prebid.mobile.BannerParameters
+import org.prebid.mobile.InterstitialAdUnit
+import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.PrebidMobile
+import org.prebid.mobile.RewardedVideoAdUnit
 import org.prebid.mobile.Signals
 import org.prebid.mobile.addendum.AdViewUtils
 import org.prebid.mobile.addendum.PbFindSizeError
+import org.prebid.mobile.api.data.AdUnitFormat
+import org.prebid.mobile.api.data.BidInfo
 import org.prebid.mobile.api.original.PrebidAdUnit
 import org.prebid.mobile.api.original.PrebidRequest
 import org.prebid.mobile.rendering.models.AdPosition
 
-/** MultiformatAdHostApi: the Original API (PrebidAdUnit fetchDemand → targeting keywords). */
+/**
+ * One Original API ad unit. A single-format request runs on Prebid's
+ * matching legacy [AdUnit] (banner, interstitial, rewarded video, native),
+ * which takes the pbAdSlot, GPID and ORTB configs; a multiformat one on
+ * [PrebidAdUnit], which has no setters for them.
+ */
+private interface OriginalAdUnit {
+    fun fetchDemand(onResult: (BidInfo) -> Unit)
+    fun activateBannerImpressionTracker(view: View)
+    fun destroy()
+}
+
+private class LegacyAdUnit(val unit: AdUnit) : OriginalAdUnit {
+    override fun fetchDemand(onResult: (BidInfo) -> Unit) = unit.fetchDemand { onResult(it) }
+    override fun activateBannerImpressionTracker(view: View) = unit.activatePrebidImpressionTracker(view)
+    override fun destroy() = unit.destroy()
+}
+
+private class MultiformatAdUnit(
+    val unit: PrebidAdUnit,
+    val request: PrebidRequest,
+) : OriginalAdUnit {
+    override fun fetchDemand(onResult: (BidInfo) -> Unit) = unit.fetchDemand(request) { onResult(it) }
+    override fun activateBannerImpressionTracker(view: View) = unit.activatePrebidImpressionTracker(view)
+    override fun destroy() = unit.destroy()
+}
+
+/** MultiformatAdHostApi: the Original API (fetchDemand → targeting keywords). */
 internal class MultiformatAdHostApiImpl(
     private val flutterApi: MultiformatFlutterApi,
     private val activity: () -> Activity?,
 ) : MultiformatAdHostApi {
 
-    private val adUnits = mutableMapOf<Long, PrebidAdUnit>()
+    private val adUnits = mutableMapOf<Long, OriginalAdUnit>()
     private val refreshSeconds = mutableMapOf<Long, Int>()
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -39,15 +74,10 @@ internal class MultiformatAdHostApiImpl(
             )))
             return
         }
-        val adUnit = PrebidAdUnit(config.configId)
+        val adUnit = makeAdUnit(config)
         adUnits[adId] = adUnit
-        // Must be set before the auction: Prebid starts the tracker when the
-        // ad server's interstitial shows the Prebid creative.
-        if (config.trackInterstitialImpression) adUnit.activateInterstitialPrebidImpressionTracker(true)
-        val request = buildRequest(config)
-        requests[adId] = request
         inFlight += adUnit
-        adUnit.fetchDemand(request) { bidInfo ->
+        adUnit.fetchDemand { bidInfo ->
             val result = bidInfo.toMultiformatResult()
             mainHandler.post {
                 inFlight -= adUnit
@@ -57,61 +87,126 @@ internal class MultiformatAdHostApiImpl(
         }
     }
 
-    private fun buildRequest(config: MultiformatAdRequestConfig) = PrebidRequest().apply {
-        config.gpid?.let(::setGpid)
-        val sizes = config.bannerSizes.orEmpty().filterNotNull().chunked(2)
+    private fun makeAdUnit(config: MultiformatAdRequestConfig): OriginalAdUnit {
+        val sizes = bannerSizes(config)
+        val banner = sizes.isNotEmpty() || interstitialBanner(config)
+        val video = config.videoConfig != null
+        val native = config.nativeConfig != null
+        val unit: AdUnit = when {
+            native && !banner && !video && !config.isInterstitial && !config.isRewarded ->
+                NativeAdUnit(config.configId).also { NativeRequestSettings(config.nativeConfig!!).applyTo(it) }
+            native -> return multiformatAdUnit(config)
+            config.isRewarded && video && !banner ->
+                RewardedVideoAdUnit(config.configId).apply {
+                    // Must be set before the auction: Prebid starts the
+                    // tracker when the ad server's ad shows the Prebid creative.
+                    if (config.trackInterstitialImpression) activatePrebidImpressionTracker()
+                    videoParameters = config.videoConfig!!.toVideoParameters()
+                }
+            config.isRewarded -> return multiformatAdUnit(config)
+            config.isInterstitial && (banner || video) ->
+                InterstitialAdUnit(config.configId, formats(banner, video)).apply {
+                    if (config.trackInterstitialImpression) activateInterstitialPrebidImpressionTracker()
+                    val minWidth = config.interstitialMinWidthPercentage
+                    val minHeight = config.interstitialMinHeightPercentage
+                    if (minWidth != null && minHeight != null) setMinSizePercentage(minWidth.toInt(), minHeight.toInt())
+                    if (banner) bannerParameters = bannerParameters(config, sizes)
+                    config.videoConfig?.let { videoParameters = it.toVideoParameters() }
+                }
+            !config.isInterstitial && sizes.isNotEmpty() -> {
+                val (first, rest) = sizes.first() to sizes.drop(1)
+                BannerAdUnit(config.configId, first.width, first.height, formats(true, video)).apply {
+                    rest.forEach { addAdditionalSize(it.width, it.height) }
+                    bannerParameters = bannerParameters(config, sizes)
+                    config.videoConfig?.let { videoParameters = it.toVideoParameters() }
+                    adPosition(config)?.let(::setAdPosition)
+                }
+            }
+            else -> return multiformatAdUnit(config)
+        }
+        config.gpid?.let(unit::setGpid)
+        config.pbAdSlot?.let(unit::setPbAdSlot)
+        config.impOrtbConfig?.let(unit::setImpOrtbConfig)
+        config.globalOrtbConfig?.let(unit::setGlobalOrtbConfig)
+        return LegacyAdUnit(unit)
+    }
+
+    private fun formats(banner: Boolean, video: Boolean): EnumSet<AdUnitFormat> =
+        EnumSet.noneOf(AdUnitFormat::class.java).apply {
+            if (banner) add(AdUnitFormat.BANNER)
+            if (video) add(AdUnitFormat.VIDEO)
+        }
+
+    private fun bannerSizes(config: MultiformatAdRequestConfig): List<AdSize> =
+        config.bannerSizes.orEmpty().filterNotNull().chunked(2)
             .filter { it.size == 2 }
             .map { (w, h) -> AdSize(w.toInt(), h.toInt()) }
-        // A banner without sizes is an interstitial's display format (its
-        // minimum size and API frameworks still apply).
-        val interstitialBanner = config.isInterstitial &&
+
+    // A banner without sizes is an interstitial's display format (its
+    // minimum size and API frameworks still apply).
+    private fun interstitialBanner(config: MultiformatAdRequestConfig): Boolean =
+        config.isInterstitial &&
             (config.bannerApi != null || config.interstitialMinWidthPercentage != null ||
                 config.interstitialMinHeightPercentage != null)
-        if (sizes.isNotEmpty() || interstitialBanner) {
-            setBannerParameters(BannerParameters().apply {
-                if (sizes.isNotEmpty()) adSizes = sizes.toSet()
-                config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
-                config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
-                config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
-            })
+
+    private fun bannerParameters(config: MultiformatAdRequestConfig, sizes: List<AdSize>) =
+        BannerParameters().apply {
+            if (sizes.isNotEmpty()) adSizes = sizes.toSet()
+            config.bannerApi?.filterNotNull()?.let { ids -> api = ids.map { Signals.Api(it.toInt()) } }
+            config.interstitialMinWidthPercentage?.let { interstitialMinWidthPercentage = it.toInt() }
+            config.interstitialMinHeightPercentage?.let { interstitialMinHeightPercentage = it.toInt() }
+        }
+
+    private fun adPosition(config: MultiformatAdRequestConfig): AdPosition? =
+        config.adPosition?.let { pos -> AdPosition.values().firstOrNull { it.value.toLong() == pos } }
+
+    private fun multiformatAdUnit(config: MultiformatAdRequestConfig): OriginalAdUnit {
+        val unit = PrebidAdUnit(config.configId)
+        if (config.trackInterstitialImpression) unit.activateInterstitialPrebidImpressionTracker(true)
+        return MultiformatAdUnit(unit, buildRequest(config))
+    }
+
+    private fun buildRequest(config: MultiformatAdRequestConfig) = PrebidRequest().apply {
+        config.gpid?.let(::setGpid)
+        val sizes = bannerSizes(config)
+        if (sizes.isNotEmpty() || interstitialBanner(config)) {
+            setBannerParameters(bannerParameters(config, sizes))
         }
         config.videoConfig?.let { setVideoParameters(it.toVideoParameters()) }
         config.nativeConfig?.let { setNativeParameters(NativeRequestSettings(it).toParameters()) }
         setInterstitial(config.isInterstitial)
         setRewarded(config.isRewarded)
-        config.adPosition?.let { pos ->
-            AdPosition.values().firstOrNull { it.value.toLong() == pos }?.let(::setAdPosition)
-        }
+        adPosition(config)?.let(::setAdPosition)
         // supportSKOverlay: iOS only (SKAdNetwork). pbAdSlot and the ORTB
-        // configs: iOS only too, PrebidAdUnit / PrebidRequest have no setters.
+        // configs: PrebidAdUnit / PrebidRequest have no setters, so a
+        // multiformat request goes without them on Android.
     }
 
     // Units with an auction running. Destroying one clears its result
     // listener, so the pending Dart Future would never complete: such a unit
     // is destroyed once its auction returns (iOS keeps it alive likewise).
-    private val inFlight = mutableSetOf<PrebidAdUnit>()
+    private val inFlight = mutableSetOf<OriginalAdUnit>()
 
-    private fun release(adUnit: PrebidAdUnit) {
+    private fun release(adUnit: OriginalAdUnit) {
         if (adUnit !in inFlight) adUnit.destroy()
     }
 
     // Auto-refresh. Prebid Android 3.4's PrebidAdUnit can't refresh: it
     // rebuilds its inner ad unit (interval 0, no refresh listener) on every
-    // fetchDemand. So the plugin re-runs the same request on a timer and
-    // sends each result to Dart as an event.
-    private val requests = mutableMapOf<Long, PrebidRequest>()
+    // fetchDemand. So the plugin re-runs the same auction on a timer, for
+    // the legacy ad units too (one mechanism), and sends each result to Dart
+    // as an event.
     private val refreshTasks = mutableMapOf<Long, Runnable>()
 
     private fun scheduleRefresh(adId: Long) {
         cancelRefresh(adId)
         val seconds = refreshSeconds[adId] ?: return
-        if (requests[adId] == null) return
+        if (adUnits[adId] == null) return
         val task = object : Runnable {
             override fun run() {
                 val adUnit = adUnits[adId] ?: return
-                val request = requests[adId] ?: return
                 inFlight += adUnit
-                adUnit.fetchDemand(request) { bidInfo ->
+                adUnit.fetchDemand { bidInfo ->
                     val result = bidInfo.toMultiformatResult()
                     mainHandler.post {
                         inFlight -= adUnit
@@ -159,7 +254,7 @@ internal class MultiformatAdHostApiImpl(
         val adUnit = adUnits[adId] ?: return false
         val root = activity()?.window?.decorView ?: return false
         val banner = findGmaBannerViews(root).singleOrNull() ?: return false
-        adUnit.activatePrebidImpressionTracker(banner)
+        adUnit.activateBannerImpressionTracker(banner)
         return true
     }
 
@@ -186,7 +281,6 @@ internal class MultiformatAdHostApiImpl(
     override fun destroy(adId: Long) {
         cancelRefresh(adId)
         refreshSeconds.remove(adId)
-        requests.remove(adId)
         adUnits.remove(adId)?.let(::release)
     }
 

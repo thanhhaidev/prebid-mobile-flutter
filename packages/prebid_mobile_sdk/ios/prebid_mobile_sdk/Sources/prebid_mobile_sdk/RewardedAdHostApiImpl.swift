@@ -21,7 +21,8 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         impOrtbConfig: String?,
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
-        pbAdSlot: String?
+        pbAdSlot: String?,
+        adPosition: Int64?
     ) throws {
         try destroy(adId: adId)
         let adUnit: RewardedAdUnit
@@ -39,6 +40,7 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         videoConfig?.apply(to: adUnit.videoParameters)
         controls?.apply(to: adUnit)
         let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
+        if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
         delegates[adId] = delegate
         rewardedAds[adId] = adUnit

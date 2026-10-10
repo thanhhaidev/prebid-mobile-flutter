@@ -176,14 +176,12 @@ internal fun videoPlacementType(name: String?): VideoPlacementType? = when (name
 }
 
 /** The winning bid of a loaded banner, as sent with `onAdLoaded`. */
-private fun BidResponse.toWinningBid(): Map<String, Any?>? {
-    val bid = winningBid ?: return null
-    val keywords = targeting.orEmpty()
-    return mapOf(
+private fun BidResponse.toWinningBid(): Map<String, Any?>? = toWinningBidData()?.let { bid ->
+    mapOf(
         "price" to bid.price,
-        "bidder" to keywords["hb_bidder"],
+        "bidder" to bid.bidder,
         "width" to bid.width,
         "height" to bid.height,
-        "targetingKeywords" to keywords,
+        "targetingKeywords" to bid.targetingKeywords,
     )
 }

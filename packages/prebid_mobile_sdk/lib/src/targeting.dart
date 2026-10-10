@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
@@ -361,6 +363,22 @@ class PrebidTargeting {
   /// Clear all user ext data entries.
   static Future<void> clearUserExtData() async {
     await api.clearUserExtData();
+  }
+
+  /// Sets the whole `user.ext` object (null clears it). Its `data` entry
+  /// gives way to the [addUserExtData] keys when any is set; the other keys
+  /// are sent as given.
+  static Future<void> setUserExt(Map<String, Object?>? ext) async {
+    await api.setUserExt(ext == null ? null : jsonEncode(ext));
+  }
+
+  /// The current `user.ext` object, including the [addUserExtData] keys
+  /// under `data`; null when empty.
+  static Future<Map<String, Object?>?> getUserExt() async {
+    final json = await api.getUserExt();
+    if (json == null) return null;
+    final decoded = jsonDecode(json);
+    return decoded is Map ? Map<String, Object?>.from(decoded) : null;
   }
 
   // ---------------------------------------------------------------------------

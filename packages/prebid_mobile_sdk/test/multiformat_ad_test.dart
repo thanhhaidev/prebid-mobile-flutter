@@ -114,6 +114,8 @@ void main() {
       expect(r.nativeAdCacheId, 'cache-1');
       expect((r.exp, r.topBidFiltered), (300, true));
       expect(r.events, {'ext.prebid.events.win': 'https://win'});
+      expect(r.expiresAt, r.receivedAt!.add(const Duration(seconds: 300)));
+      expect(r.isExpired, isFalse);
     });
 
     test('an empty result has no keywords, no events, no filtering', () async {

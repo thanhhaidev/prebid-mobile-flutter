@@ -22,6 +22,7 @@ class PrebidMultiformatBidResponse {
     this.exp,
     this.topBidFiltered = false,
     this.events = const {},
+    this.receivedAt,
   });
 
   /// The Prebid result code, the same string on Android and iOS:
@@ -68,6 +69,27 @@ class PrebidMultiformatBidResponse {
 
   /// Whether the bid was successful.
   bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
+
+  /// When the plugin received this response; with [exp] it gives
+  /// [expiresAt].
+  final DateTime? receivedAt;
+
+  /// When the winning bid expires: [receivedAt] plus [exp], or `null` when
+  /// the bid set no `exp`.
+  DateTime? get expiresAt {
+    final at = receivedAt;
+    final seconds = exp;
+    if (at == null || seconds == null) return null;
+    return at.add(Duration(milliseconds: (seconds * 1000).round()));
+  }
+
+  /// Whether [expiresAt] has passed. A full-screen ad is often loaded long
+  /// before it shows: fetch demand again rather than load your ad server's
+  /// ad with expired keywords. `false` when the bid set no `exp`.
+  bool get isExpired {
+    final at = expiresAt;
+    return at != null && !DateTime.now().isBefore(at);
+  }
 }
 
 /// A multiformat ad unit that combines banner, video, and native in one
@@ -326,6 +348,7 @@ class PrebidMultiformatAd {
       exp: result.exp,
       topBidFiltered: result.topBidFiltered ?? false,
       events: stringMap(result.events) ?? const {},
+      receivedAt: DateTime.now(),
     );
   }
 

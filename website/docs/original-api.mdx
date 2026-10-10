@@ -132,6 +132,12 @@ debugPrint('${bid.winningFormat}'); // banner, video or native
 
 More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
 
+A full-screen ad is often loaded long before it shows. Both result types carry `receivedAt`, `expiresAt` (`receivedAt` plus `exp`) and `isExpired`: when the bid has expired, fetch demand again instead of loading your ad server's ad with stale keywords.
+
+```dart
+if (response.isExpired) response = await adUnit.fetchDemand();
+```
+
 Every unit also takes `pbAdSlot`, `impOrtbConfig` and a per-unit `globalOrtbConfig`. On Android they apply to a single-format request, which runs on Prebid's matching ad unit (banner, interstitial, rewarded video or native); a `PrebidMultiformatAd` asking for two or more formats runs on Prebid Android's multiformat ad unit, which has no setters for them. Request-wide OpenRTB set with `PrebidTargeting.setGlobalOrtbConfig` applies to every request.
 
 For video, set `VideoParameters.size` (`imp.video.w` / `h`): many bidders reject an Original API video request without a player size.

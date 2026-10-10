@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
@@ -113,14 +115,6 @@ void main() {
       'clearAccessControlList': (
         PrebidTargeting.clearAccessControlList,
         () => api.clearAccessControlList(),
-      ),
-      'setGlobalOrtbConfig': (
-        () => PrebidTargeting.setGlobalOrtbConfig('{"bcat":["IAB1"]}'),
-        () => api.setGlobalOrtbConfig('{"bcat":["IAB1"]}'),
-      ),
-      'setGlobalOrtbConfig(null)': (
-        () => PrebidTargeting.setGlobalOrtbConfig(null),
-        () => api.setGlobalOrtbConfig(null),
       ),
       'setPublisherName': (
         () => PrebidTargeting.setPublisherName('CoolApp'),
@@ -381,6 +375,69 @@ void main() {
       });
       when(api.getUserExt()).thenAnswer((_) async => null);
       expect(await PrebidTargeting.getUserExt(), isNull);
+    });
+  });
+
+  group('the global OpenRTB config carries the plugin record', () {
+    const record =
+        '"prebid":{"wrapper":{"name":"prebid_mobile_sdk","version":"1.0.0"}}';
+
+    for (final (name, set, sent) in [
+      (
+        'added to a config',
+        '{"bcat":["IAB1"]}',
+        '{"bcat":["IAB1"],"app":{"ext":{$record}}}',
+      ),
+      ('the whole config when cleared', null, '{"app":{"ext":{$record}}}'),
+      (
+        'merged into the app\'s own app.ext',
+        '{"app":{"name":"n","ext":{"data":{"k":"v"}}}}',
+        '{"app":{"name":"n","ext":{"data":{"k":"v"},$record}}}',
+      ),
+      ('not added to invalid JSON', '{bcat', '{bcat'),
+      ('not added to a JSON array', '[1]', '[1]'),
+    ]) {
+      test(name, () async {
+        await PrebidTargeting.setGlobalOrtbConfig(set);
+        verify(api.setGlobalOrtbConfig(sent)).called(1);
+      });
+    }
+
+    for (final (name, stored, read) in [
+      (
+        'left out when read back',
+        '{"bcat":["IAB1"],"app":{"ext":{$record}}}',
+        '{"bcat":["IAB1"]}',
+      ),
+      ('null when it was the only content', '{"app":{"ext":{$record}}}', null),
+      (
+        'removed without the app\'s other app fields',
+        '{"app":{"name":"n","ext":{"prebid":{"source":"s","wrapper":{}}}}}',
+        '{"app":{"name":"n","ext":{"prebid":{"source":"s"}}}}',
+      ),
+      (
+        'a config without it, unchanged',
+        '{ "bcat": ["IAB1"] }',
+        '{ "bcat": ["IAB1"] }',
+      ),
+      ('nothing stored', null, null),
+    ]) {
+      test(name, () async {
+        when(api.getGlobalOrtbConfig()).thenAnswer((_) async => stored);
+        expect(await PrebidTargeting.getGlobalOrtbConfig(), read);
+      });
+    }
+
+    test('names the version in pubspec.yaml', () async {
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+      final version = RegExp(
+        r'^version: (\S+)$',
+        multiLine: true,
+      ).firstMatch(pubspec)!.group(1);
+      await PrebidTargeting.setGlobalOrtbConfig(null);
+      final sent =
+          verify(api.setGlobalOrtbConfig(captureAny)).captured.single as String;
+      expect(sent, contains('"version":"$version"'));
     });
   });
 }

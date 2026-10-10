@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'generated/prebid_api.g.dart';
+import 'internal/ortb.dart';
 
 /// Manages targeting information and privacy settings for Prebid Mobile.
 ///
@@ -269,13 +270,19 @@ class PrebidTargeting {
   /// ```
   ///
   /// Pass `null` to clear the configuration.
+  ///
+  /// The plugin adds its name and version to the config it passes on, as
+  /// `app.ext.prebid.wrapper`, so Prebid Server hosts and bidders can tell
+  /// Flutter traffic apart; [getGlobalOrtbConfig] leaves that record out.
+  /// Setting the global config from native code as well replaces the record.
   static Future<void> setGlobalOrtbConfig(String? ortbConfig) async {
-    await api.setGlobalOrtbConfig(ortbConfig);
+    await api.setGlobalOrtbConfig(withWrapperRecord(ortbConfig));
   }
 
-  /// Get the current global OpenRTB configuration JSON string.
+  /// Get the current global OpenRTB configuration JSON string, without the
+  /// plugin's `app.ext.prebid.wrapper` record.
   static Future<String?> getGlobalOrtbConfig() async {
-    return api.getGlobalOrtbConfig();
+    return withoutWrapperRecord(await api.getGlobalOrtbConfig());
   }
 
   // ---------------------------------------------------------------------------

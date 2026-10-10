@@ -11,10 +11,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockPrebidMobileHostApi api;
+  late MockTargetingHostApi targeting;
 
   setUp(() {
     api = MockPrebidMobileHostApi();
     PrebidMobile.api = api;
+    targeting = MockTargetingHostApi();
+    PrebidTargeting.api = targeting;
+    when(targeting.getGlobalOrtbConfig()).thenAnswer((_) async => null);
   });
 
   group('initializeSdk', () {
@@ -33,6 +37,21 @@ void main() {
       verify(
         api.initializeSdk('https://pbs', 'acc', 'https://pbs-no-track'),
       ).called(1);
+    });
+
+    test('adds the plugin record to the global OpenRTB config first', () async {
+      answer('succeeded');
+      when(
+        targeting.getGlobalOrtbConfig(),
+      ).thenAnswer((_) async => '{"bcat":["IAB1"]}');
+      await PrebidMobile.initializeSdk(prebidServerUrl: 'u', accountId: 'a');
+      verifyInOrder([
+        targeting.setGlobalOrtbConfig(
+          '{"bcat":["IAB1"],"app":{"ext":{"prebid":{"wrapper":'
+          '{"name":"prebid_mobile_sdk","version":"1.0.0"}}}}}',
+        ),
+        api.initializeSdk('u', 'a', null),
+      ]);
     });
 
     test('reports each status with its error', () async {

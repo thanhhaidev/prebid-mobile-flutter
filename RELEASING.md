@@ -47,7 +47,9 @@ For each package on pub.dev, open **Admin → Automated publishing**:
 1. Bump `version:` in the package's `pubspec.yaml` and rename the
    `## [Unreleased]` section of its `CHANGELOG.md` to `## [<version>] - <date>`
    (contributors add their entries under `[Unreleased]`). If a companion needs a new core API, bump
-   its `prebid_mobile_sdk: ^x.y.z` constraint too.
+   its `prebid_mobile_sdk: ^x.y.z` constraint too. For the core, also bump
+   `pluginVersion` in `lib/src/internal/ortb.dart`, the version every bid
+   request names (a test fails until it matches the pubspec).
 2. Add an entry for the new version at the top of the package's `releases`
    in [`website/src/data/compatibility.json`](website/src/data/compatibility.json)
    (native Prebid and ad SDK versions, minimum OS versions), then run

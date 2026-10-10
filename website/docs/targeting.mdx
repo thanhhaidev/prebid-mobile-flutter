@@ -63,6 +63,14 @@ Arbitrary OpenRTB JSON merged into every request:
 await PrebidTargeting.setGlobalOrtbConfig('{"ext":{"prebid":{"debug":1}}}');
 ```
 
+The plugin adds its own name and version to that config, so every request says it came from this plugin, next to the native SDK's own `source` and `version`:
+
+```json
+{"app": {"ext": {"prebid": {"wrapper": {"name": "prebid_mobile_sdk", "version": "1.0.0"}}}}}
+```
+
+`initializeSdk` sends it even when you set no config, and `getGlobalOrtbConfig()` leaves it out. Whether bidders see it depends on the Prebid Server version, which may drop `app.ext.prebid` fields it doesn't know. If your native code also sets the global config, the last call wins and the record may be lost.
+
 For a single ad unit, pass `impOrtbConfig` to the ad instead; it is merged into that ad's `imp`. This is also how to set a GPID where there is no dedicated parameter: `'{"ext":{"gpid":"/1111/home"}}'`.
 
 ## App information

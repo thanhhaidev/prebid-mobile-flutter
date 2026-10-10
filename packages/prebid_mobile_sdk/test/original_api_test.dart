@@ -270,4 +270,47 @@ void main() {
       isFalse,
     );
   });
+
+  group('bid expiry', () {
+    final received = DateTime(2020, 1, 1, 12);
+
+    test('a bid expires exp seconds after it was received', () {
+      final r = PrebidBidResponse(
+        resultCode: 'prebidDemandFetchSuccess',
+        exp: 300.5,
+        receivedAt: received,
+      );
+      expect(r.expiresAt, DateTime(2020, 1, 1, 12, 5, 0, 500));
+      expect(r.isExpired, isTrue);
+    });
+
+    test('a bid that expires later has not expired', () {
+      final r = PrebidBidResponse(
+        resultCode: 'prebidDemandFetchSuccess',
+        exp: 300,
+        receivedAt: DateTime.now(),
+      );
+      expect(r.isExpired, isFalse);
+    });
+
+    test('without exp a bid never expires', () {
+      final r = PrebidBidResponse(
+        resultCode: 'prebidDemandFetchSuccess',
+        receivedAt: received,
+      );
+      expect((r.expiresAt, r.isExpired), (null, false));
+    });
+
+    test('fetchDemand stamps when the response arrived', () async {
+      final before = DateTime.now();
+      final r = await PrebidBannerAdUnit(
+        configId: 'b',
+        sizes: const [Size(320, 50)],
+      ).fetchDemand();
+      final after = DateTime.now();
+      expect(r.receivedAt!.isBefore(before), isFalse);
+      expect(r.receivedAt!.isAfter(after), isFalse);
+      expect(r.expiresAt, r.receivedAt!.add(const Duration(seconds: 300)));
+    });
+  });
 }

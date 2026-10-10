@@ -4,6 +4,7 @@ import 'ad_enums.dart';
 import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/pigeon_conversions.dart';
+import 'targeting.dart';
 
 /// Receives each Prebid SDK log message at or above the log level, while
 /// registered with [PrebidMobile.setLogListener].
@@ -45,7 +46,8 @@ class PrebidMobile {
   /// Initialize the Prebid Mobile SDK.
   ///
   /// Must be called once before loading any ads. Typically called during
-  /// app startup (e.g., in `main()`).
+  /// app startup (e.g., in `main()`). It also adds the plugin's name and
+  /// version to every bid request (see [PrebidTargeting.setGlobalOrtbConfig]).
   ///
   /// - [prebidServerUrl] — Your Prebid Server endpoint URL
   ///   (e.g., `https://prebid-server-test-j.prebid.org/openrtb2/auction`).
@@ -61,6 +63,11 @@ class PrebidMobile {
     String? nonTrackingUrl,
     void Function(PrebidInitializationStatus status, String? error)? completion,
   }) async {
+    // Re-setting the global config adds the plugin's name and version to
+    // every request, keeping a config set earlier.
+    await PrebidTargeting.setGlobalOrtbConfig(
+      await PrebidTargeting.getGlobalOrtbConfig(),
+    );
     final result = await api.initializeSdk(
       prebidServerUrl,
       accountId,

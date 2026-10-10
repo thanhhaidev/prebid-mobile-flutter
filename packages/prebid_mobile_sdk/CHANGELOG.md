@@ -73,6 +73,12 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   and a `none` log level.
 - The Google Ad Manager VAST tag URL for IMA players
   (`PrebidInstreamVideoAd.generateInstreamUriForGam`).
+- The plugin's name and version in every bid request
+  (`app.ext.prebid.wrapper`), so Prebid Server hosts and bidders can tell
+  Flutter traffic from native app traffic. The native SDK's
+  `app.ext.prebid.source` and `version` are unchanged.
+- Bid expiry on Original API and multiformat results: `receivedAt`,
+  `expiresAt` and `isExpired`.
 - Native response image sizes (iOS), the device-data consent check, an
   `app.bundle` override (Android), Prebid's own location updates switch
   (iOS), and clearing the user location.

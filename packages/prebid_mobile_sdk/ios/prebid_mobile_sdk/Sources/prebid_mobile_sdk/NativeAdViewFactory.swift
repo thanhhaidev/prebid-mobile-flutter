@@ -190,8 +190,8 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         sponsoredLabel.isHidden = (ad.sponsoredBy ?? "").isEmpty
         bodyLabel.isHidden = (ad.text ?? "").isEmpty
         ctaButton.isHidden = (ad.callToAction ?? "").isEmpty
-        downloadImage(ad.iconUrl, into: iconView)
-        downloadImage(ad.imageUrl, into: mainImageView)
+        downloadNativeImage(ad.iconUrl, into: iconView)
+        downloadNativeImage(ad.imageUrl, into: mainImageView)
 
         let titleStack = UIStackView(arrangedSubviews: [sponsoredLabel, titleLabel])
         titleStack.axis = .vertical
@@ -244,14 +244,6 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
                 self.methodChannel.invokeMethod("onAdSize", arguments: ["height": Double(height)])
             }
         }
-    }
-
-    private func downloadImage(_ urlString: String?, into imageView: UIImageView) {
-        guard let urlString = urlString, let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data, let image = UIImage(data: data) else { return }
-            DispatchQueue.main.async { imageView.image = image }
-        }.resume()
     }
 
 }

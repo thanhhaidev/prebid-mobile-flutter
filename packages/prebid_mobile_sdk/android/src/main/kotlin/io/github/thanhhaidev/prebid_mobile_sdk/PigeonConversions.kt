@@ -38,28 +38,6 @@ internal fun AdFlutterApi.sendAdFailed(adId: Long, error: String) {
 }
 
 /**
- * Maps an Android [ResultCode] to the result-code names the
- * Dart API uses (the iOS `ResultCode` case names), so both platforms report
- * the same strings and `isSuccess` works everywhere.
- */
-internal fun ResultCode.toDartCode(): String = when (this) {
-    ResultCode.SUCCESS -> "prebidDemandFetchSuccess"
-    ResultCode.INVALID_ACCOUNT_ID -> "prebidInvalidAccountId"
-    ResultCode.INVALID_CONFIG_ID -> "prebidInvalidConfigId"
-    ResultCode.INVALID_SIZE -> "prebidInvalidSize"
-    ResultCode.INVALID_HOST_URL -> "prebidServerURLInvalid"
-    ResultCode.NETWORK_ERROR -> "prebidNetworkError"
-    ResultCode.PREBID_SERVER_ERROR -> "prebidServerError"
-    ResultCode.NO_BIDS -> "prebidDemandNoBids"
-    ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
-    ResultCode.TIMEOUT -> "prebidDemandTimedOut"
-    ResultCode.INVALID_CONTEXT -> "prebidInvalidContext"
-    ResultCode.INVALID_AD_OBJECT -> "prebidInvalidAdObject"
-    ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
-    ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
-}
-
-/**
  * Result code for a fetchDemand [BidInfo].
  * Prebid Android's Original API reports SUCCESS even for an empty seatbid
  * (no winning bid); iOS reports no-bids. Treat SUCCESS without targeting

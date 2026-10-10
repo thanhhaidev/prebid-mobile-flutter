@@ -9,6 +9,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import org.prebid.mobile.ResultCode
+
+// Shared by the core package and the GAM package; tool/check_copies.sh
+// keeps the copies identical.
 
 /** Downloads native ad images off the main thread, on a small shared pool. */
 internal object NativeImageLoader {
@@ -68,4 +72,26 @@ internal fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHe
         sampleSize *= 2
     }
     return sampleSize
+}
+
+/**
+ * Maps an Android [ResultCode] to the result-code names the
+ * Dart API uses (the iOS `ResultCode` case names), so both platforms report
+ * the same strings and `isSuccess` works everywhere.
+ */
+internal fun ResultCode.toDartCode(): String = when (this) {
+    ResultCode.SUCCESS -> "prebidDemandFetchSuccess"
+    ResultCode.INVALID_ACCOUNT_ID -> "prebidInvalidAccountId"
+    ResultCode.INVALID_CONFIG_ID -> "prebidInvalidConfigId"
+    ResultCode.INVALID_SIZE -> "prebidInvalidSize"
+    ResultCode.INVALID_HOST_URL -> "prebidServerURLInvalid"
+    ResultCode.NETWORK_ERROR -> "prebidNetworkError"
+    ResultCode.PREBID_SERVER_ERROR -> "prebidServerError"
+    ResultCode.NO_BIDS -> "prebidDemandNoBids"
+    ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
+    ResultCode.TIMEOUT -> "prebidDemandTimedOut"
+    ResultCode.INVALID_CONTEXT -> "prebidInvalidContext"
+    ResultCode.INVALID_AD_OBJECT -> "prebidInvalidAdObject"
+    ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
+    ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
 }

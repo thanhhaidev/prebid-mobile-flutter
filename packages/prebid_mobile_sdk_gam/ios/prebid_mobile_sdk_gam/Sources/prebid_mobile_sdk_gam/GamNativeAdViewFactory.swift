@@ -254,8 +254,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         iconView.clipsToBounds = true
         mainImageView.contentMode = .scaleAspectFill
         mainImageView.clipsToBounds = true
-        downloadImage(ad.iconUrl, into: iconView)
-        downloadImage(ad.imageUrl, into: mainImageView)
+        downloadNativeImage(ad.iconUrl, into: iconView)
+        downloadNativeImage(ad.imageUrl, into: mainImageView)
 
         let titleStack = UIStackView(arrangedSubviews: [sponsoredLabel, titleLabel])
         titleStack.axis = .vertical
@@ -397,14 +397,6 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
                 self?.send("onAdSize", ["height": Double(height)])
             }
         }
-    }
-
-    private func downloadImage(_ urlString: String?, into imageView: UIImageView) {
-        guard let urlString = urlString, let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data, let image = UIImage(data: data) else { return }
-            DispatchQueue.main.async { imageView.image = image }
-        }.resume()
     }
 }
 

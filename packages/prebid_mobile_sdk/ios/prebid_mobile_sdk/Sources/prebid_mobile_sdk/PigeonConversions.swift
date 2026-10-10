@@ -90,32 +90,6 @@ private func prebidPosition(_ name: String) -> Position? {
     }
 }
 
-/// The result-code names the Dart API uses (matching the Android mapping), so
-/// both platforms report the same strings.
-extension ResultCode {
-    var dartCode: String {
-        switch self {
-        case .prebidDemandFetchSuccess: return "prebidDemandFetchSuccess"
-        case .prebidServerNotSpecified: return "prebidServerNotSpecified"
-        case .prebidInvalidAccountId: return "prebidInvalidAccountId"
-        case .prebidInvalidConfigId: return "prebidInvalidConfigId"
-        case .prebidInvalidSize: return "prebidInvalidSize"
-        case .prebidNetworkError: return "prebidNetworkError"
-        case .prebidServerError: return "prebidServerError"
-        case .prebidDemandNoBids: return "prebidDemandNoBids"
-        case .prebidDemandTimedOut: return "prebidDemandTimedOut"
-        case .prebidServerURLInvalid: return "prebidServerURLInvalid"
-        case .prebidDemandNoCachedBids: return "prebidDemandNoCachedBids"
-        case .prebidUnknownError: return "prebidUnknownError"
-        case .prebidInvalidResponseStructure: return "prebidInvalidResponseStructure"
-        case .prebidInternalSDKError: return "prebidInternalSDKError"
-        case .prebidWrongArguments: return "prebidWrongArguments"
-        case .prebidNoVastTagInMediaData: return "prebidNoVastTagInMediaData"
-        case .prebidSDKMisuse, .prebidSDKMisusePreviousFetchNotCompletedYet: return "prebidSDKMisuse"
-        default: return "prebidInvalidRequest"
-        }
-    }
-}
 
 /// The ad formats named by Dart ("banner", "video"); nil for none.
 func adFormatSet(_ names: [String]?) -> Set<AdFormat>? {

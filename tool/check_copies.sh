@@ -6,7 +6,8 @@
 #   shared through the core package.
 # - the native code every companion package shares (the request parsing,
 #   the fullscreen ad manager, the plugin helpers), which each plugin
-#   compiles on its own (the Kotlin copies differ only in their package line).
+#   compiles on its own (the Kotlin copies differ only in their package line),
+#   and PrebidCommon, the native code the core and GAM packages share.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -57,5 +58,19 @@ for name in PrebidRequests.swift FullscreenAdManager.swift PrebidPlugin.swift; d
     fi
   done
 done
+core_common=packages/prebid_mobile_sdk/$kotlin/prebid_mobile_sdk/PrebidCommon.kt
+gam_common=packages/prebid_mobile_sdk_gam/$kotlin/prebid_mobile_sdk_gam/PrebidCommon.kt
+if ! diff -q <(unpackaged "$core_common") <(unpackaged "$gam_common") >/dev/null; then
+  echo "copies: $gam_common differs from $core_common; keep the two identical" >&2
+  diff -u <(unpackaged "$core_common") <(unpackaged "$gam_common") >&2 || true
+  status=1
+fi
+core_common=packages/prebid_mobile_sdk/ios/prebid_mobile_sdk/Sources/prebid_mobile_sdk/PrebidCommon.swift
+gam_common=packages/prebid_mobile_sdk_gam/${swift//PKG/gam}/PrebidCommon.swift
+if ! cmp -s "$core_common" "$gam_common"; then
+  echo "copies: $gam_common differs from $core_common; keep the two identical" >&2
+  diff -u "$core_common" "$gam_common" >&2 || true
+  status=1
+fi
 [ "$status" -eq 0 ] && echo "copies: lint rules, companion test harnesses and shared native code in sync"
 exit "$status"

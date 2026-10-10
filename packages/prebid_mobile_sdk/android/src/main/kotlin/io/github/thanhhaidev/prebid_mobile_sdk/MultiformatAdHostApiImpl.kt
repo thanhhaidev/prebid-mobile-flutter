@@ -239,7 +239,12 @@ internal class MultiformatAdHostApiImpl(
     override fun setAutoRefreshInterval(adId: Long, seconds: Long) {
         // Same bounds as Prebid's auto-refresh.
         refreshSeconds[adId] = seconds.coerceIn(30, 120).toInt()
-        if (refreshTasks.containsKey(adId)) scheduleRefresh(adId)
+        // Also when set after fetchDemand returned (the usual order): the
+        // timer starts from now. During an auction, the result starts it.
+        val adUnit = adUnits[adId]
+        if (refreshTasks.containsKey(adId) || (adUnit != null && adUnit !in inFlight)) {
+            scheduleRefresh(adId)
+        }
     }
 
     override fun stopAutoRefresh(adId: Long) {

@@ -9,6 +9,8 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
         NativeEventTracker,
         NativePlacementType;
 
+import 'max_listeners.dart';
+
 /// Listener for [PrebidMaxNativeAd] events.
 class PrebidMaxNativeAdListener {
   /// The native ad loaded and is rendered.
@@ -23,12 +25,16 @@ class PrebidMaxNativeAdListener {
   /// The native ad failed to load.
   final void Function(String error)? onAdFailed;
 
+  /// MAX paid revenue for an impression (it also fires [onAdImpression]).
+  final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
+
   /// Creates a [PrebidMaxNativeAdListener].
   const PrebidMaxNativeAdListener({
     this.onAdLoaded,
     this.onAdImpression,
     this.onAdClicked,
     this.onAdFailed,
+    this.onAdRevenuePaid,
   });
 }
 
@@ -172,6 +178,10 @@ class _PrebidMaxNativeAdState extends State<PrebidMaxNativeAd> {
           widget.listener?.onAdClicked?.call();
         case 'onAdImpression':
           widget.listener?.onAdImpression?.call();
+        case 'onAdRevenuePaid':
+          widget.listener?.onAdRevenuePaid?.call(
+            maxAdRevenueFrom(call.arguments as Map?),
+          );
       }
     });
   }

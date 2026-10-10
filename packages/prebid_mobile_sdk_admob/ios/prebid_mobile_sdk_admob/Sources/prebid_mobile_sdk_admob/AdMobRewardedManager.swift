@@ -43,6 +43,7 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
             let configId = args?["configId"] as? String ?? ""
             let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
 
+            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
             let request = Request()
             let mediationDelegate = AdMobMediationRewardedUtils(gadRequest: request)
             let adUnit = MediationRewardedAdUnit(
@@ -58,6 +59,7 @@ class AdMobRewardedManager: NSObject, FullScreenContentDelegate {
             adUnit.fetchDemand { [weak self, weak adUnit] _ in
                 // Destroyed / replaced while the auction ran: skip the load.
                 guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
+                maybeDropBid(dropBidProbability, from: request)
                 RewardedAd.load(with: adMobAdUnitId, request: request) { [weak self, weak adUnit] ad, error in
                     // A late load must not re-insert an ad for a released adId.
                     guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }

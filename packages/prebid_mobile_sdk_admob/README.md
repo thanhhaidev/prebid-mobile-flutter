@@ -71,9 +71,9 @@ ad units and wire the Prebid adapters, per the
 <!-- compatibility:start -->
 <!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
 
-| prebid_mobile_sdk_admob | Prebid Android (`prebid-mobile-sdk-admob-adapters`) | Prebid iOS (`PrebidMobileAdMobAdapters`) | Google Mobile Ads Android | Google Mobile Ads iOS |
-| --- | --- | --- | --- | --- |
-| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` |
+| prebid_mobile_sdk_admob | Prebid Android (`prebid-mobile-sdk-admob-adapters`) | Prebid iOS (`PrebidMobileAdMobAdapters`) | Google Mobile Ads Android | Google Mobile Ads iOS | Tested with |
+| --- | --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` | `google_mobile_ads 9.1.0` |
 
 Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 
@@ -96,6 +96,18 @@ PrebidAdMobBannerAd(
   listener: PrebidBannerAdListener(
     onAdLoaded: () => debugPrint('AdMob banner loaded'),
   ),
+);
+
+// Adaptive (landscape inline, full width) with an extra Prebid size and
+// Prebid auto-refresh (clamped to 30–120 s on Android, 15–120 s on iOS):
+PrebidAdMobBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/6300978111',
+  width: 320,
+  height: 50,
+  adaptive: true,
+  additionalSizes: const [Size(728, 90)],
+  refreshIntervalSeconds: 30,
 );
 ```
 
@@ -201,10 +213,11 @@ the rendered video's length but isn't sent in the request.
 
 | Class | Description |
 |---|---|
-| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController`; `adPosition`, `impOrtbConfig`. |
-| `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`, `videoParameters`, `impOrtbConfig`. |
+| `PrebidAdMobBannerAd` | Banner widget; AdMob renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adPosition`, `impOrtbConfig`. |
+| `PrebidAdMobInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidAdMobRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidAdMobNativeAd` | Native widget rendered via AdMob's native ad view; `PrebidAdMobNativeAdListener`; `context` / `contextSubType` / `placementType`. |
+| `PrebidAdMob` | `debugDropBidProbability`: **testing only**. Drops the Prebid bid before AdMob loads, with the given probability, to exercise the adapter's fallback (Prebid's test app "Random" cases). |
 
 ## License
 

@@ -53,6 +53,7 @@ class MaxRewardedManager: NSObject {
             }
             let configId = args?["configId"] as? String ?? ""
             let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
+            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
             if showingUnits.contains(maxAdUnitId) {
                 // Handing the shared instance over now would route the showing
                 // ad's reward and close to this ad; leave it alone.
@@ -105,6 +106,9 @@ class MaxRewardedManager: NSObject {
                 // Destroyed / replaced while the auction ran: skip the load.
                 guard let self = self, let adUnit = adUnit,
                       self.adUnits[adId] === adUnit else { return }
+                if shouldDropBid(dropBidProbability) {
+                    self.rewardedAds[adId]?.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
+                }
                 self.rewardedAds[adId]?.load()
             }
             result(nil)

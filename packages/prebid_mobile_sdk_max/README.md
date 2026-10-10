@@ -61,9 +61,9 @@ and wire the Prebid MAX adapter, per the
 <!-- compatibility:start -->
 <!-- Generated from website/src/data/compatibility.json by website/scripts/sync-compatibility.mjs. Do not edit. -->
 
-| prebid_mobile_sdk_max | Prebid Android (`prebid-mobile-sdk-max-adapters`) | Prebid iOS (`PrebidMobileMAXAdapters`) | AppLovin MAX Android | AppLovin MAX iOS |
-| --- | --- | --- | --- | --- |
-| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `applovin-sdk 13.1.0` | `AppLovinSDK >= 13.0.0` |
+| prebid_mobile_sdk_max | Prebid Android (`prebid-mobile-sdk-max-adapters`) | Prebid iOS (`PrebidMobileMAXAdapters`) | AppLovin MAX Android | AppLovin MAX iOS | Tested with |
+| --- | --- | --- | --- | --- | --- |
+| 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `applovin-sdk 13.1.0` | `AppLovinSDK >= 13.0.0` | `applovin_max 4.6.4` |
 
 Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 
@@ -85,6 +85,22 @@ PrebidMaxBannerAd(
   height: 50,
   listener: PrebidBannerAdListener(
     onAdLoaded: () => debugPrint('MAX banner loaded'),
+  ),
+);
+
+// Adaptive banner (full width) with an extra Prebid size and the MAX-only
+// events:
+PrebidMaxBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  maxAdUnitId: 'YOUR_MAX_BANNER_AD_UNIT_ID',
+  width: 320,
+  height: 50,
+  adaptive: true,
+  additionalSizes: const [Size(728, 90)],
+  refreshIntervalSeconds: 30,
+  listener: PrebidMaxBannerAdListener(
+    onAdExpanded: () => debugPrint('expanded'),
+    onAdRevenuePaid: (revenue) => debugPrint('${revenue.revenue} USD'),
   ),
 );
 ```
@@ -202,10 +218,12 @@ the rendered video's length but isn't sent in the request.
 
 | Class | Description |
 |---|---|
-| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController`; `adPosition`, `impOrtbConfig`. |
-| `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `controls`, `videoParameters`, `impOrtbConfig`. |
+| `PrebidMaxBannerAd` | Banner widget; MAX renders. Resizes to the rendered creative. `PrebidBannerAdController` (load on demand, `stopRefresh()`); `refreshIntervalSeconds`, `adaptive`, `additionalSizes`, `adPosition`, `impOrtbConfig`. |
+| `PrebidMaxInterstitialAd` | Interstitial with `loadAd()` / `show()` / `destroy()`, `isVideo`, `adFormats`, `controls`, `videoParameters`, `impOrtbConfig`. |
 | `PrebidMaxRewardedAd` | Rewarded with `loadAd()` / `show()` / `destroy()`, `controls`, `videoParameters`, `impOrtbConfig`. |
-| `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener`; `context` / `contextSubType` / `placementType`. |
+| `PrebidMaxNativeAd` | Native widget rendered via MAX's native ad view; `PrebidMaxNativeAdListener` (with `onAdRevenuePaid`); `context` / `contextSubType` / `placementType`. |
+| `PrebidMaxBannerAdListener`, `PrebidMaxInterstitialAdListener`, `PrebidMaxRewardedAdListener` | Core listeners plus MAX events: `onAdRevenuePaid` (`PrebidMaxAdRevenue`), and on banners `onAdExpanded`, `onAdCollapsed`, `onAdDisplayFailed`. |
+| `PrebidMax` | `debugDropBidProbability`: **testing only**. Withholds the Prebid bid from MAX, with the given probability, to exercise the adapter's fallback (Prebid's test app "Random" cases). |
 
 ## License
 

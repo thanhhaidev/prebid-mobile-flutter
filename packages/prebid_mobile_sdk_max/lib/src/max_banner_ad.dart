@@ -4,6 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show PrebidAdPosition, PrebidBannerAdController, PrebidBannerAdListener;
 
+import 'max_listeners.dart';
+import 'max_testing.dart';
+
 /// A banner ad mediated by **AppLovin MAX** with Prebid demand.
 ///
 /// Prebid runs the auction via a `MediationBannerAdUnit` and passes the winning
@@ -23,6 +26,28 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// The desired height of the banner ad in dp.
   final int height;
 
+  /// Further sizes Prebid may bid on besides [width] x [height] (e.g.
+  /// `[Size(728, 90)]`), sent in the Prebid request
+  /// (`MediationBannerAdUnit.addAdditionalSize` / `additionalSizes`). The MAX
+  /// view keeps its own size — [adaptive] or [width] x [height].
+  final List<Size>? additionalSizes;
+
+  /// Whether the MAX view is an **adaptive banner** (MAX extra parameter
+  /// `adaptive_banner` = `true`) spanning the full width available to the
+  /// widget, at the height MAX computes for that width, instead of a fixed
+  /// [width] x [height]. [width] x [height] (plus [additionalSizes]) remain
+  /// the Prebid request sizes. The width is measured once, at the first
+  /// layout. Ignored for a 300x250 (MREC) banner.
+  final bool adaptive;
+
+  /// Prebid auto-refresh interval in seconds; each refresh runs a new auction
+  /// and reloads the MAX view. `null` (default) or `0` disables Prebid's
+  /// auto-refresh on both platforms; positive values are clamped by Prebid to
+  /// its supported range (Android 30–120 s, iOS 15–120 s). MAX's own banner
+  /// refresh (set in the MAX dashboard) is separate. Stop both at runtime
+  /// with [PrebidBannerAdController.stopRefresh].
+  final int? refreshIntervalSeconds;
+
   /// Whether the ad should load automatically when the widget is created. Set
   /// to `false` and call [PrebidBannerAdController.loadAd] on [controller] to
   /// load on demand.
@@ -39,7 +64,8 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// how to set the GPID: `{"ext":{"gpid":"/1111/home"}}`).
   final String? impOrtbConfig;
 
-  /// Listener for banner ad events.
+  /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
+  /// also get MAX's expand / collapse, display-failure and revenue events.
   final PrebidBannerAdListener? listener;
 
   /// Creates a [PrebidMaxBannerAd] widget.
@@ -49,6 +75,9 @@ class PrebidMaxBannerAd extends StatefulWidget {
     required this.maxAdUnitId,
     required this.width,
     required this.height,
+    this.additionalSizes,
+    this.adaptive = false,
+    this.refreshIntervalSeconds,
     this.autoLoad = true,
     this.controller,
     this.adPosition,
@@ -66,6 +95,13 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
   late double _width = widget.width.toDouble();
   late double _height = widget.height.toDouble();
 
+  /// Width available to an [PrebidMaxBannerAd.adaptive] banner, measured at
+  /// its first layout.
+  double? _adaptiveWidth;
+
+  /// [PrebidMax.debugDropBidProbability] as read when the view was created.
+  Map<String, Object> _debugArgs = debugDropBidArgs();
+
   @override
   void didUpdateWidget(PrebidMaxBannerAd oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -81,10 +117,15 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
       // gets a new view (keyed below) that starts at the requested size.
       _width = widget.width.toDouble();
       _height = widget.height.toDouble();
+      _adaptiveWidth = null;
+      _debugArgs = debugDropBidArgs();
     }
   }
 
-  static Map<String, dynamic> _creationParams(PrebidMaxBannerAd widget) {
+  static Map<String, dynamic> _creationParams(
+    PrebidMaxBannerAd widget, {
+    double? adaptiveWidth,
+  }) {
     return <String, dynamic>{
       'configId': widget.configId,
       'maxAdUnitId': widget.maxAdUnitId,
@@ -93,17 +134,47 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
       'autoLoad': widget.autoLoad,
       if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.additionalSizes != null)
+        'additionalSizes': [
+          for (final size in widget.additionalSizes!) ...[
+            size.width.round(),
+            size.height.round(),
+          ],
+        ],
+      if (widget.adaptive) 'adaptive': true,
+      if (adaptiveWidth != null) 'adaptiveWidth': adaptiveWidth.round(),
+      if (widget.refreshIntervalSeconds != null)
+        'refreshIntervalSeconds': widget.refreshIntervalSeconds,
     };
   }
 
+  /// MREC banners keep their fixed size: MAX adaptive banners are banner-only.
+  bool get _isAdaptive =>
+      widget.adaptive && !(widget.width == 300 && widget.height == 250);
+
   @override
   Widget build(BuildContext context) {
-    final creationParams = _creationParams(widget);
-
-    return SizedBox(
-      width: _width,
-      height: _height,
-      child: _buildPlatformView(creationParams),
+    if (!_isAdaptive) {
+      return SizedBox(
+        width: _width,
+        height: _height,
+        child: _buildPlatformView({..._creationParams(widget), ..._debugArgs}),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = _adaptiveWidth ??= constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        return SizedBox(
+          width: width,
+          height: _height,
+          child: _buildPlatformView({
+            ..._creationParams(widget, adaptiveWidth: width),
+            ..._debugArgs,
+          }),
+        );
+      },
     );
   }
 
@@ -164,11 +235,28 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd> {
           widget.listener?.onAdImpression?.call();
         case 'onAdClosed':
           widget.listener?.onAdClosed?.call();
+        case 'onAdDisplayFailed':
+          final error = call.arguments as String? ?? '';
+          widget.listener?.onAdFailed?.call(error);
+          _maxListener?.onAdDisplayFailed?.call(error);
+        case 'onAdExpanded':
+          _maxListener?.onAdExpanded?.call();
+        case 'onAdCollapsed':
+          _maxListener?.onAdCollapsed?.call();
+        case 'onAdRevenuePaid':
+          _maxListener?.onAdRevenuePaid?.call(
+            maxAdRevenueFrom(call.arguments as Map?),
+          );
       }
     });
   }
 
   MethodChannel? _channel;
+
+  PrebidMaxBannerAdListener? get _maxListener {
+    final listener = widget.listener;
+    return listener is PrebidMaxBannerAdListener ? listener : null;
+  }
 
   @override
   void dispose() {

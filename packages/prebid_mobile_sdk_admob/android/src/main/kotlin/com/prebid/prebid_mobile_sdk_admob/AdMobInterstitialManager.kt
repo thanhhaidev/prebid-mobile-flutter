@@ -13,9 +13,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.prebid.mobile.admob.AdMobMediationInterstitialUtils
 import org.prebid.mobile.admob.PrebidInterstitialAdapter
-import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.mediation.MediationInterstitialAdUnit
-import java.util.EnumSet
 
 /// Handles AdMob-mediated interstitials over the
 /// `prebid_mobile_sdk_admob/interstitial` method channel. Each ad is keyed by an
@@ -68,17 +66,17 @@ class AdMobInterstitialManager(
                 val adMobAdUnitId = args.get("adMobAdUnitId") as? String ?: ""
                 val isVideo = args.get("isVideo") as? Boolean ?: false
 
+                val dropBidProbability = debugDropBidProbability(args.get("debugDropBidProbability"))
                 val extras = Bundle()
                 val request = AdRequest.Builder()
                     .addNetworkExtrasBundle(PrebidInterstitialAdapter::class.java, extras)
                     .build()
 
                 val mediationUtils = AdMobMediationInterstitialUtils(extras)
-                val format = if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER
                 val adUnit = MediationInterstitialAdUnit(
                     activity,
                     configId,
-                    EnumSet.of(format),
+                    adUnitFormats(args.get("adFormats"), isVideo),
                     mediationUtils,
                 )
                 (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
@@ -90,6 +88,7 @@ class AdMobInterstitialManager(
                 adUnit.fetchDemand {
                     // Destroyed / replaced while the auction ran: skip the load.
                     if (ads[adId] !== holder) return@fetchDemand
+                    maybeDropBid(dropBidProbability, extras, PrebidInterstitialAdapter.EXTRA_RESPONSE_ID)
                     InterstitialAd.load(
                         activity,
                         adMobAdUnitId,

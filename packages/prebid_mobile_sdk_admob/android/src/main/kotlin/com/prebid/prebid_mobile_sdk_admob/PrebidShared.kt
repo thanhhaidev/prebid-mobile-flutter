@@ -6,6 +6,7 @@ import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.api.data.Position
+import org.prebid.mobile.rendering.bidding.display.BidResponseCache
 
 // Helpers for the values the Dart side sends over method channels:
 // `NativeAsset.toMap()`, `NativeEventTracker.toMap()`,
@@ -66,6 +67,34 @@ internal fun nativeTrackersFrom(raw: Any?): List<NativeEventTracker>? {
 /// interstitial / rewarded ad units only expose `setMaxVideoDuration`, so it is
 /// the one video parameter applied on Android (the full set applies on iOS).
 internal fun videoMaxDurationFrom(raw: Any?): Int? = (raw as? Map<*, *>)?.int("maxDuration")
+
+/// `debugDropBidProbability` (`PrebidAdMob.debugDropBidProbability`, testing
+/// only), clamped to `0..1`; 0 when absent.
+internal fun debugDropBidProbability(raw: Any?): Double =
+    ((raw as? Number)?.toDouble() ?: 0.0).takeIf { !it.isNaN() }?.coerceIn(0.0, 1.0) ?: 0.0
+
+/// Testing hook: with [probability], pops the Prebid bid whose response id the
+/// mediation utils stored in [extras] under [responseIdKey] (the adapter's
+/// `EXTRA_RESPONSE_ID`) from [BidResponseCache] — exactly what Prebid's
+/// internal test app "Random" screens do — so the Prebid adapter finds no bid
+/// and AdMob falls back to its waterfall. Call after `fetchDemand` completes.
+internal fun maybeDropBid(probability: Double, extras: android.os.Bundle, responseIdKey: String) {
+    if (probability <= 0.0 || kotlin.random.Random.nextDouble() >= probability) return
+    extras.getString(responseIdKey)?.let { BidResponseCache.getInstance().popBidResponse(it) }
+}
+
+/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+/// else video or banner from `isVideo`.
+internal fun adUnitFormats(raw: Any?, isVideo: Boolean): java.util.EnumSet<org.prebid.mobile.api.data.AdUnitFormat> {
+    val names = (raw as? List<*>).orEmpty().filterIsInstance<String>()
+    val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
+    if ("banner" in names) formats.add(org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+    if ("video" in names) formats.add(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)
+    if (formats.isEmpty()) {
+        formats.add(if (isVideo) org.prebid.mobile.api.data.AdUnitFormat.VIDEO else org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+    }
+    return formats
+}
 
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).
 internal class FullscreenControls(m: Map<*, *>) {

@@ -4,14 +4,13 @@ import android.app.Activity
 import com.applovin.mediation.MaxAd
 import com.applovin.mediation.MaxAdListener
 import com.applovin.mediation.MaxError
+import com.applovin.mediation.adapters.PrebidMaxMediationAdapter
 import com.applovin.mediation.adapters.prebid.utils.MaxMediationInterstitialUtils
 import com.applovin.mediation.ads.MaxInterstitialAd
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.mediation.MediationInterstitialAdUnit
-import java.util.EnumSet
 
 /// Handles MAX-mediated interstitials over the
 /// `prebid_mobile_sdk_max/interstitial` method channel. Each ad is keyed by an
@@ -67,6 +66,7 @@ class MaxInterstitialManager(
                 val configId = args.get("configId") as? String ?: ""
                 val maxAdUnitId = args.get("maxAdUnitId") as? String ?: ""
                 val isVideo = args.get("isVideo") as? Boolean ?: false
+                val dropBidProbability = debugDropBidProbability(args.get("debugDropBidProbability"))
 
                 val interstitial = MaxInterstitialAd(maxAdUnitId, activity)
                 interstitial.setListener(object : MaxAdListener {
@@ -81,14 +81,16 @@ class MaxInterstitialManager(
                 })
 
                 // MAX reports revenue when the impression is recorded.
-                interstitial.setRevenueListener { send(adId, "onAdImpression") }
+                interstitial.setRevenueListener { ad ->
+                    send(adId, "onAdImpression")
+                    channel.invokeMethod("onAdRevenuePaid", revenuePayload(ad) + ("adId" to adId))
+                }
 
                 val mediationUtils = MaxMediationInterstitialUtils(interstitial)
-                val format = if (isVideo) AdUnitFormat.VIDEO else AdUnitFormat.BANNER
                 val adUnit = MediationInterstitialAdUnit(
                     activity,
                     configId,
-                    EnumSet.of(format),
+                    adUnitFormats(args.get("adFormats"), isVideo),
                     mediationUtils,
                 )
                 (args.get("impOrtbConfig") as? String)?.let { adUnit.setImpOrtbConfig(it) }
@@ -99,7 +101,11 @@ class MaxInterstitialManager(
 
                 adUnit.fetchDemand {
                     // Destroyed / replaced while the auction ran: skip the load.
-                    if (ads[adId] === holder) interstitial.loadAd()
+                    if (ads[adId] !== holder) return@fetchDemand
+                    if (shouldDropBid(dropBidProbability)) {
+                        interstitial.setLocalExtraParameter(PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID, "")
+                    }
+                    interstitial.loadAd()
                 }
                 result.success(null)
             }

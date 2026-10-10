@@ -40,9 +40,26 @@ PrebidAdMobBannerAd(
 | Parameter | Description |
 | --- | --- |
 | `configId`, `adMobAdUnitId` | **Required.** Prebid stored impression ID and AdMob ad unit ID. |
-| `width`, `height` | **Required.** The slot resizes to the rendered creative. |
-| `autoLoad`, `controller` | Load on demand with a [`PrebidBannerAdController`](/docs/banner#load-on-demand). |
+| `width`, `height` | **Required.** The Prebid request size. The slot resizes to the rendered creative. |
+| `additionalSizes` | Further Prebid request sizes, e.g. `[Size(728, 90)]`. The AdMob view keeps its own size. |
+| `adaptive` | `true` gives the AdMob view a landscape inline adaptive size for the full available width. The slot takes AdMob's height once the ad loads. `width` x `height` stays the Prebid request size. |
+| `refreshIntervalSeconds` | Prebid auto-refresh. Each refresh runs a new auction and reloads the AdMob view. `null` or `0` (default) turns it off on both platforms. Prebid clamps other values to 30–120 s on Android and 15–120 s on iOS. Turn off the AdMob unit's own refresh so the two don't stack. |
+| `autoLoad`, `controller` | Load on demand, or stop Prebid's refresh, with a [`PrebidBannerAdController`](/docs/banner#load-on-demand) (`stopRefresh()`). |
 | `adPosition`, `impOrtbConfig` | Ad position and impression-level OpenRTB JSON. |
+
+An adaptive banner with an extra Prebid size, as in Prebid's test app:
+
+```dart
+PrebidAdMobBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  adMobAdUnitId: 'ca-app-pub-3940256099942544/6300978111',
+  width: 320,
+  height: 50,
+  adaptive: true,
+  additionalSizes: const [Size(728, 90)],
+  refreshIntervalSeconds: 30,
+)
+```
 
 ## Interstitial and rewarded
 
@@ -60,7 +77,7 @@ interstitial = PrebidAdMobInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
+`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{AdFormat.banner, AdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
 
 ## Native
 
@@ -81,6 +98,16 @@ Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `Pre
 ## Events
 
 Banner, interstitial and rewarded listeners receive AdMob's `onAdImpression` as well as the core callbacks. `show()` before the ad is loaded, or without a foreground Activity / view controller, reports `onAdFailed`; `isLoaded` turns false after `show()`, `onAdClosed` and `onAdFailed`.
+
+## Testing the adapter fallback
+
+`PrebidAdMob.debugDropBidProbability` is a **testing-only** hook. Leave it at `0` in production apps. Set it between `0` and `1` and the plugin throws away the Prebid bid after the auction, with that probability, before AdMob loads. The Prebid adapter then finds no bid and AdMob falls back to its waterfall. Prebid's internal test app runs its "Random" cases at `0.5`:
+
+```dart
+PrebidAdMob.debugDropBidProbability = 0.5;
+```
+
+Banners read the value when they are created, and roll again on every Prebid refresh. Interstitials and rewarded ads read it on each `loadAd()`. Native ads ignore it. On Android the plugin pops the bid from Prebid's `BidResponseCache`, as the test app does. Prebid iOS keeps no bid cache, so on iOS the plugin clears the Prebid extras on the AdMob request and keeps the `hb_*` keywords.
 
 ## Compatibility
 

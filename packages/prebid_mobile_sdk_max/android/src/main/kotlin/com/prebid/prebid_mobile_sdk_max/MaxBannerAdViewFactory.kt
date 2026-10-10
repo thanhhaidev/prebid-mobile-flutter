@@ -6,6 +6,7 @@ import android.view.View
 import com.applovin.mediation.MaxAd
 import com.applovin.mediation.MaxAdViewAdListener
 import com.applovin.mediation.MaxError
+import com.applovin.mediation.adapters.PrebidMaxMediationAdapter
 import com.applovin.mediation.adapters.prebid.utils.MaxMediationBannerUtils
 import com.applovin.mediation.ads.MaxAdView
 import io.flutter.plugin.common.BinaryMessenger
@@ -45,6 +46,7 @@ class MaxBannerPlatformView(
     private val adView: MaxAdView
     private val methodChannel: MethodChannel
     private var adUnit: MediationBannerAdUnit? = null
+    private val dropBidProbability: Double
 
     // Set once Flutter disposes the view: an auction finishing later must not
     // load into the destroyed MaxAdView.
@@ -56,22 +58,42 @@ class MaxBannerPlatformView(
         val width = params["width"] as? Int ?: 320
         val height = params["height"] as? Int ?: 50
         val autoLoad = params["autoLoad"] as? Boolean ?: true
+        val refreshInterval = params["refreshIntervalSeconds"] as? Int
+        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
+        val additionalSizes = (params["additionalSizes"] as? List<*>).orEmpty()
+            .mapNotNull { (it as? Number)?.toInt() }
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (w, h) -> AdSize(w, h) }
+        dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_max/banner_$viewId")
 
         // MaxAdView defaults to the banner format; an MREC ad unit needs the
         // MREC format or MAX rejects it.
-        val format = if (width == 300 && height == 250) {
+        val isMrec = width == 300 && height == 250
+        val format = if (isMrec) {
             com.applovin.mediation.MaxAdFormat.MREC
         } else {
             com.applovin.mediation.MaxAdFormat.BANNER
         }
         adView = MaxAdView(maxAdUnitId, format, context)
+        // Adaptive banner (banner format only): full measured width, at the
+        // height MAX computes for it — as the original Prebid test app does.
+        var viewWidth = width
+        var viewHeight = height
+        if (params["adaptive"] as? Boolean == true && !isMrec) {
+            val adaptiveWidth = (params["adaptiveWidth"] as? Number)?.toInt() ?: width
+            adView.setExtraParameter("adaptive_banner", "true")
+            val size = format.getAdaptiveSize(adaptiveWidth, context)
+            viewWidth = adaptiveWidth
+            if (size.height > 0) viewHeight = size.height
+        }
         adView.setListener(object : MaxAdViewAdListener {
             override fun onAdLoaded(ad: MaxAd) {
                 methodChannel.invokeMethod(
                     "onAdSize",
-                    mapOf("width" to width.toDouble(), "height" to height.toDouble()),
+                    mapOf("width" to viewWidth.toDouble(), "height" to viewHeight.toDouble()),
                 )
                 methodChannel.invokeMethod("onAdLoaded", null)
                 methodChannel.invokeMethod("onAdDisplayed", null)
@@ -82,7 +104,8 @@ class MaxBannerPlatformView(
             }
 
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
-                methodChannel.invokeMethod("onAdFailed", error.message)
+                // Dart reports it through onAdFailed too.
+                methodChannel.invokeMethod("onAdDisplayFailed", error.message)
             }
 
             override fun onAdClicked(ad: MaxAd) {
@@ -93,13 +116,22 @@ class MaxBannerPlatformView(
                 methodChannel.invokeMethod("onAdClosed", null)
             }
 
+            override fun onAdExpanded(ad: MaxAd) {
+                methodChannel.invokeMethod("onAdExpanded", null)
+            }
+
+            override fun onAdCollapsed(ad: MaxAd) {
+                methodChannel.invokeMethod("onAdCollapsed", null)
+            }
+
             override fun onAdDisplayed(ad: MaxAd) {}
-            override fun onAdExpanded(ad: MaxAd) {}
-            override fun onAdCollapsed(ad: MaxAd) {}
         })
 
         // MAX reports revenue when the impression is recorded.
-        adView.setRevenueListener { methodChannel.invokeMethod("onAdImpression", null) }
+        adView.setRevenueListener { ad ->
+            methodChannel.invokeMethod("onAdImpression", null)
+            methodChannel.invokeMethod("onAdRevenuePaid", revenuePayload(ad))
+        }
 
         val mediationUtils = MaxMediationBannerUtils(adView)
         adUnit = MediationBannerAdUnit(
@@ -113,6 +145,10 @@ class MaxBannerPlatformView(
                 ?.let { adUnit?.setAdPosition(it) }
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
+        if (additionalSizes.isNotEmpty()) adUnit?.addAdditionalSizes(*additionalSizes.toTypedArray())
+        // 0 means a single request without auto-refresh (also Prebid's
+        // default); positive values are clamped by Prebid to 30–120 s.
+        refreshInterval?.let { adUnit?.setRefreshInterval(if (it > 0) it else 0) }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
@@ -134,7 +170,11 @@ class MaxBannerPlatformView(
 
     private fun load() {
         adUnit?.fetchDemand {
-            if (!disposed) adView.loadAd()
+            if (disposed) return@fetchDemand
+            if (shouldDropBid(dropBidProbability)) {
+                adView.setLocalExtraParameter(PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID, "")
+            }
+            adView.loadAd()
         }
     }
 

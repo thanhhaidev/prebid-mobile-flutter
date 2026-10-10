@@ -37,7 +37,26 @@ PrebidMaxBannerAd(
 )
 ```
 
-A 300×250 slot loads with MAX's MREC format; every other size uses the banner format. The parameters match the [AdMob banner](/docs/admob#banner) (`autoLoad`, `controller`, `adPosition`, `impOrtbConfig`). `controller.stopRefresh()` stops both Prebid's bid refresh and MAX's banner auto-refresh.
+A 300×250 slot loads with MAX's MREC format; every other size uses the banner format. The parameters match the [AdMob banner](/docs/admob#banner): `autoLoad`, `controller`, `adPosition`, `impOrtbConfig`, `additionalSizes` and `refreshIntervalSeconds`. Prebid clamps the refresh interval to 30–120 s on Android and 15–120 s on iOS, and `null` or `0` turns it off. MAX's own banner refresh is set in the MAX dashboard. `controller.stopRefresh()` stops both Prebid's bid refresh and MAX's banner auto-refresh.
+
+`adaptive: true` makes the MAX view an adaptive banner (MAX extra parameter `adaptive_banner` = `true`). It spans the full available width at the height MAX computes for that width. `width` x `height` stays the Prebid request size, and MREC slots ignore `adaptive`:
+
+```dart
+PrebidMaxBannerAd(
+  configId: 'prebid-demo-banner-320-50',
+  maxAdUnitId: 'YOUR_MAX_BANNER_AD_UNIT_ID',
+  width: 320,
+  height: 50,
+  adaptive: true,
+  additionalSizes: const [Size(728, 90)],
+  listener: PrebidMaxBannerAdListener(
+    onAdExpanded: () => debugPrint('expanded'),
+    onAdCollapsed: () => debugPrint('collapsed'),
+    onAdDisplayFailed: (error) => debugPrint('display failed: $error'),
+    onAdRevenuePaid: (revenue) => debugPrint('${revenue.revenue} USD'),
+  ),
+)
+```
 
 ## Interstitial and rewarded
 
@@ -56,7 +75,7 @@ rewarded = PrebidMaxRewardedAd(
 await rewarded.loadAd();
 ```
 
-`PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`; the interstitial takes `isVideo`.
+`PrebidMaxInterstitialAd` works the same way. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent) and `impOrtbConfig`. The interstitial takes `isVideo`, or `adFormats` (for example `{AdFormat.banner, AdFormat.video}`), which overrides `isVideo`. Set the display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`.
 
 :::note[One rewarded ad per MAX ad unit]
 MAX shares one rewarded ad object per ad unit. Loading a second `PrebidMaxRewardedAd` on the same `maxAdUnitId` takes it over, and the previous one receives `onAdFailed` ("Replaced by another ad on the same MAX ad unit"). While an ad on that unit is on screen, the new load fails instead ("Another ad for this MAX ad unit is showing…"), so the visible ad keeps its reward: load the next one from `onAdClosed`.
@@ -75,11 +94,32 @@ PrebidMaxNativeAd(
 )
 ```
 
-Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked` and `onAdFailed`; `assets`, `eventTrackers`, `context`, `contextSubType` and `placementType` work as on [AdMob](/docs/admob#native).
+Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdFailed` and `onAdRevenuePaid`; `assets`, `eventTrackers`, `context`, `contextSubType` and `placementType` work as on [AdMob](/docs/admob#native).
 
 ## Events
 
 `onAdImpression` (banner, interstitial, rewarded, native) comes from MAX's revenue callback, which MAX fires when it records the impression. `show()` before the ad is loaded reports `onAdFailed`.
+
+To get MAX-specific events, pass a MAX listener. Each one extends the core listener, so the core callbacks work as usual:
+
+| Listener | Extra callbacks |
+| --- | --- |
+| `PrebidMaxBannerAdListener` | `onAdExpanded`, `onAdCollapsed`, `onAdDisplayFailed` (also reported as `onAdFailed`), `onAdRevenuePaid` |
+| `PrebidMaxInterstitialAdListener` | `onAdRevenuePaid` |
+| `PrebidMaxRewardedAdListener` | `onAdRevenuePaid` |
+| `PrebidMaxNativeAdListener` | `onAdRevenuePaid` |
+
+`onAdRevenuePaid` passes a `PrebidMaxAdRevenue` with `revenue` (in USD), `revenuePrecision`, `networkName` and `placement`.
+
+## Testing the adapter fallback
+
+`PrebidMax.debugDropBidProbability` is a **testing-only** hook. Leave it at `0` in production apps. Set it between `0` and `1` and the plugin withholds the Prebid bid from MAX, with that probability, after each auction. The Prebid adapter then finds no bid and MAX falls back to its waterfall. Prebid's internal test app runs its "Random" cases at `0.5`:
+
+```dart
+PrebidMax.debugDropBidProbability = 0.5;
+```
+
+Banners read the value when they are created, and roll again on every Prebid refresh. Interstitials and rewarded ads read it on each `loadAd()`. Native ads ignore it. On Android the plugin sets the MAX local extra `PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID` to `""`, as the test app does. Prebid iOS passes the bid itself rather than a response id, so on iOS the plugin clears the bid local extra (`PBMMediationAdUnitBidKey`).
 
 ## Compatibility
 

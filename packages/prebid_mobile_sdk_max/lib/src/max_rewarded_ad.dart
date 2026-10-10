@@ -8,6 +8,9 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
         PrebidRewardedAdListener,
         VideoParameters;
 
+import 'max_listeners.dart';
+import 'max_testing.dart';
+
 const MethodChannel _channel = MethodChannel('prebid_mobile_sdk_max/rewarded');
 
 /// Routes native rewarded events (delivered over the shared method channel) to
@@ -74,7 +77,8 @@ class PrebidMaxRewardedAd {
   /// is sent in the request).
   final VideoParameters? videoParameters;
 
-  /// Listener for rewarded ad events.
+  /// Listener for rewarded ad events. Pass a [PrebidMaxRewardedAdListener]
+  /// to also get MAX's revenue events.
   final PrebidRewardedAdListener? listener;
 
   bool _loaded = false;
@@ -104,6 +108,7 @@ class PrebidMaxRewardedAd {
       'controls': ?controls?.toMap(),
       'impOrtbConfig': ?impOrtbConfig,
       'videoParameters': ?videoParameters?.toMap(),
+      ...debugDropBidArgs(),
     });
   }
 
@@ -139,6 +144,11 @@ class PrebidMaxRewardedAd {
         listener?.onAdClicked?.call();
       case 'onAdImpression':
         listener?.onAdImpression?.call();
+      case 'onAdRevenuePaid':
+        final listener = this.listener;
+        if (listener is PrebidMaxRewardedAdListener) {
+          listener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
+        }
       case 'onUserEarnedReward':
         listener?.onUserEarnedReward?.call(_rewardFrom(args));
     }

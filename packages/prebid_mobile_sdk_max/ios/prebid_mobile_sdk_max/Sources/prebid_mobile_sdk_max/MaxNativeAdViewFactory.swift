@@ -209,6 +209,7 @@ class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, 
     // MAX reports revenue when the impression is recorded.
     func didPayRevenue(for ad: MAAd) {
         methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        methodChannel.invokeMethod("onAdRevenuePaid", arguments: revenuePayload(ad))
     }
 
     func didClickNativeAd(_ ad: MAAd) {

@@ -65,6 +65,7 @@ class AdMobRewardedManager(
                 val configId = args.get("configId") as? String ?: ""
                 val adMobAdUnitId = args.get("adMobAdUnitId") as? String ?: ""
 
+                val dropBidProbability = debugDropBidProbability(args.get("debugDropBidProbability"))
                 val extras = Bundle()
                 val request = AdRequest.Builder()
                     .addNetworkExtrasBundle(PrebidRewardedAdapter::class.java, extras)
@@ -81,6 +82,7 @@ class AdMobRewardedManager(
                 adUnit.fetchDemand {
                     // Destroyed / replaced while the auction ran: skip the load.
                     if (ads[adId] !== holder) return@fetchDemand
+                    maybeDropBid(dropBidProbability, extras, PrebidRewardedAdapter.EXTRA_RESPONSE_ID)
                     RewardedAd.load(
                         activity,
                         adMobAdUnitId,

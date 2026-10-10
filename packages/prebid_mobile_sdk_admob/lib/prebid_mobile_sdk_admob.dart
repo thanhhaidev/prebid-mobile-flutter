@@ -53,3 +53,4 @@ export 'src/admob_banner_ad.dart';
 export 'src/admob_interstitial_ad.dart';
 export 'src/admob_native_ad.dart';
 export 'src/admob_rewarded_ad.dart';
+export 'src/admob_testing.dart' show PrebidAdMob;

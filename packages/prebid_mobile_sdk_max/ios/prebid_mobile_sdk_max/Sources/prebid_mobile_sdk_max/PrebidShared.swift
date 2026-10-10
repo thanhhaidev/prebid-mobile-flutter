@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import UIKit
 import PrebidMobile
+import AppLovinSDK
 
 // Helpers for the values the Dart side sends over method channels:
 // `NativeAsset.toMap()`, `NativeEventTracker.toMap()`,
@@ -83,6 +84,43 @@ func applyVideoParameters(_ raw: Any?, to vp: VideoParameters) {
     if let v = intValue(m["minDuration"]) { vp.minDuration = SingleContainerInt(integerLiteral: v) }
     if let v = intValue(m["maxBitrate"]) { vp.maxBitrate = SingleContainerInt(integerLiteral: v) }
     if let v = intValue(m["minBitrate"]) { vp.minBitrate = SingleContainerInt(integerLiteral: v) }
+}
+
+/// `debugDropBidProbability` (`PrebidMax.debugDropBidProbability`, testing
+/// only), clamped to `0...1`; 0 when absent.
+func debugDropBidProbability(_ raw: Any?) -> Double {
+    guard let p = (raw as? NSNumber)?.doubleValue, !p.isNaN else { return 0 }
+    return min(max(p, 0), 1)
+}
+
+/// Testing hook: whether to withhold this load's Prebid bid from MAX, with
+/// `probability`. Android's test app sets the response-id local extra to ""
+/// there; Prebid iOS passes the bid object itself, so the caller clears the
+/// `PBMMediationAdUnitBidKey` local extra instead — the Prebid MAX adapter
+/// then finds no bid and MAX falls back to its waterfall.
+func shouldDropBid(_ probability: Double) -> Bool {
+    probability > 0 && Double.random(in: 0..<1) < probability
+}
+
+/// The `onAdRevenuePaid` payload (`PrebidMaxAdRevenue` on the Dart side).
+func revenuePayload(_ ad: MAAd) -> [String: Any] {
+    var payload: [String: Any] = [
+        "revenue": ad.revenue,
+        "revenuePrecision": ad.revenuePrecision,
+        "networkName": ad.networkName,
+    ]
+    if let placement = ad.placement { payload["placement"] = placement }
+    return payload
+}
+
+/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+/// else video or banner from `isVideo`.
+func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
+    let names = raw as? [String] ?? []
+    var formats = Set<PrebidMobile.AdFormat>()
+    if names.contains("banner") { formats.insert(.banner) }
+    if names.contains("video") { formats.insert(.video) }
+    return formats.isEmpty ? (isVideo ? [.video] : [.banner]) : formats
 }
 
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).

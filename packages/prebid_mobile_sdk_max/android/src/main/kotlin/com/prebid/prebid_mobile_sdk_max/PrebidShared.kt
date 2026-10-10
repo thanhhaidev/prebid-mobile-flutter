@@ -67,6 +67,40 @@ internal fun nativeTrackersFrom(raw: Any?): List<NativeEventTracker>? {
 /// the one video parameter applied on Android (the full set applies on iOS).
 internal fun videoMaxDurationFrom(raw: Any?): Int? = (raw as? Map<*, *>)?.int("maxDuration")
 
+/// `debugDropBidProbability` (`PrebidMax.debugDropBidProbability`, testing
+/// only), clamped to `0..1`; 0 when absent.
+internal fun debugDropBidProbability(raw: Any?): Double =
+    ((raw as? Number)?.toDouble() ?: 0.0).takeIf { !it.isNaN() }?.coerceIn(0.0, 1.0) ?: 0.0
+
+/// Testing hook: whether to withhold this load's Prebid bid from MAX, with
+/// [probability]. The caller then sets the MAX local extra
+/// `PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID` to `""` — exactly what
+/// Prebid's internal test app "Random" screens do — so the Prebid adapter
+/// finds no bid and MAX falls back to its waterfall.
+internal fun shouldDropBid(probability: Double): Boolean =
+    probability > 0.0 && kotlin.random.Random.nextDouble() < probability
+
+/// The `onAdRevenuePaid` payload (`PrebidMaxAdRevenue` on the Dart side).
+internal fun revenuePayload(ad: com.applovin.mediation.MaxAd): Map<String, Any?> = mapOf(
+    "revenue" to ad.revenue,
+    "revenuePrecision" to ad.revenuePrecision,
+    "networkName" to ad.networkName,
+    "placement" to ad.placement,
+)
+
+/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+/// else video or banner from `isVideo`.
+internal fun adUnitFormats(raw: Any?, isVideo: Boolean): java.util.EnumSet<org.prebid.mobile.api.data.AdUnitFormat> {
+    val names = (raw as? List<*>).orEmpty().filterIsInstance<String>()
+    val formats = java.util.EnumSet.noneOf(org.prebid.mobile.api.data.AdUnitFormat::class.java)
+    if ("banner" in names) formats.add(org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+    if ("video" in names) formats.add(org.prebid.mobile.api.data.AdUnitFormat.VIDEO)
+    if (formats.isEmpty()) {
+        formats.add(if (isVideo) org.prebid.mobile.api.data.AdUnitFormat.VIDEO else org.prebid.mobile.api.data.AdUnitFormat.BANNER)
+    }
+    return formats
+}
+
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).
 internal class FullscreenControls(m: Map<*, *>) {
     val closeButtonArea = (m["closeButtonArea"] as? Number)?.toDouble()

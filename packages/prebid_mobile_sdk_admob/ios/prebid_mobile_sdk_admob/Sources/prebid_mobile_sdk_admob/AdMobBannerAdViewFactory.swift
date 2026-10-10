@@ -39,6 +39,8 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
     private let gadBanner: GoogleMobileAds.BannerView
     private let methodChannel: FlutterMethodChannel
     private let adSize: CGSize
+    private let adaptive: Bool
+    private let dropBidProbability: Double
     private let gadRequest = Request()
 
     // Retained for the lifetime of the view — the auction runs through these.
@@ -56,8 +58,17 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
         let width = args["width"] as? Int ?? 320
         let height = args["height"] as? Int ?? 50
         let autoLoad = args["autoLoad"] as? Bool ?? true
+        let refreshInterval = args["refreshIntervalSeconds"] as? Int
+        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
+        let flatSizes = (args["additionalSizes"] as? [NSNumber] ?? []).map { $0.intValue }
+        let additionalSizes = stride(from: 0, to: flatSizes.count - 1, by: 2).map {
+            CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
+        }
 
         adSize = CGSize(width: width, height: height)
+        let isAdaptive = args["adaptive"] as? Bool ?? false
+        adaptive = isAdaptive
+        dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
 
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_sdk_admob/banner_\(viewId)",
@@ -65,7 +76,16 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
         )
 
         // 1. Create the GMA banner view (the request is a stored property).
-        gadBanner = GoogleMobileAds.BannerView(adSize: adSizeFor(cgSize: adSize))
+        if isAdaptive {
+            // Landscape inline adaptive size for the width Flutter measured
+            // (the original Prebid test app uses the full width).
+            let adaptiveWidth = (args["adaptiveWidth"] as? NSNumber)?.doubleValue ?? Double(width)
+            gadBanner = GoogleMobileAds.BannerView(
+                adSize: GoogleMobileAds.landscapeInlineAdaptiveBanner(width: CGFloat(adaptiveWidth))
+            )
+        } else {
+            gadBanner = GoogleMobileAds.BannerView(adSize: adSizeFor(cgSize: adSize))
+        }
         gadBanner.adUnitID = adMobAdUnitId
 
         super.init()
@@ -86,6 +106,16 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
             adUnit.adPosition = pos
         }
         if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
+        if let interval = refreshInterval, interval > 0 {
+            // Clamped by Prebid to 15–120 s.
+            adUnit.refreshInterval = TimeInterval(interval)
+        } else {
+            // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
+            // clamps 0 up to its 15 s minimum — only a negative value is
+            // stored as 0, which disables auto-refresh (parity with Android).
+            adUnit.refreshInterval = -1
+        }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { [weak self] call, result in
@@ -111,6 +141,7 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
     private func load() {
         mediationAdUnit?.fetchDemand { [weak self] _ in
             guard let self = self else { return }
+            maybeDropBid(self.dropBidProbability, from: self.gadRequest)
             self.gadBanner.rootViewController = topViewController()
             self.gadBanner.load(self.gadRequest)
         }
@@ -130,9 +161,18 @@ class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobileAds.Ba
     // MARK: - BannerViewDelegate
 
     func bannerViewDidReceiveAd(_ bannerView: GoogleMobileAds.BannerView) {
+        var size = adSize
+        if adaptive {
+            // An inline adaptive banner reports its actual size once loaded.
+            let intrinsic = bannerView.intrinsicContentSize
+            let loaded = intrinsic.width > 0 && intrinsic.height > 0
+                ? intrinsic
+                : GoogleMobileAds.cgSize(for: bannerView.adSize)
+            if loaded.width > 0 && loaded.height > 0 { size = loaded }
+        }
         methodChannel.invokeMethod("onAdSize", arguments: [
-            "width": Double(adSize.width),
-            "height": Double(adSize.height),
+            "width": Double(size.width),
+            "height": Double(size.height),
         ])
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)

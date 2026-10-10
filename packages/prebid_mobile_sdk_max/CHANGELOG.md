@@ -20,3 +20,11 @@ MAX adapters. Built on Prebid Mobile SDK 3.4; requires `prebid_mobile_sdk`
 - Native ads rendered in MAX's native ad view, with configurable assets and
   context.
 - Ad position and per-impression OpenRTB configuration, including the GPID.
+- Prebid banner auto-refresh (`refreshIntervalSeconds`, off by default on both
+  platforms), adaptive banners (`adaptive`) and extra Prebid request sizes
+  (`additionalSizes`).
+- Multiformat interstitials (`adFormats`).
+- MAX listeners with revenue events (`onAdRevenuePaid`) and, on banners,
+  expand, collapse and display-failure events.
+- `PrebidMax.debugDropBidProbability`, a testing-only hook that withholds the
+  Prebid bid from MAX to exercise the adapter fallback.

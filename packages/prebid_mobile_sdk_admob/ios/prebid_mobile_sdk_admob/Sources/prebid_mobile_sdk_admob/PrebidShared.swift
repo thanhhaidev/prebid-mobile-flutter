@@ -1,7 +1,9 @@
 import Foundation
 import CoreGraphics
 import UIKit
+import GoogleMobileAds
 import PrebidMobile
+import PrebidMobileAdMobAdapters
 
 // Helpers for the values the Dart side sends over method channels:
 // `NativeAsset.toMap()`, `NativeEventTracker.toMap()`,
@@ -83,6 +85,37 @@ func applyVideoParameters(_ raw: Any?, to vp: VideoParameters) {
     if let v = intValue(m["minDuration"]) { vp.minDuration = SingleContainerInt(integerLiteral: v) }
     if let v = intValue(m["maxBitrate"]) { vp.maxBitrate = SingleContainerInt(integerLiteral: v) }
     if let v = intValue(m["minBitrate"]) { vp.minBitrate = SingleContainerInt(integerLiteral: v) }
+}
+
+/// `debugDropBidProbability` (`PrebidAdMob.debugDropBidProbability`, testing
+/// only), clamped to `0...1`; 0 when absent.
+func debugDropBidProbability(_ raw: Any?) -> Double {
+    guard let p = (raw as? NSNumber)?.doubleValue, !p.isNaN else { return 0 }
+    return min(max(p, 0), 1)
+}
+
+/// Testing hook: with `probability`, drops the Prebid bid from `request` after
+/// `fetchDemand` so the Prebid AdMob adapter finds no bid and AdMob falls back
+/// to its waterfall. Prebid iOS has no bid cache to pop (Android's test app
+/// pops `BidResponseCache`): the bid travels in the request's custom-event
+/// extras, so those are cleared — as the mediation utils' `cleanUpAdObject`
+/// does — while the `hb_*` keywords stay and still pick the Prebid line.
+func maybeDropBid(_ probability: Double, from request: GoogleMobileAds.Request) {
+    guard probability > 0, Double.random(in: 0..<1) < probability else { return }
+    let extras = GoogleMobileAds.CustomEventExtras()
+    extras.setExtras(nil, forLabel: AdMobConstants.PrebidAdMobEventExtrasLabel)
+    request.register(extras)
+}
+
+/// Interstitial formats: `adFormats` (`AdFormat` names) when it names any,
+/// else video or banner from `isVideo`.
+func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
+    let names = raw as? [String] ?? []
+    // Qualified: GoogleMobileAds also has an `AdFormat`.
+    var formats = Set<PrebidMobile.AdFormat>()
+    if names.contains("banner") { formats.insert(.banner) }
+    if names.contains("video") { formats.insert(.video) }
+    return formats.isEmpty ? (isVideo ? [.video] : [.banner]) : formats
 }
 
 /// Fullscreen rendering controls (`PrebidFullscreenControls`).

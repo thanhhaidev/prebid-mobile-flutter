@@ -49,6 +49,8 @@ class AdMobBannerPlatformView(
     private val methodChannel: MethodChannel
     private var adUnit: MediationBannerAdUnit? = null
     private val request: AdRequest
+    private val extras = Bundle()
+    private val dropBidProbability: Double
 
     // Set once Flutter disposes the view: an auction finishing later must not
     // load into the destroyed AdView.
@@ -60,16 +62,37 @@ class AdMobBannerPlatformView(
         val width = params["width"] as? Int ?: 320
         val height = params["height"] as? Int ?: 50
         val autoLoad = params["autoLoad"] as? Boolean ?: true
+        val adaptive = params["adaptive"] as? Boolean ?: false
+        val refreshInterval = params["refreshIntervalSeconds"] as? Int
+        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
+        val additionalSizes = (params["additionalSizes"] as? List<*>).orEmpty()
+            .mapNotNull { (it as? Number)?.toInt() }
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (w, h) -> AdSize(w, h) }
+        dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk_admob/banner_$viewId")
 
-        adView.setAdSize(GmaAdSize(width, height))
+        if (adaptive) {
+            // Landscape inline adaptive size for the width Flutter measured
+            // (the original Prebid test app uses the full width).
+            val adaptiveWidth = (params["adaptiveWidth"] as? Number)?.toInt() ?: width
+            adView.setAdSize(GmaAdSize.getLandscapeInlineAdaptiveBannerAdSize(context, adaptiveWidth))
+        } else {
+            adView.setAdSize(GmaAdSize(width, height))
+        }
         adView.adUnitId = adMobAdUnitId
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
+                // An adaptive banner's actual height is known once it loads.
+                val loaded = adView.adSize?.takeIf { adaptive && it.width > 0 && it.height > 0 }
                 methodChannel.invokeMethod(
                     "onAdSize",
-                    mapOf("width" to width.toDouble(), "height" to height.toDouble()),
+                    mapOf(
+                        "width" to (loaded?.width ?: width).toDouble(),
+                        "height" to (loaded?.height ?: height).toDouble(),
+                    ),
                 )
                 methodChannel.invokeMethod("onAdLoaded", null)
                 methodChannel.invokeMethod("onAdDisplayed", null)
@@ -92,8 +115,7 @@ class AdMobBannerPlatformView(
             }
         }
 
-        // Prebid targeting keywords are written into this Bundle by the adapter.
-        val extras = Bundle()
+        // Prebid writes the bid's response id into `extras` for the adapter.
         request = AdRequest.Builder()
             .addNetworkExtrasBundle(PrebidBannerAdapter::class.java, extras)
             .build()
@@ -110,6 +132,10 @@ class AdMobBannerPlatformView(
                 ?.let { adUnit?.setAdPosition(it) }
         }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
+        if (additionalSizes.isNotEmpty()) adUnit?.addAdditionalSizes(*additionalSizes.toTypedArray())
+        // 0 means a single request without auto-refresh (also Prebid's
+        // default); positive values are clamped by Prebid to 30–120 s.
+        refreshInterval?.let { adUnit?.setRefreshInterval(if (it > 0) it else 0) }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { call, result ->
@@ -128,6 +154,7 @@ class AdMobBannerPlatformView(
     private fun load() {
         adUnit?.fetchDemand {
             if (disposed) return@fetchDemand
+            maybeDropBid(dropBidProbability, extras, PrebidBannerAdapter.EXTRA_RESPONSE_ID)
             // The bid (if any) is now attached to the request extras; let
             // AdMob run its waterfall and render.
             adView.loadAd(request)

@@ -71,6 +71,7 @@ class MaxRewardedManager(
                 }
                 val configId = args.get("configId") as? String ?: ""
                 val maxAdUnitId = args.get("maxAdUnitId") as? String ?: ""
+                val dropBidProbability = debugDropBidProbability(args.get("debugDropBidProbability"))
                 if (maxAdUnitId in showingUnits) {
                     // Handing the shared instance over now would route the
                     // showing ad's reward and close to this ad; leave it alone.
@@ -120,7 +121,10 @@ class MaxRewardedManager(
                 })
 
                 // MAX reports revenue when the impression is recorded.
-                rewarded.setRevenueListener { send(adId, "onAdImpression") }
+                rewarded.setRevenueListener { ad ->
+                    send(adId, "onAdImpression")
+                    channel.invokeMethod("onAdRevenuePaid", revenuePayload(ad) + ("adId" to adId))
+                }
 
                 val mediationUtils = MaxMediationRewardedUtils(rewarded)
                 val adUnit = MediationRewardedVideoAdUnit(activity, configId, mediationUtils)
@@ -132,7 +136,14 @@ class MaxRewardedManager(
 
                 adUnit.fetchDemand {
                     // Destroyed / replaced while the auction ran: skip the load.
-                    if (ads[adId] === holder) rewarded.loadAd()
+                    if (ads[adId] !== holder) return@fetchDemand
+                    if (shouldDropBid(dropBidProbability)) {
+                        rewarded.setLocalExtraParameter(
+                            com.applovin.mediation.adapters.PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID,
+                            "",
+                        )
+                    }
+                    rewarded.loadAd()
                 }
                 result.success(null)
             }

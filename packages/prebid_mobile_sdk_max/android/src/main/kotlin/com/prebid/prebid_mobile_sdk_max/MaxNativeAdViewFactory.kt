@@ -98,7 +98,10 @@ class MaxNativePlatformView(
         })
 
         // MAX reports revenue when the impression is recorded.
-        nativeAdLoader.setRevenueListener { methodChannel.invokeMethod("onAdImpression", null) }
+        nativeAdLoader.setRevenueListener { ad ->
+            methodChannel.invokeMethod("onAdImpression", null)
+            methodChannel.invokeMethod("onAdRevenuePaid", revenuePayload(ad))
+        }
 
         nativeAdUnit = NativeAdUnit(configId)
         configureNativeAdUnit(nativeAdUnit, params)

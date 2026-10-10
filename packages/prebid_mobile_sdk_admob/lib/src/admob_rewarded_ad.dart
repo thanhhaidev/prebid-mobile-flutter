@@ -8,6 +8,8 @@ import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
         PrebidRewardedAdListener,
         VideoParameters;
 
+import 'admob_testing.dart';
+
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_admob/rewarded',
 );
@@ -106,6 +108,7 @@ class PrebidAdMobRewardedAd {
       'controls': ?controls?.toMap(),
       'impOrtbConfig': ?impOrtbConfig,
       'videoParameters': ?videoParameters?.toMap(),
+      ...debugDropBidArgs(),
     });
   }
 

@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show PrebidAdPosition, PrebidBannerAdController, PrebidBannerAdListener;
 
+import 'admob_testing.dart';
+
 /// A banner ad mediated by **Google AdMob** with Prebid demand.
 ///
 /// Prebid runs the auction via a `MediationBannerAdUnit` and passes the winning
@@ -22,6 +24,28 @@ class PrebidAdMobBannerAd extends StatefulWidget {
 
   /// The desired height of the banner ad in dp.
   final int height;
+
+  /// Further sizes Prebid may bid on besides [width] x [height] (e.g.
+  /// `[Size(728, 90)]`), sent in the Prebid request
+  /// (`MediationBannerAdUnit.addAdditionalSize` / `additionalSizes`). The
+  /// AdMob view keeps its own size — [adaptive] or [width] x [height].
+  final List<Size>? additionalSizes;
+
+  /// Whether the AdMob view uses AdMob's **landscape inline adaptive** banner
+  /// size for the full width available to the widget, instead of a fixed
+  /// [width] x [height]. [width] x [height] (plus [additionalSizes]) remain
+  /// the Prebid request sizes. The slot resizes to the adaptive height AdMob
+  /// reports once the ad loads; the width is measured once, at the first
+  /// layout.
+  final bool adaptive;
+
+  /// Prebid auto-refresh interval in seconds; each refresh runs a new auction
+  /// and reloads the AdMob view. `null` (default) or `0` disables
+  /// auto-refresh on both platforms; positive values are clamped by Prebid to
+  /// its supported range (Android 30–120 s, iOS 15–120 s). Turn off the AdMob
+  /// ad unit's own refresh in the AdMob UI so the two do not stack. Stop it
+  /// at runtime with [PrebidBannerAdController.stopRefresh].
+  final int? refreshIntervalSeconds;
 
   /// Whether the ad should load automatically when the widget is created. Set
   /// to `false` and call [PrebidBannerAdController.loadAd] on [controller] to
@@ -49,6 +73,9 @@ class PrebidAdMobBannerAd extends StatefulWidget {
     required this.adMobAdUnitId,
     required this.width,
     required this.height,
+    this.additionalSizes,
+    this.adaptive = false,
+    this.refreshIntervalSeconds,
     this.autoLoad = true,
     this.controller,
     this.adPosition,
@@ -66,6 +93,13 @@ class _PrebidAdMobBannerAdState extends State<PrebidAdMobBannerAd> {
   late double _width = widget.width.toDouble();
   late double _height = widget.height.toDouble();
 
+  /// Width available to an [PrebidAdMobBannerAd.adaptive] banner, measured at
+  /// its first layout.
+  double? _adaptiveWidth;
+
+  /// [PrebidAdMob.debugDropBidProbability] as read when the view was created.
+  Map<String, Object> _debugArgs = debugDropBidArgs();
+
   @override
   void didUpdateWidget(PrebidAdMobBannerAd oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -81,10 +115,15 @@ class _PrebidAdMobBannerAdState extends State<PrebidAdMobBannerAd> {
       // gets a new view (keyed below) that starts at the requested size.
       _width = widget.width.toDouble();
       _height = widget.height.toDouble();
+      _adaptiveWidth = null;
+      _debugArgs = debugDropBidArgs();
     }
   }
 
-  static Map<String, dynamic> _creationParams(PrebidAdMobBannerAd widget) {
+  static Map<String, dynamic> _creationParams(
+    PrebidAdMobBannerAd widget, {
+    double? adaptiveWidth,
+  }) {
     return <String, dynamic>{
       'configId': widget.configId,
       'adMobAdUnitId': widget.adMobAdUnitId,
@@ -93,17 +132,43 @@ class _PrebidAdMobBannerAdState extends State<PrebidAdMobBannerAd> {
       'autoLoad': widget.autoLoad,
       if (widget.adPosition != null) 'adPosition': widget.adPosition!.value,
       if (widget.impOrtbConfig != null) 'impOrtbConfig': widget.impOrtbConfig,
+      if (widget.additionalSizes != null)
+        'additionalSizes': [
+          for (final size in widget.additionalSizes!) ...[
+            size.width.round(),
+            size.height.round(),
+          ],
+        ],
+      if (widget.adaptive) 'adaptive': true,
+      if (adaptiveWidth != null) 'adaptiveWidth': adaptiveWidth.round(),
+      if (widget.refreshIntervalSeconds != null)
+        'refreshIntervalSeconds': widget.refreshIntervalSeconds,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final creationParams = _creationParams(widget);
-
-    return SizedBox(
-      width: _width,
-      height: _height,
-      child: _buildPlatformView(creationParams),
+    if (!widget.adaptive) {
+      return SizedBox(
+        width: _width,
+        height: _height,
+        child: _buildPlatformView({..._creationParams(widget), ..._debugArgs}),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = _adaptiveWidth ??= constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        return SizedBox(
+          width: width,
+          height: _height,
+          child: _buildPlatformView({
+            ..._creationParams(widget, adaptiveWidth: width),
+            ..._debugArgs,
+          }),
+        );
+      },
     );
   }
 

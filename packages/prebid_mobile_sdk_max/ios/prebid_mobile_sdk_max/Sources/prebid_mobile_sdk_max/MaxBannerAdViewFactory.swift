@@ -39,6 +39,9 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
     private let maxAdBannerView: MAAdView
     private let methodChannel: FlutterMethodChannel
     private let adSize: CGSize
+    /// The MAX view's size: `adSize`, or the adaptive banner size.
+    private let viewSize: CGSize
+    private let dropBidProbability: Double
 
     // Retained for the lifetime of the view — the auction runs through these.
     private var mediationDelegate: MAXMediationBannerUtils?
@@ -55,8 +58,26 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
         let width = args["width"] as? Int ?? 320
         let height = args["height"] as? Int ?? 50
         let autoLoad = args["autoLoad"] as? Bool ?? true
+        let refreshInterval = args["refreshIntervalSeconds"] as? Int
+        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
+        let flatSizes = (args["additionalSizes"] as? [NSNumber] ?? []).map { $0.intValue }
+        let additionalSizes = stride(from: 0, to: flatSizes.count - 1, by: 2).map {
+            CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
+        }
+        let isMrec = width == 300 && height == 250
+        // Adaptive banner (banner format only): full measured width, at the
+        // height MAX computes for it — as the original Prebid test app does.
+        let adaptive = (args["adaptive"] as? Bool ?? false) && !isMrec
 
         adSize = CGSize(width: width, height: height)
+        if adaptive {
+            let adaptiveWidth = CGFloat((args["adaptiveWidth"] as? NSNumber)?.doubleValue ?? Double(width))
+            let size = MAAdFormat.banner.adaptiveSize(forWidth: adaptiveWidth)
+            viewSize = CGSize(width: adaptiveWidth, height: size.height > 0 ? size.height : CGFloat(height))
+        } else {
+            viewSize = adSize
+        }
+        dropBidProbability = debugDropBidProbability(args["debugDropBidProbability"])
 
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_sdk_max/banner_\(viewId)",
@@ -68,9 +89,12 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
         // MREC format or MAX rejects it.
         maxAdBannerView = MAAdView(
             adUnitIdentifier: maxAdUnitId,
-            adFormat: width == 300 && height == 250 ? .mrec : .banner
+            adFormat: isMrec ? .mrec : .banner
         )
-        maxAdBannerView.frame = CGRect(origin: .zero, size: adSize)
+        if adaptive {
+            maxAdBannerView.setExtraParameterForKey("adaptive_banner", value: "true")
+        }
+        maxAdBannerView.frame = CGRect(origin: .zero, size: viewSize)
         maxAdBannerView.isHidden = false
 
         super.init()
@@ -91,6 +115,16 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
             adUnit.adPosition = pos
         }
         if let config = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
+        if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
+        if let interval = refreshInterval, interval > 0 {
+            // Clamped by Prebid to 15–120 s.
+            adUnit.refreshInterval = TimeInterval(interval)
+        } else {
+            // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
+            // clamps 0 up to its 15 s minimum — only a negative value is
+            // stored as 0, which disables auto-refresh (parity with Android).
+            adUnit.refreshInterval = -1
+        }
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { [weak self] call, result in
@@ -116,7 +150,11 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
     /// load when the view was disposed meanwhile.
     private func load() {
         mediationAdUnit?.fetchDemand { [weak self] _ in
-            self?.maxAdBannerView.loadAd()
+            guard let self = self else { return }
+            if shouldDropBid(self.dropBidProbability) {
+                self.maxAdBannerView.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
+            }
+            self.maxAdBannerView.loadAd()
         }
     }
 
@@ -136,8 +174,8 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
 
     func didLoad(_ ad: MAAd) {
         methodChannel.invokeMethod("onAdSize", arguments: [
-            "width": Double(adSize.width),
-            "height": Double(adSize.height),
+            "width": Double(viewSize.width),
+            "height": Double(viewSize.height),
         ])
         methodChannel.invokeMethod("onAdLoaded", arguments: nil)
         methodChannel.invokeMethod("onAdDisplayed", arguments: nil)
@@ -154,7 +192,8 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
     }
 
     func didFail(toDisplay ad: MAAd, withError error: MAError) {
-        methodChannel.invokeMethod("onAdFailed", arguments: error.message)
+        // Dart reports it through onAdFailed too.
+        methodChannel.invokeMethod("onAdDisplayFailed", arguments: error.message)
     }
 
     func didClick(_ ad: MAAd) {
@@ -168,9 +207,16 @@ class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDelegate, 
     // MAX reports revenue when the impression is recorded.
     func didPayRevenue(for ad: MAAd) {
         methodChannel.invokeMethod("onAdImpression", arguments: nil)
+        methodChannel.invokeMethod("onAdRevenuePaid", arguments: revenuePayload(ad))
+    }
+
+    func didExpand(_ ad: MAAd) {
+        methodChannel.invokeMethod("onAdExpanded", arguments: nil)
+    }
+
+    func didCollapse(_ ad: MAAd) {
+        methodChannel.invokeMethod("onAdCollapsed", arguments: nil)
     }
 
     func didDisplay(_ ad: MAAd) {}
-    func didExpand(_ ad: MAAd) {}
-    func didCollapse(_ ad: MAAd) {}
 }

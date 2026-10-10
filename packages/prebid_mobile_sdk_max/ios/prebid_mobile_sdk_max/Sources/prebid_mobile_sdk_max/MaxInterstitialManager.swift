@@ -44,6 +44,7 @@ final class MaxAdEventProxy: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate
     // MAX reports revenue when the impression is recorded.
     func didPayRevenue(for ad: MAAd) {
         emit("onAdImpression", [:])
+        emit("onAdRevenuePaid", revenuePayload(ad))
     }
 
     // Rewarded only; same reward keys as the GAM / AdMob packages.
@@ -91,6 +92,7 @@ class MaxInterstitialManager: NSObject {
             let configId = args?["configId"] as? String ?? ""
             let maxAdUnitId = args?["maxAdUnitId"] as? String ?? ""
             let isVideo = args?["isVideo"] as? Bool ?? false
+            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
 
             // 1. Create the MAX interstitial + Prebid mediation utils + ad unit.
             let interstitial = MAInterstitialAd(adUnitIdentifier: maxAdUnitId)
@@ -101,7 +103,7 @@ class MaxInterstitialManager: NSObject {
                 minSizePercentage: controls?.minSizePercentage,
                 mediationDelegate: mediationDelegate
             )
-            adUnit.adFormats = isVideo ? [.video] : [.banner]
+            adUnit.adFormats = adFormatsFrom(args?["adFormats"], isVideo: isVideo)
             controls?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
@@ -121,6 +123,9 @@ class MaxInterstitialManager: NSObject {
             adUnit.fetchDemand { [weak self, weak interstitial] _ in
                 guard let self = self, let interstitial = interstitial,
                       self.interstitials[adId] === interstitial else { return }
+                if shouldDropBid(dropBidProbability) {
+                    interstitial.setLocalExtraParameterForKey(PBMMediationAdUnitBidKey, value: nil)
+                }
                 interstitial.load()
             }
             result(nil)

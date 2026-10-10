@@ -43,6 +43,7 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             let configId = args?["configId"] as? String ?? ""
             let adMobAdUnitId = args?["adMobAdUnitId"] as? String ?? ""
             let isVideo = args?["isVideo"] as? Bool ?? false
+            let dropBidProbability = debugDropBidProbability(args?["debugDropBidProbability"])
 
             // 1. GMA request + Prebid mediation utils + ad unit.
             let gadRequest = Request()
@@ -56,7 +57,7 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             controls?.apply(to: adUnit)
             applyVideoParameters(args?["videoParameters"], to: adUnit.videoParameters)
             if let config = args?["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(config) }
-            adUnit.adFormats = isVideo ? [.video] : [.banner]
+            adUnit.adFormats = adFormatsFrom(args?["adFormats"], isVideo: isVideo)
 
             adUnits[adId] = adUnit
             mediationDelegates[adId] = mediationDelegate
@@ -65,6 +66,7 @@ class AdMobInterstitialManager: NSObject, FullScreenContentDelegate {
             adUnit.fetchDemand { [weak self, weak adUnit] _ in
                 // Destroyed / replaced while the auction ran: skip the load.
                 guard let self = self, let adUnit = adUnit, self.adUnits[adId] === adUnit else { return }
+                maybeDropBid(dropBidProbability, from: gadRequest)
                 GoogleMobileAds.InterstitialAd.load(
                     with: adMobAdUnitId,
                     request: gadRequest

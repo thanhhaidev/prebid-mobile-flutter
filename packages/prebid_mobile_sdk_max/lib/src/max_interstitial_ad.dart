@@ -1,9 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart'
     show
+        AdFormat,
         PrebidFullscreenControls,
         PrebidInterstitialAdListener,
         VideoParameters;
+
+import 'max_listeners.dart';
+import 'max_testing.dart';
 
 const MethodChannel _channel = MethodChannel(
   'prebid_mobile_sdk_max/interstitial',
@@ -62,7 +66,14 @@ class PrebidMaxInterstitialAd {
 
   /// Whether the interstitial may fill with a video creative. Sets the Prebid
   /// mediation ad-unit format to video when true (banner otherwise).
+  ///
+  /// Ignored when [adFormats] is set.
   final bool isVideo;
+
+  /// Formats to request — e.g. `{AdFormat.banner, AdFormat.video}` for a
+  /// multiformat interstitial (the winning bid decides the creative).
+  /// Overrides [isVideo] when set; an empty set falls back to [isVideo].
+  final Set<AdFormat>? adFormats;
 
   /// Close / skip button, sound and (interstitial) minimum-size controls.
   final PrebidFullscreenControls? controls;
@@ -79,7 +90,8 @@ class PrebidMaxInterstitialAd {
   /// is sent in the request).
   final VideoParameters? videoParameters;
 
-  /// Listener for interstitial ad events.
+  /// Listener for interstitial ad events. Pass a
+  /// [PrebidMaxInterstitialAdListener] to also get MAX's revenue events.
   final PrebidInterstitialAdListener? listener;
 
   bool _loaded = false;
@@ -92,6 +104,7 @@ class PrebidMaxInterstitialAd {
     required this.configId,
     required this.maxAdUnitId,
     this.isVideo = false,
+    this.adFormats,
     this.controls,
     this.impOrtbConfig,
     this.videoParameters,
@@ -111,6 +124,8 @@ class PrebidMaxInterstitialAd {
       'impOrtbConfig': ?impOrtbConfig,
       'videoParameters': ?videoParameters?.toMap(),
       'isVideo': isVideo,
+      'adFormats': ?adFormats?.map((f) => f.name).toList(),
+      ...debugDropBidArgs(),
     });
   }
 
@@ -146,6 +161,11 @@ class PrebidMaxInterstitialAd {
         listener?.onAdClicked?.call();
       case 'onAdImpression':
         listener?.onAdImpression?.call();
+      case 'onAdRevenuePaid':
+        final listener = this.listener;
+        if (listener is PrebidMaxInterstitialAdListener) {
+          listener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
+        }
     }
   }
 }

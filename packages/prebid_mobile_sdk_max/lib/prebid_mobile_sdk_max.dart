@@ -49,5 +49,12 @@ library;
 
 export 'src/max_banner_ad.dart';
 export 'src/max_interstitial_ad.dart';
+export 'src/max_listeners.dart'
+    show
+        PrebidMaxAdRevenue,
+        PrebidMaxBannerAdListener,
+        PrebidMaxInterstitialAdListener,
+        PrebidMaxRewardedAdListener;
 export 'src/max_native_ad.dart';
 export 'src/max_rewarded_ad.dart';
+export 'src/max_testing.dart' show PrebidMax;

@@ -175,6 +175,8 @@ class _MediationFullscreenScreenState
           'onAdHidden called',
           'onAdClicked called',
           if (_rewarded) ...[
+            // Kept to match the original layout: MAX no longer reports
+            // rewarded video start / completion, so these never fire.
             'onRewardedVideoStarted called',
             'onRewardedVideoCompleted called',
             'onUserRewarded called',

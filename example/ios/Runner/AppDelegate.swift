@@ -43,7 +43,7 @@ import UIKit
   }
 
   /// Example-only channel: raw IAB consent keys in `UserDefaults.standard`, where
-  /// the Prebid SDK reads them (see lib/platform/iab_consent_store.dart).
+  /// the Prebid SDK reads them (see lib/services/iab_consent_store.dart).
   private func registerIabConsentStore(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(
       name: "prebid_example/iab_consent_store", binaryMessenger: messenger)

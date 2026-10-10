@@ -13,14 +13,14 @@ import 'targeting_data_page.dart';
 /// Values persist via SharedPreferences; only values that differ from the
 /// defaults are stored and applied at startup ([AppSettings.applyToSdk]).
 /// "Apply" pushes all of them and re-initializes the SDK.
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+class SdkSettingsPage extends StatefulWidget {
+  const SdkSettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  State<SdkSettingsPage> createState() => _SdkSettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SdkSettingsPageState extends State<SdkSettingsPage> {
   final _serverUrl = TextEditingController(text: AppSettings.serverUrl);
   final _accountId = TextEditingController(text: AppSettings.accountId);
   final _gdprConsent = TextEditingController(text: AppSettings.gdprConsent);
@@ -131,7 +131,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const SettingsPage()),
+      MaterialPageRoute(builder: (_) => const SdkSettingsPage()),
     );
   }
 

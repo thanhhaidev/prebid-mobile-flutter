@@ -28,7 +28,7 @@ class DeveloperToolsPage extends StatelessWidget {
         children: [
           PlainListRow(
             label: 'SDK settings',
-            onTap: () => push(const SettingsPage()),
+            onTap: () => push(const SdkSettingsPage()),
           ),
           PlainListRow(
             label: 'Bid Inspector',

@@ -821,6 +821,20 @@ abstract class InstreamVideoAdHostApi {
   );
 }
 
+/// Prebid-rendered banners loaded apart from a platform view
+/// (PrebidPreloadedBannerAd), each shown later by whichever banner view
+/// shows it last (Dart → Native).
+@HostApi()
+abstract class BannerAdHostApi {
+  /// Creates and loads the banner whose events go to the channel
+  /// `prebid_mobile_sdk/banner_ad_<channelId>`, from the creation params a
+  /// banner view takes.
+  void create(int channelId, Map<String?, Object?> config);
+
+  /// Destroys the banner, taking it out of the view showing it.
+  void destroy(int channelId);
+}
+
 // =============================================================================
 // Flutter APIs (Native → Dart)
 // =============================================================================

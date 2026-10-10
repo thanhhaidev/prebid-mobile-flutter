@@ -4049,6 +4049,63 @@ class InstreamVideoAdHostApiSetup {
     }
   }
 }
+/// Prebid-rendered banners loaded apart from a platform view
+/// (PrebidPreloadedBannerAd), each shown later by whichever banner view
+/// shows it last (Dart → Native).
+///
+/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
+protocol BannerAdHostApi {
+  /// Creates and loads the banner whose events go to the channel
+  /// `prebid_mobile_sdk/banner_ad_<channelId>`, from the creation params a
+  /// banner view takes.
+  func create(channelId: Int64, config: [String?: Any?]) throws
+  /// Destroys the banner, taking it out of the view showing it.
+  func destroy(channelId: Int64) throws
+}
+
+/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
+class BannerAdHostApiSetup {
+  static var codec: FlutterStandardMessageCodec { PrebidApiPigeonCodec.shared }
+  /// Sets up an instance of `BannerAdHostApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: BannerAdHostApi?, messageChannelSuffix: String = "") {
+    let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+    /// Creates and loads the banner whose events go to the channel
+    /// `prebid_mobile_sdk/banner_ad_<channelId>`, from the creation params a
+    /// banner view takes.
+    let createChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.BannerAdHostApi.create\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      createChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let channelIdArg = args[0] as! Int64
+        let configArg = args[1] as! [String?: Any?]
+        do {
+          try api.create(channelId: channelIdArg, config: configArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      createChannel.setMessageHandler(nil)
+    }
+    /// Destroys the banner, taking it out of the view showing it.
+    let destroyChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.BannerAdHostApi.destroy\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      destroyChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let channelIdArg = args[0] as! Int64
+        do {
+          try api.destroy(channelId: channelIdArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      destroyChannel.setMessageHandler(nil)
+    }
+  }
+}
 
 /// Callbacks for ad events from native to Flutter.
 ///

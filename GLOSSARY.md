@@ -159,6 +159,10 @@ _Avoid_: ad unit ID, view ID
 The number a Dart widget gives its platform view before the view exists; the native view names its own method channel after it.
 _Avoid_: view ID, platform view ID
 
+**Preloaded banner**:
+A Prebid-rendered banner whose native view lives apart from the Flutter widgets showing it (`PrebidPreloadedBannerAd`): loaded before its slot is on screen, shown by one view at a time (the newest takes it over), and kept until the app destroys it.
+_Avoid_: cached banner, reusable banner
+
 **Fullscreen controls**:
 How Prebid presents a Prebid-rendered interstitial or rewarded ad: close and skip buttons, sound, auto-close, minimum size and SKOverlay.
 _Avoid_: interstitial settings, player options

@@ -4466,6 +4466,72 @@ interface InstreamVideoAdHostApi {
   }
 }
 /**
+ * Prebid-rendered banners loaded apart from a platform view
+ * (PrebidPreloadedBannerAd), each shown later by whichever banner view
+ * shows it last (Dart → Native).
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface BannerAdHostApi {
+  /**
+   * Creates and loads the banner whose events go to the channel
+   * `prebid_mobile_sdk/banner_ad_<channelId>`, from the creation params a
+   * banner view takes.
+   */
+  fun create(channelId: Long, config: Map<String?, Any?>)
+  /** Destroys the banner, taking it out of the view showing it. */
+  fun destroy(channelId: Long)
+
+  companion object {
+    /** The codec used by BannerAdHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      PrebidApiPigeonCodec()
+    }
+    /** Sets up an instance of `BannerAdHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: BannerAdHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.BannerAdHostApi.create$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val channelIdArg = args[0] as Long
+            val configArg = args[1] as Map<String?, Any?>
+            val wrapped: List<Any?> = try {
+              api.create(channelIdArg, configArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.prebid_mobile_sdk.BannerAdHostApi.destroy$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val channelIdArg = args[0] as Long
+            val wrapped: List<Any?> = try {
+              api.destroy(channelIdArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              PrebidApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+/**
  * Callbacks for ad events from native to Flutter.
  *
  * Generated class from Pigeon that represents Flutter messages that can be called from Kotlin.

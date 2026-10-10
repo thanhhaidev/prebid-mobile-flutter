@@ -14,9 +14,8 @@ const _failed = 'onAdFailed called';
 ///
 /// The original creates one `BannerView`, loads it with **Load ad**, attaches
 /// it to the container with **Add** and detaches it with **Remove**; it does
-/// not auto-load. A Flutter platform view can't be re-parented, so the banner
-/// is built on Load ad and shown / hidden in place ([Offstage] keeps the
-/// loaded view alive while removed).
+/// not auto-load. Here the banner is a [PrebidPreloadedBannerAd]: it loads
+/// off screen, and removing its view keeps it loaded for the next **Add**.
 class ReusableBannerScreen extends DemoScreen {
   const ReusableBannerScreen({super.key, required super.item});
 
@@ -26,17 +25,24 @@ class ReusableBannerScreen extends DemoScreen {
 
 class _ReusableBannerScreenState extends DemoScreenState<ReusableBannerScreen> {
   late final events = EventCounters([_loaded, _displayed, _failed]);
-  bool _created = false;
+  late final _ad = PrebidPreloadedBannerAd(
+    configId: config.configId,
+    width: config.width,
+    height: config.height,
+    listener: PrebidBannerAdListener(
+      onAdLoaded: () => events.fire(_loaded),
+      onAdDisplayed: () => events.fire(_displayed),
+      onAdFailed: (e) => events.fire(_failed, e),
+    ),
+  );
+  bool _loadStarted = false;
   bool _attached = false;
 
   @override
   Future<void> startAd() async {} // No auto-load.
 
-  PrebidBannerAdListener get _listener => PrebidBannerAdListener(
-    onAdLoaded: () => events.fire(_loaded),
-    onAdDisplayed: () => events.fire(_displayed),
-    onAdFailed: (e) => events.fire(_failed, e),
-  );
+  @override
+  void destroyAd() => _ad.destroy();
 
   @override
   Widget buildDemo(BuildContext context) {
@@ -50,13 +56,16 @@ class _ReusableBannerScreenState extends DemoScreenState<ReusableBannerScreen> {
           children: [
             DemoButton(
               'Load ad',
-              onPressed: _created
+              onPressed: _loadStarted
                   ? null
-                  : () => setState(() => _created = true),
+                  : () {
+                      setState(() => _loadStarted = true);
+                      _ad.load();
+                    },
             ),
             DemoButton(
               'Add',
-              onPressed: _created && !_attached
+              onPressed: _loadStarted && !_attached
                   ? () => setState(() => _attached = true)
                   : null,
             ),
@@ -72,23 +81,7 @@ class _ReusableBannerScreenState extends DemoScreenState<ReusableBannerScreen> {
         EventCounterList(counters: events),
         const SizedBox(height: 16),
         Container(height: 300, color: c.surface),
-        Center(
-          child: SizedBox(
-            width: config.width.toDouble(),
-            height: _attached ? config.height.toDouble() : 0,
-            child: _created
-                ? Offstage(
-                    offstage: !_attached,
-                    child: PrebidBannerAd(
-                      configId: config.configId,
-                      width: config.width,
-                      height: config.height,
-                      listener: _listener,
-                    ),
-                  )
-                : null,
-          ),
-        ),
+        if (_attached) Center(child: PrebidPreloadedBannerAdView(ad: _ad)),
         Container(height: 300, color: c.surface),
       ],
     );
@@ -98,9 +91,9 @@ class _ReusableBannerScreenState extends DemoScreenState<ReusableBannerScreen> {
 /// A4 — "Banner 320x50 Recycler view (In-App)" (`PpmBannerRecyclerViewFragment`).
 ///
 /// Rows: 3 grey placeholders (500 dp), a banner row, 6 placeholders, a banner
-/// row, 1 placeholder. The original moves ONE shared `BannerView` between the
-/// banner rows; platform views can't be moved, so each banner row hosts its
-/// own banner (refresh 30 s).
+/// row, 1 placeholder. As in the original, ONE banner (refresh 30 s) moves
+/// between the banner rows: a [PrebidPreloadedBannerAd] shown by whichever
+/// row was built last, without a new auction when a row scrolls back in.
 class RecyclerBannerScreen extends DemoScreen {
   const RecyclerBannerScreen({super.key, required super.item});
 
@@ -110,6 +103,17 @@ class RecyclerBannerScreen extends DemoScreen {
 
 class _RecyclerBannerScreenState extends DemoScreenState<RecyclerBannerScreen> {
   late final events = EventCounters([_loaded, _displayed, _failed]);
+  late final _ad = PrebidPreloadedBannerAd(
+    configId: config.configId,
+    width: config.width,
+    height: config.height,
+    refreshIntervalSeconds: 30,
+    listener: PrebidBannerAdListener(
+      onAdLoaded: () => events.fire(_loaded),
+      onAdDisplayed: () => events.fire(_displayed),
+      onAdFailed: (e) => events.fire(_failed, e),
+    ),
+  );
 
   static const _rows = [
     false, false, false, true, false, false, false, false, false, false, //
@@ -117,7 +121,10 @@ class _RecyclerBannerScreenState extends DemoScreenState<RecyclerBannerScreen> {
   ];
 
   @override
-  Future<void> startAd() async {}
+  Future<void> startAd() => _ad.load();
+
+  @override
+  void destroyAd() => _ad.destroy();
 
   @override
   Widget buildDemo(BuildContext context) {
@@ -142,17 +149,7 @@ class _RecyclerBannerScreenState extends DemoScreenState<RecyclerBannerScreen> {
             itemBuilder: (context, i) => _rows[i]
                 ? Center(
                     child: started
-                        ? PrebidBannerAd(
-                            configId: config.configId,
-                            width: config.width,
-                            height: config.height,
-                            refreshIntervalSeconds: 30,
-                            listener: PrebidBannerAdListener(
-                              onAdLoaded: () => events.fire(_loaded),
-                              onAdDisplayed: () => events.fire(_displayed),
-                              onAdFailed: (e) => events.fire(_failed, e),
-                            ),
-                          )
+                        ? PrebidPreloadedBannerAdView(ad: _ad)
                         : SizedBox(height: config.height.toDouble()),
                   )
                 : Container(

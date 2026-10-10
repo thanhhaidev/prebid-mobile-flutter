@@ -238,25 +238,22 @@ class _PrebidBannerAdState extends State<PrebidBannerAd>
   bool autoLoadOf(PrebidBannerAd widget) => widget.autoLoad;
 
   @override
-  Map<String, Object?> configOf(PrebidBannerAd widget) => {
-    'configId': widget.configId,
-    'width': widget.width,
-    'height': widget.height,
-    'isVideo': widget.isVideo,
-    'autoLoad': widget.autoLoad,
-    if (widget.additionalSizes case final sizes?)
-      'additionalSizes': [
-        for (final size in sizes) ...[size.width.round(), size.height.round()],
-      ],
-    'refreshIntervalSeconds': ?widget.refreshIntervalSeconds,
-    'adFormats': ?widget.adFormats?.map((f) => f.name).toList(),
-    'pbAdSlot': ?widget.pbAdSlot,
-    'adPosition': ?widget.adPosition?.value,
-    'videoParameters': ?widget.videoParameters?.toMap(),
-    'impOrtbConfig': ?impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
-    'globalOrtbConfig': ?widget.globalOrtbConfig,
-    'videoPlacementType': ?widget.videoPlacementType?.name,
-  };
+  Map<String, Object?> configOf(PrebidBannerAd widget) => bannerConfig(
+    configId: widget.configId,
+    width: widget.width,
+    height: widget.height,
+    isVideo: widget.isVideo,
+    autoLoad: widget.autoLoad,
+    additionalSizes: widget.additionalSizes,
+    refreshIntervalSeconds: widget.refreshIntervalSeconds,
+    adFormats: widget.adFormats,
+    pbAdSlot: widget.pbAdSlot,
+    adPosition: widget.adPosition,
+    videoParameters: widget.videoParameters,
+    impOrtbConfig: impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
+    globalOrtbConfig: widget.globalOrtbConfig,
+    videoPlacementType: widget.videoPlacementType,
+  );
 
   // The slot starts at the requested size and adopts the rendered creative's
   // size once the native SDK reports it, so a creative larger than the
@@ -278,3 +275,40 @@ class _PrebidBannerAdState extends State<PrebidBannerAd>
     dispatchBannerEvent(widget.listener, widget.videoListener, call);
   }
 }
+
+/// The creation params of a native banner, shared by [PrebidBannerAd] and
+/// `PrebidPreloadedBannerAd`; not exported to apps.
+Map<String, Object?> bannerConfig({
+  required String configId,
+  required int width,
+  required int height,
+  required bool isVideo,
+  required bool autoLoad,
+  List<Size>? additionalSizes,
+  int? refreshIntervalSeconds,
+  Set<PrebidAdFormat>? adFormats,
+  String? pbAdSlot,
+  PrebidAdPosition? adPosition,
+  VideoParameters? videoParameters,
+  String? impOrtbConfig,
+  String? globalOrtbConfig,
+  VideoPlacementType? videoPlacementType,
+}) => {
+  'configId': configId,
+  'width': width,
+  'height': height,
+  'isVideo': isVideo,
+  'autoLoad': autoLoad,
+  if (additionalSizes case final sizes?)
+    'additionalSizes': [
+      for (final size in sizes) ...[size.width.round(), size.height.round()],
+    ],
+  'refreshIntervalSeconds': ?refreshIntervalSeconds,
+  'adFormats': ?adFormats?.map((f) => f.name).toList(),
+  'pbAdSlot': ?pbAdSlot,
+  'adPosition': ?adPosition?.value,
+  'videoParameters': ?videoParameters?.toMap(),
+  'impOrtbConfig': ?impOrtbConfig,
+  'globalOrtbConfig': ?globalOrtbConfig,
+  'videoPlacementType': ?videoPlacementType?.name,
+};

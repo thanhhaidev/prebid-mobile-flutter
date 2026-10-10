@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../ad_listener.dart';
 import '../banner_ad.dart';
+import '../internal/platform_view.dart';
 import 'ad_view_channel.dart';
 
 /// The state of a widget that shows one native ad view: the core
@@ -89,27 +89,12 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
       ...extraParams,
       'channelId': view.id,
     };
-    final key = ValueKey(view.id);
-    void onCreated(int _) => _onViewCreated(view);
-    // defaultTargetPlatform (not dart:io) so widget tests can pick a platform.
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return AndroidView(
-        key: key,
-        viewType: viewType,
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: onCreated,
-      );
-    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      return UiKitView(
-        key: key,
-        viewType: viewType,
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: onCreated,
-      );
-    }
-    return const SizedBox.shrink();
+    return adPlatformView(
+      key: ValueKey(view.id),
+      viewType: viewType,
+      creationParams: creationParams,
+      onCreated: (_) => _onViewCreated(view),
+    );
   }
 
   /// Builds an adaptive slot: [builder] gets the width available at the

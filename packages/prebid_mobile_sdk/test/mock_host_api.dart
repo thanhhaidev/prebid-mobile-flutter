@@ -9,5 +9,6 @@ import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
   NativeAdHostApi,
   MultiformatAdHostApi,
   InstreamVideoAdHostApi,
+  BannerAdHostApi,
 ])
 void main() {}

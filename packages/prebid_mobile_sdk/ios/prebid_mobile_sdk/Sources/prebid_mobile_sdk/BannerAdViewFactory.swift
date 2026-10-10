@@ -5,9 +5,11 @@ import UIKit
 final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
+    private let preloaded: BannerAdHostApiImpl
 
-    init(messenger: FlutterBinaryMessenger) {
+    init(messenger: FlutterBinaryMessenger, preloaded: BannerAdHostApiImpl) {
         self.messenger = messenger
+        self.preloaded = preloaded
         super.init()
     }
 
@@ -16,11 +18,14 @@ final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
         viewIdentifier viewId: Int64,
         arguments args: Any?
     ) -> FlutterPlatformView {
-        return BannerAdPlatformView(
-            frame: frame,
-            viewId: viewId,
-            messenger: messenger,
-            args: args as? [String: Any] ?? [:]
+        let args = args as? [String: Any] ?? [:]
+        // Named by the Dart widget before this view exists (AdViewChannel).
+        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
+        if args["preloaded"] as? Bool == true {
+            return PreloadedBannerPlatformView(frame: frame, session: preloaded.session(channelId))
+        }
+        return OwnedBannerPlatformView(
+            session: BannerAdSession(channelId: channelId, messenger: messenger, args: args)
         )
     }
 
@@ -29,16 +34,92 @@ final class BannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
-final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDelegate, BannerViewVideoPlaybackDelegate {
+/// A banner view's platform view that owns its banner (PrebidBannerAd).
+private final class OwnedBannerPlatformView: NSObject, FlutterPlatformView {
+    private let session: BannerAdSession
 
-    private let bannerView: BannerView
+    init(session: BannerAdSession) {
+        self.session = session
+    }
+
+    func view() -> UIView {
+        return session.bannerView
+    }
+}
+
+/// Shows a banner loaded apart from any view (PrebidPreloadedBannerAd). The
+/// banner outlives this view: a later view takes it over, and releasing this
+/// one only gives it back.
+private final class PreloadedBannerPlatformView: NSObject, FlutterPlatformView {
+    private let container: UIView
+    private weak var bannerView: BannerView?
+
+    init(frame: CGRect, session: BannerAdSession?) {
+        container = UIView(frame: frame)
+        bannerView = session?.bannerView
+        super.init()
+        if let bannerView {
+            // addSubview takes it out of the view that showed it before.
+            bannerView.frame = container.bounds
+            bannerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(bannerView)
+        }
+    }
+
+    deinit {
+        // Taken over by a newer view, or destroyed: not this view's to remove.
+        if let bannerView, bannerView.superview === container {
+            bannerView.removeFromSuperview()
+        }
+    }
+
+    func view() -> UIView {
+        return container
+    }
+}
+
+/// Prebid-rendered banners loaded apart from a platform view, each kept until
+/// Dart destroys it and shown by whichever view is showing it last.
+final class BannerAdHostApiImpl: BannerAdHostApi {
+    private let messenger: FlutterBinaryMessenger
+    private var sessions: [Int64: BannerAdSession] = [:]
+
+    init(messenger: FlutterBinaryMessenger) {
+        self.messenger = messenger
+    }
+
+    func session(_ channelId: Int64) -> BannerAdSession? {
+        return sessions[channelId]
+    }
+
+    func create(channelId: Int64, config: [String?: Any?]) throws {
+        guard sessions[channelId] == nil else { return }
+        var args: [String: Any] = [:]
+        for case (let key?, let value?) in config { args[key] = value }
+        sessions[channelId] = BannerAdSession(channelId: channelId, messenger: messenger, args: args)
+    }
+
+    func destroy(channelId: Int64) throws {
+        sessions.removeValue(forKey: channelId)?.bannerView.removeFromSuperview()
+    }
+
+    func destroyAll() {
+        for channelId in Array(sessions.keys) { try? destroy(channelId: channelId) }
+    }
+}
+
+/// One Prebid `BannerView` and the method channel of its Dart widget or
+/// preloaded ad: the configuration from Dart, the delegates, and the calls
+/// from `PrebidBannerAdController`. Released with its owner.
+final class BannerAdSession: NSObject, BannerViewDelegate, BannerViewVideoPlaybackDelegate {
+
+    let bannerView: BannerView
     private let methodChannel: FlutterMethodChannel
     /// Between willPresentModal and didDismissModal (see willLeaveApplication).
     private var isModalOpen = false
 
     init(
-        frame: CGRect,
-        viewId: Int64,
+        channelId: Int64,
         messenger: FlutterBinaryMessenger,
         args: [String: Any]
     ) {
@@ -55,8 +136,6 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
 
         let adSize = CGSize(width: width, height: height)
 
-        // Named by the Dart widget before this view exists (AdViewChannel).
-        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
         methodChannel = FlutterMethodChannel(
             name: "prebid_mobile_sdk/banner_ad_\(channelId)",
             binaryMessenger: messenger
@@ -136,10 +215,6 @@ final class BannerAdPlatformView: NSObject, FlutterPlatformView, BannerViewDeleg
     deinit {
         methodChannel.setMethodCallHandler(nil)
         bannerView.stopRefresh()
-    }
-
-    func view() -> UIView {
-        return bannerView
     }
 
     // MARK: - BannerViewDelegate

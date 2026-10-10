@@ -14,6 +14,7 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
     private var nativeApi: NativeAdHostApiImpl?
     private var multiformatApi: MultiformatAdHostApiImpl?
     private var instreamApi: InstreamVideoAdHostApiImpl?
+    private var bannerApi: BannerAdHostApiImpl?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let messenger = registrar.messenger()
@@ -29,12 +30,14 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         let nativeApi = NativeAdHostApiImpl(flutterApi: flutterApi, store: instance.nativeAdStore)
         let multiformatApi = MultiformatAdHostApiImpl(flutterApi: MultiformatFlutterApi(binaryMessenger: messenger))
         let instreamApi = InstreamVideoAdHostApiImpl()
+        let bannerApi = BannerAdHostApiImpl(messenger: messenger)
         instance.prebidMobileApi = prebidMobileApi
         instance.interstitialApi = interstitialApi
         instance.rewardedApi = rewardedApi
         instance.nativeApi = nativeApi
         instance.multiformatApi = multiformatApi
         instance.instreamApi = instreamApi
+        instance.bannerApi = bannerApi
 
         PrebidMobileHostApiSetup.setUp(binaryMessenger: messenger, api: prebidMobileApi)
         TargetingHostApiSetup.setUp(binaryMessenger: messenger, api: TargetingHostApiImpl())
@@ -43,8 +46,12 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         NativeAdHostApiSetup.setUp(binaryMessenger: messenger, api: nativeApi)
         MultiformatAdHostApiSetup.setUp(binaryMessenger: messenger, api: multiformatApi)
         InstreamVideoAdHostApiSetup.setUp(binaryMessenger: messenger, api: instreamApi)
+        BannerAdHostApiSetup.setUp(binaryMessenger: messenger, api: bannerApi)
 
-        registrar.register(BannerAdViewFactory(messenger: messenger), withId: bannerViewType)
+        registrar.register(
+            BannerAdViewFactory(messenger: messenger, preloaded: bannerApi),
+            withId: bannerViewType
+        )
         registrar.register(
             NativeAdViewFactory(messenger: messenger, store: instance.nativeAdStore),
             withId: nativeViewType
@@ -68,5 +75,6 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         nativeApi?.destroyAll()
         multiformatApi?.destroyAll()
         instreamApi?.destroyAll()
+        bannerApi?.destroyAll()
     }
 }

@@ -3,6 +3,9 @@ package io.github.thanhhaidev.prebid_mobile_sdk
 import android.app.Activity
 import android.content.Context
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.FrameLayout
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
@@ -22,23 +25,97 @@ import org.prebid.mobile.rendering.models.AdPosition
 
 internal class BannerAdViewFactory(
     private val messenger: BinaryMessenger,
+    private val preloaded: BannerAdHostApiImpl,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
-        return BannerAdPlatformView(activityProvider() ?: context, viewId, messenger, params)
+        // Named by the Dart widget before this view exists (AdViewChannel).
+        val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
+        if (params["preloaded"] == true) {
+            return PreloadedBannerPlatformView(context, preloaded.session(channelId))
+        }
+        val session = BannerAdSession(activityProvider() ?: context, channelId, messenger, params)
+        return OwnedBannerPlatformView(session)
     }
 }
 
-internal class BannerAdPlatformView(
+/** A banner view's platform view that owns its banner (PrebidBannerAd). */
+private class OwnedBannerPlatformView(private val session: BannerAdSession) : PlatformView {
+    override fun getView(): View = session.bannerView
+
+    override fun dispose() = session.destroy()
+}
+
+/**
+ * Shows a banner loaded apart from any view (PrebidPreloadedBannerAd). The
+ * banner outlives this view: a later view takes it over, and disposing this
+ * one only gives it back.
+ */
+private class PreloadedBannerPlatformView(
+    context: Context,
+    session: BannerAdSession?,
+) : PlatformView {
+    private val container = FrameLayout(context)
+    private val bannerView = session?.bannerView
+
+    init {
+        bannerView?.let {
+            (it.parent as? ViewGroup)?.removeView(it)
+            container.addView(it, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        }
+    }
+
+    override fun getView(): View = container
+
+    override fun dispose() {
+        // Taken over by a newer view, or destroyed: not this view's to remove.
+        if (bannerView?.parent === container) container.removeView(bannerView)
+    }
+}
+
+/**
+ * Prebid-rendered banners loaded apart from a platform view, each kept until
+ * Dart destroys it and shown by whichever view is showing it last.
+ */
+internal class BannerAdHostApiImpl(
+    private val messenger: BinaryMessenger,
     private val context: Context,
-    private val viewId: Int,
+    private val activityProvider: () -> Activity?,
+) : BannerAdHostApi {
+    private val sessions = mutableMapOf<Long, BannerAdSession>()
+
+    fun session(channelId: Long): BannerAdSession? = sessions[channelId]
+
+    override fun create(channelId: Long, config: Map<String?, Any?>) {
+        if (sessions.containsKey(channelId)) return
+        sessions[channelId] = BannerAdSession(activityProvider() ?: context, channelId, messenger, config)
+    }
+
+    override fun destroy(channelId: Long) {
+        sessions.remove(channelId)?.let {
+            (it.bannerView.parent as? ViewGroup)?.removeView(it.bannerView)
+            it.destroy()
+        }
+    }
+
+    fun destroyAll() = sessions.keys.toList().forEach(::destroy)
+}
+
+/**
+ * One Prebid `BannerView` and the method channel of its Dart widget or
+ * preloaded ad: the configuration from Dart, the listeners, and the calls
+ * from `PrebidBannerAdController`.
+ */
+internal class BannerAdSession(
+    context: Context,
+    channelId: Long,
     messenger: BinaryMessenger,
     params: Map<*, *>,
-) : PlatformView {
+) {
 
-    private val bannerView: BannerView
+    val bannerView: BannerView
     private val methodChannel: MethodChannel
 
     init {
@@ -53,8 +130,6 @@ internal class BannerAdPlatformView(
         val impOrtbConfig = params["impOrtbConfig"] as? String
         val videoPlacement = videoPlacementType(params["videoPlacementType"] as? String)
 
-        // Named by the Dart widget before this view exists (AdViewChannel).
-        val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
         methodChannel = MethodChannel(messenger, "prebid_mobile_sdk/banner_ad_$channelId")
 
         bannerView = BannerView(context, configId, AdSize(width, height))
@@ -178,9 +253,7 @@ internal class BannerAdPlatformView(
         bannerView.loadAd()
     }
 
-    override fun getView(): View = bannerView
-
-    override fun dispose() {
+    fun destroy() {
         methodChannel.setMethodCallHandler(null)
         bannerView.destroy()
     }

@@ -21,6 +21,7 @@ class PrebidMobileSdkPlugin :
     private lateinit var nativeApi: NativeAdHostApiImpl
     private lateinit var multiformatApi: MultiformatAdHostApiImpl
     private lateinit var instreamApi: InstreamVideoAdHostApiImpl
+    private lateinit var bannerApi: BannerAdHostApiImpl
     private val nativeAdStore = NativeAdStore()
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -34,6 +35,7 @@ class PrebidMobileSdkPlugin :
         nativeApi = NativeAdHostApiImpl(flutterApi, nativeAdStore)
         multiformatApi = MultiformatAdHostApiImpl(MultiformatFlutterApi(messenger)) { activity }
         instreamApi = InstreamVideoAdHostApiImpl()
+        bannerApi = BannerAdHostApiImpl(messenger, context) { activity }
 
         PrebidMobileHostApi.setUp(messenger, prebidMobileApi)
         TargetingHostApi.setUp(messenger, TargetingHostApiImpl(context))
@@ -42,10 +44,11 @@ class PrebidMobileSdkPlugin :
         NativeAdHostApi.setUp(messenger, nativeApi)
         MultiformatAdHostApi.setUp(messenger, multiformatApi)
         InstreamVideoAdHostApi.setUp(messenger, instreamApi)
+        BannerAdHostApi.setUp(messenger, bannerApi)
 
         binding.platformViewRegistry.registerViewFactory(
             BANNER_VIEW_TYPE,
-            BannerAdViewFactory(messenger) { activity },
+            BannerAdViewFactory(messenger, bannerApi) { activity },
         )
         binding.platformViewRegistry.registerViewFactory(
             NATIVE_VIEW_TYPE,
@@ -62,6 +65,7 @@ class PrebidMobileSdkPlugin :
         NativeAdHostApi.setUp(messenger, null)
         MultiformatAdHostApi.setUp(messenger, null)
         InstreamVideoAdHostApi.setUp(messenger, null)
+        BannerAdHostApi.setUp(messenger, null)
         prebidMobileApi.clearEventDelegate()
         prebidMobileApi.clearLogger()
         // Stop auto-refresh timers and viewability polls, which would
@@ -75,6 +79,7 @@ class PrebidMobileSdkPlugin :
         nativeApi.destroyAll()
         multiformatApi.destroyAll()
         instreamApi.destroyAll()
+        bannerApi.destroyAll()
         nativeAdStore.clear()
     }
 

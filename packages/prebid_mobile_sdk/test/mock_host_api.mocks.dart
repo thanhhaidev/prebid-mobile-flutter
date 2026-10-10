@@ -1547,3 +1547,41 @@ class MockInstreamVideoAdHostApi extends _i1.Mock
           )
           as _i4.Future<String>);
 }
+
+/// A class which mocks [BannerAdHostApi].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockBannerAdHostApi extends _i1.Mock implements _i2.BannerAdHostApi {
+  MockBannerAdHostApi() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get pigeonVar_messageChannelSuffix =>
+      (super.noSuchMethod(
+            Invocation.getter(#pigeonVar_messageChannelSuffix),
+            returnValue: _i3.dummyValue<String>(
+              this,
+              Invocation.getter(#pigeonVar_messageChannelSuffix),
+            ),
+          )
+          as String);
+
+  @override
+  _i4.Future<void> create(int? channelId, Map<String?, Object?>? config) =>
+      (super.noSuchMethod(
+            Invocation.method(#create, [channelId, config]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> destroy(int? channelId) =>
+      (super.noSuchMethod(
+            Invocation.method(#destroy, [channelId]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+}

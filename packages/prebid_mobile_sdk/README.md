@@ -37,7 +37,7 @@ This plugin focuses on the **Prebid Rendered (In-App Bidding)** approach — the
 
 | Feature | Description |
 |---|---|
-| **Banner Ads** | Display and video banners via native `PlatformView` widgets with auto-refresh support. |
+| **Banner Ads** | Display and video banners via native `PlatformView` widgets with auto-refresh support, or preloaded and kept across views for feeds. |
 | **Interstitial Ads** | Fullscreen display and video ads with load/show lifecycle and video parameters. |
 | **Rewarded Ads** | Fullscreen ads that grant users a typed reward on completion. |
 | **Native Ads** | Load native ads and show them with `PrebidNativeAdView` (native rendering with impression/click tracking); raw assets are also exposed. |

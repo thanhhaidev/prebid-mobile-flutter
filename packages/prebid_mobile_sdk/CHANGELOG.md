@@ -79,6 +79,10 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   `app.ext.prebid.source` and `version` are unchanged.
 - Bid expiry on Original API and multiformat results: `receivedAt`,
   `expiresAt` and `isExpired`.
+- Preloaded banners (`PrebidPreloadedBannerAd`, shown by
+  `PrebidPreloadedBannerAdView`): loaded before their slot is on screen and
+  kept across the views showing them, so a banner in a scrolling list isn't
+  re-auctioned each time it scrolls back.
 - Native response image sizes (iOS), the device-data consent check, an
   `app.bundle` override (Android), Prebid's own location updates switch
   (iOS), and clearing the user location.

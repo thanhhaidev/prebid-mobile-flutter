@@ -12,6 +12,8 @@
 /// ## Supported Ad Formats
 ///
 /// - [PrebidBannerAd] — Inline display and video banner ads (PlatformView).
+/// - [PrebidPreloadedBannerAd] — A banner loaded ahead of its slot and kept
+///   across the views showing it (feeds).
 /// - [PrebidInterstitialAd] — Fullscreen interstitial ads (display or video).
 /// - [PrebidRewardedAd] — Fullscreen rewarded ads with typed reward callbacks.
 /// - [PrebidNativeAd] — Native ads with raw asset data for custom rendering.
@@ -46,7 +48,8 @@ library;
 
 export 'src/ad_enums.dart';
 export 'src/ad_listener.dart';
-export 'src/banner_ad.dart' hide attachBannerController, detachBannerController;
+export 'src/banner_ad.dart'
+    hide attachBannerController, bannerConfig, detachBannerController;
 export 'src/external_user_id.dart';
 export 'src/fullscreen_controls.dart';
 export 'src/interstitial_ad.dart';
@@ -56,6 +59,7 @@ export 'src/native_ad_enums.dart';
 export 'src/native_parameters.dart';
 export 'src/original_api.dart';
 export 'src/prebid_mobile.dart' hide prebidMobileHostApi;
+export 'src/preloaded_banner_ad.dart';
 export 'src/rewarded_ad.dart';
 export 'src/targeting.dart';
 export 'src/video_ad.dart';

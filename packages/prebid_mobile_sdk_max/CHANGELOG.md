@@ -35,6 +35,10 @@ All notable changes to this package are documented here. The format follows
 - Rewarded ads: with several Flutter engines loading the same MAX ad unit,
   which MAX shares per process, the engine that takes the unit over no longer
   has its ad destroyed by the previous owner.
+- iOS: fullscreen ads present from the Flutter engine's own window, and
+  banners from their own, instead of the first key window: on an iPad with
+  several windows, or with Flutter in a secondary scene (add-to-app), they
+  appeared in the wrong one. The key window remains the fallback.
 
 ## [1.0.0] - 2026-10-11
 

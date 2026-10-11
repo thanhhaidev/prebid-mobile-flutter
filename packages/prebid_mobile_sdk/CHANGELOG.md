@@ -43,6 +43,10 @@ All notable changes to this package are documented here. The format follows
   plugin template's `1.0-SNAPSHOT`).
 - iOS: with several Flutter engines, an engine that detaches no longer
   resets Prebid's logger while another engine's log listener uses it.
+- iOS: fullscreen ads present from the Flutter engine's own window, and
+  banners from their own, instead of the first key window: on an iPad with
+  several windows, or with Flutter in a secondary scene (add-to-app), they
+  appeared in the wrong one. The key window remains the fallback.
 
 ## [1.0.0] - 2026-10-11
 

@@ -22,6 +22,11 @@ class FullscreenAdManager<Ad: AnyObject> {
     private var shown: Set<Int> = []
     private var expiries: [Int: DispatchWorkItem] = [:]
 
+    /// The window of the Flutter engine this manager serves, to present its
+    /// ads in (the plugin sets it from its registrar); the foreground key
+    /// window when it returns nil.
+    final var engineWindow: () -> UIWindow? = { nil }
+
     init(name: String, messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
         channel.setMethodCallHandler { [weak self] call, result in
@@ -155,6 +160,7 @@ class FullscreenAdManager<Ad: AnyObject> {
             return send(adId, "onAdFailed", error: PrebidPresenter.notReady)
         }
         PrebidPresenter.whenReady(
+            in: engineWindow(),
             fail: { [weak self] reason in self?.send(adId, "onAdFailed", error: reason) },
             present: { [weak self, weak ad] controller in
                 // The wait for a busy controller may outlast the ad:

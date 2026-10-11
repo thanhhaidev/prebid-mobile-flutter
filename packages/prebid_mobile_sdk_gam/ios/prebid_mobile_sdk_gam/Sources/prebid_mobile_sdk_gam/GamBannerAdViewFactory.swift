@@ -178,7 +178,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
     // MARK: - BannerViewDelegate
 
     func bannerViewPresentationController() -> UIViewController? {
-        return PrebidPresenter.topViewController()
+        return PrebidPresenter.topViewController(in: bannerView.window)
     }
 
     func bannerView(_ bannerView: PrebidMobile.BannerView, didReceiveAdWithAdSize adSize: CGSize) {

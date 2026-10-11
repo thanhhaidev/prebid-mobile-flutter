@@ -175,7 +175,7 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
             onMain {
                 guard let self = self else { return }
                 maybeDropBid(self.dropBidProbability, from: self.gadRequest)
-                self.gadBanner.rootViewController = PrebidPresenter.topViewController()
+                self.gadBanner.rootViewController = PrebidPresenter.topViewController(in: self.gadBanner.window)
                 self.gadBanner.load(self.gadRequest)
             }
         }

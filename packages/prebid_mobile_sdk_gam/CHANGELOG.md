@@ -35,6 +35,10 @@ All notable changes to this package are documented here. The format follows
 - Android: native ads free their `NativeAdView` when replaced or disposed,
   and lay out in dp rather than raw pixels (they looked different on each
   screen density).
+- iOS: fullscreen ads present from the Flutter engine's own window, and
+  banners from their own, instead of the first key window: on an iPad with
+  several windows, or with Flutter in a secondary scene (add-to-app), they
+  appeared in the wrong one. The key window remains the fallback.
 
 ## [1.0.0] - 2026-10-11
 

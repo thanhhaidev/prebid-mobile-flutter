@@ -34,7 +34,19 @@ enum PrebidErrorFormatter {
 /// `UIApplication.keyWindow` is deprecated and nil in multi-scene apps).
 /// A port of the core plugin's.
 enum PrebidPresenter {
-    static func topViewController() -> UIViewController? {
+    /// The top-most presented controller of `window` (the Flutter engine's
+    /// own, or the ad view's, so a multi-window iPad or an add-to-app
+    /// secondary scene presents in the right place), or of the foreground
+    /// key window when `window` is nil or has no root.
+    static func topViewController(in window: UIWindow? = nil) -> UIViewController? {
+        var top = window?.rootViewController ?? keyWindow()?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
+    }
+
+    private static func keyWindow() -> UIWindow? {
         // Prefer the active scene, but fall back to an inactive one: the
         // scene is inactive while a system alert (e.g. ATT) or Notification
         // Center is over the app, and when returning from the background.
@@ -43,12 +55,7 @@ enum PrebidPresenter {
             (scenes.filter { $0.activationState == .foregroundActive }
             + scenes.filter { $0.activationState == .foregroundInactive })
             .flatMap { $0.windows }
-        let window = windows.first { $0.isKeyWindow } ?? windows.first
-        var top = window?.rootViewController
-        while let presented = top?.presentedViewController, !presented.isBeingDismissed {
-            top = presented
-        }
-        return top
+        return windows.first { $0.isKeyWindow } ?? windows.first
     }
 
     /// Calls `present` with a controller that can present now, or `fail`
@@ -57,16 +64,17 @@ enum PrebidPresenter {
     /// the ad has already been reported as displayed; so that case waits
     /// once for the running transition (or the next run loop), then fails.
     static func whenReady(
+        in window: UIWindow? = nil,
         retry: Bool = true,
         fail: @escaping (String) -> Void,
         present: @escaping (UIViewController) -> Void
     ) {
-        guard let top = topViewController() else { return fail(noViewController) }
+        guard let top = topViewController(in: window) else { return fail(noViewController) }
         guard isBusy(top) else { return present(top) }
         guard retry else { return fail(busy) }
         let again = {
             DispatchQueue.main.async {
-                PrebidPresenter.whenReady(retry: false, fail: fail, present: present)
+                PrebidPresenter.whenReady(in: window, retry: false, fail: fail, present: present)
             }
         }
         if let coordinator = (top.presentedViewController ?? top).transitionCoordinator {

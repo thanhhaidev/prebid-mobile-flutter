@@ -27,6 +27,10 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         )
         let interstitialApi = InterstitialAdHostApiImpl(flutterApi: flutterApi)
         let rewardedApi = RewardedAdHostApiImpl(flutterApi: flutterApi)
+        // Fullscreen ads present in this engine's window.
+        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.view.window }
+        interstitialApi.engineWindow = engineWindow
+        rewardedApi.engineWindow = engineWindow
         let nativeApi = NativeAdHostApiImpl(flutterApi: flutterApi, store: instance.nativeAdStore)
         let multiformatApi = MultiformatAdHostApiImpl(flutterApi: MultiformatFlutterApi(binaryMessenger: messenger))
         let instreamApi = InstreamVideoAdHostApiImpl()

@@ -5,6 +5,9 @@ import UIKit
 /// RewardedAdHostApi: rendering rewarded ads (Prebid renders).
 final class RewardedAdHostApiImpl: RewardedAdHostApi {
     private let flutterApi: AdFlutterApi
+    /// The engine's window, to present ads in (set from the registrar); the
+    /// foreground key window when it returns nil.
+    var engineWindow: () -> UIWindow? = { nil }
     private var rewardedAds: [Int64: RewardedAdUnit] = [:]
     // Prebid holds the delegate weakly; kept here until the ad is destroyed.
     private var delegates: [Int64: RewardedDelegate] = [:]
@@ -52,6 +55,7 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
             return flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
         }
         PrebidPresenter.whenReady(
+            in: engineWindow(),
             fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) },
             present: { [weak self] viewController in
                 // Re-checked: a retry runs later, after a possible destroy.

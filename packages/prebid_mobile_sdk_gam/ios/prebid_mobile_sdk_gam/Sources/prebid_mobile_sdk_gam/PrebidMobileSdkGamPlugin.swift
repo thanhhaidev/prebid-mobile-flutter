@@ -27,6 +27,10 @@ public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PrebidMobileSdkGamPlugin(messenger: registrar.messenger())
+        // Fullscreen ads present in this engine's window.
+        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.view.window }
+        instance.interstitialManager.engineWindow = engineWindow
+        instance.rewardedManager.engineWindow = engineWindow
         let factory = GamBannerAdViewFactory(
             messenger: registrar.messenger(),
             preloaded: instance.preloadedBanners

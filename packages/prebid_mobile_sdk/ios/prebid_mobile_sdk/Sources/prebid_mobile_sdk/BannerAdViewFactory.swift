@@ -230,7 +230,7 @@ final class BannerAdSession: NSObject, BannerViewDelegate, BannerViewVideoPlayba
     // MARK: - BannerViewDelegate
 
     func bannerViewPresentationController() -> UIViewController? {
-        return PrebidPresenter.topViewController()
+        return PrebidPresenter.topViewController(in: bannerView.window)
     }
 
     func bannerView(_ bannerView: BannerView, didReceiveAdWithAdSize adSize: CGSize) {

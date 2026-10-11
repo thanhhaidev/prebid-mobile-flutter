@@ -11,15 +11,26 @@ public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
     /// the first engine's calls would never be answered.
     private let interstitialManager: GamInterstitialManager
     private let rewardedManager: GamRewardedManager
+    private let preloadedBanners: PreloadedBanners
 
     private init(messenger: FlutterBinaryMessenger) {
+        preloadedBanners = PreloadedBanners(
+            messenger: messenger,
+            channelName: "prebid_mobile_sdk_gam/preloaded_banner"
+        ) { channelId, args in
+            GamBannerPlatformView(frame: .zero, viewId: channelId, messenger: messenger, args: args)
+        }
         interstitialManager = GamInterstitialManager(messenger: messenger)
         rewardedManager = GamRewardedManager(messenger: messenger)
         super.init()
     }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let factory = GamBannerAdViewFactory(messenger: registrar.messenger())
+        let instance = PrebidMobileSdkGamPlugin(messenger: registrar.messenger())
+        let factory = GamBannerAdViewFactory(
+            messenger: registrar.messenger(),
+            preloaded: instance.preloadedBanners
+        )
         registrar.register(factory, withId: "prebid_mobile_sdk_gam/banner")
 
         let nativeFactory = GamNativeAdViewFactory(messenger: registrar.messenger())
@@ -27,12 +38,13 @@ public final class PrebidMobileSdkGamPlugin: NSObject, FlutterPlugin {
 
         // Published so the engine keeps this instance and calls
         // `detachFromEngine(for:)` on it.
-        registrar.publish(PrebidMobileSdkGamPlugin(messenger: registrar.messenger()))
+        registrar.publish(instance)
     }
 
     /// Stops answering the fullscreen channels and drops their ads, as the
     /// Android plugin does in `onDetachedFromEngine`.
     public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+        preloadedBanners.dispose()
         interstitialManager.dispose()
         rewardedManager.dispose()
     }

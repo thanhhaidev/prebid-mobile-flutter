@@ -139,25 +139,22 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd>
   void onViewReplaced() => _debugArgs = debugDropBidArgs();
 
   @override
-  Map<String, Object?> configOf(PrebidMaxBannerAd widget) => {
-    'configId': widget.configId,
-    'maxAdUnitId': widget.maxAdUnitId,
-    'width': widget.width,
-    'height': widget.height,
-    'autoLoad': widget.autoLoad,
-    'adPosition': ?widget.adPosition?.value,
-    'impOrtbConfig': ?widget.impOrtbConfig,
-    'globalOrtbConfig': ?widget.globalOrtbConfig,
-    'pbAdSlot': ?widget.pbAdSlot,
-    if (widget.additionalSizes case final sizes?)
-      'additionalSizes': [
-        for (final size in sizes) ...[size.width.round(), size.height.round()],
-      ],
-    if (widget.adaptive) 'adaptive': true,
-    'adFormats': ?widget.adFormats?.map((f) => f.name).toList(),
-    'videoParameters': ?widget.videoParameters?.toMap(),
-    'refreshIntervalSeconds': ?widget.refreshIntervalSeconds,
-  };
+  Map<String, Object?> configOf(PrebidMaxBannerAd widget) => _maxBannerConfig(
+    configId: widget.configId,
+    maxAdUnitId: widget.maxAdUnitId,
+    width: widget.width,
+    height: widget.height,
+    autoLoad: widget.autoLoad,
+    adaptive: widget.adaptive,
+    adPosition: widget.adPosition,
+    impOrtbConfig: widget.impOrtbConfig,
+    globalOrtbConfig: widget.globalOrtbConfig,
+    pbAdSlot: widget.pbAdSlot,
+    additionalSizes: widget.additionalSizes,
+    adFormats: widget.adFormats,
+    videoParameters: widget.videoParameters,
+    refreshIntervalSeconds: widget.refreshIntervalSeconds,
+  );
 
   /// MREC banners keep their fixed size: MAX adaptive banners are banner-only.
   bool get _isAdaptive =>
@@ -187,21 +184,202 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd>
   }
 
   @override
-  void onViewEvent(MethodCall call) {
-    if (dispatchBannerEvent(widget.listener, null, call)) return;
-    final listener = widget.listener;
-    final max = listener is PrebidMaxBannerAdListener ? listener : null;
-    switch (call.method) {
-      case 'onAdDisplayFailed':
-        final error = adEventError(call.arguments);
-        listener?.onAdFailed?.call(error);
-        max?.onAdDisplayFailed?.call(error);
-      case 'onAdExpanded':
-        max?.onAdExpanded?.call();
-      case 'onAdCollapsed':
-        max?.onAdCollapsed?.call();
-      case 'onAdRevenuePaid':
-        max?.onAdRevenuePaid?.call(maxAdRevenueFrom(call.arguments as Map?));
-    }
+  void onViewEvent(MethodCall call) =>
+      _dispatchMaxBannerEvent(widget.listener, call);
+}
+
+/// Calls [listener] for a MAX banner view [event]: the banner events, and
+/// MAX's own when it is a [PrebidMaxBannerAdListener].
+void _dispatchMaxBannerEvent(
+  PrebidBannerAdListener? listener,
+  MethodCall event,
+) {
+  if (dispatchBannerEvent(listener, null, event)) return;
+  final max = listener is PrebidMaxBannerAdListener ? listener : null;
+  switch (event.method) {
+    case 'onAdDisplayFailed':
+      final error = adEventError(event.arguments);
+      listener?.onAdFailed?.call(error);
+      max?.onAdDisplayFailed?.call(error);
+    case 'onAdExpanded':
+      max?.onAdExpanded?.call();
+    case 'onAdCollapsed':
+      max?.onAdCollapsed?.call();
+    case 'onAdRevenuePaid':
+      max?.onAdRevenuePaid?.call(maxAdRevenueFrom(event.arguments as Map?));
   }
+}
+
+/// The creation params of a native MAX banner, for [PrebidMaxBannerAd] and
+/// [PrebidMaxPreloadedBannerAd].
+Map<String, Object?> _maxBannerConfig({
+  required String configId,
+  required String maxAdUnitId,
+  required int width,
+  required int height,
+  required bool autoLoad,
+  required bool adaptive,
+  PrebidAdPosition? adPosition,
+  String? impOrtbConfig,
+  String? globalOrtbConfig,
+  String? pbAdSlot,
+  List<Size>? additionalSizes,
+  Set<PrebidAdFormat>? adFormats,
+  VideoParameters? videoParameters,
+  int? refreshIntervalSeconds,
+}) => {
+  'configId': configId,
+  'maxAdUnitId': maxAdUnitId,
+  'width': width,
+  'height': height,
+  'autoLoad': autoLoad,
+  'adPosition': ?adPosition?.value,
+  'impOrtbConfig': ?impOrtbConfig,
+  'globalOrtbConfig': ?globalOrtbConfig,
+  'pbAdSlot': ?pbAdSlot,
+  if (additionalSizes case final sizes?)
+    'additionalSizes': [
+      for (final size in sizes) ...[size.width.round(), size.height.round()],
+    ],
+  if (adaptive) 'adaptive': true,
+  'adFormats': ?adFormats?.map((f) => f.name).toList(),
+  'videoParameters': ?videoParameters?.toMap(),
+  'refreshIntervalSeconds': ?refreshIntervalSeconds,
+};
+
+/// A [PrebidMaxBannerAd] loaded before its slot is on screen and kept
+/// across the views showing it: [load] it, show it with a
+/// [PrebidMaxPreloadedBannerAdView], and [destroy] it when you no longer
+/// need it. In a scrolling list, a slot scrolled away and back shows the
+/// same ad instead of running a new auction.
+///
+/// The banner shows in one view at a time: a view built later takes it over
+/// from the one showing it, which goes empty.
+class PrebidMaxPreloadedBannerAd {
+  /// Creates a banner; nothing is requested until [load]. The parameters are
+  /// those of [PrebidMaxBannerAd]; [adaptive] spans [width].
+  PrebidMaxPreloadedBannerAd({
+    required this.configId,
+    required this.maxAdUnitId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.adaptive = false,
+    this.adFormats,
+    this.videoParameters,
+    this.refreshIntervalSeconds,
+    this.adPosition,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.pbAdSlot,
+    this.listener,
+  });
+
+  static final _channel = CompanionAdChannel(
+    'prebid_mobile_sdk_max/preloaded_banner',
+  );
+
+  /// See [PrebidMaxBannerAd.configId].
+  final String configId;
+
+  /// See [PrebidMaxBannerAd.maxAdUnitId].
+  final String maxAdUnitId;
+
+  /// See [PrebidMaxBannerAd.width]. With [adaptive], the width the adaptive
+  /// banner spans.
+  final int width;
+
+  /// See [PrebidMaxBannerAd.height].
+  final int height;
+
+  /// See [PrebidMaxBannerAd.additionalSizes].
+  final List<Size>? additionalSizes;
+
+  /// Whether the MAX view is an adaptive banner spanning [width] (the banner
+  /// loads before any layout, so it can't measure the available width), at
+  /// the height MAX computes for it. Ignored for a 300x250 (MREC) banner.
+  final bool adaptive;
+
+  /// See [PrebidMaxBannerAd.adFormats].
+  final Set<PrebidAdFormat>? adFormats;
+
+  /// See [PrebidMaxBannerAd.videoParameters].
+  final VideoParameters? videoParameters;
+
+  /// See [PrebidMaxBannerAd.refreshIntervalSeconds].
+  final int? refreshIntervalSeconds;
+
+  /// See [PrebidMaxBannerAd.adPosition].
+  final PrebidAdPosition? adPosition;
+
+  /// See [PrebidMaxBannerAd.impOrtbConfig].
+  final String? impOrtbConfig;
+
+  /// See [PrebidMaxBannerAd.globalOrtbConfig].
+  final String? globalOrtbConfig;
+
+  /// See [PrebidMaxBannerAd.pbAdSlot].
+  final String? pbAdSlot;
+
+  /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
+  /// also get MAX's expand / collapse, display-failure and revenue events.
+  final PrebidBannerAdListener? listener;
+
+  bool get _isAdaptive => adaptive && !(width == 300 && height == 250);
+
+  late final PreloadedBanner _banner = PreloadedBanner.companion(
+    viewType: 'prebid_mobile_sdk_max/banner',
+    channel: _channel,
+    size: Size(width.toDouble(), height.toDouble()),
+    config: () => {
+      ..._maxBannerConfig(
+        configId: configId,
+        maxAdUnitId: maxAdUnitId,
+        width: width,
+        height: height,
+        autoLoad: true,
+        adaptive: adaptive,
+        adPosition: adPosition,
+        impOrtbConfig: impOrtbConfig,
+        globalOrtbConfig: globalOrtbConfig,
+        pbAdSlot: pbAdSlot,
+        additionalSizes: additionalSizes,
+        adFormats: adFormats,
+        videoParameters: videoParameters,
+        refreshIntervalSeconds: refreshIntervalSeconds,
+      ),
+      if (_isAdaptive) 'adaptiveWidth': width,
+      ...debugDropBidArgs(),
+    },
+    onEvent: (call) => _dispatchMaxBannerEvent(listener, call),
+  );
+
+  /// The slot size: [width] x [height] until the native SDK reports the
+  /// rendered creative's size.
+  Size get size => _banner.size;
+
+  /// Runs the auction and loads the MAX view off screen; calling it again
+  /// reloads the banner, and after [destroy] it starts afresh.
+  Future<void> load() => _banner.load();
+
+  /// Stops auto-refresh. Does nothing without a loaded banner.
+  Future<void> stopRefresh() => _banner.stopRefresh();
+
+  /// Destroys the native banner; a view showing it goes empty until the
+  /// next [load].
+  Future<void> destroy() => _banner.destroy();
+}
+
+/// Shows a [PrebidMaxPreloadedBannerAd] at the size it reports; the slot
+/// stays empty while the banner isn't loaded. Removing the view keeps the
+/// banner loaded.
+class PrebidMaxPreloadedBannerAdView extends StatelessWidget {
+  /// Creates a view of [ad].
+  const PrebidMaxPreloadedBannerAdView({super.key, required this.ad});
+
+  /// The banner to show.
+  final PrebidMaxPreloadedBannerAd ad;
+
+  @override
+  Widget build(BuildContext context) => PreloadedBannerView(banner: ad._banner);
 }

@@ -14,3 +14,4 @@ export 'src/companion/ad_view_channel.dart';
 export 'src/companion/ad_view_state.dart';
 export 'src/companion/companion_ad_channel.dart';
 export 'src/companion/companion_fullscreen_ad.dart';
+export 'src/companion/preloaded_banner.dart';

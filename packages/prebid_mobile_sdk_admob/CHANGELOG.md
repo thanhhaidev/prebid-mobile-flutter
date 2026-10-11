@@ -12,6 +12,8 @@ AdMob adapters. Built on Prebid Mobile SDK 3.4; works with
 
 ### Added
 
+- Preloaded banners (`PrebidAdMobPreloadedBannerAd`, shown by `PrebidAdMobPreloadedBannerAdView`): loaded
+  before their slot is on screen and kept across the views showing them.
 - Banner, interstitial, rewarded and native ads mediated by AdMob, with
   AdMob's impression events.
 - Banners that resize to the rendered creative and can load on demand.

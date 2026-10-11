@@ -298,4 +298,33 @@ void main() {
       );
     });
   });
+
+  test('a companion preloaded banner lives on its package channel', () async {
+    const name = 'pkg/preloaded_banner';
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(const MethodChannel(name), (c) async {
+      calls.add(c);
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(const MethodChannel(name), null),
+    );
+    final banner = PreloadedBanner.companion(
+      viewType: 'pkg/banner',
+      channel: CompanionAdChannel(name),
+      size: const Size(320, 50),
+      config: () => {'configId': 'c'},
+      onEvent: (_) {},
+    );
+    await banner.load();
+    await banner.destroy();
+
+    final id = (calls[1].arguments as Map)['channelId'];
+    expect(calls.map((c) => c.method), ['releaseAll', 'create', 'destroy']);
+    expect(calls[1].arguments, {
+      'channelId': id,
+      'config': {'configId': 'c', 'channelId': id},
+    });
+    expect(calls[2].arguments, {'channelId': id});
+  });
 }

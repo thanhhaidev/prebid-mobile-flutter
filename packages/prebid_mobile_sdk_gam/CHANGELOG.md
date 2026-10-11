@@ -12,6 +12,8 @@ through Prebid's GAM event handlers. Built on Prebid Mobile SDK 3.4; works with
 
 ### Added
 
+- Preloaded banners (`PrebidGamPreloadedBannerAd`, shown by `PrebidGamPreloadedBannerAdView`): loaded
+  before their slot is on screen and kept across the views showing them.
 - Banner ads with multisize, banner and video multiformat, outstream video
   events, auto-refresh and on-demand loading; the slot resizes to the
   creative that renders.

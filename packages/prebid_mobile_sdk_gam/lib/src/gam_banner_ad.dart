@@ -135,27 +135,24 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd>
   bool autoLoadOf(PrebidGamBannerAd widget) => widget.autoLoad;
 
   @override
-  Map<String, Object?> configOf(PrebidGamBannerAd widget) => {
-    'configId': widget.configId,
-    'gamAdUnitId': widget.gamAdUnitId,
-    'width': widget.width,
-    'height': widget.height,
-    'isVideo': widget.isVideo,
-    'autoLoad': widget.autoLoad,
-    'adPosition': ?widget.adPosition?.value,
-    if (widget.additionalSizes case final sizes?)
-      'additionalSizes': [
-        for (final size in sizes) ...[size.width.round(), size.height.round()],
-      ],
-    'adFormats': ?widget.adFormats?.map((f) => f.name).toList(),
-    'pbAdSlot': ?widget.pbAdSlot,
-    'impOrtbConfig': ?widget.impOrtbConfig,
-    'globalOrtbConfig': ?widget.globalOrtbConfig,
-    'videoParameters': ?widget.videoParameters?.toMap(),
-    'refreshIntervalSeconds': ?widget.refreshIntervalSeconds,
-    'customTargeting': ?widget.customTargeting,
-    'videoPlacementType': ?widget.videoPlacementType?.name,
-  };
+  Map<String, Object?> configOf(PrebidGamBannerAd widget) => _gamBannerConfig(
+    configId: widget.configId,
+    gamAdUnitId: widget.gamAdUnitId,
+    width: widget.width,
+    height: widget.height,
+    isVideo: widget.isVideo,
+    autoLoad: widget.autoLoad,
+    adPosition: widget.adPosition,
+    additionalSizes: widget.additionalSizes,
+    adFormats: widget.adFormats,
+    pbAdSlot: widget.pbAdSlot,
+    impOrtbConfig: widget.impOrtbConfig,
+    globalOrtbConfig: widget.globalOrtbConfig,
+    videoParameters: widget.videoParameters,
+    refreshIntervalSeconds: widget.refreshIntervalSeconds,
+    customTargeting: widget.customTargeting,
+    videoPlacementType: widget.videoPlacementType,
+  );
 
   /// The slot starts at the requested size and adopts the rendered
   /// creative's size once the native SDK reports it.
@@ -169,4 +166,187 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd>
   @override
   void onViewEvent(MethodCall call) =>
       dispatchBannerEvent(widget.listener, widget.videoListener, call);
+}
+
+/// The creation params of a native GAM banner, for [PrebidGamBannerAd] and
+/// [PrebidGamPreloadedBannerAd].
+Map<String, Object?> _gamBannerConfig({
+  required String configId,
+  required String gamAdUnitId,
+  required int width,
+  required int height,
+  required bool isVideo,
+  required bool autoLoad,
+  PrebidAdPosition? adPosition,
+  List<Size>? additionalSizes,
+  Set<PrebidAdFormat>? adFormats,
+  String? pbAdSlot,
+  String? impOrtbConfig,
+  String? globalOrtbConfig,
+  VideoParameters? videoParameters,
+  int? refreshIntervalSeconds,
+  Map<String, String>? customTargeting,
+  VideoPlacementType? videoPlacementType,
+}) => {
+  'configId': configId,
+  'gamAdUnitId': gamAdUnitId,
+  'width': width,
+  'height': height,
+  'isVideo': isVideo,
+  'autoLoad': autoLoad,
+  'adPosition': ?adPosition?.value,
+  if (additionalSizes case final sizes?)
+    'additionalSizes': [
+      for (final size in sizes) ...[size.width.round(), size.height.round()],
+    ],
+  'adFormats': ?adFormats?.map((f) => f.name).toList(),
+  'pbAdSlot': ?pbAdSlot,
+  'impOrtbConfig': ?impOrtbConfig,
+  'globalOrtbConfig': ?globalOrtbConfig,
+  'videoParameters': ?videoParameters?.toMap(),
+  'refreshIntervalSeconds': ?refreshIntervalSeconds,
+  'customTargeting': ?customTargeting,
+  'videoPlacementType': ?videoPlacementType?.name,
+};
+
+/// A [PrebidGamBannerAd] loaded before its slot is on screen and kept
+/// across the views showing it: [load] it, show it with a
+/// [PrebidGamPreloadedBannerAdView], and [destroy] it when you no longer
+/// need it. In a scrolling list, a slot scrolled away and back shows the
+/// same ad instead of running a new auction.
+///
+/// The banner shows in one view at a time: a view built later takes it over
+/// from the one showing it, which goes empty.
+class PrebidGamPreloadedBannerAd {
+  /// Creates a banner; nothing is requested until [load]. The parameters are
+  /// those of [PrebidGamBannerAd].
+  PrebidGamPreloadedBannerAd({
+    required this.configId,
+    required this.gamAdUnitId,
+    required this.width,
+    required this.height,
+    this.additionalSizes,
+    this.isVideo = false,
+    this.adFormats,
+    this.pbAdSlot,
+    this.impOrtbConfig,
+    this.globalOrtbConfig,
+    this.videoParameters,
+    this.refreshIntervalSeconds,
+    this.customTargeting,
+    this.videoPlacementType,
+    this.adPosition,
+    this.listener,
+    this.videoListener,
+  });
+
+  static final _channel = CompanionAdChannel(
+    'prebid_mobile_sdk_gam/preloaded_banner',
+  );
+
+  /// See [PrebidGamBannerAd.configId].
+  final String configId;
+
+  /// See [PrebidGamBannerAd.gamAdUnitId].
+  final String gamAdUnitId;
+
+  /// See [PrebidGamBannerAd.width].
+  final int width;
+
+  /// See [PrebidGamBannerAd.height].
+  final int height;
+
+  /// See [PrebidGamBannerAd.additionalSizes].
+  final List<Size>? additionalSizes;
+
+  /// See [PrebidGamBannerAd.isVideo].
+  final bool isVideo;
+
+  /// See [PrebidGamBannerAd.adFormats].
+  final Set<PrebidAdFormat>? adFormats;
+
+  /// See [PrebidGamBannerAd.pbAdSlot].
+  final String? pbAdSlot;
+
+  /// See [PrebidGamBannerAd.impOrtbConfig].
+  final String? impOrtbConfig;
+
+  /// See [PrebidGamBannerAd.globalOrtbConfig].
+  final String? globalOrtbConfig;
+
+  /// See [PrebidGamBannerAd.videoParameters].
+  final VideoParameters? videoParameters;
+
+  /// See [PrebidGamBannerAd.refreshIntervalSeconds]. Prebid refreshes the
+  /// banner only while it is on screen.
+  final int? refreshIntervalSeconds;
+
+  /// See [PrebidGamBannerAd.customTargeting].
+  final Map<String, String>? customTargeting;
+
+  /// See [PrebidGamBannerAd.videoPlacementType].
+  final VideoPlacementType? videoPlacementType;
+
+  /// See [PrebidGamBannerAd.adPosition].
+  final PrebidAdPosition? adPosition;
+
+  /// Listener for banner ad events.
+  final PrebidBannerAdListener? listener;
+
+  /// Listener for video playback events (outstream video creatives).
+  final PrebidBannerVideoListener? videoListener;
+
+  late final PreloadedBanner _banner = PreloadedBanner.companion(
+    viewType: 'prebid_mobile_sdk_gam/banner',
+    channel: _channel,
+    size: Size(width.toDouble(), height.toDouble()),
+    config: () => _gamBannerConfig(
+      configId: configId,
+      gamAdUnitId: gamAdUnitId,
+      width: width,
+      height: height,
+      isVideo: isVideo,
+      autoLoad: true,
+      adPosition: adPosition,
+      additionalSizes: additionalSizes,
+      adFormats: adFormats,
+      pbAdSlot: pbAdSlot,
+      impOrtbConfig: impOrtbConfig,
+      globalOrtbConfig: globalOrtbConfig,
+      videoParameters: videoParameters,
+      refreshIntervalSeconds: refreshIntervalSeconds,
+      customTargeting: customTargeting,
+      videoPlacementType: videoPlacementType,
+    ),
+    onEvent: (call) => dispatchBannerEvent(listener, videoListener, call),
+  );
+
+  /// The slot size: [width] x [height] until the native SDK reports the
+  /// rendered creative's size.
+  Size get size => _banner.size;
+
+  /// Runs the auction and renders the winner off screen; calling it again
+  /// reloads the banner, and after [destroy] it starts afresh.
+  Future<void> load() => _banner.load();
+
+  /// Stops auto-refresh. Does nothing without a loaded banner.
+  Future<void> stopRefresh() => _banner.stopRefresh();
+
+  /// Destroys the native banner; a view showing it goes empty until the
+  /// next [load].
+  Future<void> destroy() => _banner.destroy();
+}
+
+/// Shows a [PrebidGamPreloadedBannerAd] at the size it reports; the slot
+/// stays empty while the banner isn't loaded. Removing the view keeps the
+/// banner loaded.
+class PrebidGamPreloadedBannerAdView extends StatelessWidget {
+  /// Creates a view of [ad].
+  const PrebidGamPreloadedBannerAdView({super.key, required this.ad});
+
+  /// The banner to show.
+  final PrebidGamPreloadedBannerAd ad;
+
+  @override
+  Widget build(BuildContext context) => PreloadedBannerView(banner: ad._banner);
 }

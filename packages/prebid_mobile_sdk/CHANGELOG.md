@@ -83,6 +83,8 @@ or later). Requires Android 7.0 (API 24) and iOS 15.
   `PrebidPreloadedBannerAdView`): loaded before their slot is on screen and
   kept across the views showing them, so a banner in a scrolling list isn't
   re-auctioned each time it scrolls back.
+- `PreloadedBanner` and `PreloadedBannerView` in the companion library, for
+  the companion packages' preloaded banners.
 - Native response image sizes (iOS), the device-data consent check, an
   `app.bundle` override (Android), Prebid's own location updates switch
   (iOS), and clearing the user location.

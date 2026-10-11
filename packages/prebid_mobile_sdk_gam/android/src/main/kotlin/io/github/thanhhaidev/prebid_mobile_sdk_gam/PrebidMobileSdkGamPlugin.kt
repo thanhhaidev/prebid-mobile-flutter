@@ -17,11 +17,22 @@ class PrebidMobileSdkGamPlugin :
     private var activity: Activity? = null
     private var interstitialManager: GamInterstitialManager? = null
     private var rewardedManager: GamRewardedManager? = null
+    private var preloadedBanners: PreloadedBanners? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        val preloaded =
+            PreloadedBanners(binding.binaryMessenger, "prebid_mobile_sdk_gam/preloaded_banner") { channelId, params ->
+                GamBannerPlatformView(
+                    activity ?: binding.applicationContext,
+                    channelId.toInt(),
+                    binding.binaryMessenger,
+                    params,
+                )
+            }
+        preloadedBanners = preloaded
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_gam/banner",
-            GamBannerAdViewFactory(binding.binaryMessenger) { activity },
+            GamBannerAdViewFactory(binding.binaryMessenger, preloaded) { activity },
         )
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_gam/native",
@@ -32,6 +43,8 @@ class PrebidMobileSdkGamPlugin :
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        preloadedBanners?.dispose()
+        preloadedBanners = null
         // The engine disposes the platform views; the managers own their ads.
         interstitialManager?.dispose()
         interstitialManager = null

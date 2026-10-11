@@ -109,6 +109,8 @@ await ad.destroy();
 - The banner shows in one view at a time: a view built later takes it over, and the earlier one goes empty. Removing a view keeps the banner loaded.
 - A view shows an empty slot of the requested size until the banner is loaded, and again after `destroy()`; a later `load()` starts afresh.
 
+The GAM, AdMob and MAX packages have the same banner: `PrebidGamPreloadedBannerAd`, `PrebidAdMobPreloadedBannerAd` and `PrebidMaxPreloadedBannerAd`, each with its own view.
+
 ## Outstream video
 
 ```dart

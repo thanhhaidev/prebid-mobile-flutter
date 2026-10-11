@@ -12,6 +12,8 @@ MAX adapters. Built on Prebid Mobile SDK 3.4; works with `prebid_mobile_sdk`
 
 ### Added
 
+- Preloaded banners (`PrebidMaxPreloadedBannerAd`, shown by `PrebidMaxPreloadedBannerAdView`): loaded
+  before their slot is on screen and kept across the views showing them.
 - Banner (including 300x250 MREC), interstitial, rewarded and native ads
   mediated by MAX, with MAX's impression events.
 - Banners that resize to the rendered creative and can load on demand.

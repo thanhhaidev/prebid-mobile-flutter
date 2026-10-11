@@ -98,6 +98,8 @@ PrebidGamBannerAd(
 );
 ```
 
+In a scrolling list, `PrebidGamPreloadedBannerAd` loads the banner before its slot is on screen and `PrebidGamPreloadedBannerAdView` shows it, keeping it across views instead of re-auctioning ([guide](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/gam#preloaded-banner-feeds)).
+
 ### Interstitial
 
 ```dart

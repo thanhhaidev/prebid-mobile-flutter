@@ -19,11 +19,22 @@ class PrebidMobileSdkMaxPlugin :
     private var activity: Activity? = null
     private var interstitialManager: MaxInterstitialManager? = null
     private var rewardedManager: MaxRewardedManager? = null
+    private var preloadedBanners: PreloadedBanners? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        val preloaded =
+            PreloadedBanners(binding.binaryMessenger, "prebid_mobile_sdk_max/preloaded_banner") { channelId, params ->
+                MaxBannerPlatformView(
+                    activity ?: binding.applicationContext,
+                    channelId.toInt(),
+                    binding.binaryMessenger,
+                    params,
+                )
+            }
+        preloadedBanners = preloaded
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_max/banner",
-            MaxBannerAdViewFactory(binding.binaryMessenger) { activity },
+            MaxBannerAdViewFactory(binding.binaryMessenger, preloaded) { activity },
         )
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_max/native",
@@ -34,6 +45,8 @@ class PrebidMobileSdkMaxPlugin :
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        preloadedBanners?.dispose()
+        preloadedBanners = null
         interstitialManager?.dispose()
         interstitialManager = null
         rewardedManager?.dispose()

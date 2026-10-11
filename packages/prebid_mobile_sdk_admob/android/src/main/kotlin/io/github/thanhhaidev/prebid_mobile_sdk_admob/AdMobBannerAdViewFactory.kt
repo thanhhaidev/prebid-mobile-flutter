@@ -28,11 +28,16 @@ import org.prebid.mobile.rendering.models.AdPosition
  */
 internal class AdMobBannerAdViewFactory(
     private val messenger: BinaryMessenger,
+    private val preloaded: PreloadedBanners,
     private val activityProvider: () -> Activity?,
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
+        if (params["preloaded"] == true) {
+            val channelId = (params["channelId"] as? Number)?.toLong() ?: viewId.toLong()
+            return preloaded.platformView(context, channelId)
+        }
         return AdMobBannerPlatformView(
             activityProvider() ?: context,
             viewId,

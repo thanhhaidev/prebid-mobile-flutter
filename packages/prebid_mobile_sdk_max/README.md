@@ -134,6 +134,8 @@ unit formats; display only by default). `videoParameters` applies on iOS only:
 Prebid Android's mediation banner has no video-parameters setter, so Android
 sends the SDK's default video signals.
 
+In a scrolling list, `PrebidMaxPreloadedBannerAd` loads the banner before its slot is on screen and `PrebidMaxPreloadedBannerAdView` shows it, keeping it across views instead of re-auctioning ([guide](https://thanhhaidev.github.io/prebid-mobile-flutter/docs/max#preloaded-banner-feeds)).
+
 ### Interstitial
 
 ```dart

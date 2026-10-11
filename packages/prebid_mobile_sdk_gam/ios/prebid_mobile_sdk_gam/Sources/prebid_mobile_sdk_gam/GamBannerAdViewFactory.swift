@@ -10,9 +10,11 @@ import UIKit
 final class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
 
     private let messenger: FlutterBinaryMessenger
+    private let preloaded: PreloadedBanners
 
-    init(messenger: FlutterBinaryMessenger) {
+    init(messenger: FlutterBinaryMessenger, preloaded: PreloadedBanners) {
         self.messenger = messenger
+        self.preloaded = preloaded
         super.init()
     }
 
@@ -21,11 +23,16 @@ final class GamBannerAdViewFactory: NSObject, FlutterPlatformViewFactory {
         viewIdentifier viewId: Int64,
         arguments args: Any?
     ) -> FlutterPlatformView {
+        let args = args as? [String: Any] ?? [:]
+        if args["preloaded"] as? Bool == true {
+            let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? viewId
+            return preloaded.platformView(frame: frame, channelId: channelId)
+        }
         return GamBannerPlatformView(
             frame: frame,
             viewId: viewId,
             messenger: messenger,
-            args: args as? [String: Any] ?? [:]
+            args: args
         )
     }
 

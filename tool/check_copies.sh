@@ -5,8 +5,9 @@
 # - test/channel_harness.dart of the companion packages: test code can't be
 #   shared through the core package.
 # - the native code every companion package shares (the request parsing,
-#   the fullscreen ad manager, the plugin helpers), which each plugin
-#   compiles on its own (the Kotlin copies differ only in their package line),
+#   the fullscreen ad manager, the plugin helpers, the preloaded banners),
+#   which each plugin compiles on its own (the Kotlin copies differ only in
+#   their package line),
 #   with PrebidRequestsTest.kt, its JVM unit test (same rule), and
 #   PrebidCommon, the native code the core and GAM packages share.
 set -euo pipefail
@@ -38,7 +39,7 @@ kotlin=android/src/main/kotlin/io/github/thanhhaidev
 swift=ios/prebid_mobile_sdk_PKG/Sources/prebid_mobile_sdk_PKG
 unpackaged() { sed '/^package /d' "$1"; }
 for name in main/PrebidRequests.kt main/FullscreenAdManager.kt main/PrebidPlugin.kt \
-  test/PrebidRequestsTest.kt; do
+  main/PreloadedBanners.kt test/PrebidRequestsTest.kt; do
   set_dir=${name%%/*}
   name=${name#*/}
   dir=android/src/$set_dir/kotlin/io/github/thanhhaidev
@@ -52,7 +53,7 @@ for name in main/PrebidRequests.kt main/FullscreenAdManager.kt main/PrebidPlugin
     fi
   done
 done
-for name in PrebidRequests.swift FullscreenAdManager.swift PrebidPlugin.swift; do
+for name in PrebidRequests.swift FullscreenAdManager.swift PrebidPlugin.swift PreloadedBanners.swift; do
   reference=packages/prebid_mobile_sdk_gam/${swift//PKG/gam}/$name
   for pkg in admob max; do
     file=packages/prebid_mobile_sdk_$pkg/${swift//PKG/$pkg}/$name

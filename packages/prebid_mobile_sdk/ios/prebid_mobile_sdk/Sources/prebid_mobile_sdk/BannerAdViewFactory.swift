@@ -55,13 +55,12 @@ private final class PreloadedBannerPlatformView: NSObject, FlutterPlatformView {
     private weak var bannerView: BannerView?
 
     init(frame: CGRect, session: BannerAdSession?) {
-        container = UIView(frame: frame)
+        container = BannerContainer(frame: frame)
         bannerView = session?.bannerView
         super.init()
         if let bannerView {
             // addSubview takes it out of the view that showed it before.
-            bannerView.frame = container.bounds
-            bannerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            bannerView.frame.origin = .zero
             container.addSubview(bannerView)
         }
     }
@@ -75,6 +74,17 @@ private final class PreloadedBannerPlatformView: NSObject, FlutterPlatformView {
 
     func view() -> UIView {
         return container
+    }
+}
+
+/// Sizes its banner to its own bounds once it has some, as Flutter sizes a
+/// platform view's own view: never to zero, which makes an ad view fail and
+/// reload.
+private final class BannerContainer: UIView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard !bounds.isEmpty else { return }
+        for subview in subviews { subview.frame = bounds }
     }
 }
 

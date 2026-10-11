@@ -14,4 +14,6 @@ date: 2026-10-11
 - A banner shows in one view at a time; there is no error when a second view shows it, because Flutter builds a moved widget's new element before disposing the old one.
 - Prebid counts the impression and refreshes only while the creative is visible, on both platforms, so loading off screen counts nothing.
 - The app owns the lifetime: a banner not destroyed lives until the engine detaches (`releaseAds`).
-- `PrebidBannerAd` and the companion banners are unchanged.
+- The companion packages do the same with their own banner views: `PreloadedBanners` (a copy in each package, checked by `tool/check_copies.sh`, ADR-0002) keeps the banner view objects created on the `<package>/preloaded_banner` channel, which releases them after a hot restart like the fullscreen channels. The Dart side is the companion library's `PreloadedBanner` and `PreloadedBannerView` (ADR-0006), which the core's preloaded banner uses too.
+- On iOS the container sizes the banner to its own bounds only once they aren't empty: an ad view resized to zero (Google Mobile Ads') fails and reloads.
+- `PrebidBannerAd` and the companions' banner widgets are unchanged.

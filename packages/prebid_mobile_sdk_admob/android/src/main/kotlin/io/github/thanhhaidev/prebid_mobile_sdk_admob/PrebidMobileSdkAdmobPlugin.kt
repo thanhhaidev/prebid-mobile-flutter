@@ -17,11 +17,22 @@ class PrebidMobileSdkAdmobPlugin :
     private var activity: Activity? = null
     private var interstitialManager: AdMobInterstitialManager? = null
     private var rewardedManager: AdMobRewardedManager? = null
+    private var preloadedBanners: PreloadedBanners? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        val preloaded =
+            PreloadedBanners(binding.binaryMessenger, "prebid_mobile_sdk_admob/preloaded_banner") { channelId, params ->
+                AdMobBannerPlatformView(
+                    activity ?: binding.applicationContext,
+                    channelId.toInt(),
+                    binding.binaryMessenger,
+                    params,
+                )
+            }
+        preloadedBanners = preloaded
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_admob/banner",
-            AdMobBannerAdViewFactory(binding.binaryMessenger) { activity },
+            AdMobBannerAdViewFactory(binding.binaryMessenger, preloaded) { activity },
         )
         binding.platformViewRegistry.registerViewFactory(
             "prebid_mobile_sdk_admob/native",
@@ -32,6 +43,8 @@ class PrebidMobileSdkAdmobPlugin :
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        preloadedBanners?.dispose()
+        preloadedBanners = null
         // Flutter disposes the platform views itself; the fullscreen ads
         // would otherwise outlive the engine.
         interstitialManager?.dispose()

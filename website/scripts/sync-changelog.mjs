@@ -106,6 +106,8 @@ for (const name of packages) {
   const base = (from) => versions.slice(from).find((v) => hasTag(tag(v)));
 
   entries.forEach(({version, name: heading, body}) => {
+    // An empty `## [Unreleased]` waiting for entries.
+    if (!version && !body) return;
     const meta = [];
     const previous = base(version ? versions.indexOf(version) + 1 : 0);
 

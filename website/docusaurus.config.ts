@@ -53,7 +53,8 @@ const config: Config = {
         docs: {
           routeBasePath: 'docs',
           sidebarPath: './sidebars.ts',
-          editUrl: `${repo}/tree/main/website/`,
+          // Snapshots of earlier releases are generated, not committed.
+          editUrl: ({version, docPath}) => (version === 'current' ? `${repo}/tree/main/website/docs/${docPath}` : undefined),
           lastVersion: 'current',
           versions: {
             current: {label: `v${coreVersion}`},

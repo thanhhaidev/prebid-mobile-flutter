@@ -38,7 +38,7 @@ env:
 jobs:
   publish:
     name: Publish ${{ inputs.package || github.ref_name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     # Optionally require this environment in the pub.dev admin settings so only
     # this job can publish. Tag runs only, so protection rules such as "tags

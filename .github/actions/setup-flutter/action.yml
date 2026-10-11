@@ -17,6 +17,17 @@ runs:
         flutter-version: ${{ steps.version.outputs.flutter }}
         channel: stable
         cache: true
+        # Its pub cache keys on hashFiles('**/pubspec.lock'), which its post
+        # step re-evaluates over the whole workspace: after an iOS build
+        # (Pods, build outputs) that exceeds the 120 s limit and fails the job.
+        pub-cache: false
+
+    - name: Cache pub dependencies
+      uses: actions/cache@v6
+      with:
+        path: ~/.pub-cache
+        key: pub-${{ runner.os }}-${{ hashFiles('pubspec.yaml', 'packages/*/pubspec.yaml', 'example/pubspec.yaml') }}
+        restore-keys: pub-${{ runner.os }}-
 
     - name: Resolve workspace dependencies
       shell: bash

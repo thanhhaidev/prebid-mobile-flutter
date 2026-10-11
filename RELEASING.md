@@ -37,7 +37,10 @@ For each package on pub.dev, open **Admin → Automated publishing**:
 
 1. Enable **Publishing from GitHub Actions**.
 2. Repository: `thanhhaidev/prebid-mobile-flutter`.
-3. Tag pattern: `<package>-v{{version}}` (e.g. `prebid_mobile_sdk-v{{version}}`).
+3. Tag pattern: the package's tag with `{{version}}` in place of the
+   version, typed in full (`<package>` is not a placeholder pub.dev knows):
+   `prebid_mobile_sdk-v{{version}}`, `prebid_mobile_sdk_gam-v{{version}}`,
+   `prebid_mobile_sdk_admob-v{{version}}` or `prebid_mobile_sdk_max-v{{version}}`.
 4. Optional but recommended: require the GitHub environment `pub.dev`, and in
    the GitHub repo settings add protection rules to that environment
    (required reviewers, tags only).

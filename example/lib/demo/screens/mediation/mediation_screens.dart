@@ -67,13 +67,26 @@ class _MediationBannerScreenState
     onAdClosed: () => events.fire('onAdClosed'),
   );
 
+  /// Set by onAdDisplayFailed, which MAX follows with onAdFailed: that one
+  /// is not a load failure.
+  bool _displayFailed = false;
+
   PrebidMaxBannerAdListener get _maxListener => PrebidMaxBannerAdListener(
     onAdLoaded: () => events.fire('onAdLoaded'),
-    onAdFailed: (e) => events.fire(_failedRow, e),
+    onAdFailed: (e) {
+      if (_displayFailed) {
+        _displayFailed = false;
+      } else {
+        events.fire(_failedRow, e);
+      }
+    },
     onAdClicked: () => events.fire(_clickedRow),
     onAdExpanded: () => events.fire('onAdExpanded called'),
     onAdCollapsed: () => events.fire('onAdCollapsed called'),
-    onAdDisplayFailed: (e) => events.fire('onAdDisplayFailed called', e),
+    onAdDisplayFailed: (e) {
+      _displayFailed = true;
+      events.fire('onAdDisplayFailed called', e);
+    },
   );
 
   Widget _ad() {

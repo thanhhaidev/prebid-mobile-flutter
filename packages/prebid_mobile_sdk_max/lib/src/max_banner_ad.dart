@@ -203,9 +203,11 @@ void _dispatchMaxBannerEvent(
   final max = listener is PrebidMaxBannerAdListener ? listener : null;
   switch (event.method) {
     case 'onAdDisplayFailed':
+      // The specific callback first, so a listener can tell this
+      // onAdFailed from a load failure.
       final error = adEventError(event.arguments);
-      listener?.onAdFailed?.call(error);
       max?.onAdDisplayFailed?.call(error);
+      listener?.onAdFailed?.call(error);
     case 'onAdExpanded':
       max?.onAdExpanded?.call();
     case 'onAdCollapsed':

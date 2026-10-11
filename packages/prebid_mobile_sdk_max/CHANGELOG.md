@@ -39,6 +39,9 @@ All notable changes to this package are documented here. The format follows
   banners from their own, instead of the first key window: on an iPad with
   several windows, or with Flutter in a secondary scene (add-to-app), they
   appeared in the wrong one. The key window remains the fallback.
+- Banners: `onAdDisplayFailed` now fires before the `onAdFailed` that follows
+  it, so a listener can tell a display failure from a load failure (the
+  example app counted it as both).
 
 ## [1.0.0] - 2026-10-11
 

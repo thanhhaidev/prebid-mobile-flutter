@@ -76,8 +76,9 @@ class PrebidMaxBannerAdListener extends PrebidBannerAdListener {
   /// The expanded banner collapsed back to its slot.
   final void Function()? onAdCollapsed;
 
-  /// MAX loaded the banner but failed to display it. Also reported through
-  /// [onAdFailed].
+  /// MAX loaded the banner but failed to display it. [onAdFailed] follows
+  /// with the same error, so a listener counting load failures can skip the
+  /// next [onAdFailed].
   final void Function(String error)? onAdDisplayFailed;
 
   /// MAX paid revenue for an impression (it also fires [onAdImpression]).

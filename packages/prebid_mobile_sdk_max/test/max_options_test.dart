@@ -164,8 +164,9 @@ void main() {
         expect(fired, [
           'expanded',
           'collapsed',
-          'failed:boom',
+          // The specific callback first, then onAdFailed.
           'displayFailed:boom',
+          'failed:boom',
           'impression',
           'revenue',
         ]);

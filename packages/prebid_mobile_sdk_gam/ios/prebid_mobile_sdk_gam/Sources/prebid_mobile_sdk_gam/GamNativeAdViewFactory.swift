@@ -41,7 +41,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     GoogleMobileAds.NativeAdDelegate
 {
 
-    private let container = UIView()
+    private let container = NativeAdContainer()
     private let methodChannel: FlutterMethodChannel
     private let gamAdUnitId: String
     private let configId: String
@@ -56,6 +56,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     private var prebidNativeAd: PrebidMobile.NativeAd?
     private var unifiedNativeAd: GoogleMobileAds.NativeAd?
     private var customNativeAd: CustomNativeAd?
+    /// Watches a custom-format ad until its impression is recorded.
+    private var impressionTimer: Timer?
 
     // Prebid calls adDidLogImpression once per impression tracker URL;
     // report one impression.
@@ -73,6 +75,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         )
 
         super.init()
+        container.onHeight = { [weak self] height in self?.send("onAdSize", ["height": Double(height)]) }
 
         // Prebid merges its hb_* keys over these, so they win on conflict.
         if let targeting = gamCustomTargeting(args["customTargeting"]) {
@@ -125,6 +128,10 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             self.adLoader = loader
             loader.load(self.gamRequest)
         }
+    }
+
+    deinit {
+        impressionTimer?.invalidate()
     }
 
     func view() -> UIView {
@@ -287,7 +294,6 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             // GAM loaded); nothing would be tracked, so report the expiry.
             send("onAdExpired")
         }
-        reportHeight(of: stack)
     }
 
     private func renderUnified(_ nativeAd: GoogleMobileAds.NativeAd) {
@@ -349,6 +355,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         nativeAdView.callToActionView = ctaButton
         nativeAdView.nativeAd = nativeAd
 
+        // A new ad replaces the one awaiting its impression.
+        impressionTimer?.invalidate()
         for view in container.subviews { view.removeFromSuperview() }
         container.addSubview(nativeAdView)
         NSLayoutConstraint.activate([
@@ -357,7 +365,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             nativeAdView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             nativeAdView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
-        reportHeight(of: nativeAdView)
+        container.reportHeight()
     }
 
     private func renderCustomTemplate() {
@@ -367,7 +375,23 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             label.numberOfLines = 0
             label.text = ad.string(forKey: "title") ?? "Ad"
             _ = mountStack([label])
-            ad.recordImpression()
+            recordImpressionWhenViewable(ad)
+        }
+    }
+
+    /// GAM leaves a custom-format ad's impression to the app: record it once
+    /// half the ad has been on screen for a second, as Prebid's own.
+    private func recordImpressionWhenViewable(_ ad: CustomNativeAd) {
+        var viewableChecks = 0
+        impressionTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) {
+            [weak self, weak ad] timer in
+            guard let self = self, let ad = ad else { return timer.invalidate() }
+            viewableChecks = isAtLeastHalfOnScreen(self.container) ? viewableChecks + 1 : 0
+            // 1 s / 0.25 s + 1, as Prebid.
+            if viewableChecks >= 5 {
+                timer.invalidate()
+                ad.recordImpression()
+            }
         }
     }
 
@@ -382,6 +406,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
 
+        // A new ad replaces the one awaiting its impression.
+        impressionTimer?.invalidate()
         for view in container.subviews { view.removeFromSuperview() }
         container.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -390,16 +416,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
+        container.reportHeight()
         return stack
-    }
-
-    private func reportHeight(of view: UIView) {
-        DispatchQueue.main.async { [weak self] in
-            let height = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
-            if height > 0 {
-                self?.send("onAdSize", ["height": Double(height)])
-            }
-        }
     }
 }
 
@@ -474,4 +492,15 @@ final class NativeAdFinder: NSObject, PrebidMobile.NativeAdDelegate {
     func nativeAdNotValid() {
         finish { $0.nativeAdNotValid() }
     }
+}
+
+/// Whether at least half of `view` is inside its window, visible and not
+/// transparent. Flutter's own clips (a scroll viewport under an app bar)
+/// reach platform views as masks this can't see.
+private func isAtLeastHalfOnScreen(_ view: UIView) -> Bool {
+    guard let window = view.window, !view.isHidden, view.alpha > 0 else { return false }
+    let area = view.bounds.width * view.bounds.height
+    guard area > 0 else { return false }
+    let visible = view.convert(view.bounds, to: window).intersection(window.bounds)
+    return !visible.isNull && visible.width * visible.height * 2 >= area
 }

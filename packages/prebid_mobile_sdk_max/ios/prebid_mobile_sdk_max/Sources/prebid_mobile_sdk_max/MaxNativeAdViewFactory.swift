@@ -39,7 +39,7 @@ final class MaxNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 /// over `prebid_mobile_sdk_max/native_<channelId>`.
 final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDelegate, MAAdRevenueDelegate {
 
-    private let container = UIView()
+    private let container = NativeAdContainer()
     private let methodChannel: FlutterMethodChannel
 
     private var nativeAdLoader: MANativeAdLoader?
@@ -58,6 +58,7 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
         )
 
         super.init()
+        container.onHeight = { [weak self] height in self?.send("onAdSize", arguments: ["height": Double(height)]) }
 
         // 1. MAX native ad loader + Prebid mediation utils + ad unit.
         let loader = MANativeAdLoader(adUnitIdentifier: maxAdUnitId)
@@ -205,12 +206,7 @@ final class MaxNativePlatformView: NSObject, FlutterPlatformView, MANativeAdDele
         }
         loadedNativeAd = ad
         send("onAdLoaded", arguments: nil)
-        let height = container.systemLayoutSizeFitting(
-            UIView.layoutFittingCompressedSize
-        ).height
-        if height > 0 {
-            send("onAdSize", arguments: ["height": Double(height)])
-        }
+        container.reportHeight()
     }
 
     func didFailToLoadNativeAd(forAdUnitIdentifier adUnitIdentifier: String, withError error: MAError) {

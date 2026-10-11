@@ -25,6 +25,10 @@ internal abstract class FullscreenAdManager<A : Any>(
     private val channel = MethodChannel(messenger, channelName)
     private val ads = mutableMapOf<Long, A>()
 
+    /** Ads already shown: an ad shows once, whatever the SDK's own loaded
+     * state says (an AdMob ad stays set after it is shown). */
+    private val shown = mutableSetOf<Long>()
+
     init {
         channel.setMethodCallHandler(this)
     }
@@ -61,6 +65,19 @@ internal abstract class FullscreenAdManager<A : Any>(
 
     /** Unregisters the ad of [adId] without freeing it, and returns it. */
     protected fun forget(adId: Long): A? = ads.remove(adId)
+
+    /**
+     * Frees every ad, reporting [reason] as `onAdFailed` for those not shown
+     * yet: the Activity they were built with is gone for good, and holding
+     * them would leak it until Dart calls destroy().
+     */
+    fun releaseAll(reason: String) {
+        ads.keys.toList().forEach { adId ->
+            val pending = adId !in shown
+            release(adId)
+            if (pending) send(adId, "onAdFailed", reason)
+        }
+    }
 
     /** Stops answering calls and frees every ad (engine detached). */
     fun dispose() {
@@ -110,13 +127,15 @@ internal abstract class FullscreenAdManager<A : Any>(
     }
 
     private fun show(adId: Long) {
-        val ad = ads[adId]?.takeIf { isLoaded(it) }
+        val ad = ads[adId]?.takeIf { adId !in shown && isLoaded(it) }
             ?: return send(adId, "onAdFailed", PluginErrors.NOT_LOADED)
         val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
+        shown += adId
         show(adId, ad, activity)
     }
 
     private fun release(adId: Long) {
+        shown -= adId
         ads.remove(adId)?.let { destroy(adId, it) }
     }
 

@@ -16,6 +16,7 @@ internal object PluginErrors {
     const val NOT_INITIALIZED_CODE = "prebidSdkNotInitialized"
     const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
     const val NOT_LOADED = "The ad is not loaded"
+    const val ACTIVITY_DESTROYED = "The Activity was destroyed"
     const val UNKNOWN = "Unknown error"
 }
 

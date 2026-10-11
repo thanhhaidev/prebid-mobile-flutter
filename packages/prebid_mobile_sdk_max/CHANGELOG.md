@@ -4,6 +4,22 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- iOS: `loadAd()` after `stopRefresh()` loads the banner again; it did
+  nothing, with no event, because Prebid's mediation unit can't resume once
+  stopped. This also applies to preloaded banners.
+- iOS: native ads measure their height at the view's width, and again when
+  it changes (rotation); text that wraps no longer cuts off the call to
+  action.
+- Android: interstitial and rewarded ads are released when the Activity is
+  destroyed, reporting `onAdFailed`, instead of keeping the Activity alive
+  (add-to-app with a cached engine).
+- The Android library's Gradle `version` is the package version (it was the
+  plugin template's `1.0-SNAPSHOT`).
+
 ## [1.0.0] - 2026-10-11
 
 First stable release: Prebid demand in AppLovin MAX mediation through Prebid's

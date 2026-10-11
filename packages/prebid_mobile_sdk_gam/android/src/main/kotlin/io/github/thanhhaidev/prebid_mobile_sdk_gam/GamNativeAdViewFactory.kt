@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
@@ -110,6 +111,9 @@ internal class GamNativePlatformView(
     // must not load, render or report anything.
     @Volatile
     private var disposed = false
+
+    /** The pending viewability check of a custom-format ad's impression. */
+    private var impressionCheck: Runnable? = null
 
     // Prebid calls onAdImpression once per impression tracker URL; report one.
     private val prebidImpressionReported = AtomicBoolean(false)
@@ -433,7 +437,8 @@ internal class GamNativePlatformView(
 
     /**
      * Minimal fallback rendering for a GAM custom-format ad that carries no
-     * Prebid creative. Records the impression so GAM tracking stays intact.
+     * Prebid creative. GAM leaves its impression to the app: it is recorded
+     * once half the ad has been on screen for a second, as Prebid's own.
      */
     private fun renderCustomTemplate(ad: NativeCustomFormatAd) {
         val label = TextView(context).apply {
@@ -442,10 +447,40 @@ internal class GamNativePlatformView(
             setPadding(24, 24, 24, 24)
         }
         setContent(label)
-        ad.recordImpression()
+        recordImpressionWhenViewable(ad)
+    }
+
+    private fun recordImpressionWhenViewable(ad: NativeCustomFormatAd) {
+        var viewableChecks = 0
+        val check = object : Runnable {
+            override fun run() {
+                if (disposed || impressionCheck !== this) return
+                viewableChecks = if (isAtLeastHalfOnScreen(root)) viewableChecks + 1 else 0
+                if (viewableChecks >= REQUIRED_VIEWABLE_CHECKS) {
+                    impressionCheck = null
+                    ad.recordImpression()
+                } else {
+                    mainHandler.postDelayed(this, CHECK_INTERVAL_MS)
+                }
+            }
+        }
+        impressionCheck = check
+        mainHandler.postDelayed(check, CHECK_INTERVAL_MS)
+    }
+
+    private fun isAtLeastHalfOnScreen(view: View): Boolean {
+        if (!view.isShown || view.windowToken == null) return false
+        val area = view.width.toLong() * view.height
+        if (area <= 0) return false
+        val visible = Rect()
+        if (!view.getGlobalVisibleRect(visible)) return false
+        return visible.width().toLong() * visible.height() * 2 >= area
     }
 
     private fun setContent(view: View) {
+        // A new ad replaces the one awaiting its impression.
+        impressionCheck?.let { mainHandler.removeCallbacks(it) }
+        impressionCheck = null
         root.removeAllViews()
         root.addView(
             view,
@@ -487,7 +522,7 @@ internal class GamNativePlatformView(
         if (Looper.myLooper() == Looper.getMainLooper()) {
             methodChannel.invokeMethod(method, args)
         } else {
-            mainHandler.post { methodChannel.invokeMethod(method, args) }
+            mainHandler.post { if (!disposed) methodChannel.invokeMethod(method, args) }
         }
     }
 
@@ -503,3 +538,6 @@ internal class GamNativePlatformView(
         customFormatAd?.destroy()
     }
 }
+
+private const val CHECK_INTERVAL_MS = 250L
+private const val REQUIRED_VIEWABLE_CHECKS = 5 // 1 s / 0.25 s + 1, as Prebid iOS

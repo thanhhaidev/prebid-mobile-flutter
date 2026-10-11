@@ -67,5 +67,9 @@ class PrebidMobileSdkAdmobPlugin :
 
     override fun onDetachedFromActivity() {
         activity = null
+        // Fullscreen ads hold the Activity they were built with; release them
+        // with it, as the core plugin does.
+        interstitialManager?.releaseAll(PluginErrors.ACTIVITY_DESTROYED)
+        rewardedManager?.releaseAll(PluginErrors.ACTIVITY_DESTROYED)
     }
 }

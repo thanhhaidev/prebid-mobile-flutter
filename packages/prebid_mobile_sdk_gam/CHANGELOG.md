@@ -4,6 +4,22 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- A GAM custom-format native ad without a Prebid creative records its
+  impression once half of it has been on screen for a second, instead of as
+  soon as it rendered (an ad built off screen counted an impression).
+- iOS: native ads measure their height at the view's width, and again when
+  it changes (rotation); text that wraps no longer cuts off the bottom of the
+  ad. A custom-format ad reports its height too.
+- Android: interstitial and rewarded ads are released when the Activity is
+  destroyed, reporting `onAdFailed`, instead of keeping the Activity alive
+  (add-to-app with a cached engine).
+- The Android library's Gradle `version` is the package version (it was the
+  plugin template's `1.0-SNAPSHOT`).
+
 ## [1.0.0] - 2026-10-11
 
 First stable release: Google Ad Manager renders Prebid and direct-sold demand

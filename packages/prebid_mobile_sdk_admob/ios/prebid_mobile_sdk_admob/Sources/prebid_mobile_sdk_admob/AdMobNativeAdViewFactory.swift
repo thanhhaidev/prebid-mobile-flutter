@@ -42,6 +42,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
     GoogleMobileAds.NativeAdDelegate
 {
 
+    private let container = NativeAdContainer()
     private let nativeAdView = GoogleMobileAds.NativeAdView()
     private let methodChannel: FlutterMethodChannel
 
@@ -66,6 +67,15 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         super.init()
 
         buildLayout()
+        nativeAdView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(nativeAdView)
+        NSLayoutConstraint.activate([
+            nativeAdView.topAnchor.constraint(equalTo: container.topAnchor),
+            nativeAdView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            nativeAdView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            nativeAdView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.onHeight = { [weak self] height in self?.send("onAdSize", ["height": Double(height)]) }
 
         // Prebid mediation native ad unit.
         let request = Request()
@@ -113,7 +123,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
     }
 
     func view() -> UIView {
-        return nativeAdView
+        return container
     }
 
     /// Sends `event` to the widget on the main thread.
@@ -190,12 +200,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         nativeAdView.nativeAd = nativeAd
 
         send("onAdLoaded")
-        let height = nativeAdView.systemLayoutSizeFitting(
-            UIView.layoutFittingCompressedSize
-        ).height
-        if height > 0 {
-            send("onAdSize", ["height": Double(height)])
-        }
+        container.reportHeight()
     }
 
     func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {

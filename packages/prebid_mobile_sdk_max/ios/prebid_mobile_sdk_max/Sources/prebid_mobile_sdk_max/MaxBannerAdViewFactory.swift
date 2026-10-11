@@ -56,6 +56,8 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
     // Retained for the lifetime of the view — the auction runs through these.
     private var mediationDelegate: MAXMediationBannerUtils?
     private var mediationAdUnit: MediationBannerAdUnit?
+    private var makeAdUnit: (() -> (MAXMediationBannerUtils, MediationBannerAdUnit))!
+    private var refreshStopped = false
 
     init(
         frame: CGRect,
@@ -111,36 +113,39 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
         maxAdBannerView.delegate = self
         maxAdBannerView.revenueDelegate = self
 
-        // 2. Prebid mediation utils + ad unit.
-        let mediationDelegate = MAXMediationBannerUtils(adView: maxAdBannerView)
-        self.mediationDelegate = mediationDelegate
-        let adUnit = MediationBannerAdUnit(
-            configID: configId,
-            size: adSize,
-            mediationDelegate: mediationDelegate
-        )
-        mediationAdUnit = adUnit
-        if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
-            adUnit.adPosition = pos
+        // 2. Prebid mediation utils + ad unit. A load after stopRefresh
+        // builds them again: Prebid's unit can't resume once stopped.
+        makeAdUnit = { [maxAdBannerView, adSize] in
+            let mediationDelegate = MAXMediationBannerUtils(adView: maxAdBannerView)
+            let adUnit = MediationBannerAdUnit(
+                configID: configId,
+                size: adSize,
+                mediationDelegate: mediationDelegate
+            )
+            if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
+                adUnit.adPosition = pos
+            }
+            // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
+            if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
+                adUnit.setImpORTBConfig(config)
+            }
+            if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
+            if let formats = adFormatsFrom(args["adFormats"]) { adUnit.adFormats = formats }
+            // `videoParameters` is a live, get-only reference: configured in place.
+            applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
+            if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
+            if let interval = refreshInterval, interval > 0 {
+                // Clamped by Prebid to 15–120 s.
+                adUnit.refreshInterval = TimeInterval(interval)
+            } else {
+                // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
+                // clamps 0 up to its 15 s minimum — only a negative value is
+                // stored as 0, which disables auto-refresh (parity with Android).
+                adUnit.refreshInterval = -1
+            }
+            return (mediationDelegate, adUnit)
         }
-        // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
-        if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
-            adUnit.setImpORTBConfig(config)
-        }
-        if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
-        if let formats = adFormatsFrom(args["adFormats"]) { adUnit.adFormats = formats }
-        // `videoParameters` is a live, get-only reference: configured in place.
-        applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
-        if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
-        if let interval = refreshInterval, interval > 0 {
-            // Clamped by Prebid to 15–120 s.
-            adUnit.refreshInterval = TimeInterval(interval)
-        } else {
-            // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
-            // clamps 0 up to its 15 s minimum — only a negative value is
-            // stored as 0, which disables auto-refresh (parity with Android).
-            adUnit.refreshInterval = -1
-        }
+        installAdUnit()
 
         // Calls from PrebidBannerAdController.
         methodChannel.setMethodCallHandler { [weak self] call, result in
@@ -149,6 +154,7 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
                 self?.load()
                 result(nil)
             case "stopRefresh":
+                self?.refreshStopped = true
                 self?.mediationAdUnit?.stopRefresh()
                 self?.maxAdBannerView.stopAutoRefresh()
                 result(nil)
@@ -164,7 +170,15 @@ final class MaxBannerPlatformView: NSObject, FlutterPlatformView, MAAdViewAdDele
 
     /// 3. Fetch demand, then load the MAX banner. The weak capture skips the
     /// load when the view was disposed meanwhile.
+    private func installAdUnit() {
+        (mediationDelegate, mediationAdUnit) = makeAdUnit()
+    }
+
     private func load() {
+        if refreshStopped {
+            refreshStopped = false
+            installAdUnit()
+        }
         mediationAdUnit?.fetchDemand { [weak self] _ in
             guard let self = self else { return }
             if shouldDropBid(self.dropBidProbability) {

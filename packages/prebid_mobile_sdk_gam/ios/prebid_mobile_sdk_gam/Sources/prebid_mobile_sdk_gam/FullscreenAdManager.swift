@@ -17,6 +17,9 @@ class FullscreenAdManager<Ad: AnyObject> {
 
     private let channel: FlutterMethodChannel
     private var ads: [Int: Ad] = [:]
+    /// Ads already presented: an ad shows once, whatever the SDK's own
+    /// loaded state says (an AdMob ad stays set after it is shown).
+    private var shown: Set<Int> = []
 
     init(name: String, messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
@@ -62,6 +65,7 @@ class FullscreenAdManager<Ad: AnyObject> {
 
     /// Frees the ad of `adId`, if any.
     final func release(_ adId: Int) {
+        shown.remove(adId)
         if let ad = ads.removeValue(forKey: adId) {
             destroy(adId, ad)
         }
@@ -121,7 +125,7 @@ class FullscreenAdManager<Ad: AnyObject> {
     }
 
     private func show(_ adId: Int) {
-        guard let ad = ads[adId], isLoaded(ad) else {
+        guard let ad = ads[adId], !shown.contains(adId), isLoaded(ad) else {
             return send(adId, "onAdFailed", error: PrebidPresenter.notReady)
         }
         PrebidPresenter.whenReady(
@@ -130,9 +134,10 @@ class FullscreenAdManager<Ad: AnyObject> {
                 // The wait for a busy controller may outlast the ad:
                 // destroyed, reloaded or expired meanwhile.
                 guard let self = self else { return }
-                guard let ad = ad, self.isCurrent(adId, ad), self.isLoaded(ad) else {
+                guard let ad = ad, self.isCurrent(adId, ad), !self.shown.contains(adId), self.isLoaded(ad) else {
                     return self.send(adId, "onAdFailed", error: PrebidPresenter.notReady)
                 }
+                self.shown.insert(adId)
                 self.show(adId, ad, from: controller)
             }
         )

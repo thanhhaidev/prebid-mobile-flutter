@@ -1,6 +1,7 @@
 import Flutter
 import Foundation
 import PrebidMobile
+import UIKit
 
 // Shared by the companion packages; tool/check_copies.sh keeps the copies
 // identical. The request parsing is in PrebidRequests, each package's own
@@ -63,4 +64,38 @@ func adFormatsFrom(_ raw: Any?) -> Set<PrebidMobile.AdFormat>? {
 /// from `isVideo`.
 func adFormatsFrom(_ raw: Any?, isVideo: Bool) -> Set<PrebidMobile.AdFormat> {
     adFormatsFrom(raw) ?? (isVideo ? [.video] : [.banner])
+}
+
+/// The root view of a native ad view: reports the height its content needs
+/// at the width Flutter gives it, and again whenever that width changes
+/// (Flutter sizes the platform view after creating it, and on rotation).
+final class NativeAdContainer: UIView {
+    /// Called with each new height, in points.
+    var onHeight: ((CGFloat) -> Void)?
+    private var measuredWidth: CGFloat = 0
+    private var reportedHeight: CGFloat = 0
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.width > 0, bounds.width != measuredWidth else { return }
+        measuredWidth = bounds.width
+        reportHeight()
+    }
+
+    /// Measures the content (call it when the content changes): at the
+    /// screen width until Flutter has sized the view.
+    func reportHeight() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let content = self.subviews.first else { return }
+            let width = self.bounds.width > 0 ? self.bounds.width : UIScreen.main.bounds.width
+            let height = content.systemLayoutSizeFitting(
+                CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+            guard height > 0, height != self.reportedHeight else { return }
+            self.reportedHeight = height
+            self.onHeight?(height)
+        }
+    }
 }

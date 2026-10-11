@@ -38,6 +38,10 @@ melos:
       description: Run tests in packages that have a test/ directory.
       run: dart run melos exec --concurrency=1 --dir-exists="test" -- flutter test --no-pub
 
+    released-core:check:
+      description: Analyze and test each companion against the oldest core release it accepts (its constraint's lower bound), not the core in the checkout.
+      run: tool/check_released_core.sh
+
     format:
       description: Format all Dart code.
       run: dart format .

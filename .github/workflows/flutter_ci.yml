@@ -45,6 +45,11 @@ jobs:
       - name: Run tests
         run: dart run melos run test
 
+      # The steps above resolve the core in the checkout; apps get it from
+      # pub.dev.
+      - name: Test the companions against the released core
+        run: dart run melos run released-core:check
+
   publish-check:
     name: pub publish --dry-run
     runs-on: ubuntu-24.04

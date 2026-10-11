@@ -80,8 +80,14 @@ For each package on pub.dev, open **Admin → Automated publishing**:
    release date.
 
 **Order:** release `prebid_mobile_sdk` before any companion that depends on
-its new version. The workflow refuses to publish a companion while the core
-version in the repo is not on pub.dev yet.
+its new version. A companion is checked against the oldest core it accepts,
+the lower bound of its `prebid_mobile_sdk: ^x.y.z` constraint, not the core
+in the checkout (`tool/check_released_core.sh`, also run by CI): its run
+waits up to 10 minutes for that version to be on pub.dev, so the core and
+companion tags can be pushed together, then analyzes and tests the companion
+against the core's release tag. A companion that uses a core API added
+since then fails until its constraint is raised to the core version that
+adds it.
 
 To check a package without publishing, run the Release workflow manually
 (**Actions → Release → Run workflow**) and pick the package. That run only

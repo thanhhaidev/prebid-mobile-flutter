@@ -74,6 +74,7 @@ dart run melos run analyze         # flutter analyze + tool/check_copies.sh
 dart run melos run test            # Dart unit tests, every package
 dart run melos run generate:check  # Pigeon output is up to date (stage first)
 dart run melos run compatibility:check
+dart run melos run released-core:check  # companions against the released core
 
 # Native unit tests (build the example once so the Gradle and Xcode projects exist)
 cd example/android && ./gradlew :prebid_mobile_sdk:testDebugUnitTest \

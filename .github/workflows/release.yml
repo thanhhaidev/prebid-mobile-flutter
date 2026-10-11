@@ -80,16 +80,25 @@ jobs:
             echo "dir=${dir}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Require the core version on pub.dev (companion packages)
+      # The oldest core the companion accepts (its constraint's lower bound)
+      # must be on pub.dev. Polls, so the core and companion tags can be
+      # pushed together.
+      - name: Wait for the core it needs (companion packages)
         if: steps.meta.outputs.package != 'prebid_mobile_sdk' && github.event_name == 'push'
-        shell: bash
+        env:
+          DIR: ${{ steps.meta.outputs.dir }}
         run: |
-          core="$(grep -E '^version:' packages/prebid_mobile_sdk/pubspec.yaml | awk '{print $2}')"
-          if ! curl -fsS https://pub.dev/api/packages/prebid_mobile_sdk \
-              | jq -e --arg v "$core" '.versions[] | select(.version == $v)' > /dev/null; then
-            echo "::error::prebid_mobile_sdk ${core} is not on pub.dev yet; release it first (tag prebid_mobile_sdk-v${core})."
-            exit 1
-          fi
+          core="$(sed -n 's/^  prebid_mobile_sdk: *\^\{0,1\}\([0-9][^ ]*\).*/\1/p' "$DIR/pubspec.yaml")"
+          for _ in $(seq 1 30); do
+            if curl -fsS https://pub.dev/api/packages/prebid_mobile_sdk \
+                | jq -e --arg v "$core" '.versions[] | select(.version == $v)' > /dev/null; then
+              echo "prebid_mobile_sdk $core is on pub.dev"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::prebid_mobile_sdk ${core} is not on pub.dev; release it first (tag prebid_mobile_sdk-v${core})."
+          exit 1
 
       - uses: ./.github/actions/setup-flutter
 
@@ -98,6 +107,11 @@ jobs:
         run: |
           flutter analyze --no-pub
           if [ -d test ]; then flutter test --no-pub; fi
+
+      # Against that core's release tag rather than the core in the checkout.
+      - name: Analyze and test against the released core (companion packages)
+        if: steps.meta.outputs.package != 'prebid_mobile_sdk'
+        run: tool/check_released_core.sh --require-release ${{ steps.meta.outputs.package }}
 
       - name: Dry run
         working-directory: ${{ steps.meta.outputs.dir }}

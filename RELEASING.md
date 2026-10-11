@@ -52,7 +52,9 @@ For each package on pub.dev, open **Admin → Automated publishing**:
    (contributors add their entries under `[Unreleased]`). If a companion needs a new core API, bump
    its `prebid_mobile_sdk: ^x.y.z` constraint too. For the core, also bump
    `pluginVersion` in `lib/src/internal/ortb.dart`, the version every bid
-   request names (a test fails until it matches the pubspec).
+   request names (a test fails until it matches the pubspec). Bump the
+   `version` in `android/build.gradle.kts` and `s.version` in the podspec to
+   the same version (step 2's check fails until they match).
 2. Add an entry for the new version at the top of the package's `releases`
    in [`website/src/data/compatibility.json`](website/src/data/compatibility.json)
    (native Prebid and ad SDK versions, minimum OS versions), then run

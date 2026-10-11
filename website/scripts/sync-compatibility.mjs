@@ -6,8 +6,8 @@
 //                                                doesn't match its build files
 //
 // The newest entry of each package is checked against its pubspec.yaml
-// (version, Flutter and Dart constraints), android/build.gradle.kts (Prebid
-// artifact, minSdk), the podspec (Prebid pod, iOS platform) and Package.swift
+// (version, Flutter and Dart constraints), android/build.gradle.kts (version,
+// Prebid artifact, minSdk), the podspec (version, Prebid pod, iOS platform) and Package.swift
 // (Prebid package), so the docs can't drift from what the package resolves.
 // A companion's `testedWith` (the constraint the example app puts on the
 // Flutter ad plugin) is checked against example/pubspec.yaml.
@@ -44,6 +44,7 @@ for (const [name, pkg] of packages) {
   expect('the Dart constraint', match(pubspec, /^\s+sdk:\s*'?([^'\n]+?)'?\s*$/m), latest.dart, 'pubspec.yaml');
 
   const gradle = read(`${dir}/android/build.gradle.kts`);
+  expect('version', match(gradle, /^version\s*=\s*"([^"]+)"/m), latest.version, 'build.gradle.kts');
   const artifact = pkg.android.replace(/[.]/g, '\\.');
   expect('the Prebid Android version', match(gradle, new RegExp(`"${artifact}:([^"]+)"`)), latest.prebidAndroid, 'build.gradle.kts');
   expect('minSdk', Number(match(gradle, /minSdk\s*=\s*(\d+)/)), latest.androidMinSdk, 'build.gradle.kts');
@@ -56,6 +57,7 @@ for (const [name, pkg] of packages) {
     iosRange(latest.prebidIos),
     'podspec',
   );
+  expect('version', match(podspec, /s\.version\s*=\s*'([^']+)'/), latest.version, 'podspec');
   expect('the iOS platform', match(podspec, /s\.platform\s*=\s*:ios,\s*'([^']+)'/), latest.iosMin, 'podspec');
 
   const spm = read(`${dir}/ios/${name}/Package.swift`);

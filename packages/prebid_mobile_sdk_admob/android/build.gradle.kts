@@ -1,5 +1,5 @@
 group = "io.github.thanhhaidev.prebid_mobile_sdk_admob"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 buildscript {
     val kotlinVersion = "2.4.21"

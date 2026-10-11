@@ -58,7 +58,8 @@ void main() {
             isVideo: true,
             adFormats: {PrebidAdFormat.banner, PrebidAdFormat.video},
             pbAdSlot: '/slot',
-            impOrtbConfig: '{"ext":{"gpid":"/1/banner"}}',
+            impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+            gpid: '/1/banner',
             globalOrtbConfig: '{"app":{}}',
             videoParameters: VideoParameters(
               mimes: ['video/mp4'],
@@ -85,7 +86,7 @@ void main() {
         'additionalSizes': [300, 250, 728, 90],
         'adFormats': ['banner', 'video'],
         'pbAdSlot': '/slot',
-        'impOrtbConfig': '{"ext":{"gpid":"/1/banner"}}',
+        'impOrtbConfig': '{"ext":{"gpid":"/1/banner","data":{"k":"v"}}}',
         'globalOrtbConfig': '{"app":{}}',
         'videoParameters': {
           'mimes': ['video/mp4'],

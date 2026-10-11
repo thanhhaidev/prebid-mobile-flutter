@@ -37,14 +37,17 @@ internal class MaxRewardedManager(
         val dropBidProbability: Double,
     )
 
-    /** MAX ad unit id → the `adId` that currently owns its shared instance. */
-    private val ownerByUnit = mutableMapOf<String, Long>()
+    /** An `adId` of one manager (one per Flutter engine). */
+    private data class Owner(
+        val manager: MaxRewardedManager,
+        val adId: Long,
+    )
 
-    /**
-     * MAX ad units whose ad is on screen (from displayed until hidden or
-     * display-failed).
-     */
-    private val showingUnits = mutableSetOf<String>()
+    /** Gives [adId]'s shared instance to another ad: frees its Prebid unit. */
+    private fun handOver(adId: Long) {
+        forget(adId)?.adUnit?.destroy()
+        send(adId, "onAdFailed", "Replaced by another ad on the same MAX ad unit")
+    }
 
     // Handing the shared instance over now would route the showing ad's
     // reward and close to this ad; leave it alone.
@@ -58,11 +61,9 @@ internal class MaxRewardedManager(
         // The shared instance moves to this adId; the previous owner stops
         // receiving events (the listener is replaced below) and is told why.
         // Its Prebid ad unit is freed, the MAX ad is not.
-        ownerByUnit[maxAdUnitId]?.takeIf { it != adId }?.let { previous ->
-            forget(previous)?.adUnit?.destroy()
-            send(previous, "onAdFailed", "Replaced by another ad on the same MAX ad unit")
-        }
-        ownerByUnit[maxAdUnitId] = adId
+        val owner = Owner(this, adId)
+        ownerByUnit[maxAdUnitId]?.takeIf { it != owner }?.let { it.manager.handOver(it.adId) }
+        ownerByUnit[maxAdUnitId] = owner
 
         val rewarded = MaxRewardedAd.getInstance(maxAdUnitId, activity)
         rewarded.setListener(object : MaxRewardedAdListener {
@@ -127,7 +128,7 @@ internal class MaxRewardedManager(
     override fun destroy(adId: Long, ad: Ad) {
         ad.adUnit.destroy()
         val unitId = ad.rewarded.adUnitId
-        if (ownerByUnit[unitId] == adId) {
+        if (ownerByUnit[unitId] == Owner(this, adId)) {
             ownerByUnit.remove(unitId)
             showingUnits.remove(unitId)
             ad.rewarded.destroy()
@@ -137,6 +138,18 @@ internal class MaxRewardedManager(
     private fun maxAdUnitId(args: Map<*, *>): String = args["maxAdUnitId"] as? String ?: ""
 
     private companion object {
+        // MAX's shared instances are per process, so their owners are too:
+        // several Flutter engines may load the same unit. Main thread only.
+
+        /** MAX ad unit id → the ad that currently owns its shared instance. */
+        val ownerByUnit = mutableMapOf<String, Owner>()
+
+        /**
+         * MAX ad units whose ad is on screen (from displayed until hidden or
+         * display-failed).
+         */
+        val showingUnits = mutableSetOf<String>()
+
         const val SHOWING_ERROR =
             "Another ad for this MAX ad unit is showing; load the next one after onAdClosed"
     }

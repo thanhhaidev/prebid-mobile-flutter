@@ -37,6 +37,7 @@ class PrebidMaxBannerAd extends StatefulWidget {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
     this.listener,
   });
 
@@ -112,6 +113,10 @@ class PrebidMaxBannerAd extends StatefulWidget {
   /// already there wins).
   final String? pbAdSlot;
 
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
+
   /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
   /// also get MAX's expand / collapse, display-failure and revenue events.
   final PrebidBannerAdListener? listener;
@@ -147,7 +152,7 @@ class _PrebidMaxBannerAdState extends State<PrebidMaxBannerAd>
     autoLoad: widget.autoLoad,
     adaptive: widget.adaptive,
     adPosition: widget.adPosition,
-    impOrtbConfig: widget.impOrtbConfig,
+    impOrtbConfig: impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
     globalOrtbConfig: widget.globalOrtbConfig,
     pbAdSlot: widget.pbAdSlot,
     additionalSizes: widget.additionalSizes,
@@ -265,6 +270,7 @@ class PrebidMaxPreloadedBannerAd {
     required this.height,
     this.additionalSizes,
     this.adaptive = false,
+    this.adaptiveWidth,
     this.adFormats,
     this.videoParameters,
     this.refreshIntervalSeconds,
@@ -272,6 +278,7 @@ class PrebidMaxPreloadedBannerAd {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
     this.listener,
   });
 
@@ -300,6 +307,11 @@ class PrebidMaxPreloadedBannerAd {
   /// the height MAX computes for it. Ignored for a 300x250 (MREC) banner.
   final bool adaptive;
 
+  /// The width, in dp, the MAX adaptive banner spans when [adaptive];
+  /// [width] when null. [width] stays the Prebid request size, so a
+  /// full-width adaptive banner can still ask bidders for a 320x50 bid.
+  final double? adaptiveWidth;
+
   /// See [PrebidMaxBannerAd.adFormats].
   final Set<PrebidAdFormat>? adFormats;
 
@@ -321,6 +333,10 @@ class PrebidMaxPreloadedBannerAd {
   /// See [PrebidMaxBannerAd.pbAdSlot].
   final String? pbAdSlot;
 
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
+
   /// Listener for banner ad events. Pass a [PrebidMaxBannerAdListener] to
   /// also get MAX's expand / collapse, display-failure and revenue events.
   final PrebidBannerAdListener? listener;
@@ -340,7 +356,7 @@ class PrebidMaxPreloadedBannerAd {
         autoLoad: true,
         adaptive: adaptive,
         adPosition: adPosition,
-        impOrtbConfig: impOrtbConfig,
+        impOrtbConfig: impOrtbWithGpid(impOrtbConfig, gpid),
         globalOrtbConfig: globalOrtbConfig,
         pbAdSlot: pbAdSlot,
         additionalSizes: additionalSizes,
@@ -348,7 +364,7 @@ class PrebidMaxPreloadedBannerAd {
         videoParameters: videoParameters,
         refreshIntervalSeconds: refreshIntervalSeconds,
       ),
-      if (_isAdaptive) 'adaptiveWidth': width,
+      if (_isAdaptive) 'adaptiveWidth': adaptiveWidth ?? width,
       ...debugDropBidArgs(),
     },
     onEvent: (call) => _dispatchMaxBannerEvent(listener, call),

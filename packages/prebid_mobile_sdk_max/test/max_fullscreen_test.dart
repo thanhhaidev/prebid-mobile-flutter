@@ -70,6 +70,7 @@ void main() {
         impOrtbConfig: '{}',
         globalOrtbConfig: '{"app":{}}',
         pbAdSlot: '/slot',
+        gpid: '/g',
         videoParameters: const VideoParameters(
           mimes: ['video/mp4'],
           protocols: [VideoProtocol.vast4_0],
@@ -87,7 +88,7 @@ void main() {
           'minWidthPercentage': 50,
           'minHeightPercentage': 70,
         },
-        'impOrtbConfig': '{}',
+        'impOrtbConfig': '{"ext":{"gpid":"/g"}}',
         'globalOrtbConfig': '{"app":{}}',
         'pbAdSlot': '/slot',
         'videoParameters': {
@@ -256,6 +257,7 @@ void main() {
         impOrtbConfig: '{}',
         globalOrtbConfig: '{"app":{}}',
         pbAdSlot: '/slot',
+        gpid: '/g',
         videoParameters: const VideoParameters(
           mimes: ['video/mp4'],
           battr: [VideoCreativeAttribute.adCanBeSkipped],
@@ -266,7 +268,7 @@ void main() {
         'configId': 'c',
         'maxAdUnitId': 'u',
         'controls': {'skipDelay': 3},
-        'impOrtbConfig': '{}',
+        'impOrtbConfig': '{"ext":{"gpid":"/g"}}',
         'globalOrtbConfig': '{"app":{}}',
         'pbAdSlot': '/slot',
         'videoParameters': {

@@ -38,11 +38,24 @@ final class MaxRewardedEntry {
 /// reward and close would reach the new owner), so a load on it fails.
 final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
 
+    /// An `adId` of one manager (one per Flutter engine).
+    private struct Owner {
+        weak var manager: MaxRewardedManager?
+        let adId: Int
+    }
+
+    // MAX's shared ads are per process, so their owners are too: several
+    // Flutter engines may load the same unit. Main thread only.
     /// MAX ad unit identifier → the `adId` that currently owns its shared ad.
-    private var ownerByUnit: [String: Int] = [:]
+    private static var ownerByUnit: [String: Owner] = [:]
     /// MAX ad units whose ad is on screen (from displayed until hidden or
     /// display-failed).
-    private var showingUnits: Set<String> = []
+    private static var showingUnits: Set<String> = []
+
+    private func owns(_ unitId: String, _ adId: Int) -> Bool {
+        let owner = Self.ownerByUnit[unitId]
+        return owner?.manager === self && owner?.adId == adId
+    }
 
     private static let showingError =
         "Another ad for this MAX ad unit is showing; load the next one after onAdClosed"
@@ -54,7 +67,7 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
     // Handing the shared instance over now would route the showing ad's
     // reward and close to this ad; leave it alone.
     override func refuseLoad(_ adId: Int, _ args: [String: Any]) -> String? {
-        showingUnits.contains(Self.maxAdUnitId(args)) ? Self.showingError : nil
+        Self.showingUnits.contains(Self.maxAdUnitId(args)) ? Self.showingError : nil
     }
 
     override func create(_ adId: Int, _ args: [String: Any]) -> MaxRewardedEntry {
@@ -63,9 +76,11 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
 
         // The shared instance moves to this adId; the previous owner stops
         // receiving events and is told why.
-        if let previous = ownerByUnit[maxAdUnitId], previous != adId {
-            release(previous)
-            send(previous, "onAdFailed", error: "Replaced by another ad on the same MAX ad unit")
+        if let previous = Self.ownerByUnit[maxAdUnitId], !owns(maxAdUnitId, adId),
+            let manager = previous.manager
+        {
+            manager.release(previous.adId)
+            manager.send(previous.adId, "onAdFailed", error: "Replaced by another ad on the same MAX ad unit")
         }
 
         let rewarded = MARewardedAd.shared(withAdUnitIdentifier: maxAdUnitId)
@@ -83,11 +98,11 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
             guard let self = self else { return }
             switch event {
             case "onAdDisplayed":
-                self.showingUnits.insert(maxAdUnitId)
+                Self.showingUnits.insert(maxAdUnitId)
             case "onAdClosed", "onAdFailed":
                 // Hidden, or failed to display (a load cannot fail while the
                 // unit shows: loads are refused meanwhile).
-                self.showingUnits.remove(maxAdUnitId)
+                Self.showingUnits.remove(maxAdUnitId)
             default:
                 break
             }
@@ -95,7 +110,7 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
         }
         rewarded.delegate = proxy
         rewarded.revenueDelegate = proxy
-        ownerByUnit[maxAdUnitId] = adId
+        Self.ownerByUnit[maxAdUnitId] = Owner(manager: self, adId: adId)
         return MaxRewardedEntry(
             adUnit: adUnit,
             mediationDelegate: mediationDelegate,
@@ -129,9 +144,9 @@ final class MaxRewardedManager: FullscreenAdManager<MaxRewardedEntry> {
     /// is using.
     override func destroy(_ adId: Int, _ ad: MaxRewardedEntry) {
         let unitId = ad.rewarded.adUnitIdentifier
-        guard ownerByUnit[unitId] == adId else { return }
-        ownerByUnit.removeValue(forKey: unitId)
-        showingUnits.remove(unitId)
+        guard owns(unitId, adId) else { return }
+        Self.ownerByUnit.removeValue(forKey: unitId)
+        Self.showingUnits.remove(unitId)
         ad.rewarded.delegate = nil
         ad.rewarded.revenueDelegate = nil
     }

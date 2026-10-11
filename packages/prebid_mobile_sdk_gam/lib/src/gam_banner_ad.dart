@@ -33,6 +33,7 @@ class PrebidGamBannerAd extends StatefulWidget {
     this.isVideo = false,
     this.adFormats,
     this.pbAdSlot,
+    this.gpid,
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.videoParameters,
@@ -74,6 +75,10 @@ class PrebidGamBannerAd extends StatefulWidget {
 
   /// Prebid ad slot (`imp.ext.data.pbadslot`).
   final String? pbAdSlot;
+
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
 
   /// Impression-level OpenRTB JSON merged into this ad unit's `imp` (e.g.
   /// `{"ext":{"gpid":"/1111/home"}}`).
@@ -146,7 +151,7 @@ class _PrebidGamBannerAdState extends State<PrebidGamBannerAd>
     additionalSizes: widget.additionalSizes,
     adFormats: widget.adFormats,
     pbAdSlot: widget.pbAdSlot,
-    impOrtbConfig: widget.impOrtbConfig,
+    impOrtbConfig: impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
     globalOrtbConfig: widget.globalOrtbConfig,
     videoParameters: widget.videoParameters,
     refreshIntervalSeconds: widget.refreshIntervalSeconds,
@@ -229,6 +234,7 @@ class PrebidGamPreloadedBannerAd {
     this.isVideo = false,
     this.adFormats,
     this.pbAdSlot,
+    this.gpid,
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.videoParameters,
@@ -267,6 +273,10 @@ class PrebidGamPreloadedBannerAd {
 
   /// See [PrebidGamBannerAd.pbAdSlot].
   final String? pbAdSlot;
+
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
 
   /// See [PrebidGamBannerAd.impOrtbConfig].
   final String? impOrtbConfig;
@@ -311,7 +321,7 @@ class PrebidGamPreloadedBannerAd {
       additionalSizes: additionalSizes,
       adFormats: adFormats,
       pbAdSlot: pbAdSlot,
-      impOrtbConfig: impOrtbConfig,
+      impOrtbConfig: impOrtbWithGpid(impOrtbConfig, gpid),
       globalOrtbConfig: globalOrtbConfig,
       videoParameters: videoParameters,
       refreshIntervalSeconds: refreshIntervalSeconds,

@@ -58,7 +58,8 @@ void main() {
             ),
             adPosition: PrebidAdPosition.footer,
             pbAdSlot: '/slot',
-            impOrtbConfig: '{"ext":{"gpid":"/1111/home"}}',
+            impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+            gpid: '/1111/home',
             globalOrtbConfig: '{"app":{}}',
             autoLoad: false,
           ),
@@ -72,7 +73,7 @@ void main() {
         'height': 250,
         'autoLoad': false,
         'adPosition': 5,
-        'impOrtbConfig': '{"ext":{"gpid":"/1111/home"}}',
+        'impOrtbConfig': '{"ext":{"gpid":"/1111/home","data":{"k":"v"}}}',
         'globalOrtbConfig': '{"app":{}}',
         'pbAdSlot': '/slot',
         'adFormats': ['banner', 'video'],
@@ -372,7 +373,9 @@ void main() {
           const PrebidMaxNativeAd(
             configId: 'c',
             maxAdUnitId: 'u',
-            impOrtbConfig: '{"ext":{"gpid":"/1111/home"}}',
+            impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+            gpid: '/1111/home',
+            pbAdSlot: '/slot',
             globalOrtbConfig: '{"app":{}}',
             nativeParameters: NativeParameters(
               context: NativeContextType.contentCentric,
@@ -400,7 +403,10 @@ void main() {
         [true, false, true],
       );
       expect(p['ext'], '{"k":1}');
-      expect(p['impOrtbConfig'], '{"ext":{"gpid":"/1111/home"}}');
+      expect(
+        p['impOrtbConfig'],
+        '{"ext":{"gpid":"/1111/home","data":{"pbadslot":"/slot","k":"v"}}}',
+      );
       expect(p['globalOrtbConfig'], '{"app":{}}');
     }, variant: android);
 

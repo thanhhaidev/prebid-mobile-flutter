@@ -22,6 +22,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import kotlin.math.roundToInt
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
@@ -179,7 +180,7 @@ internal class AdMobNativePlatformView(
         iconView.scaleType = ImageView.ScaleType.CENTER_CROP
         mediaView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            420,
+            context.dp(180),
         )
 
         val header = LinearLayout(context).apply {
@@ -187,14 +188,14 @@ internal class AdMobNativePlatformView(
             gravity = Gravity.CENTER_VERTICAL
             addView(
                 iconView,
-                LinearLayout.LayoutParams(96, 96).apply { rightMargin = 24 },
+                LinearLayout.LayoutParams(context.dp(40), context.dp(40)).apply { rightMargin = context.dp(8) },
             )
             addView(headlineView)
         }
 
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(context.dp(12), context.dp(12), context.dp(12), context.dp(12))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -251,6 +252,11 @@ internal class AdMobNativePlatformView(
         disposed = true
         nativeAd?.destroy()
         nativeAd = null
+        // Frees its media view's resources, as Google asks.
+        nativeAdView.destroy()
         adUnit?.destroy()
     }
 }
+
+/** [value] dp in pixels. */
+private fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()

@@ -46,6 +46,22 @@ void main() {
     });
   });
 
+  test(
+    'an adaptive width spans the banner, the size stays the bid size',
+    () async {
+      await PrebidAdMobPreloadedBannerAd(
+        configId: 'c',
+        adMobAdUnitId: 'u',
+        width: 320,
+        height: 50,
+        adaptive: true,
+        adaptiveWidth: 411,
+      ).load();
+      final config = plugin.argsOf('create')['config']! as Map;
+      expect((config['width'], config['adaptiveWidth']), (320, 411.0));
+    },
+  );
+
   testWidgets('a view shows the banner; destroy ends it', (tester) async {
     final events = <String>[];
     final ad = PrebidAdMobPreloadedBannerAd(

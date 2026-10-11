@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
@@ -330,17 +331,17 @@ internal class GamNativePlatformView(
         imageView.scaleType = ImageView.ScaleType.CENTER_CROP
         imageView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            420,
+            context.dp(180),
         )
-        downloadImage(ad.iconUrl, iconView, 96, 96)
-        downloadImage(ad.imageUrl, imageView, context.resources.displayMetrics.widthPixels, 420)
+        downloadImage(ad.iconUrl, iconView, context.dp(40), context.dp(40))
+        downloadImage(ad.imageUrl, imageView, context.resources.displayMetrics.widthPixels, context.dp(180))
 
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(
                 iconView,
-                LinearLayout.LayoutParams(96, 96).apply { rightMargin = 24 },
+                LinearLayout.LayoutParams(context.dp(40), context.dp(40)).apply { rightMargin = context.dp(8) },
             )
             addView(
                 LinearLayout(context).apply {
@@ -354,7 +355,7 @@ internal class GamNativePlatformView(
 
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(context.dp(12), context.dp(12), context.dp(12), context.dp(12))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -397,7 +398,7 @@ internal class GamNativePlatformView(
         ad.icon?.drawable?.let { iconView.setImageDrawable(it) }
         mediaView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            420,
+            context.dp(180),
         )
         ad.mediaContent?.let { mediaView.mediaContent = it }
 
@@ -406,14 +407,14 @@ internal class GamNativePlatformView(
             gravity = Gravity.CENTER_VERTICAL
             addView(
                 iconView,
-                LinearLayout.LayoutParams(96, 96).apply { rightMargin = 24 },
+                LinearLayout.LayoutParams(context.dp(40), context.dp(40)).apply { rightMargin = context.dp(8) },
             )
             addView(headlineView)
         }
 
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(context.dp(12), context.dp(12), context.dp(12), context.dp(12))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -444,7 +445,7 @@ internal class GamNativePlatformView(
         val label = TextView(context).apply {
             text = ad.getText("title") ?: "Ad"
             textSize = 15f
-            setPadding(24, 24, 24, 24)
+            setPadding(context.dp(12), context.dp(12), context.dp(12), context.dp(12))
         }
         setContent(label)
         recordImpressionWhenViewable(ad)
@@ -481,6 +482,7 @@ internal class GamNativePlatformView(
         // A new ad replaces the one awaiting its impression.
         impressionCheck?.let { mainHandler.removeCallbacks(it) }
         impressionCheck = null
+        destroyNativeAdViews()
         root.removeAllViews()
         root.addView(
             view,
@@ -536,8 +538,17 @@ internal class GamNativePlatformView(
         adUnit?.destroy()
         unifiedNativeAd?.destroy()
         customFormatAd?.destroy()
+        destroyNativeAdViews()
+    }
+
+    /** Frees a shown unified ad's view (its media view), as Google asks. */
+    private fun destroyNativeAdViews() {
+        for (i in 0 until root.childCount) (root.getChildAt(i) as? NativeAdView)?.destroy()
     }
 }
 
 private const val CHECK_INTERVAL_MS = 250L
 private const val REQUIRED_VIEWABLE_CHECKS = 5 // 1 s / 0.25 s + 1, as Prebid iOS
+
+/** [value] dp in pixels. */
+private fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()

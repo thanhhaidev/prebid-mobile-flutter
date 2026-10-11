@@ -102,7 +102,8 @@ void main() {
             plcmt: VideoPlcmt.interstitial,
             maxDuration: 30,
           ),
-          impOrtbConfig: '{"ext":{"gpid":"/1111/home"}}',
+          impOrtbConfig: '{"ext":{"data":{"k":"v"}}}',
+          gpid: '/1111/home',
           globalOrtbConfig: '{"app":{}}',
           pbAdSlot: '/slot',
         ).loadAd();
@@ -123,7 +124,7 @@ void main() {
             'maxDuration': 30,
             'plcmt': 3,
           },
-          'impOrtbConfig': '{"ext":{"gpid":"/1111/home"}}',
+          'impOrtbConfig': '{"ext":{"gpid":"/1111/home","data":{"k":"v"}}}',
           'globalOrtbConfig': '{"app":{}}',
           'pbAdSlot': '/slot',
         });
@@ -291,6 +292,7 @@ void main() {
         impOrtbConfig: '{}',
         globalOrtbConfig: '{"app":{}}',
         pbAdSlot: '/slot',
+        gpid: '/g',
         videoParameters: const VideoParameters(mimes: ['video/mp4']),
       ).loadAd();
       expect(h.argsOf('load')..remove('adId'), {
@@ -298,7 +300,7 @@ void main() {
         'gamAdUnitId': 'u',
         'customTargeting': {'k': 'v'},
         'controls': {'skipDelay': 3},
-        'impOrtbConfig': '{}',
+        'impOrtbConfig': '{"ext":{"gpid":"/g"}}',
         'globalOrtbConfig': '{"app":{}}',
         'pbAdSlot': '/slot',
         'videoParameters': {

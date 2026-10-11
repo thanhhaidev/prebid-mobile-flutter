@@ -40,6 +40,7 @@ class PrebidAdMobBannerAd extends StatefulWidget {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
     this.listener,
   });
 
@@ -116,6 +117,10 @@ class PrebidAdMobBannerAd extends StatefulWidget {
   /// already there wins).
   final String? pbAdSlot;
 
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
+
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
 
@@ -150,7 +155,7 @@ class _PrebidAdMobBannerAdState extends State<PrebidAdMobBannerAd>
         height: widget.height,
         autoLoad: widget.autoLoad,
         adPosition: widget.adPosition,
-        impOrtbConfig: widget.impOrtbConfig,
+        impOrtbConfig: impOrtbWithGpid(widget.impOrtbConfig, widget.gpid),
         globalOrtbConfig: widget.globalOrtbConfig,
         pbAdSlot: widget.pbAdSlot,
         additionalSizes: widget.additionalSizes,
@@ -245,11 +250,13 @@ class PrebidAdMobPreloadedBannerAd {
     this.adFormats,
     this.videoParameters,
     this.adaptive = false,
+    this.adaptiveWidth,
     this.refreshIntervalSeconds,
     this.adPosition,
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
     this.listener,
   });
 
@@ -285,6 +292,11 @@ class PrebidAdMobPreloadedBannerAd {
   /// AdMob reports once the ad loads.
   final bool adaptive;
 
+  /// The width, in dp, the AdMob adaptive banner spans when [adaptive];
+  /// [width] when null. [width] stays the Prebid request size, so a
+  /// full-width adaptive banner can still ask bidders for a 320x50 bid.
+  final double? adaptiveWidth;
+
   /// See [PrebidAdMobBannerAd.refreshIntervalSeconds].
   final int? refreshIntervalSeconds;
 
@@ -299,6 +311,10 @@ class PrebidAdMobPreloadedBannerAd {
 
   /// See [PrebidAdMobBannerAd.pbAdSlot].
   final String? pbAdSlot;
+
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
 
   /// Listener for banner ad events.
   final PrebidBannerAdListener? listener;
@@ -315,7 +331,7 @@ class PrebidAdMobPreloadedBannerAd {
         height: height,
         autoLoad: true,
         adPosition: adPosition,
-        impOrtbConfig: impOrtbConfig,
+        impOrtbConfig: impOrtbWithGpid(impOrtbConfig, gpid),
         globalOrtbConfig: globalOrtbConfig,
         pbAdSlot: pbAdSlot,
         additionalSizes: additionalSizes,
@@ -324,7 +340,7 @@ class PrebidAdMobPreloadedBannerAd {
         adaptive: adaptive,
         refreshIntervalSeconds: refreshIntervalSeconds,
       ),
-      if (adaptive) 'adaptiveWidth': width,
+      if (adaptive) 'adaptiveWidth': adaptiveWidth ?? width,
       ...debugDropBidArgs(),
     },
     onEvent: (call) => dispatchBannerEvent(listener, null, call),

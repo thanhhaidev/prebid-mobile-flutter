@@ -50,6 +50,7 @@ PrebidAdMobBannerAd(
 | `adPosition`, `impOrtbConfig` | Ad position and impression-level OpenRTB JSON. |
 | `globalOrtbConfig` | Request-level OpenRTB JSON for this ad unit only. |
 | `pbAdSlot` | Prebid ad slot (`imp.ext.data.pbadslot`); on iOS sent in the `imp` JSON, since Prebid iOS has no setter on mediation units. |
+| `gpid` | Global Placement ID (`imp.ext.gpid`), sent in the `imp` JSON (a `gpid` already in `impOrtbConfig` wins). |
 
 An adaptive banner with an extra Prebid size, as in Prebid's test app:
 
@@ -67,7 +68,7 @@ PrebidAdMobBannerAd(
 
 ### Preloaded banner (feeds)
 
-`PrebidAdMobPreloadedBannerAd` loads a banner before its slot is on screen and keeps it across the views showing it, so a banner in a scrolling list isn't re-auctioned each time it scrolls back. It takes the parameters above, without `autoLoad` and `controller`; see [Preload a banner](/docs/banner#preload-a-banner-feeds) for the lifecycle. The banner loads before any layout, so with `adaptive: true` it spans `width` instead of measuring the available width.
+`PrebidAdMobPreloadedBannerAd` loads a banner before its slot is on screen and keeps it across the views showing it, so a banner in a scrolling list isn't re-auctioned each time it scrolls back. It takes the parameters above, without `autoLoad` and `controller`; see [Preload a banner](/docs/banner#preload-a-banner-feeds) for the lifecycle. The banner loads before any layout, so with `adaptive: true` it spans `width` instead of measuring the available width; set `adaptiveWidth` (for example the screen width) to span more while `width` stays the Prebid request size.
 
 ```dart
 final ad = PrebidAdMobPreloadedBannerAd(
@@ -98,7 +99,7 @@ interstitial = PrebidAdMobInterstitialAd(
 await interstitial.loadAd();
 ```
 
-`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent), `impOrtbConfig`, `globalOrtbConfig` and `pbAdSlot`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the interstitial's display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`; rewarded ads have no minimum size or auto-close in Prebid's mediation units. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
+`PrebidAdMobRewardedAd` works the same way with a `PrebidRewardedAdListener` and `onUserEarnedReward`. Both take [`controls`](/docs/fullscreen#rendering-controls), [`videoParameters`](/docs/video#where-each-field-is-sent), `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid`; the interstitial takes `isVideo` for video demand, or `adFormats` (for example `{PrebidAdFormat.banner, PrebidAdFormat.video}` for a multiformat interstitial), which overrides `isVideo`. Set the interstitial's display minimum size with `PrebidFullscreenControls(minSizePercentage: Size(30, 30))`; rewarded ads have no minimum size or auto-close in Prebid's mediation units. `supportSKOverlay` doesn't apply: Prebid's mediation units have no SKOverlay setting.
 
 ## Native
 
@@ -114,7 +115,7 @@ PrebidAdMobNativeAd(
 )
 ```
 
-Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests Prebid's reference assets and impression trackers, with the social, general social and in-feed context. `impOrtbConfig` and `globalOrtbConfig` apply on iOS only: Prebid Android's mediation native unit has no setters for them.
+Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests Prebid's reference assets and impression trackers, with the social, general social and in-feed context. `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid` (the last two sent in the `imp` JSON) apply on iOS only: Prebid Android's mediation native unit has no setters for them.
 
 ## Events
 

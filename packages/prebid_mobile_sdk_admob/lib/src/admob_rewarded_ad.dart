@@ -34,6 +34,7 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
     this.impOrtbConfig,
     this.globalOrtbConfig,
     this.pbAdSlot,
+    this.gpid,
     this.videoParameters,
     this.listener,
   }) : super(_channel);
@@ -63,6 +64,10 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
   /// already there wins).
   final String? pbAdSlot;
 
+  /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
+  /// [impOrtbConfig]; a `gpid` already there wins.
+  final String? gpid;
+
   /// OpenRTB video parameters for a video rewarded. iOS applies every field;
   /// Prebid Android's mediation ad unit only exposes `setMaxVideoDuration`, so
   /// [VideoParameters.maxDuration] only caps the rendered video there (nothing
@@ -77,7 +82,7 @@ class PrebidAdMobRewardedAd extends CompanionFullscreenAd {
     'configId': configId,
     'adMobAdUnitId': adMobAdUnitId,
     'controls': ?controls?.toMap(),
-    'impOrtbConfig': ?impOrtbConfig,
+    'impOrtbConfig': ?impOrtbWithGpid(impOrtbConfig, gpid),
     'globalOrtbConfig': ?globalOrtbConfig,
     'pbAdSlot': ?pbAdSlot,
     'videoParameters': ?videoParameters?.toMap(),

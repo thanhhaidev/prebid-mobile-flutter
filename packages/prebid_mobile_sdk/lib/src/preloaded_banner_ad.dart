@@ -10,6 +10,7 @@ import 'companion/ad_view_state.dart';
 import 'companion/preloaded_banner.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/ortb.dart';
+import 'internal/session.dart';
 import 'video_parameters.dart';
 
 /// A Prebid-rendered banner that lives apart from the widgets showing it:
@@ -116,25 +117,29 @@ class PrebidPreloadedBannerAd {
   late final PreloadedBanner _banner = PreloadedBanner(
     viewType: 'prebid_mobile_sdk/banner_ad',
     size: Size(width.toDouble(), height.toDouble()),
-    create: (channelId) => api.create(
-      channelId,
-      bannerConfig(
-        configId: configId,
-        width: width,
-        height: height,
-        isVideo: isVideo,
-        autoLoad: true,
-        additionalSizes: additionalSizes,
-        refreshIntervalSeconds: refreshIntervalSeconds,
-        adFormats: adFormats,
-        pbAdSlot: pbAdSlot,
-        adPosition: adPosition,
-        videoParameters: videoParameters,
-        impOrtbConfig: impOrtbWithGpid(impOrtbConfig, gpid),
-        globalOrtbConfig: globalOrtbConfig,
-        videoPlacementType: videoPlacementType,
-      ),
-    ),
+    create: (channelId) {
+      // A restarted isolate's channel ids collide with the old banners'.
+      releasePreviousIsolateAds();
+      return api.create(
+        channelId,
+        bannerConfig(
+          configId: configId,
+          width: width,
+          height: height,
+          isVideo: isVideo,
+          autoLoad: true,
+          additionalSizes: additionalSizes,
+          refreshIntervalSeconds: refreshIntervalSeconds,
+          adFormats: adFormats,
+          pbAdSlot: pbAdSlot,
+          adPosition: adPosition,
+          videoParameters: videoParameters,
+          impOrtbConfig: impOrtbWithGpid(impOrtbConfig, gpid),
+          globalOrtbConfig: globalOrtbConfig,
+          videoPlacementType: videoPlacementType,
+        ),
+      );
+    },
     destroy: api.destroy,
     onEvent: _onEvent,
   );

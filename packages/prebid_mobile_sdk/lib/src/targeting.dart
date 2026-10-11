@@ -14,7 +14,8 @@ import 'internal/ortb.dart';
 /// - **First-Party Data** — App ext data (`app.ext.data`) for enriched bid requests.
 /// - **Access Control** — Control which bidders can access first-party data.
 /// - **OpenRTB Configuration** — Global OpenRTB JSON config merged into every bid request.
-/// - **App Information** — Publisher name, store URL, domain, content URL.
+/// - **App Information** — Publisher name, store URL, domain, app name. Set
+///   others, such as `app.content.url`, with [setGlobalOrtbConfig].
 ///
 /// ## Example
 ///

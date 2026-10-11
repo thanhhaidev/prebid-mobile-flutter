@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -69,7 +71,8 @@ class PreloadedBanner {
   /// creative's size.
   Size get size => _size.value;
 
-  /// Creates and loads the native banner, or reloads it once created.
+  /// Creates and loads the native banner, or reloads it once created. A
+  /// creation that failed is retried by the next call.
   Future<void> load() {
     final created = _created;
     final channel = _channel;
@@ -83,6 +86,18 @@ class PreloadedBanner {
     // The native banner loads once created.
     final creating = _created = _create(fresh.id);
     _revision.value++;
+    unawaited(
+      creating.then<void>(
+        (_) {},
+        onError: (Object _) {
+          if (!identical(_created, creating)) return;
+          _created = null;
+          _channel = null;
+          fresh.dispose();
+          _revision.value++;
+        },
+      ),
+    );
     return creating;
   }
 
@@ -91,7 +106,11 @@ class PreloadedBanner {
     final created = _created;
     final channel = _channel;
     if (created == null || channel == null) return;
-    await created;
+    try {
+      await created;
+    } on Object {
+      return; // Never created: nothing refreshes.
+    }
     await channel.methodChannel.invokeMethod<void>('stopRefresh');
   }
 

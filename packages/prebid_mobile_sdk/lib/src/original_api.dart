@@ -410,6 +410,7 @@ class PrebidNativeAdUnit with _AutoRefresh {
     exp: r.exp,
     topBidFiltered: r.topBidFiltered,
     events: r.events,
+    receivedAt: r.receivedAt,
     nativeAdCacheId: r.nativeAdCacheId,
   );
 }
@@ -423,6 +424,7 @@ class PrebidNativeBidResponse extends PrebidBidResponse {
     super.exp,
     super.topBidFiltered,
     super.events,
+    super.receivedAt,
     this.nativeAdCacheId,
   });
 

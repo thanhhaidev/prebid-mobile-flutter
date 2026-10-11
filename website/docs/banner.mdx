@@ -95,7 +95,7 @@ final ad = PrebidPreloadedBannerAd(
   refreshIntervalSeconds: 30,
   listener: PrebidBannerAdListener(onAdLoaded: () => debugPrint('loaded')),
 );
-await ad.load(); // the auction runs and the creative renders off screen
+await ad.load(); // creates the banner; the auction runs and the creative renders off screen
 
 // In the list item, as often as it is built:
 PrebidPreloadedBannerAdView(ad: ad);

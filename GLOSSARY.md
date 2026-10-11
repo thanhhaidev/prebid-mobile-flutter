@@ -77,7 +77,7 @@ The integration with no ad server: the Rendering API on its own, plus In-App nat
 _Avoid_: standalone, Prebid-only
 
 **Original API**:
-The integration where Prebid only runs the auction and returns targeting keywords; the app's ad server renders the winning bid through the Prebid Universal Creative. Its classes are `PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidNativeAdUnit`, `PrebidMultiformatAd` and `PrebidInstreamVideoAd`; GAM native follows the same flow.
+The integration where Prebid only runs the auction and returns targeting keywords; the app's ad server renders the winning bid through the Prebid Universal Creative. Its classes are `PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`, `PrebidNativeAdUnit`, `PrebidMultiformatAd` and `PrebidInstreamVideoAd`; GAM native follows the same flow.
 _Avoid_: GAM coordination, keyword handoff API, header bidding API
 
 **Ad server**:

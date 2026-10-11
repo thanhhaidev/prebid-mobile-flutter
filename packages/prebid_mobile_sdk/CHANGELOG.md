@@ -4,6 +4,25 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `PrebidNativeAdUnit.fetchDemand()` responses carry `receivedAt`, so
+  `expiresAt` and `isExpired` work for native bids as for the other units
+  (they were always `null` / `false`).
+- `PrebidInterstitialAd` without `adFormats` requests a banner on iOS too, as
+  documented; Prebid iOS used to add video on its own.
+- After a hot restart, a preloaded banner or an Original API / multiformat
+  unit without `onDemandRefreshed` that is the first ad releases the previous
+  isolate's native ads first, as every other ad does (the old banner could be
+  shown again and old auto-refresh timers kept running).
+- A preloaded banner whose native creation failed is created again by the
+  next `load()`, and `stopRefresh()` no longer throws for it. This also
+  applies to the GAM, AdMob and MAX preloaded banners.
+- The Android library's Gradle `version` is the package version (it was the
+  plugin template's `1.0-SNAPSHOT`).
+
 ## [1.0.0] - 2026-10-11
 
 First stable release, built on Prebid Mobile SDK 3.4 (Android 3.4.0, iOS 3.4.1

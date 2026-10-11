@@ -215,8 +215,11 @@ PrebidInterstitialAdListener(
 ```
 
 Every other call returns a `Future` that completes once the native SDK has
-applied it. It only fails when the platform call itself fails (for example a
-`PlatformException` when the plugin isn't registered).
+applied it. It fails when the platform call itself fails (for example a
+`PlatformException` when the plugin isn't registered, or when iOS rejects
+the URL given to `setPrebidServerUrl`), and with an `ArgumentError` for a
+request that can't get bids, such as a multiformat `fetchDemand()` without
+any format.
 
 Await `PrebidMobile.initializeSdk()` before loading ads. Prebid Android
 drops requests made before initialization completes; the plugin reports them

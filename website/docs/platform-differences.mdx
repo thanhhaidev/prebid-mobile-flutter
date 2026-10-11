@@ -69,7 +69,7 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 
 ## Not exposed, on purpose
 
-- **`PrebidMobile.setPbsConfig` (Android):** Prebid writes it from Prebid Server's response (`ext.prebid.passthrough`), overwriting any value the app sets. Set the creative timeouts with `setCreativeFactoryTimeout` and `setCreativeFactoryTimeoutPreRenderContent`.
+- **Prebid Android's `PrebidMobile.setPbsConfig`** (not exposed by the plugin): Prebid writes it from Prebid Server's response (`ext.prebid.passthrough`), overwriting any value the app sets. Set the creative timeouts with `setCreativeFactoryTimeout` and `setCreativeFactoryTimeoutPreRenderContent`.
 - **`BannerView.setStoredAuctionResponse` (iOS):** it sets the process-wide stored auction response, not one for the banner. Use `PrebidMobile.setStoredAuctionResponse`.
 - **Native `getWinEvent` / `getImpEvent` (Android):** Prebid fires the win and impression events itself. The Original API returns them in `PrebidBidResponse.events` for apps that report them on their own.
 - **Plugin renderers (`registerPluginRenderer`):** a renderer is a native object, so register it from the app's native code (`MainActivity` / `AppDelegate`) before loading ads; Prebid then uses it for the plugin's ads too. The plugin's views don't forward the renderers' own events (`PluginEventListener`).

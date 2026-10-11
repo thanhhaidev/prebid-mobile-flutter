@@ -47,7 +47,8 @@ class PrebidInterstitialAd {
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
-  /// The ad formats to request (banner, video, or both).
+  /// The ad formats to request (banner, video, or both). `null` requests a
+  /// banner only, on both platforms (Prebid iOS on its own would add video).
   final Set<PrebidAdFormat>? adFormats;
 
   /// Video playback parameters (protocols, playback methods, etc.).
@@ -97,7 +98,7 @@ class PrebidInterstitialAd {
     await api.loadAd(
       _ad.adId,
       configId,
-      adFormats?.map((f) => f.name).toList(),
+      (adFormats ?? const {PrebidAdFormat.banner}).map((f) => f.name).toList(),
       videoParameters?.toConfig(),
       impOrtbWithGpid(impOrtbConfig, gpid),
       globalOrtbConfig,

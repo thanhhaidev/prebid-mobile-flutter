@@ -162,6 +162,21 @@ void main() {
       await ad.destroy();
       verifyNever(api.destroy(any));
     });
+
+    test('the next load retries a failed creation', () async {
+      var fail = true;
+      when(api.create(any, any)).thenAnswer((_) async {
+        if (fail) throw PlatformException(code: 'x');
+      });
+      final ad = PrebidPreloadedBannerAd(configId: 'c', width: 1, height: 1);
+      await expectLater(ad.load(), throwsA(isA<PlatformException>()));
+      await ad.stopRefresh(); // Nothing to stop.
+      fail = false;
+      await ad.load();
+      final ids = verify(api.create(captureAny, any)).captured;
+      expect(ids, hasLength(2));
+      expect(ids.first, isNot(ids.last));
+    });
   });
 
   group('PrebidPreloadedBannerAdView', () {

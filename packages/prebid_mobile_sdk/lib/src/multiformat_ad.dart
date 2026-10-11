@@ -7,6 +7,7 @@ import 'generated/prebid_api.g.dart';
 import 'internal/ad_ids.dart';
 import 'internal/multiformat_event_router.dart';
 import 'internal/pigeon_conversions.dart';
+import 'internal/session.dart';
 import 'native_parameters.dart';
 import 'prebid_mobile.dart';
 import 'video_parameters.dart';
@@ -261,6 +262,9 @@ class PrebidMultiformatAd {
       );
     }
 
+    // The router does it too, but only with an onDemandRefreshed callback:
+    // a restarted isolate's ad ids collide with the old units'.
+    releasePreviousIsolateAds();
     // Re-register: [destroy] unregisters, and the object may be reused.
     _register();
     final config = MultiformatAdRequestConfig(

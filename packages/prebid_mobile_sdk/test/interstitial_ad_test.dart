@@ -131,11 +131,11 @@ void main() {
       expect(args[8], 7);
     });
 
-    test('leaves every unset option out', () async {
+    test('leaves every unset option out, and asks for a banner', () async {
       await PrebidInterstitialAd(configId: 'i').loadAd();
       expect(lastLoad().skip(1), [
         'i',
-        null,
+        ['banner'],
         null,
         null,
         null,

@@ -312,5 +312,11 @@ void main() {
       expect(r.receivedAt!.isAfter(after), isFalse);
       expect(r.expiresAt, r.receivedAt!.add(const Duration(seconds: 300)));
     });
+
+    test('a native unit stamps its response too', () async {
+      final r = await PrebidNativeAdUnit(configId: 'n').fetchDemand();
+      expect(r.receivedAt, isNotNull);
+      expect(r.expiresAt, r.receivedAt!.add(const Duration(seconds: 300)));
+    });
   });
 }

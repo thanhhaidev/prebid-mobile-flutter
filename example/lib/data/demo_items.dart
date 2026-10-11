@@ -764,7 +764,8 @@ final _inApp = <DemoItem>[
     refreshSeconds: 5,
     note:
         'BannerView declared in XML: configId prebid-demo-banner-320-50, '
-        'refreshIntervalSec 5; the bundle has no config id',
+        'refreshIntervalSec 5; the bundle has no config id, so the screen '
+        'uses the layout one',
   ),
   _inAppBanner(
     'Banner 320x50 Special Symbols (In-App)',

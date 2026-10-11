@@ -55,9 +55,15 @@ class _BannerScreenState extends DemoScreenState<BannerScreen> {
           (item.integration == DemoIntegration.gam ||
               item.integration == DemoIntegration.original));
 
+  /// The config id of A6's banner: the original declares its `BannerView`
+  /// in the layout XML with this id, and the screen's bundle has none.
+  static const _layoutConfigId = 'prebid-demo-banner-320-50';
+
   @override
   AdConfiguration initialConfiguration() => AdConfiguration(
-    configId: item.resolveConfigId() ?? '',
+    configId:
+        item.resolveConfigId() ??
+        (item.screen == ScreenType.a6 ? _layoutConfigId : ''),
     width: item.size.width,
     height: item.size.height,
     refreshSeconds: item.refreshSeconds ?? 30,

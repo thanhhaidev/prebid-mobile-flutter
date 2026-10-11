@@ -42,6 +42,14 @@ melos:
       description: Analyze and test each companion against the oldest core release it accepts (its constraint's lower bound), not the core in the checkout.
       run: tool/check_released_core.sh
 
+    consumer:test:
+      description: Smoke-test the packages in a fresh app outside the workspace, with the Flutter on PATH (CI runs it on the oldest supported Flutter).
+      run: tool/check_consumer_app.sh test
+
+    consumer:spm:
+      description: Build a fresh app using the packages through Swift Package Manager only (macOS).
+      run: tool/check_consumer_app.sh spm
+
     format:
       description: Format all Dart code.
       run: dart format .

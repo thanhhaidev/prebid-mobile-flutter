@@ -152,12 +152,52 @@ jobs:
           xcodebuild test -quiet -workspace Runner.xcworkspace -scheme Runner \
             -destination "platform=iOS Simulator,id=$udid"
 
+  # The packages as an app gets them, in a fresh app outside the workspace:
+  # compiled by the oldest Flutter their pubspecs accept (the workspace's dev
+  # dependencies need a newer one, so the jobs above can't).
+  min-flutter:
+    name: Oldest supported Flutter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read the lowest Flutter version
+        id: version
+        run: |
+          version=$(sed -n "s/^  flutter: *'>=\([0-9.]*\)'$/\1/p" packages/prebid_mobile_sdk/pubspec.yaml)
+          echo "flutter=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install Flutter ${{ steps.version.outputs.flutter }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.version.outputs.flutter }}
+          channel: stable
+
+      - name: Smoke test in a fresh app
+        run: tool/check_consumer_app.sh test
+
+  # The plugins ship Package.swift as well as podspecs; the example builds
+  # with CocoaPods (applovin_max has no Swift Package Manager support), so a
+  # fresh app with only these packages builds through Swift Package Manager.
+  spm:
+    name: Build with Swift Package Manager (iOS)
+    needs: check
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-flutter
+
+      - name: Build a fresh app with Swift Package Manager only
+        run: tool/check_consumer_app.sh spm
+
   # One check to require in branch protection: green only when every job
   # above passed.
   ci:
     name: CI passed
     if: always()
-    needs: [check, publish-check, score, android, ios]
+    needs: [check, publish-check, score, android, ios, min-flutter, spm]
     runs-on: ubuntu-24.04
     steps:
       - name: Every job succeeded

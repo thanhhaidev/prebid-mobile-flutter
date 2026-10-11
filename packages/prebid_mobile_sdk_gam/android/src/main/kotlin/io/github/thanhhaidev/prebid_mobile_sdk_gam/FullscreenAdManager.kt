@@ -1,6 +1,8 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
 import android.app.Activity
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -28,6 +30,15 @@ internal abstract class FullscreenAdManager<A : Any>(
     /** Ads already shown: an ad shows once, whatever the SDK's own loaded
      * state says (an AdMob ad stays set after it is shown). */
     private val shown = mutableSetOf<Long>()
+
+    /**
+     * How long a loaded ad stays valid when its SDK lets it expire without
+     * telling (AdMob: an hour), or null when the SDK reports it itself.
+     * Past it, an ad not shown yet is freed and reports `onAdExpired`.
+     */
+    protected open val adLifetimeMs: Long? = null
+    private val expiries = mutableMapOf<Long, Runnable>()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     init {
         channel.setMethodCallHandler(this)
@@ -131,10 +142,12 @@ internal abstract class FullscreenAdManager<A : Any>(
             ?: return send(adId, "onAdFailed", PluginErrors.NOT_LOADED)
         val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
         shown += adId
+        cancelExpiry(adId)
         show(adId, ad, activity)
     }
 
     private fun release(adId: Long) {
+        cancelExpiry(adId)
         shown -= adId
         ads.remove(adId)?.let { destroy(adId, it) }
     }
@@ -151,7 +164,26 @@ internal abstract class FullscreenAdManager<A : Any>(
      * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
      * [error] as its `error` (blank becomes "Unknown error").
      */
+    private fun scheduleExpiry(adId: Long) {
+        val lifetime = adLifetimeMs ?: return
+        val ad = ads[adId] ?: return
+        cancelExpiry(adId)
+        val expiry = Runnable {
+            expiries.remove(adId)
+            if (ads[adId] !== ad || adId in shown) return@Runnable
+            release(adId)
+            send(adId, "onAdExpired")
+        }
+        expiries[adId] = expiry
+        mainHandler.postDelayed(expiry, lifetime)
+    }
+
+    private fun cancelExpiry(adId: Long) {
+        expiries.remove(adId)?.let(mainHandler::removeCallbacks)
+    }
+
     protected fun send(adId: Long, event: String, error: String? = null, extras: Map<String, Any?> = emptyMap()) {
+        if (event == "onAdLoaded") scheduleExpiry(adId)
         val payload = mutableMapOf<String, Any?>("adId" to adId)
         if (event == "onAdFailed" || error != null) payload["error"] = errorMessage(error)
         payload.putAll(extras)

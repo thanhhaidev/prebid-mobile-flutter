@@ -20,6 +20,7 @@ class FullscreenAdManager<Ad: AnyObject> {
     /// Ads already presented: an ad shows once, whatever the SDK's own
     /// loaded state says (an AdMob ad stays set after it is shown).
     private var shown: Set<Int> = []
+    private var expiries: [Int: DispatchWorkItem] = [:]
 
     init(name: String, messenger: FlutterBinaryMessenger) {
         channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
@@ -55,6 +56,11 @@ class FullscreenAdManager<Ad: AnyObject> {
     /// more.
     func destroy(_ adId: Int, _ ad: Ad) {}
 
+    /// How long a loaded ad stays valid when its SDK lets it expire without
+    /// telling (AdMob: an hour), or `nil` when the SDK reports it itself.
+    /// Past it, an ad not shown yet is freed and reports `onAdExpired`.
+    var adLifetime: TimeInterval? { nil }
+
     // MARK: - For subclasses
 
     /// Whether `ad` is still the one registered for `adId`: false once it was
@@ -65,6 +71,7 @@ class FullscreenAdManager<Ad: AnyObject> {
 
     /// Frees the ad of `adId`, if any.
     final func release(_ adId: Int) {
+        cancelExpiry(adId)
         shown.remove(adId)
         if let ad = ads.removeValue(forKey: adId) {
             destroy(adId, ad)
@@ -82,6 +89,25 @@ class FullscreenAdManager<Ad: AnyObject> {
             payload["error"] = PrebidErrorFormatter.describe(nil as Error?)
         }
         onMain { [channel] in channel.invokeMethod(event, arguments: payload) }
+        if event == "onAdLoaded" { onMain { [weak self] in self?.scheduleExpiry(adId) } }
+    }
+
+    private func scheduleExpiry(_ adId: Int) {
+        guard let lifetime = adLifetime, let ad = ads[adId] else { return }
+        cancelExpiry(adId)
+        let expiry = DispatchWorkItem { [weak self, weak ad] in
+            guard let self = self else { return }
+            self.expiries.removeValue(forKey: adId)
+            guard let ad = ad, self.isCurrent(adId, ad), !self.shown.contains(adId) else { return }
+            self.release(adId)
+            self.send(adId, "onAdExpired")
+        }
+        expiries[adId] = expiry
+        DispatchQueue.main.asyncAfter(deadline: .now() + lifetime, execute: expiry)
+    }
+
+    private func cancelExpiry(_ adId: Int) {
+        expiries.removeValue(forKey: adId)?.cancel()
     }
 
     /// Stops answering calls and frees every ad (engine detached).
@@ -138,6 +164,7 @@ class FullscreenAdManager<Ad: AnyObject> {
                     return self.send(adId, "onAdFailed", error: PrebidPresenter.notReady)
                 }
                 self.shown.insert(adId)
+                self.cancelExpiry(adId)
                 self.show(adId, ad, from: controller)
             }
         )

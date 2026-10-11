@@ -28,6 +28,9 @@ internal class AdMobRewardedManager(
     activityProvider,
 ) {
 
+    // AdMob ads expire an hour after they load, without a callback.
+    override val adLifetimeMs: Long? = 60 * 60 * 1000L
+
     /** One rewarded ad: the Prebid ad unit and, once loaded, the AdMob ad. */
     internal class Ad(
         val adUnit: MediationRewardedVideoAdUnit,

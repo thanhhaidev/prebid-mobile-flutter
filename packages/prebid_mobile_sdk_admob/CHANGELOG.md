@@ -26,6 +26,9 @@ All notable changes to this package are documented here. The format follows
   stopped. This also applies to preloaded banners.
 - An interstitial or rewarded ad shows once: a second `show()` reports
   `onAdFailed` (not loaded) instead of presenting the used ad again.
+- Interstitial and rewarded ads report `onAdExpired` when AdMob's one-hour
+  lifetime runs out before they are shown (AdMob has no callback for it);
+  `isLoaded` turns false and the ad must be loaded again.
 - iOS: native ads measure their height at the view's width, and again when
   it changes (rotation); text that wraps no longer cuts off the call to
   action.

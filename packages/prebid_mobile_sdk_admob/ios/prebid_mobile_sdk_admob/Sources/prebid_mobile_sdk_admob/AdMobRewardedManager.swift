@@ -56,6 +56,9 @@ final class AdMobRewardedManager: FullscreenAdManager<AdMobRewarded> {
         super.init(name: "prebid_mobile_sdk_admob/rewarded", messenger: messenger)
     }
 
+    // AdMob ads expire an hour after they load, without a callback.
+    override var adLifetime: TimeInterval? { 60 * 60 }
+
     override func create(_ adId: Int, _ args: [String: Any]) -> AdMobRewarded {
         AdMobRewarded(args: args)
     }

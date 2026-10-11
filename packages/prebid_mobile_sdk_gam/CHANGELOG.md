@@ -6,6 +6,18 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-11
+
+### Added
+
+- `gpid` (`imp.ext.gpid`) on `PrebidGamBannerAd`,
+  `PrebidGamPreloadedBannerAd`, `PrebidGamInterstitialAd` and
+  `PrebidGamRewardedAd`, as on `PrebidGamNativeAd`.
+
+### Changed
+
+- Requires `prebid_mobile_sdk` 1.1.0 or later.
+
 ### Fixed
 
 - A GAM custom-format native ad without a Prebid creative records its
@@ -19,6 +31,9 @@ All notable changes to this package are documented here. The format follows
   (add-to-app with a cached engine).
 - The Android library's Gradle `version` is the package version (it was the
   plugin template's `1.0-SNAPSHOT`).
+- Android: native ads free their `NativeAdView` when replaced or disposed,
+  and lay out in dp rather than raw pixels (they looked different on each
+  screen density).
 
 ## [1.0.0] - 2026-10-11
 

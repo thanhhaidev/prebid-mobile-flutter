@@ -6,6 +6,22 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-11
+
+### Added
+
+- `PrebidBannerAdUnit(api: ...)`: the banner's API frameworks
+  (`imp.banner.api`), e.g. MRAID.
+- `PrebidVideoAdBidResponse` is a `PrebidBidResponse`: in-stream video bids
+  carry `receivedAt`, `expiresAt`, `isExpired`, `topBidFiltered` and
+  `events` like the other Original API responses.
+- Value equality (`==`, `hashCode`) and a readable `toString()` for the bid
+  responses, `PrebidWinningBid`, `PrebidReward`, `ExternalUserId`,
+  `UserUniqueId`, `VideoParameters` and `PrebidFullscreenControls`.
+- `package:prebid_mobile_sdk/companion.dart` exports `impOrtbWithGpid` and
+  `impOrtbWithPbAdSlot`, which the companion packages use to send a GPID and
+  an ad slot in the `imp` JSON.
+
 ### Fixed
 
 - `PrebidNativeAdUnit.fetchDemand()` responses carry `receivedAt`, so
@@ -22,6 +38,8 @@ All notable changes to this package are documented here. The format follows
   applies to the GAM, AdMob and MAX preloaded banners.
 - The Android library's Gradle `version` is the package version (it was the
   plugin template's `1.0-SNAPSHOT`).
+- iOS: with several Flutter engines, an engine that detaches no longer
+  resets Prebid's logger while another engine's log listener uses it.
 
 ## [1.0.0] - 2026-10-11
 

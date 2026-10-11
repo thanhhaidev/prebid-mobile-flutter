@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
+import 'package:prebid_mobile_sdk/src/internal/ortb.dart' show pluginVersion;
 
 import 'mock_host_api.mocks.dart';
 
@@ -380,7 +381,7 @@ void main() {
 
   group('the global OpenRTB config carries the plugin record', () {
     const record =
-        '"prebid":{"wrapper":{"name":"prebid_mobile_sdk","version":"1.0.0"}}';
+        '"prebid":{"wrapper":{"name":"prebid_mobile_sdk","version":"$pluginVersion"}}';
 
     for (final (name, set, sent) in [
       (

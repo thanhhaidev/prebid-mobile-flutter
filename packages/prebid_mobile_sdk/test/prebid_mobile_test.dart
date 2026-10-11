@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:prebid_mobile_sdk/prebid_mobile_sdk.dart';
 import 'package:prebid_mobile_sdk/src/generated/prebid_api.g.dart';
+import 'package:prebid_mobile_sdk/src/internal/ortb.dart' show pluginVersion;
 
 import 'mock_host_api.mocks.dart';
 import 'platform_events.dart';
@@ -48,7 +49,7 @@ void main() {
       verifyInOrder([
         targeting.setGlobalOrtbConfig(
           '{"bcat":["IAB1"],"app":{"ext":{"prebid":{"wrapper":'
-          '{"name":"prebid_mobile_sdk","version":"1.0.0"}}}}}',
+          '{"name":"prebid_mobile_sdk","version":"$pluginVersion"}}}}}',
         ),
         api.initializeSdk('u', 'a', null),
       ]);

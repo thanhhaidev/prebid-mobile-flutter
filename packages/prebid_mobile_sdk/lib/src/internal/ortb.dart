@@ -48,7 +48,7 @@ const pluginName = 'prebid_mobile_sdk';
 
 /// The plugin's version in that record; a test keeps it equal to the
 /// pubspec version.
-const pluginVersion = '1.0.0';
+const pluginVersion = '1.1.0';
 
 /// [globalOrtbConfig] with the plugin's `app.ext.prebid.wrapper` record (its
 /// name and version), so Prebid Server hosts and bidders can tell plugin

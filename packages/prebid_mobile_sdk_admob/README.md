@@ -30,8 +30,8 @@ natively. Apps that only use Prebid In-App rendering should not depend on it.
 
 ```yaml
 dependencies:
-  prebid_mobile_sdk: ^1.0.0
-  prebid_mobile_sdk_admob: ^1.0.0
+  prebid_mobile_sdk: ^1.1.0
+  prebid_mobile_sdk_admob: ^1.1.0
 ```
 
 ### Native configuration (required)
@@ -73,6 +73,7 @@ ad units and wire the Prebid adapters, per the
 
 | prebid_mobile_sdk_admob | Prebid Android (`prebid-mobile-sdk-admob-adapters`) | Prebid iOS (`PrebidMobileAdMobAdapters`) | Google Mobile Ads Android | Google Mobile Ads iOS | Tested with |
 | --- | --- | --- | --- | --- | --- |
+| 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` | `google_mobile_ads ^9.1.0` |
 | 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | `play-services-ads 25.5.0` | `Google-Mobile-Ads-SDK >= 13.0.0` | `google_mobile_ads ^9.1.0` |
 
 Also requires the matching core `prebid_mobile_sdk` release. Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.

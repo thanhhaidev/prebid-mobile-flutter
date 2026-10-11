@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'prebid_mobile_sdk'
-  s.version          = '1.0.0'
+  s.version          = '1.1.0'
   s.summary          = 'Unofficial Flutter plugin for the Prebid Mobile SDK.'
   s.description      = <<-DESC
 An unofficial Flutter plugin that wraps the Prebid Mobile SDK for Android and

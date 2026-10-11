@@ -60,6 +60,7 @@ Each release bundles a fixed Prebid Mobile SDK version per platform:
 
 | prebid_mobile_sdk | Prebid Android | Prebid iOS | Android | iOS | Flutter | Dart |
 | --- | --- | --- | --- | --- | --- | --- |
+| 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | API 24+ | 15.0+ | `>=3.44.0` | `^3.12.0` |
 | 1.0.0 | `3.4.0` | `>= 3.4.1, < 4.0` | API 24+ | 15.0+ | `>=3.44.0` | `^3.12.0` |
 
 Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
@@ -76,7 +77,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  prebid_mobile_sdk: ^1.0.0
+  prebid_mobile_sdk: ^1.1.0
 ```
 
 ### iOS

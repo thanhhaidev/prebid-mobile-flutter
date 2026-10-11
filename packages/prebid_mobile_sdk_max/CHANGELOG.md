@@ -6,6 +6,19 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-11
+
+### Added
+
+- `gpid` (`imp.ext.gpid`) on every MAX ad, and `pbAdSlot` on
+  `PrebidMaxNativeAd`.
+- `PrebidMaxPreloadedBannerAd(adaptiveWidth: ...)`: the width an adaptive
+  banner spans, apart from `width`, the Prebid request size.
+
+### Changed
+
+- Requires `prebid_mobile_sdk` 1.1.0 or later.
+
 ### Fixed
 
 - iOS: `loadAd()` after `stopRefresh()` loads the banner again; it did
@@ -19,6 +32,9 @@ All notable changes to this package are documented here. The format follows
   (add-to-app with a cached engine).
 - The Android library's Gradle `version` is the package version (it was the
   plugin template's `1.0-SNAPSHOT`).
+- Rewarded ads: with several Flutter engines loading the same MAX ad unit,
+  which MAX shares per process, the engine that takes the unit over no longer
+  has its ad destroyed by the previous owner.
 
 ## [1.0.0] - 2026-10-11
 

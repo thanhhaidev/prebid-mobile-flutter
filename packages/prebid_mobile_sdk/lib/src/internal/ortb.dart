@@ -19,6 +19,29 @@ String? impOrtbWithGpid(String? impOrtbConfig, String? gpid) {
   });
 }
 
+/// [impOrtbConfig] with `ext.data.pbadslot` set to [pbAdSlot] (unless it
+/// already sets one), for ad units without a pbAdSlot setter. Unchanged
+/// without a [pbAdSlot] or when [impOrtbConfig] is not a JSON object.
+String? impOrtbWithPbAdSlot(String? impOrtbConfig, String? pbAdSlot) {
+  if (pbAdSlot == null) return impOrtbConfig;
+  final Object? decoded;
+  try {
+    decoded = impOrtbConfig == null ? const {} : jsonDecode(impOrtbConfig);
+  } on FormatException {
+    return impOrtbConfig;
+  }
+  if (decoded is! Map) return impOrtbConfig;
+  final ext = decoded['ext'];
+  final data = ext is Map ? ext['data'] : null;
+  return jsonEncode({
+    ...decoded,
+    'ext': {
+      if (ext is Map) ...ext,
+      'data': {'pbadslot': pbAdSlot, if (data is Map) ...data},
+    },
+  });
+}
+
 /// The plugin's name in the `app.ext.prebid.wrapper` record of every bid
 /// request.
 const pluginName = 'prebid_mobile_sdk';

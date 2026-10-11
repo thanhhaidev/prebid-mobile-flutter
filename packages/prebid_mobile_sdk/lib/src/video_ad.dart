@@ -5,34 +5,23 @@ import 'generated/prebid_api.g.dart';
 import 'internal/ad_ids.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/session.dart';
+import 'original_api.dart';
 import 'video_parameters.dart';
 
-/// Result of an in-stream video bid request.
-class PrebidVideoAdBidResponse {
+/// Result of an in-stream video bid request: a [PrebidBidResponse], so it
+/// carries the bid's expiry ([PrebidBidResponse.isExpired]) and event URLs
+/// too. A video is often fetched well before it plays: fetch again rather
+/// than hand your player an expired bid.
+class PrebidVideoAdBidResponse extends PrebidBidResponse {
   /// Creates a [PrebidVideoAdBidResponse].
   const PrebidVideoAdBidResponse({
-    required this.resultCode,
-    this.targetingKeywords,
-    this.exp,
+    required super.resultCode,
+    super.targetingKeywords,
+    super.exp,
+    super.topBidFiltered,
+    super.events,
+    super.receivedAt,
   });
-
-  /// The Prebid result code, the same string on Android and iOS:
-  /// `prebidDemandFetchSuccess` ([isSuccess]), `prebidDemandNoBids`,
-  /// `prebidDemandNoCachedBids`, `prebidDemandTimedOut`,
-  /// `prebidNetworkError`, `prebidServerError`, a configuration error
-  /// (`prebidInvalidAccountId`, `prebidInvalidConfigId`, `prebidInvalidSize`,
-  /// `prebidServerURLInvalid`, `prebidServerNotSpecified`,
-  /// `prebidInvalidRequest`) or `prebidSdkNotInitialized`.
-  final String resultCode;
-
-  /// Targeting keywords to pass to the ad server.
-  final Map<String, String>? targetingKeywords;
-
-  /// Winning bid expiration in seconds (`bid.exp`), if the bid set one.
-  final double? exp;
-
-  /// Whether the bid was successful.
-  bool get isSuccess => resultCode == 'prebidDemandFetchSuccess';
 }
 
 /// An in-stream video ad unit for original API integration.
@@ -117,6 +106,9 @@ class PrebidInstreamVideoAd {
       resultCode: result.resultCode,
       targetingKeywords: stringMap(result.targetingKeywords),
       exp: result.exp,
+      topBidFiltered: result.topBidFiltered ?? false,
+      events: stringMap(result.events) ?? const {},
+      receivedAt: DateTime.now(),
     );
   }
 

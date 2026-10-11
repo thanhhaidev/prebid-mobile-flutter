@@ -36,7 +36,7 @@ if (bid.isSuccess) {
 await video.destroy();
 ```
 
-`PrebidVideoAdBidResponse` has the `resultCode`, `targetingKeywords`, `isSuccess` and the bid's `exp` (seconds before it expires).
+`PrebidVideoAdBidResponse` is a `PrebidBidResponse`: it has the `resultCode`, `targetingKeywords`, `isSuccess`, the bid's `exp` (seconds before it expires) with `receivedAt`, `expiresAt` and `isExpired`, and `topBidFiltered` and `events`. A video is often fetched well before it plays: when `isExpired`, fetch again rather than hand the player an expired bid.
 
 `PrebidInstreamVideoAd` also takes `gpid`, `pbAdSlot`, `impOrtbConfig` and `globalOrtbConfig`.
 

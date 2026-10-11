@@ -44,11 +44,13 @@ void main() {
         pbAdSlot: '/slot',
         impOrtbConfig: '{"imp":1}',
         globalOrtbConfig: '{"app":{}}',
+        api: const [VideoApi.mraid2, VideoApi.omid1],
       ).fetchDemand();
 
       final c = lastRequest();
       expect(c.configId, 'b');
       expect(c.bannerSizes, [300, 250]);
+      expect(c.bannerApi, [5, 7]);
       expect((c.isInterstitial, c.isRewarded), (false, false));
       expect((c.videoConfig, c.nativeConfig), (null, null));
       expect((c.adPosition, c.gpid, c.pbAdSlot), (4, '/1/home', '/slot'));

@@ -1,3 +1,5 @@
+import 'internal/values.dart';
+
 /// An external user ID from a third-party identity module: one OpenRTB
 /// `user.eids` entry.
 ///
@@ -86,6 +88,25 @@ class ExternalUserId {
 
   /// The type of the first ID in [uids].
   int get atype => uids.first.atype;
+
+  Map<String, Object?> get _fields => {
+    'source': source,
+    'uids': uids,
+    'ext': ext,
+    'inserter': inserter,
+    'matcher': matcher,
+    'mm': mm,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ExternalUserId && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('ExternalUserId', _fields);
 }
 
 /// One ID of an [ExternalUserId] (`user.eids[].uids[]`).
@@ -106,4 +127,18 @@ class UserUniqueId {
 
   /// Vendor-specific extensions for this ID.
   final Map<String, Object?>? ext;
+
+  @override
+  bool operator ==(Object other) =>
+      other is UserUniqueId &&
+      other.id == id &&
+      other.atype == atype &&
+      deepEquals(other.ext, ext);
+
+  @override
+  int get hashCode => Object.hash(id, atype, deepHash(ext));
+
+  @override
+  String toString() =>
+      describe('UserUniqueId', {'id': id, 'atype': atype, 'ext': ext});
 }

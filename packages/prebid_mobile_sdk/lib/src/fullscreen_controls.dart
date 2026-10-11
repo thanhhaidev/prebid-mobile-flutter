@@ -1,4 +1,5 @@
 import 'dart:ui' show Size;
+import 'internal/values.dart';
 
 /// Corner for the fullscreen close / skip buttons.
 enum PrebidButtonPosition {
@@ -96,4 +97,27 @@ class PrebidFullscreenControls {
     'minHeightPercentage': ?minSizePercentage?.height.round(),
     'supportSKOverlay': ?supportSKOverlay,
   };
+
+  Map<String, Object?> get _fields => {
+    'closeButtonArea': closeButtonArea,
+    'closeButtonPosition': closeButtonPosition,
+    'skipButtonArea': skipButtonArea,
+    'skipButtonPosition': skipButtonPosition,
+    'skipDelay': skipDelay,
+    'isMuted': isMuted,
+    'isSoundButtonVisible': isSoundButtonVisible,
+    'isAutoCloseOnCompletionEnabled': isAutoCloseOnCompletionEnabled,
+    'minSizePercentage': minSizePercentage,
+    'supportSKOverlay': supportSKOverlay,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidFullscreenControls && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidFullscreenControls', _fields);
 }

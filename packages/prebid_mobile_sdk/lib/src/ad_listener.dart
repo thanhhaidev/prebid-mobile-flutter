@@ -1,4 +1,5 @@
 import 'ad_enums.dart';
+import 'internal/values.dart';
 
 /// Reward data returned by rewarded ads when a user completes the ad experience.
 ///
@@ -23,6 +24,20 @@ class PrebidReward {
 
   /// Optional extra data from the reward payload.
   final Map<String, dynamic>? ext;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidReward &&
+      other.type == type &&
+      other.count == count &&
+      deepEquals(other.ext, ext);
+
+  @override
+  int get hashCode => Object.hash(type, count, deepHash(ext));
+
+  @override
+  String toString() =>
+      describe('PrebidReward', {'type': type, 'count': count, 'ext': ext});
 }
 
 /// Listener for SDK initialization events.

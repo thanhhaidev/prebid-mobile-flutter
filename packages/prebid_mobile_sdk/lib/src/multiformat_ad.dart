@@ -8,6 +8,7 @@ import 'internal/ad_ids.dart';
 import 'internal/multiformat_event_router.dart';
 import 'internal/pigeon_conversions.dart';
 import 'internal/session.dart';
+import 'internal/values.dart';
 import 'native_parameters.dart';
 import 'prebid_mobile.dart';
 import 'video_parameters.dart';
@@ -91,6 +92,28 @@ class PrebidMultiformatBidResponse {
     final at = expiresAt;
     return at != null && !DateTime.now().isBefore(at);
   }
+
+  Map<String, Object?> get _fields => {
+    'resultCode': resultCode,
+    'winningFormat': winningFormat,
+    'targetingKeywords': targetingKeywords,
+    'nativeAdCacheId': nativeAdCacheId,
+    'exp': exp,
+    'topBidFiltered': topBidFiltered,
+    'events': events,
+    'receivedAt': receivedAt,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidMultiformatBidResponse &&
+      deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidMultiformatBidResponse', _fields);
 }
 
 /// A multiformat ad unit that combines banner, video, and native in one

@@ -7,6 +7,7 @@ import 'ad_enums.dart';
 import 'ad_listener.dart';
 import 'companion/ad_view_state.dart';
 import 'internal/ortb.dart';
+import 'internal/values.dart';
 import 'video_parameters.dart';
 
 /// The winning bid of a loaded Prebid-rendered banner
@@ -51,6 +52,23 @@ class PrebidWinningBid {
 
   /// The bid's targeting keywords (`hb_pb`, `hb_bidder`, ...).
   final Map<String, String> targetingKeywords;
+
+  Map<String, Object?> get _fields => {
+    'price': price,
+    'bidder': bidder,
+    'size': size,
+    'targetingKeywords': targetingKeywords,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidWinningBid && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidWinningBid', _fields);
 }
 
 /// Controls a [PrebidBannerAd]: load on demand (with `autoLoad: false`) or

@@ -1,6 +1,7 @@
 import 'dart:ui' show Size;
 
 import 'ad_enums.dart';
+import 'internal/values.dart';
 import 'multiformat_ad.dart';
 import 'native_ad.dart';
 import 'native_parameters.dart';
@@ -70,6 +71,28 @@ class PrebidBidResponse {
     final at = expiresAt;
     return at != null && !DateTime.now().isBefore(at);
   }
+
+  /// The fields equality and [toString] compare, by subclasses extended.
+  Map<String, Object?> get _fields => {
+    'resultCode': resultCode,
+    'targetingKeywords': targetingKeywords,
+    'exp': exp,
+    'topBidFiltered': topBidFiltered,
+    'events': events,
+    'receivedAt': receivedAt,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidBidResponse &&
+      other.runtimeType == runtimeType &&
+      deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => Object.hash(runtimeType, deepHash(_fields));
+
+  @override
+  String toString() => describe('$runtimeType', _fields);
 }
 
 /// Auto-refresh shared by the Original API ad units: after [fetchDemand]
@@ -132,10 +155,12 @@ class PrebidBannerAdUnit with _AutoRefresh {
     this.pbAdSlot,
     this.impOrtbConfig,
     this.globalOrtbConfig,
+    this.api,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
+         bannerApi: api,
          adPosition: adPosition,
          gpid: gpid,
          pbAdSlot: pbAdSlot,
@@ -151,6 +176,11 @@ class PrebidBannerAdUnit with _AutoRefresh {
 
   /// Banner sizes to request (e.g. `[Size(300, 250)]`).
   final List<Size> sizes;
+
+  /// The API frameworks the banner supports (`imp.banner.api`), e.g.
+  /// `[VideoApi.mraid2, VideoApi.mraid3, VideoApi.omid1]` for MRAID
+  /// creatives.
+  final List<VideoApi>? api;
 
   /// Ad position on screen (`imp.banner.pos`).
   final PrebidAdPosition? adPosition;
@@ -431,4 +461,10 @@ class PrebidNativeBidResponse extends PrebidBidResponse {
   /// Native cache ID returned by Prebid, when native demand wins; show the
   /// ad with [PrebidNativeAd.loadFromCacheId].
   final String? nativeAdCacheId;
+
+  @override
+  Map<String, Object?> get _fields => {
+    ...super._fields,
+    'nativeAdCacheId': nativeAdCacheId,
+  };
 }

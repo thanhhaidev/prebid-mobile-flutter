@@ -20,8 +20,11 @@ void main() {
         resultCode: 'prebidDemandFetchSuccess',
         targetingKeywords: {'hb_pb': '0.10'},
         exp: 300,
+        topBidFiltered: true,
+        events: {'ext.prebid.events.win': 'https://win'},
       ),
     );
+    final before = DateTime.now();
     final result = await PrebidInstreamVideoAd(
       configId: 'video',
       size: const Size(640, 480),
@@ -43,6 +46,14 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(result.targetingKeywords, {'hb_pb': '0.10'});
     expect(result.exp, 300);
+    expect(result.topBidFiltered, isTrue);
+    expect(result.events, {'ext.prebid.events.win': 'https://win'});
+    expect(result.receivedAt!.isBefore(before), isFalse);
+    expect(
+      result.expiresAt,
+      result.receivedAt!.add(const Duration(seconds: 300)),
+    );
+    expect(result.isExpired, isFalse);
   });
 
   test('without bids there are no keywords; destroy frees the ad', () async {

@@ -1,4 +1,5 @@
 import 'dart:ui' show Size;
+import 'internal/values.dart';
 
 /// Video parameters for OpenRTB video ad configuration.
 ///
@@ -106,6 +107,34 @@ class VideoParameters {
     'width': ?size?.width.round(),
     'height': ?size?.height.round(),
   };
+
+  Map<String, Object?> get _fields => {
+    'mimes': mimes,
+    'protocols': protocols,
+    'playbackMethods': playbackMethods,
+    'placement': placement,
+    'plcmt': plcmt,
+    'startDelay': startDelay,
+    'linearity': linearity,
+    'skippable': skippable,
+    'battr': battr,
+    'minBitrate': minBitrate,
+    'maxBitrate': maxBitrate,
+    'maxDuration': maxDuration,
+    'minDuration': minDuration,
+    'api': api,
+    'size': size,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is VideoParameters && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('VideoParameters', _fields);
 }
 
 /// OpenRTB 2.6 video placement subtypes (`plcmt`).

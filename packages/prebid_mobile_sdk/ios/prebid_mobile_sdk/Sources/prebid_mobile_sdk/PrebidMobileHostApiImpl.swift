@@ -220,15 +220,26 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
         configureLogger { $0.api = nil }
     }
 
+    /// The PluginLogger Prebid logs through now, of whichever engine set it
+    /// last: Prebid's logger is process-wide and has no getter.
+    private static weak var installedLogger: PluginLogger?
+
     private func configureLogger(_ change: (PluginLogger) -> Void) {
         let logger = self.logger ?? PluginLogger()
         change(logger)
         if logger.api == nil && !logger.silenced {
-            // Back to Prebid's console logger (only if this engine replaced it).
-            if self.logger != nil { Log.setCustomLogger(SDKConsoleLogger()) }
+            // Back to Prebid's console logger, unless another engine has
+            // replaced this one's since.
+            if self.logger != nil, Self.installedLogger === logger {
+                Log.setCustomLogger(SDKConsoleLogger())
+                Self.installedLogger = nil
+            }
             self.logger = nil
         } else {
-            if self.logger == nil { Log.setCustomLogger(logger) }
+            if self.logger == nil {
+                Log.setCustomLogger(logger)
+                Self.installedLogger = logger
+            }
             self.logger = logger
         }
     }
@@ -352,8 +363,27 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
 /// Prebid's logger while the plugin routes its logs: to Dart (`api`) or
 /// nowhere (`silenced`, PrebidLogLevel.none).
 final class PluginLogger: NSObject, PrebidLogger {
-    var api: PrebidEventFlutterApi?
-    var silenced = false
+    // Set on main, read on Prebid's logging queues.
+    private let lock = NSLock()
+    private var _api: PrebidEventFlutterApi?
+    private var _silenced = false
+
+    var api: PrebidEventFlutterApi? {
+        get { locked { _api } }
+        set { locked { _api = newValue } }
+    }
+
+    var silenced: Bool {
+        get { locked { _silenced } }
+        set { locked { _silenced = newValue } }
+    }
+
+    // NSLock.withLock needs iOS 16.
+    private func locked<T>(_ body: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
+    }
 
     func error(_ object: Any, filename: String, line: Int, function: String) { send(object, .error) }
     func info(_ object: Any, filename: String, line: Int, function: String) { send(object, .info) }
@@ -366,6 +396,7 @@ final class PluginLogger: NSObject, PrebidLogger {
     /// Prebid logs from any queue; Flutter channels need main. The LogLevel
     /// raw values match the Dart PrebidLogLevel indexes.
     private func send(_ object: Any, _ level: LogLevel) {
+        let (api, silenced) = locked { (_api, _silenced) }
         guard !silenced, let api = api, level.rawValue >= Log.logLevel.rawValue else { return }
         let message = "\(object)"
         DispatchQueue.main.async {

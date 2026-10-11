@@ -130,7 +130,7 @@ debugPrint('${bid.winningFormat}'); // banner, video or native
 
 `PrebidMultiformatBidResponse` adds `winningFormat`, `nativeAdCacheId`, `exp`, `topBidFiltered` and `events` (the win and impression URLs, when Prebid Server sends them). A native win shows with [`PrebidNativeAd.loadFromCacheId`](/docs/native#original-api-native).
 
-More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
+More request options: `bannerApi` (banner API frameworks, e.g. MRAID), `interstitialMinSizePercentage` for an interstitial request (also without `bannerSizes`), `gpid` and `adPosition`. Native demand is requested when `nativeParameters` is set. `PrebidBannerAdUnit` takes `api` for the same banner API frameworks. Every single-format unit (`PrebidBannerAdUnit`, `PrebidInterstitialAdUnit`, `PrebidRewardedAdUnit`, `PrebidNativeAdUnit`) takes `gpid` too, and its `PrebidBidResponse` carries `exp`, `topBidFiltered` and `events`.
 
 A full-screen ad is often loaded long before it shows. Both result types carry `receivedAt`, `expiresAt` (`receivedAt` plus `exp`) and `isExpired`: when the bid has expired, fetch demand again instead of loading your ad server's ad with stale keywords.
 

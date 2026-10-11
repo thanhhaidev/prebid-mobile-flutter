@@ -280,6 +280,53 @@ void main() {
     String channelOf(PlatformViewHarness views) =>
         'prebid_mobile_sdk_gam/native_${views.channelIds.last}';
 
+    List<Object?> fractions(PlatformViewHarness views) => [
+      for (final c in views.calls)
+        if (c.method == 'setVisibleFraction') c.arguments,
+    ];
+
+    testWidgets('reports the fraction a scroll viewport leaves on screen', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              height: 400,
+              child: ListView(
+                controller: controller,
+                children: const [
+                  SizedBox(height: 240),
+                  PrebidGamNativeAd(configId: 'c', gamAdUnitId: 'u'),
+                  SizedBox(height: 800),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      // 240–560 in a 400 tall viewport: 160 of 320 visible.
+      expect(fractions(views), [0.5]);
+
+      controller.jumpTo(240);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(fractions(views), [0.5, 1.0]);
+
+      // Gone: no more reports.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(fractions(views), [0.5, 1.0]);
+    }, variant: android);
+
     testWidgets('default creation params', (tester) async {
       final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
       addTearDown(views.dispose);

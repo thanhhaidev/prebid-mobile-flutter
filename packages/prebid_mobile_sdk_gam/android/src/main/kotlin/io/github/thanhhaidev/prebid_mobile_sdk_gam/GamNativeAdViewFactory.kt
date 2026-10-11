@@ -116,6 +116,13 @@ internal class GamNativePlatformView(
     /** The pending viewability check of a custom-format ad's impression. */
     private var impressionCheck: Runnable? = null
 
+    /**
+     * The fraction of the view Flutter paints on screen, from the Dart
+     * widget (Flutter's clips reach a platform view as a mask the native
+     * check can't read); 1 until the first report.
+     */
+    private var flutterVisibleFraction = 1.0
+
     // Prebid calls onAdImpression once per impression tracker URL; report one.
     private val prebidImpressionReported = AtomicBoolean(false)
 
@@ -134,6 +141,14 @@ internal class GamNativePlatformView(
     }
 
     init {
+        methodChannel.setMethodCallHandler { call, result ->
+            if (call.method == "setVisibleFraction") {
+                flutterVisibleFraction = (call.arguments as? Number)?.toDouble() ?: 1.0
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
         // Prebid adds its hb_* keys to this request after the app's, so they
         // win on conflict.
         val adRequest = AdManagerAdRequest.Builder().apply {
@@ -470,6 +485,7 @@ internal class GamNativePlatformView(
     }
 
     private fun isAtLeastHalfOnScreen(view: View): Boolean {
+        if (flutterVisibleFraction < 0.5) return false
         if (!view.isShown || view.windowToken == null) return false
         val area = view.width.toLong() * view.height
         if (area <= 0) return false
@@ -532,6 +548,7 @@ internal class GamNativePlatformView(
 
     override fun dispose() {
         disposed = true
+        methodChannel.setMethodCallHandler(null)
         mainHandler.removeCallbacksAndMessages(null)
         imageLoads.forEach { it.cancel(true) }
         imageLoads.clear()

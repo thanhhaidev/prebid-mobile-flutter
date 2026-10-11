@@ -58,6 +58,10 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     private var customNativeAd: CustomNativeAd?
     /// Watches a custom-format ad until its impression is recorded.
     private var impressionTimer: Timer?
+    /// The fraction of the view Flutter paints on screen, from the Dart
+    /// widget (Flutter's clips reach a platform view as a mask the native
+    /// check can't read); 1 until the first report.
+    private var flutterVisibleFraction: Double = 1
 
     // Prebid calls adDidLogImpression once per impression tracker URL;
     // report one impression.
@@ -76,6 +80,11 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
 
         super.init()
         container.onHeight = { [weak self] height in self?.send("onAdSize", ["height": Double(height)]) }
+        methodChannel.setMethodCallHandler { [weak self] call, result in
+            guard call.method == "setVisibleFraction" else { return result(FlutterMethodNotImplemented) }
+            self?.flutterVisibleFraction = (call.arguments as? NSNumber)?.doubleValue ?? 1
+            result(nil)
+        }
 
         // Prebid merges its hb_* keys over these, so they win on conflict.
         if let targeting = gamCustomTargeting(args["customTargeting"]) {
@@ -132,6 +141,7 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
 
     deinit {
         impressionTimer?.invalidate()
+        methodChannel.setMethodCallHandler(nil)
     }
 
     func view() -> UIView {
@@ -386,7 +396,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
         impressionTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) {
             [weak self, weak ad] timer in
             guard let self = self, let ad = ad else { return timer.invalidate() }
-            viewableChecks = isAtLeastHalfOnScreen(self.container) ? viewableChecks + 1 : 0
+            let viewable = self.flutterVisibleFraction >= 0.5 && isAtLeastHalfOnScreen(self.container)
+            viewableChecks = viewable ? viewableChecks + 1 : 0
             // 1 s / 0.25 s + 1, as Prebid.
             if viewableChecks >= 5 {
                 timer.invalidate()
@@ -496,7 +507,8 @@ final class NativeAdFinder: NSObject, PrebidMobile.NativeAdDelegate {
 
 /// Whether at least half of `view` is inside its window, visible and not
 /// transparent. Flutter's own clips (a scroll viewport under an app bar)
-/// reach platform views as masks this can't see.
+/// reach platform views as masks this can't see: the Dart widget reports
+/// those (`setVisibleFraction`).
 private func isAtLeastHalfOnScreen(_ view: UIView) -> Bool {
     guard let window = view.window, !view.isHidden, view.alpha > 0 else { return false }
     let area = view.bounds.width * view.bounds.height

@@ -21,8 +21,9 @@ All notable changes to this package are documented here. The format follows
 ### Fixed
 
 - A GAM custom-format native ad without a Prebid creative records its
-  impression once half of it has been on screen for a second, instead of as
-  soon as it rendered (an ad built off screen counted an impression).
+  impression once half of it has been on screen for a second, Flutter's
+  clips (a scroll viewport, `ClipRect`) included, instead of as soon as it
+  rendered (an ad built off screen counted an impression).
 - iOS: native ads measure their height at the view's width, and again when
   it changes (rotation); text that wraps no longer cuts off the bottom of the
   ad. A custom-format ad reports its height too.

@@ -174,6 +174,10 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd>
   @override
   String get viewType => 'prebid_mobile_sdk_gam/native';
 
+  // A custom-format ad's impression waits for half of it on screen.
+  @override
+  bool get reportsVisibleFraction => true;
+
   @override
   Map<String, Object?> configOf(PrebidGamNativeAd widget) => {
     'configId': widget.configId,

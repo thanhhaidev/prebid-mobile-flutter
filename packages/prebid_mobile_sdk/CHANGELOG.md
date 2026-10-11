@@ -18,6 +18,9 @@ All notable changes to this package are documented here. The format follows
 - Value equality (`==`, `hashCode`) and a readable `toString()` for the bid
   responses, `PrebidWinningBid`, `PrebidReward`, `ExternalUserId`,
   `UserUniqueId`, `VideoParameters` and `PrebidFullscreenControls`.
+- `AdViewState.reportsVisibleFraction` (companion library): a native view
+  can get the fraction of it that Flutter paints on screen, which its own
+  viewability check can't see.
 - `package:prebid_mobile_sdk/companion.dart` exports `impOrtbWithGpid` and
   `impOrtbWithPbAdSlot`, which the companion packages use to send a GPID and
   an ad slot in the `imp` JSON.

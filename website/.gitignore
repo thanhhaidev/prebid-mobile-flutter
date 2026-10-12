@@ -21,6 +21,7 @@ yarn-error.log*
 
 # Generated from the packages' CHANGELOG.md files (built by `npm run changelog`)
 /src/pages/changelog.md
+/src/pages/changelog/
 
 # Published versions and dates from pub.dev (built by `npm run releases`)
 /src/data/releases.json

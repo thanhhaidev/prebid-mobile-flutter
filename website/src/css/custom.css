@@ -622,6 +622,52 @@ a code { color: inherit; }
 
 .changelog-page main li { margin-bottom: 0.35rem; }
 
+/* Long API names in the notes would widen the page past a phone screen. */
+.changelog-page main :not(pre) > code { overflow-wrap: anywhere; }
+
+/* One page per package; this row switches between them. */
+.changelog-packages ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.changelog-page main .changelog-packages li { margin: 0; }
+
+.changelog-packages a,
+.changelog-packages [aria-current] {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--asx-border);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.changelog-packages a { color: var(--ifm-font-color-base); }
+.changelog-packages a:hover { border-color: var(--asx-green); text-decoration: none; }
+
+.changelog-packages [aria-current] {
+  border-color: var(--asx-green);
+  background: var(--asx-green);
+  color: #fff;
+}
+
+.release-pending {
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(38 129 210 / 14%);
+  color: #1f68a8;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+[data-theme='dark'] .release-pending { color: #9bd2ff; }
+
 
 /* ---------- Version badge in the mobile menu ---------- */
 

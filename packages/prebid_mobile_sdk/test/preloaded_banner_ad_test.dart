@@ -120,12 +120,14 @@ void main() {
       await send(id, 'onAdSize', {'width': 300.0, 'height': 250.0});
       await send(id, 'onAdSize', {'width': 300.0, 'height': 0.0});
       await send(id, 'onAdLoaded', {'price': 1.5, 'width': 300, 'height': 250});
+      expect(ad.winningBid?.price, 1.5);
+      expect(ad.winningBid?.size, const Size(300, 250));
+      // A refresh without a bid leaves no winning bid.
       await send(id, 'onAdFailed', {'error': 'no bid'});
+      expect(ad.winningBid, isNull);
       await send(id, 'onVideoCompleted');
 
       expect(ad.size, const Size(300, 250));
-      expect(ad.winningBid?.price, 1.5);
-      expect(ad.winningBid?.size, const Size(300, 250));
       expect(events, ['loaded', 'failed: no bid', 'completed']);
     });
 

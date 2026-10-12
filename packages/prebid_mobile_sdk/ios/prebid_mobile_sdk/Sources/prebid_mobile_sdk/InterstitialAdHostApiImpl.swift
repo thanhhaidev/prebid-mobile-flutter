@@ -5,15 +5,11 @@ import UIKit
 /// InterstitialAdHostApi: rendering interstitials (Prebid renders).
 final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
     private let flutterApi: AdFlutterApi
-    /// The engine's window, to present ads in (set from the registrar); the
-    /// foreground key window when it returns nil.
-    var engineWindow: () -> UIWindow? = { nil }
-    private var interstitialAds: [Int64: InterstitialRenderingAdUnit] = [:]
-    // Prebid holds the delegate weakly; kept here until the ad is destroyed.
-    private var delegates: [Int64: InterstitialDelegate] = [:]
+    let store: FullscreenAdStore
 
     init(flutterApi: AdFlutterApi) {
         self.flutterApi = flutterApi
+        store = FullscreenAdStore(flutterApi: flutterApi)
     }
 
     func loadAd(
@@ -49,40 +45,17 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi)
         if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
-        delegates[adId] = delegate
 
-        interstitialAds[adId] = adUnit
+        store.put(adId, adUnit, delegate: delegate)
         adUnit.loadAd()
     }
 
     func show(adId: Int64) throws {
-        guard interstitialAds[adId]?.isReady == true else {
-            return flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-        }
-        PrebidPresenter.whenReady(
-            in: engineWindow(),
-            fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) },
-            present: { [weak self] viewController in
-                // Re-checked: a retry runs later, after a possible destroy.
-                guard let self = self else { return }
-                guard let interstitial = self.interstitialAds[adId], interstitial.isReady else {
-                    return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-                }
-                interstitial.show(from: viewController)
-            })
+        store.show(adId)
     }
 
     func destroy(adId: Int64) throws {
-        // The unit may outlive this (e.g. while on screen): detach it so it
-        // stops reporting under this ad id.
-        interstitialAds.removeValue(forKey: adId)?.delegate = nil
-        delegates.removeValue(forKey: adId)
-    }
-
-    func destroyAll() -> [Int64] {
-        let ids = Array(interstitialAds.keys)
-        for id in ids { try? destroy(adId: id) }
-        return ids
+        store.remove(adId)
     }
 }
 

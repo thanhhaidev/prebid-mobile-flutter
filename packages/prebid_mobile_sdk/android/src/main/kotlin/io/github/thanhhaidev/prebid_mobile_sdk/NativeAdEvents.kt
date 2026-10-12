@@ -102,7 +102,9 @@ internal class NativeAdEvents(
     override fun onAdClicked() = send("onAdClicked")
 
     override fun onAdImpression() {
-        mainHandler.post { reportImpression() }
+        // Not once stopped: a late tracker callback of an ad since reloaded
+        // (same adId) or destroyed.
+        mainHandler.post { if (!stopped) reportImpression() }
     }
 
     override fun onAdExpired() {

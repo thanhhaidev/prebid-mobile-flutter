@@ -5,15 +5,11 @@ import UIKit
 /// RewardedAdHostApi: rendering rewarded ads (Prebid renders).
 final class RewardedAdHostApiImpl: RewardedAdHostApi {
     private let flutterApi: AdFlutterApi
-    /// The engine's window, to present ads in (set from the registrar); the
-    /// foreground key window when it returns nil.
-    var engineWindow: () -> UIWindow? = { nil }
-    private var rewardedAds: [Int64: RewardedAdUnit] = [:]
-    // Prebid holds the delegate weakly; kept here until the ad is destroyed.
-    private var delegates: [Int64: RewardedDelegate] = [:]
+    let store: FullscreenAdStore
 
     init(flutterApi: AdFlutterApi) {
         self.flutterApi = flutterApi
+        store = FullscreenAdStore(flutterApi: flutterApi)
     }
 
     func loadAd(
@@ -45,37 +41,16 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
         if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
-        delegates[adId] = delegate
-        rewardedAds[adId] = adUnit
+        store.put(adId, adUnit, delegate: delegate)
         adUnit.loadAd()
     }
 
     func show(adId: Int64) throws {
-        guard rewardedAds[adId]?.isReady == true else {
-            return flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-        }
-        PrebidPresenter.whenReady(
-            in: engineWindow(),
-            fail: { [weak self] error in self?.flutterApi.sendAdFailed(adId, error) },
-            present: { [weak self] viewController in
-                // Re-checked: a retry runs later, after a possible destroy.
-                guard let self = self else { return }
-                guard let rewarded = self.rewardedAds[adId], rewarded.isReady else {
-                    return self.flutterApi.sendAdFailed(adId, PrebidPresenter.notReady)
-                }
-                rewarded.show(from: viewController)
-            })
+        store.show(adId)
     }
 
     func destroy(adId: Int64) throws {
-        rewardedAds.removeValue(forKey: adId)?.delegate = nil
-        delegates.removeValue(forKey: adId)
-    }
-
-    func destroyAll() -> [Int64] {
-        let ids = Array(rewardedAds.keys)
-        for id in ids { try? destroy(adId: id) }
-        return ids
+        store.remove(adId)
     }
 }
 

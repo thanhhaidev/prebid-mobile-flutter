@@ -5,6 +5,7 @@ import '../companion/companion_ad_channel.dart';
 import '../generated/prebid_api.g.dart';
 import 'ad_event_router.dart';
 import 'ad_ids.dart';
+import 'session.dart';
 
 /// What the core interstitial and rewarded ads share: the ad id, the event
 /// routing (stopped by [destroyed], restarted by [loading]) and [isLoaded].
@@ -13,9 +14,13 @@ import 'ad_ids.dart';
 /// payloads, so the same `dispatchInterstitialEvent` /
 /// `dispatchRewardedEvent` serve both.
 class FullscreenAdLifecycle {
-  /// Starts routing the events of a new ad id to [dispatch].
+  /// Routes the events of a new ad id to [dispatch], from the first
+  /// [loading] on (an ad never loaded holds no listener).
   FullscreenAdLifecycle(this.dispatch) : adId = nextAdId() {
-    _register();
+    // Before any native call or view of this ad: after a hot restart the
+    // native side still holds the previous isolate's ads, and releasing them
+    // later would also drop this isolate's views (and their ads) by then.
+    releasePreviousIsolateAds();
   }
 
   /// Identifies the ad on the native side.

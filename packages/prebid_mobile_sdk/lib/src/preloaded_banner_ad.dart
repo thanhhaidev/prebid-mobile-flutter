@@ -168,9 +168,11 @@ class PrebidPreloadedBannerAd {
   }
 
   void _onEvent(MethodCall call) {
-    if (call.method == 'onAdLoaded') {
-      _winningBid = PrebidWinningBid.fromPayload(call.arguments);
-    }
+    _winningBid = switch (call.method) {
+      'onAdLoaded' => PrebidWinningBid.fromPayload(call.arguments),
+      'onAdFailed' => null,
+      _ => _winningBid,
+    };
     dispatchBannerEvent(listener, videoListener, call);
   }
 }

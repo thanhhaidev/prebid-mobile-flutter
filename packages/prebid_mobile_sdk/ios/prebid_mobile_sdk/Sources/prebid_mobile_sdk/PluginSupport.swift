@@ -60,16 +60,19 @@ enum PrebidPresenter {
         guard let top = topViewController(in: window) else { return fail(noViewController) }
         guard isBusy(top) else { return present(top) }
         guard retry else { return fail(busy) }
+        var retried = false
         let again = {
+            guard !retried else { return }
+            retried = true
             DispatchQueue.main.async {
                 PrebidPresenter.whenReady(in: window, retry: false, fail: fail, present: present)
             }
         }
-        if let coordinator = (top.presentedViewController ?? top).transitionCoordinator {
-            _ = coordinator.animate(alongsideTransition: nil) { _ in again() }
-        } else {
-            again()
-        }
+        // UIKit doesn't call the completion when it can't queue it (false).
+        let queued =
+            (top.presentedViewController ?? top).transitionCoordinator?
+            .animate(alongsideTransition: nil) { _ in again() } ?? false
+        if !queued { again() }
     }
 
     private static func isBusy(_ controller: UIViewController) -> Bool {

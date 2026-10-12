@@ -145,6 +145,11 @@ void main() {
       ]);
     });
 
+    test('an empty set of formats asks for a banner too', () async {
+      await PrebidInterstitialAd(configId: 'i', adFormats: const {}).loadAd();
+      expect(lastLoad()[2], ['banner']);
+    });
+
     test('unset video fields and controls stay unset', () async {
       await PrebidInterstitialAd(
         configId: 'i',

@@ -44,7 +44,7 @@ void main() {
         pbAdSlot: '/slot',
         impOrtbConfig: '{"imp":1}',
         globalOrtbConfig: '{"app":{}}',
-        api: const [VideoApi.mraid2, VideoApi.omid1],
+        bannerApi: const [VideoApi.mraid2, VideoApi.omid1],
       ).fetchDemand();
 
       final c = lastRequest();

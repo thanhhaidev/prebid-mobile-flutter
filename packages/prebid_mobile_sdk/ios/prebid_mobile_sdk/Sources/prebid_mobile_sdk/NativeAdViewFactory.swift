@@ -60,6 +60,9 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
     private let methodChannel: FlutterMethodChannel
     private let store: NativeAdStore
     private var lastReportedHeight: CGFloat = 0
+    /// Kept here, not only on the ad's forwarder: a reload makes a new
+    /// forwarder, and Dart sends the fraction only when it changes.
+    private var visibleFraction: Double = 1
 
     init(viewId: Int64, messenger: FlutterBinaryMessenger, store: NativeAdStore, args: [String: Any]) {
         adId = (args["adId"] as? NSNumber)?.int64Value ?? 0
@@ -72,7 +75,9 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
         )
         self.store = store
         super.init()
-        container.onWidthChange = { [weak self] width in self?.reportHeight(width: width) }
+        if !customLayout {
+            container.onWidthChange = { [weak self] width in self?.reportHeight(width: width) }
+        }
         // The fraction of the view Flutter paints on screen, from
         // PrebidNativeAdView: Flutter's clips (scroll viewports, ClipRect)
         // reach the platform view as a mask the native check can't read.
@@ -82,6 +87,7 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
                 return
             }
             if let self = self, let fraction = (call.arguments as? NSNumber)?.doubleValue {
+                self.visibleFraction = fraction
                 self.store.delegates[self.adId]?.flutterVisibleFraction = fraction
             }
             result(nil)
@@ -110,6 +116,7 @@ final class NativeAdPlatformView: NSObject, FlutterPlatformView {
             customLayout ? fill(content) : embed(content)
             if !customLayout { reportHeight() }
         } else if let ad = store.ads[adId], let forwarder = store.delegates[adId] {
+            forwarder.flutterVisibleFraction = visibleFraction
             customLayout ? track(ad, forwarder: forwarder) : render(ad, forwarder: forwarder)
         }
     }

@@ -67,17 +67,7 @@ internal class MultiformatAdHostApiImpl(
     ) {
         cancelRefresh(adId)
         adUnits.remove(adId)?.let(::release)
-        if (!PrebidMobile.isSdkInitialized()) {
-            callback(
-                Result.success(
-                    MultiformatBidResult(
-                        resultCode = PluginErrors.NOT_INITIALIZED_CODE,
-                        targetingKeywords = emptyMap(),
-                    ),
-                ),
-            )
-            return
-        }
+        if (!PrebidMobile.isSdkInitialized()) return callback(Result.success(notInitializedResult))
         val adUnit = makeAdUnit(config)
         adUnits[adId] = adUnit
         inFlight += adUnit
@@ -128,12 +118,13 @@ internal class MultiformatAdHostApiImpl(
                     rest.forEach { addAdditionalSize(it.width, it.height) }
                     bannerParameters = bannerParameters(config, sizes)
                     config.videoConfig?.let { videoParameters = it.toVideoParameters() }
-                    adPosition(config)?.let(::setAdPosition)
                 }
             }
 
             else -> return multiformatAdUnit(config)
         }
+        // Only BannerAdUnit has a setter; every unit's request reads it.
+        adPosition(config)?.let(unit.configuration::setAdPosition)
         config.gpid?.let(unit::setGpid)
         config.pbAdSlot?.let(unit::setPbAdSlot)
         config.impOrtbConfig?.let(unit::setImpOrtbConfig)
@@ -304,7 +295,9 @@ internal class MultiformatAdHostApiImpl(
     }
 
     fun destroyAll() {
-        adUnits.keys.toList().forEach(::destroy)
+        // An interval can be set without a unit (before fetchDemand, or a
+        // fetch that failed): drop it too, or a reused adId would refresh.
+        (adUnits.keys + refreshSeconds.keys + refreshTasks.keys).toSet().forEach(::destroy)
     }
 
     /**

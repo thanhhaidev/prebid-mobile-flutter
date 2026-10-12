@@ -26,7 +26,7 @@ internal class InterstitialAdHostApiImpl(
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
         pbAdSlot: String?,
-        adPosition: Long?,
+        adPosition: Long?, // iOS only: Prebid Android's rendering unit has no setter.
     ) {
         // A reload replaces the previous unit; destroy it so it stops sending
         // events under this ad id.
@@ -66,23 +66,22 @@ internal class InterstitialAdHostApiImpl(
 
         adUnit.setInterstitialAdUnitListener(object : InterstitialAdUnitListener {
             override fun onAdLoaded(unit: InterstitialAdUnit) {
-                val bid = unit.bidResponse?.toWinningBidData()
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded", winningBid = bid)) {}
+                flutterApi.sendAdEvent(adId, "onAdLoaded", winningBid = unit.bidResponse?.toWinningBidData())
             }
             override fun onAdFailed(unit: InterstitialAdUnit, e: AdException?) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = e?.message)) {}
+                flutterApi.sendAdEvent(adId, "onAdFailed", e?.message)
             }
             override fun onAdDisplayed(unit: InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDisplayed")) {}
+                flutterApi.sendAdEvent(adId, "onAdDisplayed")
             }
             override fun onAdClosed(unit: InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClosed")) {}
+                flutterApi.sendAdEvent(adId, "onAdClosed")
             }
             override fun onAdClicked(unit: InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}
+                flutterApi.sendAdEvent(adId, "onAdClicked")
             }
             override fun onAdExpired(unit: InterstitialAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdExpired")) {}
+                flutterApi.sendAdEvent(adId, "onAdExpired")
             }
         })
 

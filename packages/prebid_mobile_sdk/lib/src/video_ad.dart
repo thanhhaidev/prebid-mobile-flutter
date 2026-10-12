@@ -91,8 +91,8 @@ class PrebidInstreamVideoAd {
   Future<PrebidVideoAdBidResponse> fetchDemand() async {
     final config = InstreamVideoAdRequestConfig(
       configId: configId,
-      width: size.width.toInt(),
-      height: size.height.toInt(),
+      width: size.width.round(),
+      height: size.height.round(),
       videoConfig: videoParameters?.toConfig(),
       gpid: gpid,
       pbAdSlot: pbAdSlot,

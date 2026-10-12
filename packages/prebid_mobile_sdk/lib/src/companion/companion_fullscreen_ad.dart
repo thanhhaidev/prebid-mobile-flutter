@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 
 import '../ad_listener.dart';
+import '../internal/ad_ids.dart';
 import 'ad_view_state.dart';
 import 'companion_ad_channel.dart';
 
@@ -16,7 +17,7 @@ abstract class CompanionFullscreenAd {
   /// Creates an ad that talks over [channel].
   CompanionFullscreenAd(this._channel) : adId = _nextId++;
 
-  static int _nextId = 1;
+  static int _nextId = randomFirstId();
 
   final CompanionAdChannel _channel;
 
@@ -37,7 +38,13 @@ abstract class CompanionFullscreenAd {
   @protected
   void onEvent(String event, Map? args);
 
-  /// Requests an ad; the result arrives on the listener.
+  /// Requests an ad. The listener's `onAdLoaded` fires when it is ready to
+  /// [show]; `onAdFailed` fires instead when it can't load (on Android also
+  /// when the Prebid SDK isn't initialized yet).
+  ///
+  /// A load replaces the previous ad of this object. While that ad is on
+  /// screen, load the next one after `onAdClosed`: the showing ad's later
+  /// events (its close, a reward) are dropped otherwise.
   Future<void> loadAd() async {
     _loaded = false;
     _channel.register(adId, _handleEvent);
@@ -46,7 +53,9 @@ abstract class CompanionFullscreenAd {
 
   /// Presents the loaded ad fullscreen. An ad shows once, so [isLoaded] turns
   /// false; if it can't be shown (not loaded yet, nothing to present from)
-  /// the listener's `onAdFailed` fires.
+  /// the listener's `onAdFailed` fires. When it failed only for want of an
+  /// Activity or view controller to present from, the ad is kept: calling
+  /// [show] again later can still present it.
   Future<void> show() {
     _loaded = false;
     return _channel.invoke('show', {'adId': adId});

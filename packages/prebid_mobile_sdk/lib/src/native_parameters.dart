@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'internal/values.dart';
 import 'native_ad.dart';
 import 'native_ad_enums.dart';
 
@@ -107,4 +108,28 @@ class NativeParameters {
     'privacy': ?privacy,
     if (ext != null) 'ext': jsonEncode(ext),
   };
+
+  Map<String, Object?> get _fields => {
+    'assets': assets,
+    'eventTrackers': eventTrackers,
+    'context': context,
+    'contextSubType': contextSubType,
+    'placementType': placementType,
+    'placementCount': placementCount,
+    'sequence': sequence,
+    'assetUrlSupport': assetUrlSupport,
+    'dUrlSupport': dUrlSupport,
+    'privacy': privacy,
+    'ext': ext,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is NativeParameters && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('NativeParameters', _fields);
 }

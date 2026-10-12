@@ -547,6 +547,14 @@ void main() {
 
       await platform.send(platform.views.single, 'onAdLoaded');
       expect(controller.winningBid, isNull);
+
+      // A refresh without a bid leaves no winning bid.
+      await platform.send(platform.views.single, 'onAdLoaded', {'price': 0.5});
+      expect(controller.winningBid, isNotNull);
+      await platform.send(platform.views.single, 'onAdFailed', {
+        'error': 'no bid',
+      });
+      expect(controller.winningBid, isNull);
     }, variant: _ios);
   });
 }

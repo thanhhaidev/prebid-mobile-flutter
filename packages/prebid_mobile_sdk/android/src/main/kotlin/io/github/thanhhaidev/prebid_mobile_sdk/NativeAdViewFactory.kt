@@ -57,6 +57,12 @@ internal class NativeAdPlatformView(
         MethodChannel(messenger, "prebid_mobile_sdk/native_ad_$channelId")
     private val root = FrameLayout(context)
 
+    /**
+     * Kept here, not only on the ad's listener: a reload makes a new
+     * listener, and Dart sends the fraction only when it changes.
+     */
+    private var visibleFraction = 1.0
+
     init {
         // The fraction of the view Flutter paints on screen, from
         // PrebidNativeAdView: Flutter's clips (scroll viewports, ClipRect)
@@ -64,6 +70,7 @@ internal class NativeAdPlatformView(
         methodChannel.setMethodCallHandler { call, result ->
             if (call.method == "setVisibleFraction") {
                 (call.arguments as? Number)?.toDouble()?.let {
+                    visibleFraction = it
                     store.listeners[adId]?.flutterVisibleFraction = it
                 }
                 result.success(null)
@@ -102,8 +109,14 @@ internal class NativeAdPlatformView(
         val events = NativeAdEvents(adId, flutterApi)
         if (!ad.registerView(container, listOf(container), events)) return expire(events)
         root.addView(container, matchParent())
+        register(events, container)
+    }
+
+    /** Stores the registered view and starts the plugin's viewability check. */
+    private fun register(events: NativeAdEvents, container: View) {
         store.listeners[adId] = events
         store.views[adId] = container
+        events.flutterVisibleFraction = visibleFraction
         events.watchViewability(container)
     }
 
@@ -182,9 +195,7 @@ internal class NativeAdPlatformView(
         // a registered view: report the expiry here.
         if (!registered) return expire(events)
         root.addView(container, matchWidth())
-        store.listeners[adId] = events
-        store.views[adId] = container
-        events.watchViewability(container)
+        register(events, container)
         reportHeight(container)
         // Decoded at the size the views draw them (icon 40dp square, image
         // full width x 180dp).

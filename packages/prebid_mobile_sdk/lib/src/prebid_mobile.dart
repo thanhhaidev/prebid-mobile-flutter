@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'ad_enums.dart';
+import 'ad_listener.dart';
 import 'external_user_id.dart';
 import 'generated/prebid_api.g.dart';
 import 'internal/pigeon_conversions.dart';
@@ -61,7 +62,7 @@ class PrebidMobile {
     required String prebidServerUrl,
     required String accountId,
     String? nonTrackingUrl,
-    void Function(PrebidInitializationStatus status, String? error)? completion,
+    OnInitializationComplete? completion,
   }) async {
     // Re-setting the global config adds the plugin's name and version to
     // every request, keeping a config set earlier.

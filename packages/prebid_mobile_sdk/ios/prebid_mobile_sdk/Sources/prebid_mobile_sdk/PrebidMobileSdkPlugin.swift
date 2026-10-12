@@ -27,12 +27,13 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
         )
         let interstitialApi = InterstitialAdHostApiImpl(flutterApi: flutterApi)
         let rewardedApi = RewardedAdHostApiImpl(flutterApi: flutterApi)
-        // Fullscreen ads present in this engine's window.
-        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.view.window }
-        interstitialApi.engineWindow = engineWindow
-        rewardedApi.engineWindow = engineWindow
+        // Fullscreen ads present in this engine's window; banners are found there.
+        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.viewIfLoaded?.window }
+        interstitialApi.store.engineWindow = engineWindow
+        rewardedApi.store.engineWindow = engineWindow
         let nativeApi = NativeAdHostApiImpl(flutterApi: flutterApi, store: instance.nativeAdStore)
         let multiformatApi = MultiformatAdHostApiImpl(flutterApi: MultiformatFlutterApi(binaryMessenger: messenger))
+        multiformatApi.engineWindow = engineWindow
         let instreamApi = InstreamVideoAdHostApiImpl()
         let bannerApi = BannerAdHostApiImpl(messenger: messenger)
         instance.prebidMobileApi = prebidMobileApi
@@ -74,8 +75,8 @@ public final class PrebidMobileSdkPlugin: NSObject, FlutterPlugin {
     }
 
     private func releaseAllAds() {
-        _ = interstitialApi?.destroyAll()
-        _ = rewardedApi?.destroyAll()
+        interstitialApi?.store.removeAll()
+        rewardedApi?.store.removeAll()
         nativeApi?.destroyAll()
         multiformatApi?.destroyAll()
         instreamApi?.destroyAll()

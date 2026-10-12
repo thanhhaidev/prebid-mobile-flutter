@@ -34,9 +34,24 @@ internal object PluginErrors {
     const val NOT_INITIALIZED_CODE = "prebidSdkNotInitialized"
 }
 
-internal fun AdFlutterApi.sendAdFailed(adId: Long, error: String) {
-    onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = error)) {}
+/** Sends ad event [eventName] of [adId] to Dart (no reply expected). */
+internal fun AdFlutterApi.sendAdEvent(
+    adId: Long,
+    eventName: String,
+    error: String? = null,
+    winningBid: WinningBidData? = null,
+) {
+    onAdEvent(AdEvent(adId = adId, eventName = eventName, error = error, winningBid = winningBid)) {}
 }
+
+internal fun AdFlutterApi.sendAdFailed(adId: Long, error: String) = sendAdEvent(adId, "onAdFailed", error)
+
+/**
+ * The fetchDemand result before the SDK has initialized, when Prebid
+ * Android would drop the request without calling back.
+ */
+internal val notInitializedResult
+    get() = MultiformatBidResult(resultCode = PluginErrors.NOT_INITIALIZED_CODE, targetingKeywords = emptyMap())
 
 /**
  * Result code for a fetchDemand [BidInfo].

@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import '../internal/ad_ids.dart';
+
 /// The method channel of one native ad view, named before the view exists.
 ///
 /// Native views start loading as soon as they are created, which can be
@@ -18,7 +20,7 @@ class AdViewChannel {
       ..setMethodCallHandler(handler);
   }
 
-  static int _nextId = 1;
+  static int _nextId = randomFirstId();
 
   /// The id the native view names its channel with (`channelId`).
   final int id;

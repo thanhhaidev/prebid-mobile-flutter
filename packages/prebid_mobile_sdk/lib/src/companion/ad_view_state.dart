@@ -46,9 +46,7 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
   /// viewability check can't read.
   bool get reportsVisibleFraction => false;
 
-  static const _visibilityInterval = Duration(milliseconds: 250);
-  Timer? _visibilityTimer;
-  double? _sentFraction;
+  final _visibility = VisibleFractionReporter();
 
   /// The creative width the current view reported, if any.
   double? get reportedWidth => _reportedWidth;
@@ -128,7 +126,9 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
     // A replaced view finishing its creation late has nothing to attach.
     if (!identical(view, _view) || !mounted) return;
     _created = true;
-    if (reportsVisibleFraction) _startVisibility(view);
+    if (reportsVisibleFraction) {
+      _visibility.start(view.methodChannel, () => mounted ? context : null);
+    }
     final controller = controllerOf(widget);
     if (controller != null) {
       attachBannerController(
@@ -137,23 +137,6 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
         autoLoaded: autoLoadOf(widget),
       );
     }
-  }
-
-  void _startVisibility(AdViewChannel view) {
-    _visibilityTimer?.cancel();
-    _sentFraction = null;
-    _visibilityTimer = Timer.periodic(_visibilityInterval, (_) {
-      final box = mounted ? context.findRenderObject() : null;
-      if (box is! RenderBox) return;
-      final fraction = (visibleFraction(box) * 100).roundToDouble() / 100;
-      if (fraction == _sentFraction) return;
-      _sentFraction = fraction;
-      view.methodChannel
-          .invokeMethod<void>('setVisibleFraction', fraction)
-          .catchError((Object _) {
-            // The native view is gone (disposed between ticks).
-          });
-    });
   }
 
   Future<dynamic> _onCall(MethodCall call) async {
@@ -171,8 +154,7 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
   }
 
   void _release(PrebidBannerAdController? controller) {
-    _visibilityTimer?.cancel();
-    _visibilityTimer = null;
+    _visibility.stop();
     _view.dispose();
     if (_created && controller != null) {
       detachBannerController(controller, _view.methodChannel);
@@ -186,6 +168,12 @@ mixin AdViewState<T extends StatefulWidget> on State<T> {
     super.dispose();
   }
 }
+
+/// [sizes] as the flat `[width, height, ...]` list of whole dps the native
+/// banner views read (`additionalSizes`).
+List<int> flatSizes(List<Size> sizes) => [
+  for (final size in sizes) ...[size.width.round(), size.height.round()],
+];
 
 /// The error message of a failure event: the payload itself (a String) or
 /// its `error` entry.

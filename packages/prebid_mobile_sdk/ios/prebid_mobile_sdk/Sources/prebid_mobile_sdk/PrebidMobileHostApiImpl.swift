@@ -32,7 +32,7 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
             case .serverStatusWarning: statusStr = "serverStatusWarning"
             default: statusStr = "failed"
             }
-            let result = InitializationResult(status: statusStr, error: error?.localizedDescription)
+            let result = InitializationResult(status: statusStr, error: error.map(PrebidErrorFormatter.describe))
             // The status check replies on Prebid's URLSession queue; channel
             // replies belong on the platform (main) thread.
             if Thread.isMainThread {
@@ -67,7 +67,8 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
                 try Prebid.initializeSDK(serverURL: prebidServerUrl, callback)
             }
         } catch {
-            let result = InitializationResult(status: "failed", error: error.localizedDescription)
+            let result = InitializationResult(
+                status: "failed", error: PrebidErrorFormatter.describe(error))
             completion(.success(result))
         }
     }
@@ -236,7 +237,9 @@ final class PrebidMobileHostApiImpl: PrebidMobileHostApi {
             }
             self.logger = nil
         } else {
-            if self.logger == nil {
+            // Also when another engine detached and put the console logger
+            // back since (installedLogger is then nil).
+            if self.logger == nil || Self.installedLogger == nil {
                 Log.setCustomLogger(logger)
                 Self.installedLogger = logger
             }

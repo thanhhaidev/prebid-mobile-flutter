@@ -24,7 +24,7 @@ internal class RewardedAdHostApiImpl(
         globalOrtbConfig: String?,
         controls: FullscreenControlsConfig?,
         pbAdSlot: String?,
-        adPosition: Long?,
+        adPosition: Long?, // iOS only: Prebid Android's rendering unit has no setter.
     ) {
         rewardedAds.remove(adId)?.destroy()
         if (!PrebidMobile.isSdkInitialized()) {
@@ -43,23 +43,22 @@ internal class RewardedAdHostApiImpl(
 
         adUnit.setRewardedAdUnitListener(object : RewardedAdUnitListener {
             override fun onAdLoaded(unit: RewardedAdUnit) {
-                val bid = unit.bidResponse?.toWinningBidData()
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdLoaded", winningBid = bid)) {}
+                flutterApi.sendAdEvent(adId, "onAdLoaded", winningBid = unit.bidResponse?.toWinningBidData())
             }
             override fun onAdFailed(unit: RewardedAdUnit, e: AdException?) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdFailed", error = e?.message)) {}
+                flutterApi.sendAdEvent(adId, "onAdFailed", e?.message)
             }
             override fun onAdDisplayed(unit: RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdDisplayed")) {}
+                flutterApi.sendAdEvent(adId, "onAdDisplayed")
             }
             override fun onAdClosed(unit: RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClosed")) {}
+                flutterApi.sendAdEvent(adId, "onAdClosed")
             }
             override fun onAdClicked(unit: RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdClicked")) {}
+                flutterApi.sendAdEvent(adId, "onAdClicked")
             }
             override fun onAdExpired(unit: RewardedAdUnit) {
-                flutterApi.onAdEvent(AdEvent(adId = adId, eventName = "onAdExpired")) {}
+                flutterApi.sendAdEvent(adId, "onAdExpired")
             }
             override fun onUserEarnedReward(unit: RewardedAdUnit, reward: Reward?) {
                 flutterApi.onAdEvent(

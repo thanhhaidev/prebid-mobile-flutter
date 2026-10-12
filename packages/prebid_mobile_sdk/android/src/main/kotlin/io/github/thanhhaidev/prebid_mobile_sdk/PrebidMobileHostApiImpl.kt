@@ -13,6 +13,7 @@ import org.prebid.mobile.PrebidEventDelegate
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.TargetingParams
 import org.prebid.mobile.api.data.InitializationStatus
+import org.prebid.mobile.rendering.sdk.InitializationNotifier
 import org.prebid.mobile.rendering.utils.helpers.AppInfoManager
 
 /**
@@ -42,6 +43,7 @@ internal class PrebidMobileHostApiImpl(
         if (PrebidMobile.isSdkInitialized()) {
             // Still applies the (possibly new) server URL; the listener is skipped.
             PrebidMobile.initializeSdk(context, prebidServerUrl) {}
+            logUtilLevel?.let(LogUtil::setLogLevel)
             callback(Result.success(InitializationResult(status = "succeeded")))
             return
         }
@@ -49,22 +51,45 @@ internal class PrebidMobileHostApiImpl(
         // another engine also answers this one.
         pendingInitCallbacks += callback
         if (pendingInitCallbacks.size > 1) return
+        // An init started outside the plugin (natively, by the host app) is
+        // still running: Prebid would drop this listener, so wait for it.
+        if (InitializationNotifier.isInitializationInProgress()) return awaitForeignInit()
         PrebidMobile.initializeSdk(context, prebidServerUrl) { status ->
             val statusStr = when (status) {
                 InitializationStatus.SUCCEEDED -> "succeeded"
                 InitializationStatus.SERVER_STATUS_WARNING -> "serverStatusWarning"
                 else -> "failed"
             }
-            val result = InitializationResult(status = statusStr, error = status.description)
             mainHandler.post {
-                val callbacks = pendingInitCallbacks.toList()
-                pendingInitCallbacks.clear()
-                callbacks.forEach { it(Result.success(result)) }
+                answerInit(InitializationResult(status = statusStr, error = status.description))
             }
         }
-        // The first init (synchronously) replaces app.name with the app label.
+        // The first init (synchronously) replaces app.name with the app label,
+        // and copies PrebidMobile's log level (NONE as "everything") to LogUtil.
         TargetingHostApiImpl.appNameOverride?.let { AppInfoManager.setAppName(it) }
+        logUtilLevel?.let(LogUtil::setLogLevel)
         checkGmaCompatibility()
+    }
+
+    private fun awaitForeignInit() {
+        mainHandler.postDelayed({
+            when {
+                InitializationNotifier.isInitializationInProgress() -> awaitForeignInit()
+
+                PrebidMobile.isSdkInitialized() ->
+                    answerInit(InitializationResult(status = "succeeded"))
+
+                else -> answerInit(
+                    InitializationResult(status = "failed", error = "Prebid SDK initialization failed"),
+                )
+            }
+        }, FOREIGN_INIT_POLL_MS)
+    }
+
+    private fun answerInit(result: InitializationResult) {
+        val callbacks = pendingInitCallbacks.toList()
+        pendingInitCallbacks.clear()
+        callbacks.forEach { it(Result.success(result)) }
     }
 
     /**
@@ -128,6 +153,12 @@ internal class PrebidMobileHostApiImpl(
             else -> PrebidMobile.LogLevel.DEBUG
         }
         PrebidMobile.setLogLevel(logLevel)
+        // Prebid copies its settings into LogUtil, which does the logging,
+        // only when it initializes: set LogUtil too, for a change after that.
+        // LogUtil logs every priority at or above its level, and NONE's value
+        // (-1) is below them all: silence it with a level above every one.
+        logUtilLevel = if (logLevel == PrebidMobile.LogLevel.NONE) Log.ASSERT + 1 else logLevel.value
+        logUtilLevel?.let(LogUtil::setLogLevel)
     }
 
     override fun setCreativeFactoryTimeout(timeout: Long) {
@@ -233,7 +264,17 @@ internal class PrebidMobileHostApiImpl(
             }
         }
         logger = forwarder
-        PrebidMobile.setCustomLogger(forwarder)
+        setPrebidLogger(forwarder)
+    }
+
+    /**
+     * Sets Prebid's logger, or logcat for null: kept by PrebidMobile, used
+     * by LogUtil (see setLogLevel).
+     */
+    private fun setPrebidLogger(logger: LogUtil.PrebidLogger?) {
+        val prebidLogger = logger ?: LogcatLogger
+        PrebidMobile.setCustomLogger(prebidLogger)
+        LogUtil.setLogger(prebidLogger)
     }
 
     // Prebid logs from any thread; Flutter channels need main.
@@ -245,7 +286,7 @@ internal class PrebidMobileHostApiImpl(
     fun clearLogger() {
         val own = logger ?: return
         logger = null
-        if (PrebidMobile.getCustomLogger() === own) consoleLogger?.let(PrebidMobile::setCustomLogger)
+        if (PrebidMobile.getCustomLogger() === own) setPrebidLogger(consoleLogger)
     }
 
     // Location updates are an iOS setting: Prebid Android only reads the
@@ -353,6 +394,21 @@ internal class PrebidMobileHostApiImpl(
 
     private companion object {
         val pendingInitCallbacks = mutableListOf<(Result<InitializationResult>) -> Unit>()
+        const val FOREIGN_INIT_POLL_MS = 100L
+
+        /** LogUtil's level for the last setLogLevel, process-wide like LogUtil. */
+        var logUtilLevel: Int? = null
+    }
+}
+
+/** Logs to logcat, as Prebid's own default logger (which isn't public) does. */
+private object LogcatLogger : LogUtil.PrebidLogger {
+    override fun println(priority: Int, tag: String, message: String) {
+        Log.println(priority, tag, message)
+    }
+
+    override fun e(tag: String, message: String, throwable: Throwable) {
+        Log.e(tag, message, throwable)
     }
 }
 

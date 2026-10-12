@@ -105,4 +105,35 @@ void main() {
     );
     expectValue(controls(3), controls(3), controls(4));
   });
+
+  test('native parameters and responses compare by value', () {
+    NativeParameters parameters(int length) => NativeParameters(
+      assets: [
+        NativeAsset.title(length: length, required: true),
+        const NativeAsset.image(mimes: ['image/png']),
+      ],
+      eventTrackers: const [
+        NativeEventTracker(
+          eventType: NativeEventType.impression,
+          methods: [NativeEventTrackingMethod.image],
+        ),
+      ],
+      ext: {
+        'k': [length],
+      },
+    );
+    expectValue(parameters(90), parameters(90), parameters(25));
+    expect(
+      const NativeAsset.data(dataType: NativeDataType.rating).toString(),
+      'NativeAsset(type: NativeAssetType.data, required: false, '
+      'dataType: NativeDataType.rating)',
+    );
+
+    PrebidNativeAdResponse response(String title) => PrebidNativeAdResponse(
+      title: title,
+      images: const [PrebidNativeImage(type: 3, url: 'https://img')],
+      dataAssets: const [PrebidNativeData(type: 3, value: '4.5')],
+    );
+    expectValue(response('a'), response('a'), response('b'));
+  });
 }

@@ -10,6 +10,8 @@ import 'generated/prebid_api.g.dart';
 import 'internal/ad_event_router.dart';
 import 'internal/ad_ids.dart';
 import 'internal/pigeon_conversions.dart';
+import 'internal/session.dart';
+import 'internal/values.dart';
 import 'internal/visibility.dart';
 import 'native_ad_enums.dart';
 import 'native_parameters.dart';
@@ -98,6 +100,30 @@ class PrebidNativeAdResponse {
     for (final d in dataAssets)
       if (d.type == type.value && d.value != null) d.value!,
   ];
+
+  Map<String, Object?> get _fields => {
+    'title': title,
+    'text': text,
+    'iconUrl': iconUrl,
+    'imageUrl': imageUrl,
+    'sponsoredBy': sponsoredBy,
+    'callToAction': callToAction,
+    'clickUrl': clickUrl,
+    'privacyUrl': privacyUrl,
+    'titles': titles,
+    'images': images,
+    'dataAssets': dataAssets,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidNativeAdResponse && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidNativeAdResponse', _fields);
 }
 
 /// An image asset of a native response.
@@ -122,6 +148,23 @@ class PrebidNativeImage {
 
   /// The image height the bid declares, in pixels. iOS only, as [width].
   final int? height;
+
+  Map<String, Object?> get _fields => {
+    'type': type,
+    'url': url,
+    'width': width,
+    'height': height,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidNativeImage && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidNativeImage', _fields);
 }
 
 /// A data asset of a native response.
@@ -134,6 +177,18 @@ class PrebidNativeData {
 
   /// The asset value.
   final String? value;
+
+  Map<String, Object?> get _fields => {'type': type, 'value': value};
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrebidNativeData && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('PrebidNativeData', _fields);
 }
 
 /// Defines a native asset for the ad request.
@@ -265,6 +320,32 @@ class NativeAsset {
     if (ext != null) 'ext': jsonEncode(ext),
     if (assetExt != null) 'assetExt': jsonEncode(assetExt),
   };
+
+  Map<String, Object?> get _fields => {
+    'type': type,
+    'required': required,
+    'titleLength': titleLength,
+    'imageType': imageType,
+    'imageWidth': imageWidth,
+    'imageHeight': imageHeight,
+    'imageWidthMin': imageWidthMin,
+    'imageHeightMin': imageHeightMin,
+    'dataType': dataType,
+    'dataLength': dataLength,
+    'imageMimes': imageMimes,
+    'ext': ext,
+    'assetExt': assetExt,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is NativeAsset && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('NativeAsset', _fields);
 }
 
 /// Defines a native event tracker for the ad request.
@@ -291,6 +372,22 @@ class NativeEventTracker {
     'methods': methods.map((m) => m.value).toList(),
     if (ext != null) 'ext': jsonEncode(ext),
   };
+
+  Map<String, Object?> get _fields => {
+    'eventType': eventType,
+    'methods': methods,
+    'ext': ext,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is NativeEventTracker && deepEquals(other._fields, _fields);
+
+  @override
+  int get hashCode => deepHash(_fields);
+
+  @override
+  String toString() => describe('NativeEventTracker', _fields);
 }
 
 /// A native ad: loads the assets of a native bid for your app to show.
@@ -340,7 +437,10 @@ class PrebidNativeAd {
     this.globalOrtbConfig,
     this.listener,
   }) : _adId = nextAdId() {
-    AdEventRouter.instance.register(_adId, _handleEvent);
+    // Before any native call or view of this ad: after a hot restart the
+    // native side still holds the previous isolate's ads, and releasing them
+    // later would also drop this isolate's views (and their ads) by then.
+    releasePreviousIsolateAds();
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
@@ -541,16 +641,11 @@ class PrebidNativeAdView extends StatefulWidget {
 class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
   static const _viewType = 'prebid_mobile_sdk/native_ad';
 
-  /// How often the visible fraction is measured, as the native viewability
-  /// check polls.
-  static const _visibilityInterval = Duration(milliseconds: 250);
-
   late double _height = widget.height;
   late AdViewChannel _view = _listen();
   bool _created = false;
   final _boxKey = GlobalKey();
-  Timer? _visibilityTimer;
-  double? _sentFraction;
+  final _visibility = VisibleFractionReporter();
 
   @override
   void didUpdateWidget(PrebidNativeAdView oldWidget) {
@@ -562,7 +657,7 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
       _view.dispose();
       _view = _listen();
       _created = false;
-      _stopVisibility();
+      _visibility.stop();
       _height = widget.height;
     }
   }
@@ -576,38 +671,18 @@ class _PrebidNativeAdViewState extends State<PrebidNativeAdView> {
 
   /// Reports the fraction of the view Flutter paints on screen to the native
   /// view, which counts the ad viewable only when both its own check and
-  /// this fraction reach one half. Sent when it changes.
-  void _startVisibility() {
-    _stopVisibility();
-    _visibilityTimer = Timer.periodic(_visibilityInterval, (_) {
-      final box = _boxKey.currentContext?.findRenderObject();
-      final channel = _view.methodChannel;
-      if (box is! RenderBox || !_created) return;
-      final fraction = (visibleFraction(box) * 100).roundToDouble() / 100;
-      if (fraction == _sentFraction) return;
-      _sentFraction = fraction;
-      channel.invokeMethod<void>('setVisibleFraction', fraction).catchError((
-        Object _,
-      ) {
-        // The native view is gone (disposed between ticks).
-      });
-    });
-  }
-
-  void _stopVisibility() {
-    _visibilityTimer?.cancel();
-    _visibilityTimer = null;
-    _sentFraction = null;
-  }
-
+  /// this fraction reach one half.
   void _onPlatformViewCreated(int viewId) {
     _created = true;
-    _startVisibility();
+    _visibility.start(
+      _view.methodChannel,
+      () => _created ? _boxKey.currentContext : null,
+    );
   }
 
   @override
   void dispose() {
-    _stopVisibility();
+    _visibility.stop();
     _view.dispose();
     super.dispose();
   }

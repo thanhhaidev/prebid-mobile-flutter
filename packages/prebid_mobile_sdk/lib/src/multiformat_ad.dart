@@ -117,7 +117,9 @@ class PrebidMultiformatBidResponse {
 }
 
 /// A multiformat ad unit that combines banner, video, and native in one
-/// bid request. Uses the Prebid SDK's `PrebidAdUnit` + `PrebidRequest` API.
+/// bid request. Uses the Prebid SDK's `PrebidAdUnit` + `PrebidRequest` API;
+/// on Android a request for a single format uses Prebid's ad unit of that
+/// format instead.
 ///
 /// ```dart
 /// final multiformatAd = PrebidMultiformatAd(
@@ -167,7 +169,10 @@ class PrebidMultiformatAd {
     this.globalOrtbConfig,
     this.onDemandRefreshed,
   }) : _adId = nextAdId() {
-    _register();
+    // Before any native call or view of this ad: after a hot restart the
+    // native side still holds the previous isolate's ads, and releasing them
+    // later would also drop this isolate's views (and their ads) by then.
+    releasePreviousIsolateAds();
   }
 
   /// The platform channel to the native SDK; tests replace it with a mock.
@@ -263,8 +268,8 @@ class PrebidMultiformatAd {
     if (bannerSizes != null && bannerSizes!.isNotEmpty) {
       flatSizes = [];
       for (final size in bannerSizes!) {
-        flatSizes.add(size.width.toInt());
-        flatSizes.add(size.height.toInt());
+        flatSizes.add(size.width.round());
+        flatSizes.add(size.height.round());
       }
     }
 

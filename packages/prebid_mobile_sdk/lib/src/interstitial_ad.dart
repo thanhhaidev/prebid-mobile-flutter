@@ -47,8 +47,9 @@ class PrebidInterstitialAd {
   /// The Prebid Server stored impression configuration ID.
   final String configId;
 
-  /// The ad formats to request (banner, video, or both). `null` requests a
-  /// banner only, on both platforms (Prebid iOS on its own would add video).
+  /// The ad formats to request (banner, video, or both). `null` or an empty
+  /// set requests a banner only, on both platforms (Prebid iOS on its own
+  /// would add video).
   final Set<PrebidAdFormat>? adFormats;
 
   /// Video playback parameters (protocols, playback methods, etc.).
@@ -92,13 +93,24 @@ class PrebidInterstitialAd {
   /// iOS keeps it internal); null before a load and without a bid.
   PrebidWinningBid? get winningBid => _ad.winningBid;
 
+  Set<PrebidAdFormat> get _requestedFormats {
+    final formats = adFormats;
+    return formats == null || formats.isEmpty
+        ? const {PrebidAdFormat.banner}
+        : formats;
+  }
+
   /// Load the interstitial ad. Also valid after [destroy].
+  ///
+  /// A load replaces the previous ad of this object. While that ad is on
+  /// screen, load the next one after `onAdClosed`: the showing ad's later
+  /// events are dropped otherwise.
   Future<void> loadAd() async {
     _ad.loading();
     await api.loadAd(
       _ad.adId,
       configId,
-      (adFormats ?? const {PrebidAdFormat.banner}).map((f) => f.name).toList(),
+      _requestedFormats.map((f) => f.name).toList(),
       videoParameters?.toConfig(),
       impOrtbWithGpid(impOrtbConfig, gpid),
       globalOrtbConfig,

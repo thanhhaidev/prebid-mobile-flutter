@@ -16,17 +16,7 @@ internal class InstreamVideoAdHostApiImpl : InstreamVideoAdHostApi {
         callback: (Result<MultiformatBidResult>) -> Unit,
     ) {
         adUnits.remove(adId)?.let(::release)
-        if (!PrebidMobile.isSdkInitialized()) {
-            callback(
-                Result.success(
-                    MultiformatBidResult(
-                        resultCode = PluginErrors.NOT_INITIALIZED_CODE,
-                        targetingKeywords = emptyMap(),
-                    ),
-                ),
-            )
-            return
-        }
+        if (!PrebidMobile.isSdkInitialized()) return callback(Result.success(notInitializedResult))
         val adUnit = InStreamVideoAdUnit(
             config.configId,
             config.width.toInt(),

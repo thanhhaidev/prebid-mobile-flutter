@@ -6,11 +6,11 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-11
+## [1.1.0] - 2026-10-12
 
 ### Added
 
-- `PrebidBannerAdUnit(api: ...)`: the banner's API frameworks
+- `PrebidBannerAdUnit(bannerApi: ...)`: the banner's API frameworks
   (`imp.banner.api`), e.g. MRAID.
 - `PrebidVideoAdBidResponse` is a `PrebidBidResponse`: in-stream video bids
   carry `receivedAt`, `expiresAt`, `isExpired`, `topBidFiltered` and
@@ -24,6 +24,11 @@ All notable changes to this package are documented here. The format follows
 - `package:prebid_mobile_sdk/companion.dart` exports `impOrtbWithGpid` and
   `impOrtbWithPbAdSlot`, which the companion packages use to send a GPID and
   an ad slot in the `imp` JSON.
+- Value equality and a readable `toString()` for `NativeParameters`,
+  `NativeAsset`, `NativeEventTracker`, `PrebidNativeAdResponse`,
+  `PrebidNativeImage` and `PrebidNativeData`.
+- `flatSizes` (companion library): the `additionalSizes` creation param of
+  the native banner views.
 
 ### Fixed
 
@@ -47,6 +52,46 @@ All notable changes to this package are documented here. The format follows
   banners from their own, instead of the first key window: on an iPad with
   several windows, or with Flutter in a secondary scene (add-to-app), they
   appeared in the wrong one. The key window remains the fallback.
+- Android: `setLogLevel` and `setLogListener` after `initializeSdk` take
+  effect (Prebid applied them only when it initialized), and removing the
+  log listener logs to logcat again.
+- Android: `initializeSdk` completes when the app had started initializing
+  Prebid natively; it waited forever.
+- Native ads keep Flutter's visible fraction across a reload, on both
+  platforms: a reloaded ad half hidden under an app bar could count an
+  impression.
+- A native ad Flutter doesn't paint (under `Offstage`, `Opacity` 0, another
+  `IndexedStack` child, or on a route covered by an opaque one) counts as
+  invisible for its impression.
+- Android: a native ad's late impression callback after it was reloaded or
+  destroyed is ignored instead of reaching the new ad's listener.
+- `PrebidBannerAdController.winningBid` and
+  `PrebidPreloadedBannerAd.winningBid` are null after a load or refresh
+  without a bid, as documented; they kept the previous bid.
+- After a hot restart, a new banner no longer shares its channel with a
+  previous isolate's preloaded banner, which could leave its controller
+  throwing `MissingPluginException`. This also applies to the GAM, AdMob
+  and MAX ads.
+- `PrebidInterstitialAd(adFormats: {})` requests a banner on iOS too, as on
+  Android.
+- An interstitial, rewarded, native or Original API ad that is never loaded
+  no longer keeps its listener alive.
+- Android: Original API interstitial and rewarded units send `adPosition`.
+- Android: after a hot restart, an Original API unit no longer refreshes on
+  an interval set by the previous isolate.
+- Android: a result code added by a newer Prebid SDK is reported as
+  `prebidUnknownError` instead of crashing the app.
+- Original API and in-stream video sizes are rounded to whole points like
+  the other ads' (they were truncated).
+- iOS: `activateBannerImpressionTracker`, `findPrebidCreativeSize` and
+  `activateBannerSKAdNetwork` look for the banner in the Flutter engine's
+  window.
+- iOS: `show()` during a view controller transition that UIKit can't queue
+  reports `onAdDisplayed` or `onAdFailed`; it could report neither.
+- iOS: with several Flutter engines, an engine whose log listener was reset
+  by another engine detaching gets its logs back when it sets it again.
+- iOS: a failed `initializeSdk` reports Prebid's failure reason, not only
+  its generic description.
 
 ## [1.0.0] - 2026-10-11
 

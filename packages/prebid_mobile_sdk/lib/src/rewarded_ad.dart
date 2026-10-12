@@ -71,7 +71,7 @@ class PrebidRewardedAd {
   /// `gpid` already there wins).
   final String? gpid;
 
-  /// Ad position on screen (`imp.pos`; fullscreen for an interstitial).
+  /// Ad position on screen (`imp.pos`; fullscreen for a rewarded ad).
   /// iOS only: Prebid Android's fullscreen ad units have no setter.
   final PrebidAdPosition? adPosition;
 
@@ -90,6 +90,10 @@ class PrebidRewardedAd {
   PrebidWinningBid? get winningBid => _ad.winningBid;
 
   /// Load the rewarded ad. Also valid after [destroy].
+  ///
+  /// A load replaces the previous ad of this object. While that ad is on
+  /// screen, load the next one after `onAdClosed`: the showing ad's later
+  /// events (its close, the reward) are dropped otherwise.
   Future<void> loadAd() async {
     _ad.loading();
     await api.loadAd(

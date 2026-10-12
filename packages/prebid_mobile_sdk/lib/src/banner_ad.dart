@@ -7,6 +7,7 @@ import 'ad_enums.dart';
 import 'ad_listener.dart';
 import 'companion/ad_view_state.dart';
 import 'internal/ortb.dart';
+import 'internal/session.dart';
 import 'internal/values.dart';
 import 'video_parameters.dart';
 
@@ -104,7 +105,9 @@ class PrebidBannerAdController {
     await channel.invokeMethod<void>('loadAd');
   }
 
-  /// Stops auto-refresh for the banner.
+  /// Stops auto-refresh for the banner. It acts on the banner's native view,
+  /// so a call before that view exists does nothing: call it once the
+  /// banner has loaded (`onAdLoaded`).
   Future<void> stopRefresh() async {
     await _channel?.invokeMethod<void>('stopRefresh');
   }
@@ -284,11 +287,22 @@ class _PrebidBannerAdState extends State<PrebidBannerAd>
   );
 
   @override
+  void initState() {
+    // Before this view's creation message: the previous isolate's preloaded
+    // banners may hold this view's channel id (hot restart).
+    releasePreviousIsolateAds();
+    super.initState();
+  }
+
+  @override
   void onViewEvent(MethodCall call) {
-    if (call.method == 'onAdLoaded') {
-      widget.controller?._winningBid = PrebidWinningBid.fromPayload(
-        call.arguments,
-      );
+    final controller = widget.controller;
+    if (controller != null) {
+      controller._winningBid = switch (call.method) {
+        'onAdLoaded' => PrebidWinningBid.fromPayload(call.arguments),
+        'onAdFailed' => null,
+        _ => controller._winningBid,
+      };
     }
     dispatchBannerEvent(widget.listener, widget.videoListener, call);
   }
@@ -317,10 +331,7 @@ Map<String, Object?> bannerConfig({
   'height': height,
   'isVideo': isVideo,
   'autoLoad': autoLoad,
-  if (additionalSizes case final sizes?)
-    'additionalSizes': [
-      for (final size in sizes) ...[size.width.round(), size.height.round()],
-    ],
+  if (additionalSizes case final sizes?) 'additionalSizes': flatSizes(sizes),
   'refreshIntervalSeconds': ?refreshIntervalSeconds,
   'adFormats': ?adFormats?.map((f) => f.name).toList(),
   'pbAdSlot': ?pbAdSlot,

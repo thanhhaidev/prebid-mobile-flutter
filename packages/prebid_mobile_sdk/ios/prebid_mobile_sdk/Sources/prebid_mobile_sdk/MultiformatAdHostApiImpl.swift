@@ -8,6 +8,8 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     private let flutterApi: MultiformatFlutterApi
     private var adUnits: [Int64: PrebidAdUnit] = [:]
     private var refreshSeconds: [Int64: Int64] = [:]
+    /// This engine's window, where its banners are.
+    var engineWindow: () -> UIWindow? = { nil }
 
     init(flutterApi: MultiformatFlutterApi) {
         self.flutterApi = flutterApi
@@ -105,13 +107,13 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     func activateBannerImpressionTracker(adId: Int64) throws -> Bool {
-        guard let adUnit = adUnits[adId], let banner = Self.onlyGmaBanner() else { return false }
+        guard let adUnit = adUnits[adId], let banner = onlyGmaBanner() else { return false }
         adUnit.activatePrebidAdViewImpressionTracker(adView: banner)
         return true
     }
 
     func findPrebidCreativeSize(adId: Int64, completion: @escaping (Result<[Int64]?, Error>) -> Void) {
-        guard let banner = Self.onlyGmaBanner() else { return completion(.success(nil)) }
+        guard let banner = onlyGmaBanner() else { return completion(.success(nil)) }
         AdViewUtils.findPrebidCreativeSize(
             banner,
             success: { size in
@@ -123,7 +125,7 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     func activateBannerSKAdNetwork(adId: Int64) throws -> Bool {
-        guard let adUnit = adUnits[adId], let banner = Self.onlyGmaBanner() else { return false }
+        guard let adUnit = adUnits[adId], let banner = onlyGmaBanner() else { return false }
         adUnit.activatePrebidBannerSKAdNetworkStoreKitAdsFlow(adView: banner)
         return true
     }
@@ -141,9 +143,10 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     /// The only Google Mobile Ads banner on screen, if there is exactly one.
-    private static func onlyGmaBanner() -> UIView? {
-        guard let root = PrebidPresenter.topViewController()?.view.window else { return nil }
-        let banners = gmaBannerViews(in: root)
+    private func onlyGmaBanner() -> UIView? {
+        guard let root = engineWindow() ?? PrebidPresenter.topViewController()?.view.window
+        else { return nil }
+        let banners = Self.gmaBannerViews(in: root)
         return banners.count == 1 ? banners[0] : nil
     }
 
@@ -160,6 +163,8 @@ final class MultiformatAdHostApiImpl: MultiformatAdHostApi {
     }
 
     func destroyAll() {
-        for id in adUnits.keys { try? destroy(adId: id) }
+        // An interval can be set without a unit (before fetchDemand, or a
+        // fetch that failed): drop it too, or a reused adId would refresh.
+        for id in Set(adUnits.keys).union(refreshSeconds.keys) { try? destroy(adId: id) }
     }
 }

@@ -5,6 +5,7 @@ import 'internal/values.dart';
 import 'multiformat_ad.dart';
 import 'native_ad.dart';
 import 'native_parameters.dart';
+import 'video_ad.dart';
 import 'video_parameters.dart';
 
 /// Result of an **Original API** bid request.
@@ -92,7 +93,12 @@ class PrebidBidResponse {
   int get hashCode => Object.hash(runtimeType, deepHash(_fields));
 
   @override
-  String toString() => describe('$runtimeType', _fields);
+  // Named in full: runtimeType is minified in obfuscated builds.
+  String toString() => describe(switch (this) {
+    PrebidNativeBidResponse() => 'PrebidNativeBidResponse',
+    PrebidVideoAdBidResponse() => 'PrebidVideoAdBidResponse',
+    _ => 'PrebidBidResponse',
+  }, _fields);
 }
 
 /// Auto-refresh shared by the Original API ad units: after [fetchDemand]
@@ -155,12 +161,12 @@ class PrebidBannerAdUnit with _AutoRefresh {
     this.pbAdSlot,
     this.impOrtbConfig,
     this.globalOrtbConfig,
-    this.api,
+    this.bannerApi,
     void Function(PrebidBidResponse response)? onDemandRefreshed,
   }) : _delegate = PrebidMultiformatAd(
          configId: configId,
          bannerSizes: sizes,
-         bannerApi: api,
+         bannerApi: bannerApi,
          adPosition: adPosition,
          gpid: gpid,
          pbAdSlot: pbAdSlot,
@@ -180,7 +186,7 @@ class PrebidBannerAdUnit with _AutoRefresh {
   /// The API frameworks the banner supports (`imp.banner.api`), e.g.
   /// `[VideoApi.mraid2, VideoApi.mraid3, VideoApi.omid1]` for MRAID
   /// creatives.
-  final List<VideoApi>? api;
+  final List<VideoApi>? bannerApi;
 
   /// Ad position on screen (`imp.banner.pos`).
   final PrebidAdPosition? adPosition;

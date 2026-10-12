@@ -292,6 +292,24 @@ void main() {
       expect(views.creationParams, {'configId': 'c', 'maxAdUnitId': 'u'});
     }, variant: android);
 
+    testWidgets('an unbounded width falls back to the screen width', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_max/native');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: PrebidMaxNativeAd(configId: 'c', maxAdUnitId: 'u'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(tester.getSize(find.byType(SizedBox).last).width, screen.width);
+    }, variant: android);
+
     testWidgets('sends assets and trackers', (tester) async {
       final views = PlatformViewHarness('prebid_mobile_sdk_max/native');
       addTearDown(views.dispose);

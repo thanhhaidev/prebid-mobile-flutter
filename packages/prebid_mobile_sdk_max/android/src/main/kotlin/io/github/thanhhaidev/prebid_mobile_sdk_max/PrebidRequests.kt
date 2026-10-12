@@ -1,6 +1,7 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_max
 
 import org.json.JSONObject
+import org.prebid.mobile.AdSize
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeAsset
 import org.prebid.mobile.NativeDataAsset
@@ -9,6 +10,7 @@ import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.api.data.Position
 import org.prebid.mobile.api.mediation.MediationNativeAdUnit
+import org.prebid.mobile.rendering.models.AdPosition
 
 // Parsing of the values the Dart side sends over method channels
 // (`NativeParameters.toMap()`, `PrebidFullscreenControls.toMap()`,
@@ -82,6 +84,17 @@ internal fun nativeTrackersFrom(raw: Any?): List<NativeEventTracker>? {
     }
 }
 
+/** `additionalSizes`: a flat `[w, h, w, h, ...]` list of extra banner sizes. */
+internal fun additionalSizesFrom(raw: Any?): List<AdSize> = (raw as? List<*>).orEmpty()
+    .mapNotNull { (it as? Number)?.toInt() }
+    .chunked(2)
+    .filter { it.size == 2 }
+    .map { (w, h) -> AdSize(w, h) }
+
+/** `adPosition` (a `PrebidAdPosition` value), when it names one. */
+internal fun adPositionFrom(raw: Any?): AdPosition? =
+    (raw as? Number)?.toInt()?.let { pos -> AdPosition.values().firstOrNull { it.value == pos } }
+
 /**
  * `maxDuration` from `VideoParameters.toMap()`. Prebid Android's rendering and mediation
  * interstitial / rewarded ad units only expose `setMaxVideoDuration`, so it is
@@ -113,15 +126,43 @@ internal class FullscreenControls(m: Map<*, *>) {
     }
 }
 
+/** The impression trackers (image + JS) a native request sends when the app sets none. */
+internal fun defaultNativeTrackers(): List<NativeEventTracker> = listOfNotNull(
+    // The constructor throws for an empty method list, never for this one.
+    runCatching {
+        NativeEventTracker(
+            NativeEventTracker.EVENT_TYPE.IMPRESSION,
+            arrayListOf(
+                NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
+                NativeEventTracker.EVENT_TRACKING_METHOD.JS,
+            ),
+        )
+    }.getOrNull(),
+)
+
 /**
  * Native context / context subtype / placement type from the Dart payload,
- * overriding the view's defaults when set.
+ * overriding the defaults (social, general social, in-feed, as on iOS;
+ * Prebid Android sends none otherwise) when set.
  */
 internal class NativeContext(
     val context: NativeAdUnit.CONTEXT_TYPE?,
     val subType: NativeAdUnit.CONTEXTSUBTYPE?,
     val placement: NativeAdUnit.PLACEMENTTYPE?,
 ) {
+    fun applyTo(unit: NativeAdUnit) {
+        unit.setContextType(context ?: NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
+        unit.setContextSubType(subType ?: NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
+        unit.setPlacementType(placement ?: NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
+    }
+
+    // MediationNativeAdUnit has the same setters, without a common type.
+    fun applyTo(unit: MediationNativeAdUnit) {
+        unit.setContextType(context ?: NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
+        unit.setContextSubType(subType ?: NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
+        unit.setPlacementType(placement ?: NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
+    }
+
     companion object {
         fun from(params: Map<*, *>): NativeContext {
             fun id(key: String) = (params[key] as? Number)?.toInt()

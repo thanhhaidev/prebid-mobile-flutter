@@ -16,15 +16,7 @@ final class GamRewardedManager: GamFullscreenAdManager {
         let gamAdUnitId = args["gamAdUnitId"] as? String ?? ""
 
         let eventHandler = GAMRewardedAdEventHandler(adUnitID: gamAdUnitId)
-        if let targeting = gamCustomTargeting(args["customTargeting"]) {
-            // Prebid 3.4: app custom targeting on the GAM request; Prebid's
-            // hb_* keys still take precedence.
-            eventHandler.adManagerRequestConfiguration = { request in
-                var merged = request.customTargeting ?? [:]
-                merged.merge(targeting) { _, app in app }
-                request.customTargeting = merged
-            }
-        }
+        eventHandler.adManagerRequestConfiguration = gamRequestConfiguration(args["customTargeting"])
         let controls = FullscreenControls(args["controls"])
         let adUnit: RewardedAdUnit
         if let minSize = controls?.minSizePercentage {

@@ -72,16 +72,19 @@ enum PrebidPresenter {
         guard let top = topViewController(in: window) else { return fail(noViewController) }
         guard isBusy(top) else { return present(top) }
         guard retry else { return fail(busy) }
+        var retried = false
         let again = {
+            guard !retried else { return }
+            retried = true
             DispatchQueue.main.async {
                 PrebidPresenter.whenReady(in: window, retry: false, fail: fail, present: present)
             }
         }
-        if let coordinator = (top.presentedViewController ?? top).transitionCoordinator {
-            _ = coordinator.animate(alongsideTransition: nil) { _ in again() }
-        } else {
-            again()
-        }
+        // UIKit doesn't call the completion when it can't queue it (false).
+        let queued =
+            (top.presentedViewController ?? top).transitionCoordinator?
+            .animate(alongsideTransition: nil) { _ in again() } ?? false
+        if !queued { again() }
     }
 
     private static func isBusy(_ controller: UIViewController) -> Bool {
@@ -215,6 +218,101 @@ struct FullscreenControls {
 
 /// Impression-level ORTB JSON with `ext.data.pbadslot` set to [pbAdSlot]
 /// (unless the JSON already sets one), for ad units without a pbAdSlot setter.
+extension FullscreenControls {
+    // `supportSKOverlay` has no mediation equivalent: Prebid's mediation ad
+    // units don't expose it (AdMob / AppLovin render the ad), so it is ignored.
+    func apply(to adUnit: MediationBaseInterstitialAdUnit) {
+        if let v = closeButtonArea { adUnit.closeButtonArea = v }
+        if let v = closeButtonPosition { adUnit.closeButtonPosition = v }
+        if let v = isMuted { adUnit.isMuted = v }
+        if let v = isSoundButtonVisible { adUnit.isSoundButtonVisible = v }
+        // Skip / auto-close exist on interstitials only (none on rewarded).
+        if let interstitial = adUnit as? MediationInterstitialAdUnit {
+            if let v = skipButtonArea { interstitial.skipButtonArea = v }
+            if let v = skipButtonPosition { interstitial.skipButtonPosition = v }
+            if let v = skipDelay { interstitial.skipDelay = v }
+            if let v = isAutoCloseOnCompletionEnabled { interstitial.isAutoCloseOnCompletionEnabled = v }
+        }
+    }
+}
+
+/// Configures an AdMob / MAX native unit from the Dart widget's `args`
+/// (`NativeParameters.toMap()` and the ORTB configs). Unset, it requests
+/// Prebid's reference assets, impression trackers (image + JS) and the
+/// social / general social / in-feed context, as on Android.
+func configureMediationNative(_ adUnit: MediationNativeAdUnit, args: [String: Any]) {
+    adUnit.addNativeAssets(nativeAssetsFrom(args["assets"]) ?? mediationNativeAssets())
+    adUnit.setContextType(.Social)
+    adUnit.setPlacementType(.FeedContent)
+    adUnit.setContextSubType(.Social)
+    if let v = args["context"] as? Int { adUnit.setContextType(ContextType(integerLiteral: v)) }
+    if let v = args["contextSubType"] as? Int { adUnit.setContextSubType(ContextSubType(integerLiteral: v)) }
+    if let v = args["placementType"] as? Int { adUnit.setPlacementType(PlacementType(integerLiteral: v)) }
+    if let v = intValue(args["placementCount"]) { adUnit.setPlacementCount(v) }
+    if let v = intValue(args["sequence"]) { adUnit.setSequence(v) }
+    if let v = args["assetUrlSupport"] as? Bool { adUnit.setAssetURLSupport(v ? 1 : 0) }
+    if let v = args["dUrlSupport"] as? Bool { adUnit.setDURLSupport(v ? 1 : 0) }
+    if let v = args["privacy"] as? Bool { adUnit.setPrivacy(v ? 1 : 0) }
+    if let v = jsonDictionary(args["ext"]) { adUnit.setExt(v) }
+    if let v = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(v) }
+    if let v = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(v) }
+    adUnit.addEventTracker(
+        nativeTrackersFrom(args["eventTrackers"]) ?? [
+            NativeEventTracker(event: .Impression, methods: [.Image, .js])
+        ])
+}
+
+/// Prebid's reference native request: title, icon, sponsored, body and call
+/// to action.
+private func mediationNativeAssets() -> [NativeAsset] {
+    let icon = NativeAssetImage(minimumWidth: 20, minimumHeight: 20, required: true)
+    icon.type = ImageAsset.Icon
+    let title = NativeAssetTitle(length: 90, required: true)
+    let body = NativeAssetData(type: DataAsset.description, required: true)
+    let cta = NativeAssetData(type: DataAsset.ctatext, required: true)
+    let sponsored = NativeAssetData(type: DataAsset.sponsored, required: true)
+    return [title, icon, sponsored, body, cta]
+}
+
+/// `additionalSizes`: a flat `[w, h, w, h, ...]` list of extra banner sizes.
+func additionalSizesFrom(_ raw: Any?) -> [CGSize] {
+    let flat = (raw as? [NSNumber] ?? []).map { $0.intValue }
+    return stride(from: 0, to: flat.count - 1, by: 2).map {
+        CGSize(width: flat[$0], height: flat[$0 + 1])
+    }
+}
+
+/// `adPosition` (a `PrebidAdPosition` value), when it names one.
+func adPositionFrom(_ raw: Any?) -> AdPosition? {
+    (raw as? Int).flatMap { AdPosition(rawValue: $0) }
+}
+
+/// `refreshIntervalSeconds` as a Prebid iOS refresh interval. Prebid
+/// refreshes every 60 s by default, and `AdUnitConfig` clamps 0 up to its
+/// 15 s minimum: only a negative value is stored as 0, which disables
+/// auto-refresh (parity with Android, where unset or 0 means none).
+/// Positive values are clamped by Prebid to 15–120 s.
+func prebidRefreshInterval(_ raw: Any?) -> TimeInterval {
+    guard let seconds = raw as? Int, seconds > 0 else { return -1 }
+    return TimeInterval(seconds)
+}
+
+/// Configures an AdMob / MAX banner unit from the Dart widget's `args`.
+func configureMediationBanner(_ adUnit: MediationBannerAdUnit, args: [String: Any]) {
+    if let pos = adPositionFrom(args["adPosition"]) { adUnit.adPosition = pos }
+    // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
+    if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
+        adUnit.setImpORTBConfig(config)
+    }
+    if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
+    if let formats = adFormatsFrom(args["adFormats"]) { adUnit.adFormats = formats }
+    // `videoParameters` is a live, get-only reference: configured in place.
+    applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
+    let additionalSizes = additionalSizesFrom(args["additionalSizes"])
+    if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
+    adUnit.refreshInterval = prebidRefreshInterval(args["refreshIntervalSeconds"])
+}
+
 func impOrtb(_ json: String?, pbAdSlot: String?) -> String? {
     guard let pbAdSlot = pbAdSlot else { return json }
     let data = json.flatMap { $0.data(using: .utf8) }

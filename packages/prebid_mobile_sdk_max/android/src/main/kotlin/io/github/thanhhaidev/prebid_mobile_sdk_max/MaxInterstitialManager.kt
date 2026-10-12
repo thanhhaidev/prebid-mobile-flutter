@@ -40,7 +40,13 @@ internal class MaxInterstitialManager(
             override fun onAdLoaded(ad: MaxAd) = send(adId, "onAdLoaded")
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) = send(adId, "onAdFailed", error.message)
             override fun onAdDisplayed(ad: MaxAd) = send(adId, "onAdDisplayed")
-            override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) = send(adId, "onAdFailed", error.message)
+
+            // onAdDisplayFailed tells it apart from a load failure;
+            // onAdFailed follows, as for every failure.
+            override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
+                send(adId, "onAdDisplayFailed", error.message)
+                send(adId, "onAdFailed", error.message)
+            }
             override fun onAdHidden(ad: MaxAd) = send(adId, "onAdClosed")
             override fun onAdClicked(ad: MaxAd) = send(adId, "onAdClicked")
         })

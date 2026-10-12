@@ -85,25 +85,7 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
             configId: configId,
             mediationDelegate: mediationDelegate
         )
-        adUnit.addNativeAssets(nativeAssetsFrom(args["assets"]) ?? Self.requestAssets)
-        adUnit.setContextType(.Social)
-        adUnit.setPlacementType(.FeedContent)
-        adUnit.setContextSubType(.Social)
-        if let v = args["context"] as? Int { adUnit.setContextType(ContextType(integerLiteral: v)) }
-        if let v = args["contextSubType"] as? Int { adUnit.setContextSubType(ContextSubType(integerLiteral: v)) }
-        if let v = args["placementType"] as? Int { adUnit.setPlacementType(PlacementType(integerLiteral: v)) }
-        if let v = intValue(args["placementCount"]) { adUnit.setPlacementCount(v) }
-        if let v = intValue(args["sequence"]) { adUnit.setSequence(v) }
-        if let v = args["assetUrlSupport"] as? Bool { adUnit.setAssetURLSupport(v ? 1 : 0) }
-        if let v = args["dUrlSupport"] as? Bool { adUnit.setDURLSupport(v ? 1 : 0) }
-        if let v = args["privacy"] as? Bool { adUnit.setPrivacy(v ? 1 : 0) }
-        if let v = jsonDictionary(args["ext"]) { adUnit.setExt(v) }
-        if let v = args["impOrtbConfig"] as? String { adUnit.setImpORTBConfig(v) }
-        if let v = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(v) }
-        adUnit.addEventTracker(
-            nativeTrackersFrom(args["eventTrackers"]) ?? [
-                NativeEventTracker(event: .Impression, methods: [.Image, .js])
-            ])
+        configureMediationNative(adUnit, args: args)
         self.adUnit = adUnit
 
         adUnit.fetchDemand { [weak self] _ in
@@ -111,7 +93,8 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
                 guard let self = self else { return }
                 let loader = AdLoader(
                     adUnitID: adMobAdUnitId,
-                    rootViewController: PrebidPresenter.topViewController(),
+                    // The view's own window: GMA presents click-throughs from it.
+                    rootViewController: PrebidPresenter.topViewController(in: self.container.window),
                     adTypes: [.native],
                     options: nil
                 )
@@ -176,16 +159,6 @@ final class AdMobNativePlatformView: NSObject, FlutterPlatformView, NativeAdLoad
         nativeAdView.headlineView = headlineLabel
         nativeAdView.bodyView = bodyLabel
         nativeAdView.callToActionView = ctaButton
-    }
-
-    private static var requestAssets: [NativeAsset] {
-        let icon = NativeAssetImage(minimumWidth: 20, minimumHeight: 20, required: true)
-        icon.type = ImageAsset.Icon
-        let title = NativeAssetTitle(length: 90, required: true)
-        let body = NativeAssetData(type: DataAsset.description, required: true)
-        let cta = NativeAssetData(type: DataAsset.ctatext, required: true)
-        let sponsored = NativeAssetData(type: DataAsset.sponsored, required: true)
-        return [title, icon, sponsored, body, cta]
     }
 
     // MARK: - NativeAdLoaderDelegate

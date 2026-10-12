@@ -17,15 +17,7 @@ final class GamInterstitialManager: GamFullscreenAdManager {
         let isVideo = args["isVideo"] as? Bool ?? false
 
         let eventHandler = GAMInterstitialEventHandler(adUnitID: gamAdUnitId)
-        if let targeting = gamCustomTargeting(args["customTargeting"]) {
-            // Prebid 3.4: app custom targeting on the GAM request; Prebid's
-            // hb_* keys still take precedence.
-            eventHandler.adManagerRequestConfiguration = { request in
-                var merged = request.customTargeting ?? [:]
-                merged.merge(targeting) { _, app in app }
-                request.customTargeting = merged
-            }
-        }
+        eventHandler.adManagerRequestConfiguration = gamRequestConfiguration(args["customTargeting"])
         let controls = FullscreenControls(args["controls"])
         let adUnit: InterstitialRenderingAdUnit
         if let minSize = controls?.minSizePercentage {

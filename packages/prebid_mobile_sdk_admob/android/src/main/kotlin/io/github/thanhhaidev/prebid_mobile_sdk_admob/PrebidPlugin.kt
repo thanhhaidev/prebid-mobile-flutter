@@ -1,6 +1,9 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_admob
 
+import android.content.Context
+import android.view.View
 import java.util.EnumSet
+import kotlin.math.roundToInt
 import kotlin.random.Random
 import org.prebid.mobile.api.data.AdUnitFormat
 
@@ -17,6 +20,7 @@ internal object PluginErrors {
     const val NO_ACTIVITY = "No Activity is attached to the Flutter engine"
     const val NOT_LOADED = "The ad is not loaded"
     const val ACTIVITY_DESTROYED = "The Activity was destroyed"
+    const val ACTIVITY_RECREATED = "The Activity was re-created for a configuration change"
     const val UNKNOWN = "Unknown error"
 }
 
@@ -36,6 +40,22 @@ internal fun failure(message: String?): Map<String, Any?> = mapOf("error" to err
  */
 internal fun viewChannelName(prefix: String, params: Map<*, *>, viewId: Int): String =
     "${prefix}_${(params["channelId"] as? Number)?.toLong() ?: viewId.toLong()}"
+
+/** [value] dp in pixels. */
+internal fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()
+
+/**
+ * [content]'s natural height at [width] pixels, in logical pixels: a
+ * platform view is clamped to its Flutter-side size, so its own height
+ * would only echo that.
+ */
+internal fun naturalHeight(content: View, width: Int): Double {
+    content.measure(
+        View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+    )
+    return (content.measuredHeight / content.resources.displayMetrics.density).toDouble()
+}
 
 /**
  * `debugDropBidProbability` (`PrebidAdMob` / `PrebidMax`

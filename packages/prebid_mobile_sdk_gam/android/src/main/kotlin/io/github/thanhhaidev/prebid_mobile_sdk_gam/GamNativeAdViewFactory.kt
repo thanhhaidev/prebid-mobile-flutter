@@ -1,8 +1,6 @@
 package io.github.thanhhaidev.prebid_mobile_sdk_gam
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -29,17 +27,10 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import java.io.ByteArrayOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.roundToInt
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
-import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidMobile
@@ -60,7 +51,7 @@ internal class GamNativeAdViewFactory(private val messenger: BinaryMessenger) :
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *> ?: emptyMap<String, Any>()
-        return GamNativePlatformView(context, messenger, params)
+        return GamNativePlatformView(context, messenger, params, viewId)
     }
 }
 
@@ -73,9 +64,9 @@ internal class GamNativePlatformView(
     private val context: Context,
     messenger: BinaryMessenger,
     params: Map<*, *>,
+    viewId: Int,
 ) : PlatformView {
 
-    private val channelId = (params["channelId"] as? Number)?.toLong() ?: 0L
     private val configId = params["configId"] as? String ?: ""
     private val gamAdUnitId = params["gamAdUnitId"] as? String ?: ""
     private val customFormatId = params["customFormatId"] as? String ?: ""
@@ -90,7 +81,7 @@ internal class GamNativePlatformView(
     private val requestOptions = NativeRequestOptions(params)
 
     private val methodChannel =
-        MethodChannel(messenger, "prebid_mobile_sdk_gam/native_$channelId")
+        MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_gam/native", params, viewId))
     private val root = FrameLayout(context)
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -156,12 +147,7 @@ internal class GamNativePlatformView(
         }.build()
 
         val nativeAdUnit = NativeAdUnit(configId)
-        nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
-        nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
-        nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
-        nativeContext.context?.let { nativeAdUnit.setContextType(it) }
-        nativeContext.subType?.let { nativeAdUnit.setContextSubType(it) }
-        nativeContext.placement?.let { nativeAdUnit.setPlacementType(it) }
+        nativeContext.applyTo(nativeAdUnit)
         addNativeAssets(nativeAdUnit)
         gpid?.let { nativeAdUnit.setGpid(it) }
         pbAdSlot?.let { nativeAdUnit.setPbAdSlot(it) }
@@ -268,7 +254,7 @@ internal class GamNativePlatformView(
     private fun addNativeAssets(adUnit: NativeAdUnit) {
         if (customAssets != null) {
             customAssets.forEach { adUnit.addAsset(it) }
-            (customTrackers ?: defaultTrackers()).forEach { adUnit.addEventTracker(it) }
+            (customTrackers ?: defaultNativeTrackers()).forEach { adUnit.addEventTracker(it) }
             return
         }
         val title = NativeTitleAsset()
@@ -302,20 +288,8 @@ internal class GamNativePlatformView(
         cta.dataType = NativeDataAsset.DATA_TYPE.CTATEXT
         adUnit.addAsset(cta)
 
-        (customTrackers ?: defaultTrackers()).forEach { adUnit.addEventTracker(it) }
+        (customTrackers ?: defaultNativeTrackers()).forEach { adUnit.addEventTracker(it) }
     }
-
-    private fun defaultTrackers(): List<NativeEventTracker> = listOfNotNull(
-        runCatching {
-            NativeEventTracker(
-                NativeEventTracker.EVENT_TYPE.IMPRESSION,
-                arrayListOf(
-                    NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
-                    NativeEventTracker.EVENT_TRACKING_METHOD.JS,
-                ),
-            )
-        }.getOrNull(),
-    )
 
     /**
      * Renders the Prebid winning native creative and registers the view so
@@ -510,14 +484,8 @@ internal class GamNativePlatformView(
         // Measure the content's natural height (the root is clamped to the
         // current Flutter-side size) and report it in logical pixels.
         root.post {
-            view.measure(
-                View.MeasureSpec.makeMeasureSpec(root.width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            )
-            val h = view.measuredHeight / context.resources.displayMetrics.density
-            if (h > 0) {
-                send("onAdSize", mapOf("height" to h.toDouble()))
-            }
+            val h = naturalHeight(view, root.width)
+            if (h > 0) send("onAdSize", mapOf("height" to h))
         }
     }
 
@@ -566,6 +534,3 @@ internal class GamNativePlatformView(
 
 private const val CHECK_INTERVAL_MS = 250L
 private const val REQUIRED_VIEWABLE_CHECKS = 5 // 1 s / 0.25 s + 1, as Prebid iOS
-
-/** [value] dp in pixels. */
-private fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()

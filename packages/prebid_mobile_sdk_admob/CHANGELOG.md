@@ -6,7 +6,7 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-11
+## [1.1.0] - 2026-10-12
 
 ### Added
 
@@ -14,6 +14,7 @@ All notable changes to this package are documented here. The format follows
   `PrebidAdMobNativeAd` (iOS only, as its `impOrtbConfig`).
 - `PrebidAdMobPreloadedBannerAd(adaptiveWidth: ...)`: the width an adaptive
   banner spans, apart from `width`, the Prebid request size.
+- `PrebidAdMobNativeAd(width: ...)`.
 
 ### Changed
 
@@ -43,6 +44,13 @@ All notable changes to this package are documented here. The format follows
   banners from their own, instead of the first key window: on an iPad with
   several windows, or with Flutter in a secondary scene (add-to-app), they
   appeared in the wrong one. The key window remains the fallback.
+- `PrebidAdMobNativeAd` in a parent with an unbounded width (a `Row`, a
+  horizontal list) takes the screen width instead of failing layout.
+- iOS: a native ad's click-through opens from the ad's own window.
+- Android: interstitial and rewarded ads are released when the Activity is
+  re-created for a configuration change, as the core plugin's are.
+- iOS: `show()` during a view controller transition that UIKit can't queue
+  reports `onAdDisplayed` or `onAdFailed`; it could report neither.
 
 ## [1.0.0] - 2026-10-11
 

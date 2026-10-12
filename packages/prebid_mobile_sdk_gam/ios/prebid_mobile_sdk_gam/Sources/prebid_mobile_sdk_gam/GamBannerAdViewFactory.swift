@@ -69,18 +69,13 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
         let height = args["height"] as? Int ?? 50
         let isVideo = args["isVideo"] as? Bool ?? false
         let autoLoad = args["autoLoad"] as? Bool ?? true
-        let refreshInterval = args["refreshIntervalSeconds"] as? Int
         let videoPlacement = args["videoPlacementType"] as? String
         let adFormats = args["adFormats"] as? [String]
         let pbAdSlot = args["pbAdSlot"] as? String
         let impOrtbConfig = args["impOrtbConfig"] as? String
 
         let adSize = CGSize(width: width, height: height)
-        // Flat [w, h, w, h, ...] list of extra sizes for a multisize banner.
-        let flatSizes = (args["additionalSizes"] as? [NSNumber] ?? []).map { $0.intValue }
-        let additionalSizes = stride(from: 0, to: flatSizes.count - 1, by: 2).map {
-            CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
-        }
+        let additionalSizes = additionalSizesFrom(args["additionalSizes"])
 
         methodChannel = viewChannel(
             "prebid_mobile_sdk_gam/banner", args: args, viewId: viewId, messenger: messenger
@@ -90,15 +85,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
             adUnitID: gamAdUnitId,
             validGADAdSizes: ([adSize] + additionalSizes).map { nsValue(for: adSizeFor(cgSize: $0)) }
         )
-        if let targeting = gamCustomTargeting(args["customTargeting"]) {
-            // Prebid 3.4: app custom targeting on the GAM request; Prebid's
-            // hb_* keys still take precedence.
-            eventHandler.adManagerRequestConfiguration = { request in
-                var merged = request.customTargeting ?? [:]
-                merged.merge(targeting) { _, app in app }
-                request.customTargeting = merged
-            }
-        }
+        eventHandler.adManagerRequestConfiguration = gamRequestConfiguration(args["customTargeting"])
         // Takes the primary size from the event handler and derives
         // `additionalSizes` from its remaining valid sizes.
         bannerView = PrebidMobile.BannerView(configID: configId, eventHandler: eventHandler)
@@ -106,16 +93,11 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
         super.init()
         StoredAuctionResponseKeeper.protect(bannerView)
 
-        if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
-            bannerView.adPosition = pos
-        }
+        if let pos = adPositionFrom(args["adPosition"]) { bannerView.adPosition = pos }
 
-        if let adFormats = adFormats {
+        if adFormats != nil {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.
-            var formats: Set<PrebidMobile.AdFormat> = []
-            if adFormats.contains("banner") { formats.insert(.banner) }
-            if adFormats.contains("video") { formats.insert(.video) }
-            if !formats.isEmpty { bannerView.adFormats = formats }
+            if let formats = adFormatsFrom(adFormats) { bannerView.adFormats = formats }
         } else if isVideo {
             bannerView.adFormats = [.video]
         }
@@ -133,14 +115,7 @@ final class GamBannerPlatformView: NSObject, FlutterPlatformView, PrebidMobile.B
         if let impOrtbConfig = impOrtbConfig { bannerView.setImpORTBConfig(impOrtbConfig) }
         if let config = args["globalOrtbConfig"] as? String { bannerView.setGlobalORTBConfig(config) }
 
-        if let interval = refreshInterval, interval > 0 {
-            bannerView.refreshInterval = TimeInterval(interval)
-        } else {
-            // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
-            // clamps 0 up to its 15 s minimum — only a negative value is
-            // stored as 0, which disables auto-refresh (parity with Android).
-            bannerView.refreshInterval = -1
-        }
+        bannerView.refreshInterval = prebidRefreshInterval(args["refreshIntervalSeconds"])
 
         bannerView.delegate = self
         bannerView.videoPlaybackDelegate = self

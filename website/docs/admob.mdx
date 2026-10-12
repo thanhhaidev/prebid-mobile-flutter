@@ -115,7 +115,7 @@ PrebidAdMobNativeAd(
 )
 ```
 
-Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests Prebid's reference assets and impression trackers, with the social, general social and in-feed context. `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid` (the last two sent in the `imp` JSON) apply on iOS only: Prebid Android's mediation native unit has no setters for them.
+Rendered in AdMob's `NativeAdView`, so AdMob tracks impressions and clicks. `PrebidAdMobNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdOpened` and `onAdFailed`. `nativeParameters` ([`NativeParameters`](/docs/native#requested-assets)) sets the requested assets, event trackers, context and request options; unset, it requests Prebid's reference assets and impression trackers, with the social, general social and in-feed context. `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid` (the last two sent in the `imp` JSON) apply on iOS only: Prebid Android's mediation native unit has no setters for them. The slot fills the parent's width (the screen width inside a `Row` or a horizontal list), or `width`, and grows from `height` to the rendered content.
 
 ## Events
 

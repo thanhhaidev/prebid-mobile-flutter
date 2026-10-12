@@ -106,31 +106,16 @@ class PrebidMaxInterstitialAd extends CompanionFullscreenAd {
     ...debugDropBidArgs(),
   };
 
-  /// Requests the ad. [PrebidInterstitialAdListener.onAdLoaded] fires when it is
-  /// ready to [show]; [PrebidInterstitialAdListener.onAdFailed] fires instead
-  /// when it can't load (on Android also when the Prebid SDK isn't
-  /// initialized yet).
-  @override
-  Future<void> loadAd() => super.loadAd();
-
-  /// Presents the loaded interstitial fullscreen. An ad shows once, so [isLoaded]
-  /// turns false; if it cannot be shown (not loaded yet, no foreground
-  /// activity / view controller) the listener's `onAdFailed` fires.
-  @override
-  Future<void> show() => super.show();
-
-  /// Releases native resources held by this ad. [loadAd] may be called again
-  /// afterwards.
-  @override
-  Future<void> destroy() => super.destroy();
-
   @override
   void onEvent(String event, Map? args) {
     if (dispatchInterstitialEvent(listener, event, args)) return;
     final maxListener = listener;
-    if (event == 'onAdRevenuePaid' &&
-        maxListener is PrebidMaxInterstitialAdListener) {
-      maxListener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
+    if (maxListener is! PrebidMaxInterstitialAdListener) return;
+    switch (event) {
+      case 'onAdDisplayFailed':
+        maxListener.onAdDisplayFailed?.call(adEventError(args));
+      case 'onAdRevenuePaid':
+        maxListener.onAdRevenuePaid?.call(maxAdRevenueFrom(args));
     }
   }
 }

@@ -14,9 +14,10 @@ abstract final class PrebidAdMob {
   /// Prebid's internal test app "Random" cases (which use `0.5`) to exercise
   /// the adapter's no-bid path.
   ///
-  /// Read at each [PrebidAdMobBannerAd] creation and each
-  /// [PrebidAdMobInterstitialAd] / [PrebidAdMobRewardedAd] `loadAd()`; banners
-  /// roll again on every auto-refresh. Native ads ignore it. Natively:
+  /// Read at each [PrebidAdMobBannerAd] creation, each native creation of a
+  /// [PrebidAdMobPreloadedBannerAd] (its first `load()`, not a reload) and
+  /// each [PrebidAdMobInterstitialAd] / [PrebidAdMobRewardedAd] `loadAd()`;
+  /// banners roll again on every auto-refresh. Native ads ignore it. Natively:
   ///
   /// - **Android** pops the bid from Prebid's `BidResponseCache` (exactly as
   ///   the test app does).

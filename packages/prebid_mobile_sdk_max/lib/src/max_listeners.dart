@@ -97,8 +97,14 @@ class PrebidMaxInterstitialAdListener extends PrebidInterstitialAdListener {
     super.onAdClicked,
     super.onAdExpired,
     super.onAdImpression,
+    this.onAdDisplayFailed,
     this.onAdRevenuePaid,
   });
+
+  /// MAX loaded the ad but failed to display it. [onAdFailed] follows with
+  /// the same error, so a listener counting load failures can skip the next
+  /// [onAdFailed].
+  final void Function(String error)? onAdDisplayFailed;
 
   /// MAX paid revenue for an impression (it also fires [onAdImpression]).
   final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;
@@ -117,8 +123,14 @@ class PrebidMaxRewardedAdListener extends PrebidRewardedAdListener {
     super.onUserEarnedReward,
     super.onAdExpired,
     super.onAdImpression,
+    this.onAdDisplayFailed,
     this.onAdRevenuePaid,
   });
+
+  /// MAX loaded the ad but failed to display it. [onAdFailed] follows with
+  /// the same error, so a listener counting load failures can skip the next
+  /// [onAdFailed].
+  final void Function(String error)? onAdDisplayFailed;
 
   /// MAX paid revenue for an impression (it also fires [onAdImpression]).
   final void Function(PrebidMaxAdRevenue revenue)? onAdRevenuePaid;

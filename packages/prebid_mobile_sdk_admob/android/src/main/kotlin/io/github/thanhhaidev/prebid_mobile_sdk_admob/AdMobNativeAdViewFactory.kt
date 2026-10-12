@@ -22,10 +22,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import kotlin.math.roundToInt
-import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
-import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidMobile
@@ -85,29 +82,11 @@ internal class AdMobNativePlatformView(
 
         val extras = Bundle()
         val adUnit = MediationNativeAdUnit(configId, extras)
-        // Defaults as on iOS (and the other companions); Prebid Android sends
-        // no context or placement otherwise.
-        adUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
-        adUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
-        adUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
-        NativeContext.from(params).let { c ->
-            c.context?.let { adUnit.setContextType(it) }
-            c.subType?.let { adUnit.setContextSubType(it) }
-            c.placement?.let { adUnit.setPlacementType(it) }
-        }
+        NativeContext.from(params).applyTo(adUnit)
         // MediationNativeAdUnit has no ORTB config setters: those are iOS only.
         NativeRequestOptions(params).applyTo(adUnit)
         (nativeAssetsFrom(params["assets"]) ?: nativeAssets()).forEach { adUnit.addAsset(it) }
-        val trackers = nativeTrackersFrom(params["eventTrackers"]) ?: listOf(
-            NativeEventTracker(
-                NativeEventTracker.EVENT_TYPE.IMPRESSION,
-                arrayListOf(
-                    NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
-                    NativeEventTracker.EVENT_TRACKING_METHOD.JS,
-                ),
-            ),
-        )
-        trackers.forEach { adUnit.addEventTracker(it) }
+        (nativeTrackersFrom(params["eventTrackers"]) ?: defaultNativeTrackers()).forEach { adUnit.addEventTracker(it) }
         this.adUnit = adUnit
 
         val adLoader = AdLoader.Builder(context, adMobAdUnitId)
@@ -125,14 +104,8 @@ internal class AdMobNativePlatformView(
                 nativeAdView.post {
                     if (disposed) return@post
                     val content = nativeAdView.getChildAt(0) ?: return@post
-                    content.measure(
-                        View.MeasureSpec.makeMeasureSpec(nativeAdView.width, View.MeasureSpec.EXACTLY),
-                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                    )
-                    val h = content.measuredHeight / nativeAdView.resources.displayMetrics.density
-                    if (h > 0) {
-                        methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
-                    }
+                    val h = naturalHeight(content, nativeAdView.width)
+                    if (h > 0) methodChannel.invokeMethod("onAdSize", mapOf("height" to h))
                 }
             }
             .withAdListener(object : AdListener() {
@@ -257,6 +230,3 @@ internal class AdMobNativePlatformView(
         adUnit?.destroy()
     }
 }
-
-/** [value] dp in pixels. */
-private fun Context.dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()

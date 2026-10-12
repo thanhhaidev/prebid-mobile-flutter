@@ -132,7 +132,9 @@ internal abstract class FullscreenAdManager<A : Any>(
             return send(adId, "onAdFailed", PluginErrors.NOT_INITIALIZED)
         }
         val activity = activityProvider() ?: return send(adId, "onAdFailed", PluginErrors.NO_ACTIVITY)
-        val ad = create(adId, args, activity)
+        // The ad SDK rejects some arguments by throwing (MAX: an empty ad unit id).
+        val ad = runCatching { create(adId, args, activity) }
+            .getOrElse { return send(adId, "onAdFailed", it.message) }
         ads[adId] = ad
         load(adId, ad, activity)
     }
@@ -160,10 +162,7 @@ internal abstract class FullscreenAdManager<A : Any>(
         ads.keys.toList().forEach { release(it) }
     }
 
-    /**
-     * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
-     * [error] as its `error` (blank becomes "Unknown error").
-     */
+    /** Frees the unshown ad after [adLifetimeMs] and reports `onAdExpired`. */
     private fun scheduleExpiry(adId: Long) {
         val lifetime = adLifetimeMs ?: return
         val ad = ads[adId] ?: return
@@ -182,6 +181,10 @@ internal abstract class FullscreenAdManager<A : Any>(
         expiries.remove(adId)?.let(mainHandler::removeCallbacks)
     }
 
+    /**
+     * Sends [event] for [adId] with any [extras]; `onAdFailed` carries
+     * [error] as its `error` (blank becomes "Unknown error").
+     */
     protected fun send(adId: Long, event: String, error: String? = null, extras: Map<String, Any?> = emptyMap()) {
         if (event == "onAdLoaded") scheduleExpiry(adId)
         val payload = mutableMapOf<String, Any?>("adId" to adId)

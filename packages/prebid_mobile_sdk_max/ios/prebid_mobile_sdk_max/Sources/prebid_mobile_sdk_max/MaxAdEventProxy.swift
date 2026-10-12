@@ -35,8 +35,12 @@ final class MaxAdEventProxy: NSObject, MARewardedAdDelegate, MAAdRevenueDelegate
         emit("onAdClicked", [:])
     }
 
+    // onAdDisplayFailed tells it apart from a load failure; onAdFailed
+    // follows, as for every failure.
     func didFail(toDisplay ad: MAAd, withError error: MAError) {
-        emit("onAdFailed", ["error": PrebidErrorFormatter.describe(error)])
+        let payload = ["error": PrebidErrorFormatter.describe(error)]
+        emit("onAdDisplayFailed", payload)
+        emit("onAdFailed", payload)
     }
 
     // MAX reports revenue when the impression is recorded.

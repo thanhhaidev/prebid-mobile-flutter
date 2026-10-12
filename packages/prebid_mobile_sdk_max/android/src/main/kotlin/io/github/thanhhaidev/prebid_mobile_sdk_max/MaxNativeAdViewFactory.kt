@@ -19,7 +19,6 @@ import io.flutter.plugin.platform.PlatformViewFactory
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeAsset
 import org.prebid.mobile.NativeDataAsset
-import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidMobile
@@ -134,14 +133,8 @@ internal class MaxNativePlatformView(
     private fun reportContentHeight(content: View) {
         container.post {
             if (disposed) return@post
-            content.measure(
-                View.MeasureSpec.makeMeasureSpec(container.width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            )
-            val h = content.measuredHeight / container.resources.displayMetrics.density
-            if (h > 0) {
-                methodChannel.invokeMethod("onAdSize", mapOf("height" to h.toDouble()))
-            }
+            val h = naturalHeight(content, container.width)
+            if (h > 0) methodChannel.invokeMethod("onAdSize", mapOf("height" to h))
         }
     }
 
@@ -157,20 +150,13 @@ internal class MaxNativePlatformView(
     }
 
     private fun configureNativeAdUnit(nativeAdUnit: NativeAdUnit, params: Map<*, *>) {
-        nativeAdUnit.setContextType(NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
-        nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
-        nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
-        NativeContext.from(params).let { c ->
-            c.context?.let { nativeAdUnit.setContextType(it) }
-            c.subType?.let { nativeAdUnit.setContextSubType(it) }
-            c.placement?.let { nativeAdUnit.setPlacementType(it) }
-        }
+        NativeContext.from(params).applyTo(nativeAdUnit)
         NativeRequestOptions(params).applyTo(nativeAdUnit)
         (params["impOrtbConfig"] as? String)?.let { nativeAdUnit.setImpOrtbConfig(it) }
         (params["globalOrtbConfig"] as? String)?.let { nativeAdUnit.setGlobalOrtbConfig(it) }
 
         (nativeAssetsFrom(params["assets"]) ?: defaultAssets()).forEach { nativeAdUnit.addAsset(it) }
-        (nativeTrackersFrom(params["eventTrackers"]) ?: listOf(defaultTracker()))
+        (nativeTrackersFrom(params["eventTrackers"]) ?: defaultNativeTrackers())
             .forEach { nativeAdUnit.addEventTracker(it) }
     }
 
@@ -196,15 +182,6 @@ internal class MaxNativePlatformView(
             dataType = NativeDataAsset.DATA_TYPE.CTATEXT
             isRequired = true
         },
-    )
-
-    /** Image and JS impression trackers. */
-    private fun defaultTracker() = NativeEventTracker(
-        NativeEventTracker.EVENT_TYPE.IMPRESSION,
-        arrayListOf(
-            NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE,
-            NativeEventTracker.EVENT_TRACKING_METHOD.JS,
-        ),
     )
 
     override fun getView(): View = container

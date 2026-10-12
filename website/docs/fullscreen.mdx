@@ -63,7 +63,8 @@ await rewarded.loadAd();
 
 - `isLoaded` is true from `onAdLoaded` until the ad is shown, fails, closes or expires.
 - `loadAd()` again replaces the previous ad; the old one stops sending events.
-- `show()` before `onAdLoaded`, or with no foreground Activity / view controller, reports `onAdFailed` instead of failing silently.
+- `show()` before `onAdLoaded`, or with no foreground Activity / view controller, reports `onAdFailed` instead of failing silently. Without an Activity / view controller the ad is kept, so a later `show()` can still present it.
+- A load replaces the ad's previous load. To preload the next ad on the same object, wait for `onAdClosed`: loading while an ad is on screen drops its remaining events (its close, a reward).
 - `onAdExpired` fires when the bid's `exp` elapses before `show()`. Load again.
 - Call `destroy()` when you're done, typically in `onAdClosed` or your widget's `dispose`.
 - <Only platform="android" /> `winningBid` holds the bid of the last load (price, bidder, size, targeting keywords), for analytics; `null` before a load, without a bid, and on iOS, where Prebid keeps it internal.

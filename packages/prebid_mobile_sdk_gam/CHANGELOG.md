@@ -6,7 +6,7 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-11
+## [1.1.0] - 2026-10-12
 
 ### Added
 
@@ -39,6 +39,18 @@ All notable changes to this package are documented here. The format follows
   banners from their own, instead of the first key window: on an iPad with
   several windows, or with Flutter in a secondary scene (add-to-app), they
   appeared in the wrong one. The key window remains the fallback.
+- iOS: a GAM custom-format ad that wins reports `onAdImpression` and
+  `onAdClicked`, as on Android.
+- iOS: a native ad's click-through opens from the ad's own window.
+- Android: interstitial and rewarded ads are released when the Activity is
+  re-created for a configuration change, as the core plugin's are, instead
+  of showing on the destroyed Activity.
+- `PrebidGamNativeAd` in a parent with an unbounded width (a `Row`, a
+  horizontal list) takes the screen width instead of failing layout.
+- iOS: `show()` during a view controller transition that UIKit can't queue
+  reports `onAdDisplayed` or `onAdFailed`; it could report neither.
+- Android: a result code added by a newer Prebid SDK no longer crashes the
+  app.
 
 ## [1.0.0] - 2026-10-11
 

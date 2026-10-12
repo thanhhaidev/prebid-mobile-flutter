@@ -28,7 +28,7 @@ public final class PrebidMobileSdkAdmobPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PrebidMobileSdkAdmobPlugin(messenger: registrar.messenger())
         // Fullscreen ads present in this engine's window.
-        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.view.window }
+        let engineWindow: () -> UIWindow? = { [weak registrar] in registrar?.viewController?.viewIfLoaded?.window }
         instance.interstitialManager.engineWindow = engineWindow
         instance.rewardedManager.engineWindow = engineWindow
         let bannerFactory = AdMobBannerAdViewFactory(

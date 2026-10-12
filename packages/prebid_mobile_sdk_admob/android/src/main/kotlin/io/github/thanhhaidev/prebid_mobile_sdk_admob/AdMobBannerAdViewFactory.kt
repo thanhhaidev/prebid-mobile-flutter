@@ -19,7 +19,6 @@ import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.admob.AdMobMediationBannerUtils
 import org.prebid.mobile.admob.PrebidBannerAdapter
 import org.prebid.mobile.api.mediation.MediationBannerAdUnit
-import org.prebid.mobile.rendering.models.AdPosition
 
 /**
  * PlatformView factory for AdMob-mediated banners. The rendered view is the
@@ -78,12 +77,7 @@ internal class AdMobBannerPlatformView(
         val autoLoad = params["autoLoad"] as? Boolean ?: true
         val adaptive = params["adaptive"] as? Boolean ?: false
         val refreshInterval = params["refreshIntervalSeconds"] as? Int
-        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
-        val additionalSizes = (params["additionalSizes"] as? List<*>).orEmpty()
-            .mapNotNull { (it as? Number)?.toInt() }
-            .chunked(2)
-            .filter { it.size == 2 }
-            .map { (w, h) -> AdSize(w, h) }
+        val additionalSizes = additionalSizesFrom(params["additionalSizes"])
         dropBidProbability = debugDropBidProbability(params["debugDropBidProbability"])
 
         methodChannel = MethodChannel(messenger, viewChannelName("prebid_mobile_sdk_admob/banner", params, viewId))
@@ -141,10 +135,7 @@ internal class AdMobBannerPlatformView(
             AdSize(width, height),
             mediationUtils,
         )
-        (params["adPosition"] as? Number)?.toInt()?.let { pos ->
-            AdPosition.values().firstOrNull { it.value == pos }
-                ?.let { adUnit?.setAdPosition(it) }
-        }
+        adPositionFrom(params["adPosition"])?.let { adUnit?.setAdPosition(it) }
         (params["impOrtbConfig"] as? String)?.let { adUnit?.setImpOrtbConfig(it) }
         (params["globalOrtbConfig"] as? String)?.let { adUnit?.setGlobalOrtbConfig(it) }
         (params["pbAdSlot"] as? String)?.let { adUnit?.setPbAdSlot(it) }
@@ -152,9 +143,7 @@ internal class AdMobBannerPlatformView(
         // `videoParameters` has no counterpart here: Prebid Android's
         // mediation banner has no video-parameters setter, so a video banner
         // sends the SDK's defaults.
-        if (params["adFormats"] != null) {
-            adUnit?.setAdUnitFormats(adUnitFormats(params["adFormats"], isVideo = false))
-        }
+        adUnitFormatsFrom(params["adFormats"])?.let { adUnit?.setAdUnitFormats(it) }
         // 0 means a single request without auto-refresh (also Prebid's
         // default); positive values are clamped by Prebid to 30–120 s.
         refreshInterval?.let { adUnit?.setRefreshInterval(if (it > 0) it else 0) }

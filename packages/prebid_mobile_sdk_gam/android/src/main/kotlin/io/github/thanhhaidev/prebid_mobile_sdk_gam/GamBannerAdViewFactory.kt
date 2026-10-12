@@ -9,17 +9,14 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
-import java.util.EnumSet
 import org.prebid.mobile.AdSize
 import org.prebid.mobile.PrebidMobile
-import org.prebid.mobile.api.data.AdUnitFormat
 import org.prebid.mobile.api.data.VideoPlacementType
 import org.prebid.mobile.api.exceptions.AdException
 import org.prebid.mobile.api.rendering.BannerView
 import org.prebid.mobile.api.rendering.listeners.BannerVideoListener
 import org.prebid.mobile.api.rendering.listeners.BannerViewListener
 import org.prebid.mobile.eventhandlers.GamBannerEventHandler
-import org.prebid.mobile.rendering.models.AdPosition
 
 /**
  * PlatformView factory for GAM-rendered banners. Mirrors the core
@@ -68,12 +65,7 @@ internal class GamBannerPlatformView(
         val adFormats = (params["adFormats"] as? List<*>)?.filterIsInstance<String>()
         val pbAdSlot = params["pbAdSlot"] as? String
         val impOrtbConfig = params["impOrtbConfig"] as? String
-        // Flat [w, h, w, h, ...] list of extra sizes for a multisize banner.
-        val additionalSizes = (params["additionalSizes"] as? List<*>).orEmpty()
-            .mapNotNull { (it as? Number)?.toInt() }
-            .chunked(2)
-            .filter { it.size == 2 }
-            .map { (w, h) -> AdSize(w, h) }
+        val additionalSizes = additionalSizesFrom(params["additionalSizes"])
         val videoPlacement = when (params["videoPlacementType"] as? String) {
             "inArticle" -> VideoPlacementType.IN_ARTICLE
             "inFeed" -> VideoPlacementType.IN_FEED
@@ -94,17 +86,11 @@ internal class GamBannerPlatformView(
             }
         }
         bannerView = BannerView(context, configId, eventHandler)
-        (params["adPosition"] as? Number)?.toInt()?.let { pos ->
-            AdPosition.values().firstOrNull { it.value == pos }
-                ?.let { bannerView.setAdPosition(it) }
-        }
+        adPositionFrom(params["adPosition"])?.let { bannerView.setAdPosition(it) }
 
         if (adFormats != null) {
             // Multiformat banner (Prebid 3.4): banner and/or video in one request.
-            val formats = EnumSet.noneOf(AdUnitFormat::class.java)
-            if ("banner" in adFormats) formats.add(AdUnitFormat.BANNER)
-            if ("video" in adFormats) formats.add(AdUnitFormat.VIDEO)
-            if (formats.isNotEmpty()) bannerView.setAdUnitFormats(formats)
+            adUnitFormatsFrom(adFormats)?.let { bannerView.setAdUnitFormats(it) }
             if ("video" in adFormats) bannerView.videoPlacementType = videoPlacement
         } else if (isVideo) {
             bannerView.videoPlacementType = videoPlacement

@@ -17,16 +17,16 @@ PODS:
   - interactive_media_ads (0.0.1):
     - Flutter
     - GoogleAds-IMA-iOS-SDK (< 3.28.10, >= 3.23)
-  - prebid_mobile_sdk (1.0.0):
+  - prebid_mobile_sdk (1.1.0):
     - Flutter
     - PrebidMobile (>= 3.4.1, ~> 3.4)
-  - prebid_mobile_sdk_admob (1.0.0):
+  - prebid_mobile_sdk_admob (1.1.0):
     - Flutter
     - PrebidMobileAdMobAdapters (>= 3.4.1, ~> 3.4)
-  - prebid_mobile_sdk_gam (1.0.0):
+  - prebid_mobile_sdk_gam (1.1.0):
     - Flutter
     - PrebidMobileGAMEventHandlers (>= 3.4.1, ~> 3.4)
-  - prebid_mobile_sdk_max (1.0.0):
+  - prebid_mobile_sdk_max (1.1.0):
     - Flutter
     - PrebidMobileMAXAdapters (>= 3.4.1, ~> 3.4)
   - PrebidMobile (3.4.1):
@@ -117,10 +117,10 @@ SPEC CHECKSUMS:
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   interactive_media_ads: 74c714e953f0d4cea16eab9412cee383482af174
-  prebid_mobile_sdk: eab9c930803b0d3f8ae437a5fa17bb448b9edbd7
-  prebid_mobile_sdk_admob: 60cffcee1fb37d951e6d19a8b3f517543c9122c3
-  prebid_mobile_sdk_gam: 8131d80349c6cd17ece9e6a8ad281e42e6e22f98
-  prebid_mobile_sdk_max: be832ab31d87d278e88ed8a375eb11f7360ec799
+  prebid_mobile_sdk: 3028ef95eb69f920acbb75031d307895436edf91
+  prebid_mobile_sdk_admob: c0d21351b5a4703beef77afb3f464b49a519aa1e
+  prebid_mobile_sdk_gam: 947d83dfca28d9d61195ff4237fb10972e25cd35
+  prebid_mobile_sdk_max: 74ab55912e0f9eae63efae2d5a8ce12f6349a723
   PrebidMobile: 2ebb30717214023ac5178f050a4aa1a7c41396d6
   PrebidMobileAdMobAdapters: ace94831a3e855c068410f912d0763f15add8a7f
   PrebidMobileGAMEventHandlers: b79e23615d5903aeeb1421070ed8a5e628978d34

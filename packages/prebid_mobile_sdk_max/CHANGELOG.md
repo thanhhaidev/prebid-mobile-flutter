@@ -6,7 +6,7 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-11
+## [1.1.0] - 2026-10-12
 
 ### Added
 
@@ -14,6 +14,10 @@ All notable changes to this package are documented here. The format follows
   `PrebidMaxNativeAd`.
 - `PrebidMaxPreloadedBannerAd(adaptiveWidth: ...)`: the width an adaptive
   banner spans, apart from `width`, the Prebid request size.
+- `PrebidMaxNativeAd(width: ...)`.
+- `onAdDisplayFailed` on `PrebidMaxInterstitialAdListener` and
+  `PrebidMaxRewardedAdListener`, as on the banner listener: MAX loaded the
+  ad but couldn't show it. `onAdFailed` follows.
 
 ### Changed
 
@@ -42,6 +46,15 @@ All notable changes to this package are documented here. The format follows
 - Banners: `onAdDisplayFailed` now fires before the `onAdFailed` that follows
   it, so a listener can tell a display failure from a load failure (the
   example app counted it as both).
+- `PrebidMaxNativeAd` in a parent with an unbounded width (a `Row`, a
+  horizontal list) takes the screen width instead of failing layout.
+- Android: a rewarded ad with an invalid MAX ad unit id reports
+  `onAdFailed` instead of throwing from `loadAd()`, and no longer takes the
+  ad unit from another ad.
+- Android: interstitial and rewarded ads are released when the Activity is
+  re-created for a configuration change, as the core plugin's are.
+- iOS: `show()` during a view controller transition that UIKit can't queue
+  reports `onAdDisplayed` or `onAdFailed`; it could report neither.
 
 ## [1.0.0] - 2026-10-11
 

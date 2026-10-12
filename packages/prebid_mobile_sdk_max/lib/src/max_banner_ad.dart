@@ -244,10 +244,7 @@ Map<String, Object?> _maxBannerConfig({
   'impOrtbConfig': ?impOrtbConfig,
   'globalOrtbConfig': ?globalOrtbConfig,
   'pbAdSlot': ?pbAdSlot,
-  if (additionalSizes case final sizes?)
-    'additionalSizes': [
-      for (final size in sizes) ...[size.width.round(), size.height.round()],
-    ],
+  if (additionalSizes case final sizes?) 'additionalSizes': flatSizes(sizes),
   if (adaptive) 'adaptive': true,
   'adFormats': ?adFormats?.map((f) => f.name).toList(),
   'videoParameters': ?videoParameters?.toMap(),
@@ -264,7 +261,8 @@ Map<String, Object?> _maxBannerConfig({
 /// from the one showing it, which goes empty.
 class PrebidMaxPreloadedBannerAd {
   /// Creates a banner; nothing is requested until [load]. The parameters are
-  /// those of [PrebidMaxBannerAd]; [adaptive] spans [width].
+  /// those of [PrebidMaxBannerAd]; [adaptive] spans [adaptiveWidth], or
+  /// [width] when it is null.
   PrebidMaxPreloadedBannerAd({
     required this.configId,
     required this.maxAdUnitId,
@@ -294,8 +292,8 @@ class PrebidMaxPreloadedBannerAd {
   /// See [PrebidMaxBannerAd.maxAdUnitId].
   final String maxAdUnitId;
 
-  /// See [PrebidMaxBannerAd.width]. With [adaptive], the width the adaptive
-  /// banner spans.
+  /// See [PrebidMaxBannerAd.width]. With [adaptive], also the width the
+  /// adaptive banner spans, unless [adaptiveWidth] is set.
   final int width;
 
   /// See [PrebidMaxBannerAd.height].

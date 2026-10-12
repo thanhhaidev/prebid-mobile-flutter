@@ -70,12 +70,6 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         let width = args["width"] as? Int ?? 320
         let height = args["height"] as? Int ?? 50
         let autoLoad = args["autoLoad"] as? Bool ?? true
-        let refreshInterval = args["refreshIntervalSeconds"] as? Int
-        // Flat [w, h, w, h, ...] list of extra Prebid request sizes.
-        let flatSizes = (args["additionalSizes"] as? [NSNumber] ?? []).map { $0.intValue }
-        let additionalSizes = stride(from: 0, to: flatSizes.count - 1, by: 2).map {
-            CGSize(width: flatSizes[$0], height: flatSizes[$0 + 1])
-        }
 
         adSize = CGSize(width: width, height: height)
         let isAdaptive = args["adaptive"] as? Bool ?? false
@@ -113,29 +107,7 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
                 size: adSize,
                 mediationDelegate: mediationDelegate
             )
-            if let pos = (args["adPosition"] as? Int).flatMap({ AdPosition(rawValue: $0) }) {
-                adUnit.adPosition = pos
-            }
-            // Prebid iOS has no pbAdSlot setter on this ad unit: send it in the imp.
-            if let config = impOrtb(args["impOrtbConfig"] as? String, pbAdSlot: args["pbAdSlot"] as? String) {
-                adUnit.setImpORTBConfig(config)
-            }
-            if let config = args["globalOrtbConfig"] as? String { adUnit.setGlobalORTBConfig(config) }
-            if !additionalSizes.isEmpty { adUnit.additionalSizes = additionalSizes }
-            if args["adFormats"] != nil {
-                adUnit.adFormats = adFormatsFrom(args["adFormats"], isVideo: false)
-            }
-            // Prebid exposes the parameters get-only: they are configured in place.
-            applyVideoParameters(args["videoParameters"], to: adUnit.videoParameters)
-            if let interval = refreshInterval, interval > 0 {
-                // Clamped by Prebid to 15–120 s.
-                adUnit.refreshInterval = TimeInterval(interval)
-            } else {
-                // Prebid iOS refreshes every 60 s by default, and `AdUnitConfig`
-                // clamps 0 up to its 15 s minimum — only a negative value is
-                // stored as 0, which disables auto-refresh (parity with Android).
-                adUnit.refreshInterval = -1
-            }
+            configureMediationBanner(adUnit, args: args)
             return (mediationDelegate, adUnit)
         }
         installAdUnit()
@@ -160,12 +132,13 @@ final class AdMobBannerPlatformView: NSObject, FlutterPlatformView, GoogleMobile
         }
     }
 
-    /// 3. Fetch demand, then let AdMob run its waterfall and render. The weak
-    /// capture skips the load when the view was disposed meanwhile.
+    /// A new Prebid mediation unit (and its delegate) from `makeAdUnit`.
     private func installAdUnit() {
         (mediationDelegate, mediationAdUnit) = makeAdUnit()
     }
 
+    /// 3. Fetch demand, then let AdMob run its waterfall and render. The weak
+    /// capture skips the load when the view was disposed meanwhile.
     private func load() {
         if refreshStopped {
             refreshStopped = false

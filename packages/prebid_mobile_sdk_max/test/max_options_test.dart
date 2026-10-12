@@ -302,6 +302,45 @@ void main() {
       expect(revenues, ['Prebid']);
     });
 
+    test(
+      'a display failure reaches onAdDisplayFailed, then onAdFailed',
+      () async {
+        final events = <String>[];
+        for (final (channel, load) in <(String, Future<void> Function())>[
+          (
+            'prebid_mobile_sdk_max/interstitial',
+            () => PrebidMaxInterstitialAd(
+              configId: 'c',
+              maxAdUnitId: 'u',
+              listener: PrebidMaxInterstitialAdListener(
+                onAdDisplayFailed: (e) => events.add('display: $e'),
+                onAdFailed: (e) => events.add('failed: $e'),
+              ),
+            ).loadAd(),
+          ),
+          (
+            'prebid_mobile_sdk_max/rewarded',
+            () => PrebidMaxRewardedAd(
+              configId: 'c',
+              maxAdUnitId: 'u',
+              listener: PrebidMaxRewardedAdListener(
+                onAdDisplayFailed: (e) => events.add('display: $e'),
+                onAdFailed: (e) => events.add('failed: $e'),
+              ),
+            ).loadAd(),
+          ),
+        ]) {
+          events.clear();
+          final h = ChannelHarness(channel);
+          await load();
+          final adId = h.argsOf('load')['adId'] as int;
+          await h.emit('onAdDisplayFailed', adId, {'error': 'busy'});
+          await h.emit('onAdFailed', adId, {'error': 'busy'});
+          expect(events, ['display: busy', 'failed: busy'], reason: channel);
+        }
+      },
+    );
+
     test('interstitial and rewarded send the drop-bid probability', () async {
       final i = ChannelHarness('prebid_mobile_sdk_max/interstitial');
       final r = ChannelHarness('prebid_mobile_sdk_max/rewarded');

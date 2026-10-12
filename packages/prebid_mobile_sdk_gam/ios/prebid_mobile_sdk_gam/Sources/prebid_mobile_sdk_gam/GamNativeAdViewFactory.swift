@@ -23,7 +23,8 @@ final class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
     ) -> FlutterPlatformView {
         return GamNativePlatformView(
             messenger: messenger,
-            args: args as? [String: Any] ?? [:]
+            args: args as? [String: Any] ?? [:],
+            viewId: viewId
         )
     }
 
@@ -38,7 +39,7 @@ final class GamNativeAdViewFactory: NSObject, FlutterPlatformViewFactory {
 final class GamNativePlatformView: NSObject, FlutterPlatformView,
     AdLoaderDelegate, CustomNativeAdLoaderDelegate, NativeAdLoaderDelegate,
     PrebidMobile.NativeAdDelegate, PrebidMobile.NativeAdEventDelegate,
-    GoogleMobileAds.NativeAdDelegate
+    GoogleMobileAds.NativeAdDelegate, GoogleMobileAds.CustomNativeAdDelegate
 {
 
     private let container = NativeAdContainer()
@@ -67,15 +68,13 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     // report one impression.
     private var prebidImpressionReported = false
 
-    init(messenger: FlutterBinaryMessenger, args: [String: Any]) {
-        let channelId = (args["channelId"] as? NSNumber)?.int64Value ?? 0
+    init(messenger: FlutterBinaryMessenger, args: [String: Any], viewId: Int64) {
         self.gamAdUnitId = args["gamAdUnitId"] as? String ?? ""
         self.configId = args["configId"] as? String ?? ""
         self.customFormatId = args["customFormatId"] as? String ?? ""
 
-        methodChannel = FlutterMethodChannel(
-            name: "prebid_mobile_sdk_gam/native_\(channelId)",
-            binaryMessenger: messenger
+        methodChannel = viewChannel(
+            "prebid_mobile_sdk_gam/native", args: args, viewId: viewId, messenger: messenger
         )
 
         super.init()
@@ -129,7 +128,8 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             }
             let loader = AdLoader(
                 adUnitID: self.gamAdUnitId,
-                rootViewController: PrebidPresenter.topViewController(),
+                // The view's own window: GMA presents click-throughs from it.
+                rootViewController: PrebidPresenter.topViewController(in: self.container.window),
                 adTypes: adTypes,
                 options: []
             )
@@ -179,6 +179,9 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
 
     func adLoader(_ adLoader: AdLoader, didReceive customNativeAd: CustomNativeAd) {
         self.customNativeAd = customNativeAd
+        // Reports the impression the plugin records (recordImpressionWhenViewable)
+        // and clicks, as the loader's AdListener does on Android.
+        customNativeAd.delegate = self
         send("customAdLoaded")
         // Ask Prebid to extract its winning bid from the GAM custom-template
         // ad; the finder routes the answer back to this view.
@@ -245,6 +248,16 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     }
 
     func nativeAdDidRecordClick(_ nativeAd: GoogleMobileAds.NativeAd) {
+        send("onAdClicked")
+    }
+
+    // MARK: - GoogleMobileAds.CustomNativeAdDelegate
+
+    func customNativeAdDidRecordImpression(_ nativeAd: CustomNativeAd) {
+        send("onAdImpression")
+    }
+
+    func customNativeAdDidRecordClick(_ nativeAd: CustomNativeAd) {
         send("onAdClicked")
     }
 
@@ -342,40 +355,14 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
             mediaView.heightAnchor.constraint(equalToConstant: 180),
         ])
 
-        let stack = UIStackView(arrangedSubviews: [mediaView, header, bodyLabel, ctaButton])
-        stack.axis = .vertical
-        stack.spacing = 8
-        stack.alignment = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
-
-        nativeAdView.translatesAutoresizingMaskIntoConstraints = false
-        nativeAdView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: nativeAdView.topAnchor),
-            stack.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor),
-            stack.bottomAnchor.constraint(equalTo: nativeAdView.bottomAnchor),
-        ])
+        Self.pin(Self.adStack([mediaView, header, bodyLabel, ctaButton]), in: nativeAdView)
         nativeAdView.mediaView = mediaView
         nativeAdView.iconView = iconView
         nativeAdView.headlineView = headlineLabel
         nativeAdView.bodyView = bodyLabel
         nativeAdView.callToActionView = ctaButton
         nativeAdView.nativeAd = nativeAd
-
-        // A new ad replaces the one awaiting its impression.
-        impressionTimer?.invalidate()
-        for view in container.subviews { view.removeFromSuperview() }
-        container.addSubview(nativeAdView)
-        NSLayoutConstraint.activate([
-            nativeAdView.topAnchor.constraint(equalTo: container.topAnchor),
-            nativeAdView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            nativeAdView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            nativeAdView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
-        container.reportHeight()
+        mount(nativeAdView)
     }
 
     private func renderCustomTemplate() {
@@ -409,26 +396,41 @@ final class GamNativePlatformView: NSObject, FlutterPlatformView,
     /// Adds a padded vertical stack filling the container, returns the stack.
     @discardableResult
     private func mountStack(_ views: [UIView]) -> UIStackView {
+        let stack = Self.adStack(views)
+        mount(stack)
+        return stack
+    }
+
+    /// Shows [content] as the view's only content, sized to it.
+    private func mount(_ content: UIView) {
+        // A new ad replaces the one awaiting its impression.
+        impressionTimer?.invalidate()
+        for view in container.subviews { view.removeFromSuperview() }
+        Self.pin(content, in: container)
+        container.reportHeight()
+    }
+
+    /// A native layout's vertical stack, padded and spaced.
+    private static func adStack(_ views: [UIView]) -> UIStackView {
         let stack = UIStackView(arrangedSubviews: views)
         stack.axis = .vertical
         stack.spacing = 8
         stack.alignment = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
-
-        // A new ad replaces the one awaiting its impression.
-        impressionTimer?.invalidate()
-        for view in container.subviews { view.removeFromSuperview() }
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
-        container.reportHeight()
         return stack
+    }
+
+    /// Adds [view] to [parent], pinned to its edges.
+    private static func pin(_ view: UIView, in parent: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        parent.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: parent.topAnchor),
+            view.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: parent.bottomAnchor),
+        ])
     }
 }
 

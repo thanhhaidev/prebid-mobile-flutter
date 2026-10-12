@@ -98,7 +98,8 @@ class PrebidAdMobBannerAd extends StatefulWidget {
   final bool autoLoad;
 
   /// Optional controller to load on demand (`autoLoad: false`) or stop
-  /// Prebid's (and the ad server's) auto-refresh.
+  /// Prebid's auto-refresh (AdMob's own refresh is set in the AdMob console;
+  /// see [refreshIntervalSeconds]).
   final PrebidBannerAdController? controller;
 
   /// Ad position on screen (`imp.banner.pos`).
@@ -220,10 +221,7 @@ Map<String, Object?> _adMobBannerConfig({
   'impOrtbConfig': ?impOrtbConfig,
   'globalOrtbConfig': ?globalOrtbConfig,
   'pbAdSlot': ?pbAdSlot,
-  if (additionalSizes case final sizes?)
-    'additionalSizes': [
-      for (final size in sizes) ...[size.width.round(), size.height.round()],
-    ],
+  if (additionalSizes case final sizes?) 'additionalSizes': flatSizes(sizes),
   'adFormats': ?adFormats?.map((f) => f.name).toList(),
   'videoParameters': ?videoParameters?.toMap(),
   if (adaptive) 'adaptive': true,
@@ -240,7 +238,8 @@ Map<String, Object?> _adMobBannerConfig({
 /// from the one showing it, which goes empty.
 class PrebidAdMobPreloadedBannerAd {
   /// Creates a banner; nothing is requested until [load]. The parameters are
-  /// those of [PrebidAdMobBannerAd]; [adaptive] spans [width].
+  /// those of [PrebidAdMobBannerAd]; [adaptive] spans [adaptiveWidth], or
+  /// [width] when it is null.
   PrebidAdMobPreloadedBannerAd({
     required this.configId,
     required this.adMobAdUnitId,
@@ -270,8 +269,8 @@ class PrebidAdMobPreloadedBannerAd {
   /// See [PrebidAdMobBannerAd.adMobAdUnitId].
   final String adMobAdUnitId;
 
-  /// See [PrebidAdMobBannerAd.width]. With [adaptive], the width the
-  /// adaptive banner spans.
+  /// See [PrebidAdMobBannerAd.width]. With [adaptive], also the width the
+  /// adaptive banner spans, unless [adaptiveWidth] is set.
   final int width;
 
   /// See [PrebidAdMobBannerAd.height].
@@ -287,8 +286,8 @@ class PrebidAdMobPreloadedBannerAd {
   final VideoParameters? videoParameters;
 
   /// Whether the AdMob view uses AdMob's landscape inline adaptive banner
-  /// size for [width] (the banner loads before any layout, so it can't
-  /// measure the available width). The slot resizes to the adaptive height
+  /// size for [adaptiveWidth] or [width] (the banner loads before any
+  /// layout, so it can't measure the available width). The slot resizes to the adaptive height
   /// AdMob reports once the ad loads.
   final bool adaptive;
 

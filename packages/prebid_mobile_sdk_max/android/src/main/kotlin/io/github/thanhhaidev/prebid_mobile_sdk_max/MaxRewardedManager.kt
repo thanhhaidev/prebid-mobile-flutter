@@ -58,6 +58,10 @@ internal class MaxRewardedManager(
         val configId = args["configId"] as? String ?: ""
         val maxAdUnitId = maxAdUnitId(args)
 
+        // First: it throws for an invalid ad unit id, which must not take the
+        // unit from its owner below.
+        val rewarded = MaxRewardedAd.getInstance(maxAdUnitId, activity)
+
         // The shared instance moves to this adId; the previous owner stops
         // receiving events (the listener is replaced below) and is told why.
         // Its Prebid ad unit is freed, the MAX ad is not.
@@ -65,7 +69,6 @@ internal class MaxRewardedManager(
         ownerByUnit[maxAdUnitId]?.takeIf { it != owner }?.let { it.manager.handOver(it.adId) }
         ownerByUnit[maxAdUnitId] = owner
 
-        val rewarded = MaxRewardedAd.getInstance(maxAdUnitId, activity)
         rewarded.setListener(object : MaxRewardedAdListener {
             override fun onAdLoaded(ad: MaxAd) = send(adId, "onAdLoaded")
             override fun onAdDisplayed(ad: MaxAd) {
@@ -80,6 +83,8 @@ internal class MaxRewardedManager(
             override fun onAdLoadFailed(adUnitId: String, error: MaxError) = send(adId, "onAdFailed", error.message)
             override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {
                 showingUnits.remove(maxAdUnitId)
+                // As the interstitial: the specific event, then onAdFailed.
+                send(adId, "onAdDisplayFailed", error.message)
                 send(adId, "onAdFailed", error.message)
             }
             override fun onUserRewarded(ad: MaxAd, reward: MaxReward) {

@@ -62,6 +62,9 @@ class PrebidMobileSdkGamPlugin :
 
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
+        // As the core plugin: the ads hold the Activity, which is destroyed.
+        interstitialManager?.releaseAll(PluginErrors.ACTIVITY_RECREATED)
+        rewardedManager?.releaseAll(PluginErrors.ACTIVITY_RECREATED)
     }
 
     override fun onDetachedFromActivity() {

@@ -14,9 +14,10 @@ abstract final class PrebidMax {
   /// app "Random" cases (which use `0.5`) to exercise the adapter's no-bid
   /// path.
   ///
-  /// Read at each [PrebidMaxBannerAd] creation and each
-  /// [PrebidMaxInterstitialAd] / [PrebidMaxRewardedAd] `loadAd()`; banners
-  /// roll again on every auto-refresh. Native ads ignore it. Natively:
+  /// Read at each [PrebidMaxBannerAd] creation, each native creation of a
+  /// [PrebidMaxPreloadedBannerAd] (its first `load()`, not a reload) and
+  /// each [PrebidMaxInterstitialAd] / [PrebidMaxRewardedAd] `loadAd()`;
+  /// banners roll again on every auto-refresh. Native ads ignore it. Natively:
   ///
   /// - **Android** sets the MAX local extra
   ///   `PrebidMaxMediationAdapter.EXTRA_RESPONSE_ID` to `""` (exactly as the

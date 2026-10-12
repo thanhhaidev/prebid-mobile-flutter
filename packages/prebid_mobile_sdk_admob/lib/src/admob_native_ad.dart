@@ -48,6 +48,7 @@ class PrebidAdMobNativeAd extends StatefulWidget {
     super.key,
     required this.configId,
     required this.adMobAdUnitId,
+    this.width = double.infinity,
     this.height = 320,
     this.nativeParameters = const NativeParameters(),
     this.impOrtbConfig,
@@ -62,6 +63,11 @@ class PrebidAdMobNativeAd extends StatefulWidget {
 
   /// The AdMob native ad unit ID.
   final String adMobAdUnitId;
+
+  /// Width of the native view: the parent's width by default. Where the
+  /// parent leaves the width unbounded (a `Row`, a horizontal list) the
+  /// default falls back to the screen width.
+  final double width;
 
   /// Height of the native ad slot in dp. Grows to the rendered content when the
   /// native layout reports its measured height.
@@ -113,11 +119,16 @@ class _PrebidAdMobNativeAdState extends State<PrebidAdMobNativeAd>
     'globalOrtbConfig': ?widget.globalOrtbConfig,
   };
 
+  // A native view can't be infinitely wide: LimitedBox only applies when
+  // the parent leaves the width unbounded.
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: double.infinity,
-    height: reportedHeight ?? widget.height,
-    child: buildAdView(),
+  Widget build(BuildContext context) => LimitedBox(
+    maxWidth: MediaQuery.maybeSizeOf(context)?.width ?? 0,
+    child: SizedBox(
+      width: widget.width,
+      height: reportedHeight ?? widget.height,
+      child: buildAdView(),
+    ),
   );
 
   @override

@@ -327,6 +327,24 @@ void main() {
       expect(fractions(views), [0.5, 1.0]);
     }, variant: android);
 
+    testWidgets('an unbounded width falls back to the screen width', (
+      tester,
+    ) async {
+      final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
+      addTearDown(views.dispose);
+      await tester.pumpWidget(
+        _host(
+          const SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: PrebidGamNativeAd(configId: 'c', gamAdUnitId: 'u'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(tester.getSize(find.byType(SizedBox).last).width, screen.width);
+    }, variant: android);
+
     testWidgets('default creation params', (tester) async {
       final views = PlatformViewHarness('prebid_mobile_sdk_gam/native');
       addTearDown(views.dispose);

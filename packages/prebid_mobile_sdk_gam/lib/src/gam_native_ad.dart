@@ -73,7 +73,9 @@ class PrebidGamNativeAdListener {
   /// URL). That differs from the core `PrebidNativeAdView`, whose
   /// `onAdImpression` is viewability-based (the ad on screen for about a
   /// second). For a GAM ad that wins ([onPrimaryAdWinUnified]) it is the
-  /// Google Mobile Ads SDK's impression callback.
+  /// Google Mobile Ads SDK's impression callback; for a GAM custom-format ad
+  /// that wins ([onPrimaryAdWinCustom]), the impression the plugin records
+  /// once half of the ad has been on screen for a second.
   final VoidCallback? onAdImpression;
 
   /// The rendered native ad was clicked.
@@ -130,7 +132,9 @@ class PrebidGamNativeAd extends StatefulWidget {
   /// (e.g. `11934135` in the Prebid demo). `null` requests unified native only.
   final String? customFormatId;
 
-  /// Width of the native view.
+  /// Width of the native view: the parent's width by default. Where the
+  /// parent leaves the width unbounded (a `Row`, a horizontal list) the
+  /// default falls back to the screen width.
   final double width;
 
   /// Initial height of the native view (grows to the rendered content).
@@ -191,11 +195,16 @@ class _PrebidGamNativeAdState extends State<PrebidGamNativeAd>
     'globalOrtbConfig': ?widget.globalOrtbConfig,
   };
 
+  // A native view can't be infinitely wide: LimitedBox only applies when
+  // the parent leaves the width unbounded.
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: widget.width,
-    height: reportedHeight ?? widget.height,
-    child: buildAdView(),
+  Widget build(BuildContext context) => LimitedBox(
+    maxWidth: MediaQuery.maybeSizeOf(context)?.width ?? 0,
+    child: SizedBox(
+      width: widget.width,
+      height: reportedHeight ?? widget.height,
+      child: buildAdView(),
+    ),
   );
 
   @override

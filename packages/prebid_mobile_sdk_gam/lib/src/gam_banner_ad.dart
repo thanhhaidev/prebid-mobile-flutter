@@ -200,10 +200,7 @@ Map<String, Object?> _gamBannerConfig({
   'isVideo': isVideo,
   'autoLoad': autoLoad,
   'adPosition': ?adPosition?.value,
-  if (additionalSizes case final sizes?)
-    'additionalSizes': [
-      for (final size in sizes) ...[size.width.round(), size.height.round()],
-    ],
+  if (additionalSizes case final sizes?) 'additionalSizes': flatSizes(sizes),
   'adFormats': ?adFormats?.map((f) => f.name).toList(),
   'pbAdSlot': ?pbAdSlot,
   'impOrtbConfig': ?impOrtbConfig,

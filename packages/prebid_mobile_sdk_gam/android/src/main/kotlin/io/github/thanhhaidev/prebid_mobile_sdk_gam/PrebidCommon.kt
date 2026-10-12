@@ -81,17 +81,34 @@ internal fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHe
  */
 internal fun ResultCode.toDartCode(): String = when (this) {
     ResultCode.SUCCESS -> "prebidDemandFetchSuccess"
+
     ResultCode.INVALID_ACCOUNT_ID -> "prebidInvalidAccountId"
+
     ResultCode.INVALID_CONFIG_ID -> "prebidInvalidConfigId"
+
     ResultCode.INVALID_SIZE -> "prebidInvalidSize"
+
     ResultCode.INVALID_HOST_URL -> "prebidServerURLInvalid"
+
     ResultCode.NETWORK_ERROR -> "prebidNetworkError"
+
     ResultCode.PREBID_SERVER_ERROR -> "prebidServerError"
+
     ResultCode.NO_BIDS -> "prebidDemandNoBids"
+
     ResultCode.NO_CACHED_BIDS -> "prebidDemandNoCachedBids"
+
     ResultCode.TIMEOUT -> "prebidDemandTimedOut"
+
     ResultCode.INVALID_CONTEXT -> "prebidInvalidContext"
+
     ResultCode.INVALID_AD_OBJECT -> "prebidInvalidAdObject"
+
     ResultCode.INVALID_NATIVE_REQUEST -> "prebidInvalidNativeRequest"
+
     ResultCode.INVALID_PREBID_REQUEST_OBJECT -> "prebidInvalidRequest"
+
+    // A code added by a newer Prebid the app resolves to: without this
+    // branch, Kotlin throws NoWhenBranchMatchedException in the callback.
+    else -> "prebidUnknownError"
 }

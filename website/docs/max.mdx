@@ -134,7 +134,7 @@ PrebidMaxNativeAd(
 )
 ```
 
-Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdFailed` and `onAdRevenuePaid`; `nativeParameters` works as on [AdMob](/docs/admob#native); `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid` (the last two sent in the `imp` JSON) apply on both platforms.
+Rendered in MAX's native ad view. `PrebidMaxNativeAdListener` has `onAdLoaded`, `onAdImpression`, `onAdClicked`, `onAdFailed` and `onAdRevenuePaid`; `nativeParameters` works as on [AdMob](/docs/admob#native); `impOrtbConfig`, `globalOrtbConfig`, `pbAdSlot` and `gpid` (the last two sent in the `imp` JSON) apply on both platforms. `width` and `height` size the slot as on AdMob.
 
 ## Events
 
@@ -147,8 +147,8 @@ To get MAX-specific events, pass a MAX listener. Each one extends the core liste
 | Listener | Extra callbacks |
 | --- | --- |
 | `PrebidMaxBannerAdListener` | `onAdExpanded`, `onAdCollapsed`, `onAdDisplayFailed` (also reported as `onAdFailed`), `onAdRevenuePaid` |
-| `PrebidMaxInterstitialAdListener` | `onAdRevenuePaid` |
-| `PrebidMaxRewardedAdListener` | `onAdRevenuePaid` |
+| `PrebidMaxInterstitialAdListener` | `onAdDisplayFailed` (followed by `onAdFailed`), `onAdRevenuePaid` |
+| `PrebidMaxRewardedAdListener` | `onAdDisplayFailed` (followed by `onAdFailed`), `onAdRevenuePaid` |
 | `PrebidMaxNativeAdListener` | `onAdRevenuePaid` |
 
 `onAdRevenuePaid` passes a `PrebidMaxAdRevenue` with `revenue` (in USD), `revenuePrecision`, `networkName` and `placement`.

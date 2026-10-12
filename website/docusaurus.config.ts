@@ -13,8 +13,14 @@ const coreVersion = readJson<{packages: Record<string, {releases: {version: stri
 const snapshots = existsSync(new URL('./versions.json', import.meta.url)) ? readJson<string[]>('./versions.json') : [];
 
 /** Matches the given docs pages ('' is the intro page), in any docs version. */
-const docsPage = (pages: string[]) =>
-  `/docs/(?:[0-9][^/]*/)?(?:${pages.map((p) => p.replace(/-/g, '\\-')).join('|')})/?$`;
+const docsPage = (pages: string[]) => {
+  const named = pages
+    .filter(Boolean)
+    .map((p) => p.replace(/-/g, '\\-'))
+    .join('|');
+  // An optional version segment; '' is the docs home (`/docs`, `/docs/1.0.0`).
+  return `/docs(?:/[0-9][^/]*)?${pages.includes('') ? `(?:/(?:${named}))?` : `/(?:${named})`}/?$`;
+};
 const guidePages = ['', 'configuration', 'privacy', 'targeting', 'events', 'debugging', 'platform-differences'];
 
 const config: Config = {
@@ -93,11 +99,11 @@ const config: Config = {
       },
       items: [
         {type: 'html', position: 'left', value: '<span class="navbar-docs-badge">DOCS</span>'},
-        // Plain links: `type: 'doc'` items of one sidebar all show as active.
-        {to: '/docs/', label: 'Guide', position: 'left', activeBaseRegex: docsPage(guidePages)},
-        {to: '/docs/banner', label: 'Ad formats', position: 'left', activeBaseRegex: docsPage(['banner', 'fullscreen', 'native', 'video'])},
-        {to: '/docs/integrations', label: 'Ad servers', position: 'left', activeBaseRegex: docsPage(['integrations', 'original-api', 'gam', 'admob', 'max'])},
-        {to: '/docs/compatibility', label: 'Compatibility', position: 'left', activeBaseRegex: docsPage(['compatibility'])},
+        // Links into the docs version being read (src/components/VersionedDocLink).
+        {type: 'custom-versionedDocLink', docPath: '', label: 'Guide', position: 'left', activeBaseRegex: docsPage(guidePages)},
+        {type: 'custom-versionedDocLink', docPath: 'banner', label: 'Ad formats', position: 'left', activeBaseRegex: docsPage(['banner', 'fullscreen', 'native', 'video'])},
+        {type: 'custom-versionedDocLink', docPath: 'integrations', label: 'Ad servers', position: 'left', activeBaseRegex: docsPage(['integrations', 'original-api', 'gam', 'admob', 'max'])},
+        {type: 'custom-versionedDocLink', docPath: 'compatibility', label: 'Compatibility', position: 'left', activeBaseRegex: docsPage(['compatibility'])},
         {to: '/changelog', label: 'Changelog', position: 'left'},
         // The docs version: a link to the release notes until there are
         // snapshots of earlier releases, then a version switcher.

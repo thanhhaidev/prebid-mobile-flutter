@@ -18,16 +18,13 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Rewarded skip controls | ✓ | Ignored |
 | Rewarded `adFormats` (core; Android always requests banner and video) and minimum size (`PrebidFullscreenControls.minSizePercentage`, core and GAM; AdMob and MAX rewarded have none) | Ignored | ✓ |
 | Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` on a `PrebidMultiformatAd` that Prebid Android serves with its multiformat `PrebidAdUnit`: native with any other format or with `isInterstitial` / `isRewarded`, rewarded with a banner, and video without banner sizes outside a fullscreen ad | Ignored: `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig`. Other units send them on both, and `gpid` is sent on both in every case | ✓ |
-| AdMob native `impOrtbConfig`, `globalOrtbConfig`, and the `pbAdSlot` and `gpid` sent through `impOrtbConfig` | Ignored: no setter on Prebid's mediation native unit | ✓ |
 | Native response image `width` / `height` (`PrebidNativeImage`) | `null` | ✓ |
-| Interstitial / rewarded `winningBid` (core) | ✓ | `null`: Prebid iOS keeps the bid internal |
 | Interstitial / rewarded `adPosition` (core) | Always fullscreen (`pos` 7): no setter on Prebid Android's fullscreen units | ✓ |
 | `PrebidMobile.setDebugLogFileEnabled` | Ignored (`getDebugLogFileEnabled` returns `null`) | ✓ |
 | `PrebidMobile.getTimeoutMillisDynamic` | `null`: Prebid Android writes Prebid Server's timeout into `getTimeoutMillis` | ✓ |
-| `PrebidTargeting.setBundleName` (`app.bundle` override) | ✓ | Ignored (`getBundleName` returns `null`): iOS sends the bundle ID or the iTunes ID |
 | `PrebidMobile.setLocationUpdatesEnabled` | Ignored (`getLocationUpdatesEnabled` returns `null`): Android reads the last known location | ✓ |
 | `PrebidTargeting.getAppKeywords`, `getSourceApp`, `getItunesId` | Empty / `null` | ✓ |
-| `PrebidInstreamVideoAd.generateInstreamUriForGam` sizes | Any | 400x300, 640x480 and 320x480 only (others throw) |
+| `PrebidInstreamVideoAd.generateInstreamUriForGam` size 320x480 | Throws, like any size but 640x480 and 400x300 | ✓ |
 | Banner `videoParameters` (core, GAM, AdMob, MAX) | SDK defaults | ✓ |
 | Interstitial / rewarded `videoParameters` | `maxDuration` caps the rendered video | ✓ every field |
 | App keywords (`PrebidTargeting.addAppKeyword` and the rest) | Logged and ignored: set `app.keywords` with `setGlobalOrtbConfig` | ✓ |
@@ -46,10 +43,12 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once (core and GAM banners) |
 | Native custom layout clicks | Prebid Android clicks a registered view; Prebid iOS has no click API | `PrebidNativeAd.performClick` on both |
 | Stored auction response | Prebid iOS clears it when a banner is deallocated | Kept until you clear it |
-| `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
+| `PrebidTargeting.setAppName`, `setBundleName` | Prebid iOS has no app-name or bundle setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` / `app.bundle` there wins on both) |
+| Interstitial / rewarded `winningBid` (core) | Prebid iOS keeps the bid internal | Set on both: on iOS the plugin's event handler keeps the bid Prebid hands it |
+| AdMob native `impOrtbConfig`, `globalOrtbConfig` | Prebid Android's mediation native unit has no setters | Sent on both: on Android the plugin runs the auction with the native unit inside it |
 | Creative factory timeouts | iOS stores seconds | Milliseconds on both |
-| `pbAdSlot` on interstitial / rewarded (every package) and on AdMob / MAX banners | Prebid iOS has no setter on these units | Set on both; on iOS through `imp.ext.data.pbadslot` in `impOrtbConfig` (yours wins) |
-| `gpid` on banners, interstitials and rewarded ads (every package) and on MAX native | Neither SDK has a setter on these units | Set on both through `imp.ext.gpid` in `impOrtbConfig` (yours wins) |
+| `pbAdSlot` on interstitial / rewarded (every package) and on AdMob / MAX banners and native ads | Prebid iOS has no setter on these units | Set on both through `imp.ext.data.pbadslot` in `impOrtbConfig` (yours wins) |
+| `gpid` on banners, interstitials and rewarded ads (every package) and on AdMob / MAX native | Neither SDK has a setter on these units | Set on both through `imp.ext.gpid` in `impOrtbConfig` (yours wins) |
 | `PrebidTargeting.setUSPrivacyString` | Neither SDK has a setter: both read `IABUSPrivacy_String` from the IAB storage | Written to the IAB storage (`SharedPreferences` / `UserDefaults`), so it persists across launches until cleared with `null`, like a CMP's value |
 | Google Mobile Ads version check | Prebid checks the GMA version only when the app passes it | With GMA linked, `initializeSdk` passes it on both (a warning in the log if Prebid doesn't support it) |
 | Log level `none` | Prebid iOS has no such level; Prebid Android's `NONE` logs everything | Silent on both |

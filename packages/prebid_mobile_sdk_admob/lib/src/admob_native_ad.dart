@@ -79,20 +79,18 @@ class PrebidAdMobNativeAd extends StatefulWidget {
   /// default to social, general social and in-feed.
   final NativeParameters nativeParameters;
 
-  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`. iOS
-  /// only: Prebid Android's mediation native ad unit has no setter for it.
+  /// Impression-level OpenRTB JSON merged into this ad unit's `imp`.
   final String? impOrtbConfig;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). Sent in [impOrtbConfig], so
-  /// iOS only; a `pbadslot` already there wins.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Sent in [impOrtbConfig]; a
+  /// `pbadslot` already there wins.
   final String? pbAdSlot;
 
   /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
-  /// [impOrtbConfig], so iOS only; a `gpid` already there wins.
+  /// [impOrtbConfig]; a `gpid` already there wins.
   final String? gpid;
 
-  /// Request-level OpenRTB JSON for this ad unit only. iOS only, as
-  /// [impOrtbConfig].
+  /// Request-level OpenRTB JSON for this ad unit only.
   final String? globalOrtbConfig;
 
   /// Listener for native ad events.

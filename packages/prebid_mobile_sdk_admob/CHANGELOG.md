@@ -6,12 +6,13 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-12
-
 ### Added
 
 - `gpid` (`imp.ext.gpid`) on every AdMob ad, and `pbAdSlot` on
-  `PrebidAdMobNativeAd` (iOS only, as its `impOrtbConfig`).
+  `PrebidAdMobNativeAd`.
+- Android: `PrebidAdMobNativeAd` sends `impOrtbConfig` and
+  `globalOrtbConfig` (and the `pbAdSlot` and `gpid` in it); they were iOS
+  only.
 - `PrebidAdMobPreloadedBannerAd(adaptiveWidth: ...)`: the width an adaptive
   banner spans, apart from `width`, the Prebid request size.
 - `PrebidAdMobNativeAd(width: ...)`.

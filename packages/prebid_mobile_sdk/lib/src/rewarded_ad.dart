@@ -85,8 +85,8 @@ class PrebidRewardedAd {
   /// Whether the ad has loaded and is ready to [show].
   bool get isLoaded => _ad.isLoaded;
 
-  /// The winning bid of the last load, for analytics. Android only (Prebid
-  /// iOS keeps it internal); null before a load and without a bid.
+  /// The winning bid of the last load, for analytics; null before a load
+  /// and without a bid.
   PrebidWinningBid? get winningBid => _ad.winningBid;
 
   /// Load the rewarded ad. Also valid after [destroy].

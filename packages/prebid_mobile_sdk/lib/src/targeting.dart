@@ -417,14 +417,19 @@ class PrebidTargeting {
   /// The iTunes ID ([setItunesId]); null on Android.
   static Future<String?> getItunesId() => api.getItunesId();
 
-  /// Android only: overrides `app.bundle` (e.g. to test against a Prebid
-  /// Server account set up for your production bundle); null restores the
-  /// package name. iOS sends the bundle ID, or [setItunesId] when set.
+  /// Overrides `app.bundle` (e.g. to test against a Prebid Server account
+  /// set up for your production bundle); null restores the package name or
+  /// bundle ID ([setItunesId] on iOS, when set).
+  ///
+  /// An `app.bundle` in [setGlobalOrtbConfig] takes precedence on both
+  /// platforms. iOS: Prebid iOS has no bundle setter, so the plugin merges
+  /// `{"app":{"bundle": bundleName}}` into the global ORTB config, as for
+  /// [setAppName].
   static Future<void> setBundleName(String? bundleName) async {
     await api.setBundleName(bundleName);
   }
 
-  /// The `app.bundle` override ([setBundleName]); null on iOS.
+  /// The `app.bundle` override ([setBundleName]).
   static Future<String?> getBundleName() => api.getBundleName();
 
   /// OM SDK partner name sent in `source.ext.omidpn`.

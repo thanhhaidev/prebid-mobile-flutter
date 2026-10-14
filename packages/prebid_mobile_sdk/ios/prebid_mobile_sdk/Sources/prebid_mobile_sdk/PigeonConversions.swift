@@ -3,6 +3,23 @@ import UIKit
 
 // Conversions between Pigeon types and the Prebid SDK.
 
+// MARK: - Winning bid
+
+extension BidResponse {
+    /// The winning bid of a loaded Prebid-rendered ad; nil without one.
+    var winningBidData: WinningBidData? {
+        guard let bid = winningBid else { return nil }
+        let keywords = targetingInfo ?? [:]
+        return WinningBidData(
+            price: Double(bid.price),
+            bidder: keywords["hb_bidder"],
+            width: Int64(bid.size.width),
+            height: Int64(bid.size.height),
+            targetingKeywords: keywords
+        )
+    }
+}
+
 // MARK: - Fullscreen controls
 
 extension FullscreenControlsConfig {

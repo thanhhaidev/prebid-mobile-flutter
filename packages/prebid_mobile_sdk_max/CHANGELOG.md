@@ -6,8 +6,6 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-12
-
 ### Added
 
 - `gpid` (`imp.ext.gpid`) on every MAX ad, and `pbAdSlot` on

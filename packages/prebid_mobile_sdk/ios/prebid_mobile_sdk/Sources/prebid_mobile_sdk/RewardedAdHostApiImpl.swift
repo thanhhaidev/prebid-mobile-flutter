@@ -24,11 +24,12 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         adPosition: Int64?
     ) throws {
         try destroy(adId: adId)
+        let handler = BidKeepingRewardedHandler()
         let adUnit: RewardedAdUnit
         if let minSize = controls?.minSizePercentage {
-            adUnit = RewardedAdUnit(configID: configId, minSizePercentage: minSize)
+            adUnit = RewardedAdUnit(configID: configId, minSizePercentage: minSize, eventHandler: handler)
         } else {
-            adUnit = RewardedAdUnit(configID: configId)
+            adUnit = RewardedAdUnit(configID: configId, eventHandler: handler)
         }
         // Prebid iOS has no pbAdSlot setter on rendering units: send it in the imp.
         if let config = impOrtb(impOrtbConfig, pbAdSlot: pbAdSlot) { adUnit.setImpORTBConfig(config) }
@@ -38,7 +39,7 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
         // (reference-type) parameters, so configure it in place.
         videoConfig?.apply(to: adUnit.videoParameters)
         controls?.apply(to: adUnit)
-        let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi)
+        let delegate = RewardedDelegate(adId: adId, flutterApi: flutterApi, handler: handler)
         if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
         store.put(adId, adUnit, delegate: delegate)
@@ -57,14 +58,17 @@ final class RewardedAdHostApiImpl: RewardedAdHostApi {
 private final class RewardedDelegate: NSObject, RewardedAdUnitDelegate {
     let adId: Int64
     let flutterApi: AdFlutterApi
+    let handler: BidKeepingRewardedHandler
 
-    init(adId: Int64, flutterApi: AdFlutterApi) {
+    init(adId: Int64, flutterApi: AdFlutterApi, handler: BidKeepingRewardedHandler) {
         self.adId = adId
         self.flutterApi = flutterApi
+        self.handler = handler
     }
 
     func rewardedAdDidReceiveAd(_ rewardedAd: RewardedAdUnit) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdLoaded")) { _ in }
+        let event = AdEvent(adId: adId, eventName: "onAdLoaded", winningBid: handler.bidResponse?.winningBidData)
+        flutterApi.onAdEvent(event: event) { _ in }
     }
 
     func rewardedAd(_ rewardedAd: RewardedAdUnit, didFailToReceiveAdWithError error: Error?) {

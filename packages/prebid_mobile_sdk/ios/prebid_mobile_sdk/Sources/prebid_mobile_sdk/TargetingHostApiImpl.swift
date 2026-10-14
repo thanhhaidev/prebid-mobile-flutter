@@ -115,31 +115,40 @@ final class TargetingHostApiImpl: TargetingHostApi {
     }
 
     func getGlobalOrtbConfig() throws -> String? {
-        // The caller's own JSON, without the app.name merged in below.
-        Self.appNameOverride == nil
+        // The caller's own JSON, without the app fields merged in below.
+        Self.appOverrides.isEmpty
             ? Targeting.shared.getGlobalORTBConfig()
             : Self.globalOrtbConfig
     }
 
-    // app.name override. Prebid iOS always sends the bundle display name and
-    // has no setter (Android: AppInfoManager.setAppName), so the name goes in
-    // through the global ORTB config, which Prebid deep-merges over the
-    // request. An app.name in the caller's own config wins, as on Android.
+    // app.name and app.bundle overrides. Prebid iOS always sends the bundle
+    // display name and the bundle ID (or itunesID) and has no setters
+    // (Android: AppInfoManager.setAppName, TargetingParams.setBundleName), so
+    // they go in through the global ORTB config, which Prebid deep-merges over
+    // the request. The same field in the caller's own config wins, as on
+    // Android.
     private static var globalOrtbConfig: String?
-    private static var appNameOverride: String?
+    private static var appOverrides: [String: String] = [:]
 
     func setAppName(name: String?) throws {
-        Self.appNameOverride = name
+        Self.appOverrides["name"] = name
         applyGlobalOrtbConfig()
     }
 
+    func setBundleName(bundleName: String?) throws {
+        Self.appOverrides["bundle"] = bundleName
+        applyGlobalOrtbConfig()
+    }
+
+    func getBundleName() throws -> String? { Self.appOverrides["bundle"] }
+
     private func applyGlobalOrtbConfig() {
         let config = Self.globalOrtbConfig
-        guard let name = Self.appNameOverride else {
+        guard !Self.appOverrides.isEmpty else {
             Targeting.shared.setGlobalORTBConfig(config)
             return
         }
-        // Invalid JSON is ignored by Prebid anyway; the name is still sent.
+        // Invalid JSON is ignored by Prebid anyway; the overrides are still sent.
         var root: [String: Any] = [:]
         if let data = config?.data(using: .utf8),
             let parsed = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
@@ -147,7 +156,7 @@ final class TargetingHostApiImpl: TargetingHostApi {
             root = parsed
         }
         var app = root["app"] as? [String: Any] ?? [:]
-        if app["name"] == nil { app["name"] = name }
+        for (key, value) in Self.appOverrides where app[key] == nil { app[key] = value }
         root["app"] = app
         let merged = (try? JSONSerialization.data(withJSONObject: root))
             .flatMap { String(data: $0, encoding: .utf8) }
@@ -162,10 +171,6 @@ final class TargetingHostApiImpl: TargetingHostApi {
     func setItunesId(itunesId: String?) throws { Targeting.shared.itunesID = itunesId }
     func getSourceApp() throws -> String? { Targeting.shared.sourceapp }
     func getItunesId() throws -> String? { Targeting.shared.itunesID }
-
-    // Android only: Prebid iOS sends the bundle ID (or itunesID) as app.bundle.
-    func setBundleName(bundleName: String?) throws {}
-    func getBundleName() throws -> String? { nil }
 
     func setOmidPartnerName(name: String?) throws { Targeting.shared.omidPartnerName = name }
     func setOmidPartnerVersion(version: String?) throws { Targeting.shared.omidPartnerVersion = version }

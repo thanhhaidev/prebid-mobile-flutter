@@ -357,10 +357,7 @@ data class AdEvent (
   val error: String? = null,
   val reward: RewardData? = null,
   val nativeAd: NativeAdData? = null,
-  /**
-   * `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
-   * the SDK exposes it (Android only).
-   */
+  /** `onAdLoaded` of an interstitial or rewarded ad: its winning bid. */
   val winningBid: WinningBidData? = null
 )
  {
@@ -2728,7 +2725,10 @@ interface TargetingHostApi {
    */
   fun setSourceApp(sourceApp: String?)
   fun setItunesId(itunesId: String?)
-  /** Android only: overrides `app.bundle`; null restores the app's own. */
+  /**
+   * Overrides `app.bundle` (iOS: through the global ORTB config); null
+   * restores the app's own.
+   */
   fun setBundleName(bundleName: String?)
   fun getBundleName(): String?
   fun setOmidPartnerName(name: String?)

@@ -18,6 +18,39 @@ extension RewardedAdUnit: FullscreenRenderingAdUnit {
     func detachDelegate() { delegate = nil }
 }
 
+/// Prebid's standalone interstitial event handler (Prebid always wins), which
+/// also keeps the bid response: Prebid iOS keeps the unit's own internal, so
+/// this is how `onAdLoaded` gets the winning bid.
+final class BidKeepingInterstitialHandler: NSObject, InterstitialEventHandlerProtocol {
+    weak var loadingDelegate: InterstitialEventLoadingDelegate?
+    weak var interactionDelegate: InterstitialEventInteractionDelegate?
+    private(set) var bidResponse: BidResponse?
+
+    // Never shown: Prebid renders the ad itself once it wins.
+    var isReady: Bool { false }
+    func show(from viewController: UIViewController?) {}
+
+    func requestAd(with bidResponse: BidResponse?) {
+        self.bidResponse = bidResponse
+        loadingDelegate?.prebidDidWin()
+    }
+}
+
+/// [BidKeepingInterstitialHandler] for rewarded ads.
+final class BidKeepingRewardedHandler: NSObject, RewardedEventHandlerProtocol {
+    weak var loadingDelegate: InterstitialEventLoadingDelegate?
+    weak var interactionDelegate: RewardedEventInteractionDelegate?
+    private(set) var bidResponse: BidResponse?
+
+    var isReady: Bool { false }
+    func show(from viewController: UIViewController?) {}
+
+    func requestAd(with bidResponse: BidResponse?) {
+        self.bidResponse = bidResponse
+        loadingDelegate?.prebidDidWin()
+    }
+}
+
 /// The interstitial or rewarded units of one engine by ad id, with their
 /// delegates (Prebid holds a delegate weakly), and how they're shown.
 final class FullscreenAdStore {

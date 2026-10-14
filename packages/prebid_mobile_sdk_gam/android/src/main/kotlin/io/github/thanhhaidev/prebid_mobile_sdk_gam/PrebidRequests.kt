@@ -9,7 +9,6 @@ import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.api.data.Position
-import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 import org.prebid.mobile.rendering.models.AdPosition
 
 // Parsing of the values the Dart side sends over method channels
@@ -156,13 +155,6 @@ internal class NativeContext(
         unit.setPlacementType(placement ?: NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
     }
 
-    // MediationNativeAdUnit has the same setters, without a common type.
-    fun applyTo(unit: MediationNativeAdUnit) {
-        unit.setContextType(context ?: NativeAdUnit.CONTEXT_TYPE.SOCIAL_CENTRIC)
-        unit.setContextSubType(subType ?: NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
-        unit.setPlacementType(placement ?: NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
-    }
-
     companion object {
         fun from(params: Map<*, *>): NativeContext {
             fun id(key: String) = (params[key] as? Number)?.toInt()
@@ -185,16 +177,6 @@ internal class NativeRequestOptions(params: Map<*, *>) {
     private val ext = params.json("ext")
 
     fun applyTo(unit: NativeAdUnit) {
-        placementCount?.let(unit::setPlacementCount)
-        sequence?.let(unit::setSeq)
-        assetUrlSupport?.let(unit::setAUrlSupport)
-        dUrlSupport?.let(unit::setDUrlSupport)
-        privacy?.let(unit::setPrivacy)
-        ext?.let(unit::setExt)
-    }
-
-    // MediationNativeAdUnit has the same setters, without a common type.
-    fun applyTo(unit: MediationNativeAdUnit) {
         placementCount?.let(unit::setPlacementCount)
         sequence?.let(unit::setSeq)
         assetUrlSupport?.let(unit::setAUrlSupport)

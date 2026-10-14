@@ -295,8 +295,7 @@ class AdEvent {
 
   NativeAdData? nativeAd;
 
-  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
-  /// the SDK exposes it (Android only).
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid.
   WinningBidData? winningBid;
 
   List<Object?> _toList() {
@@ -3780,7 +3779,8 @@ class TargetingHostApi {
     );
   }
 
-  /// Android only: overrides `app.bundle`; null restores the app's own.
+  /// Overrides `app.bundle` (iOS: through the global ORTB config); null
+  /// restores the app's own.
   Future<void> setBundleName(String? bundleName) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setBundleName$pigeonVar_messageChannelSuffix';

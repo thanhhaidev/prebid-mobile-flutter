@@ -22,18 +22,18 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.admob.PrebidNativeAdapter
-import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 
 /**
  * PlatformView factory for AdMob-mediated native ads. The rendered view is a
  * Google Mobile Ads [NativeAdView] populated with the winning ad's assets;
- * Prebid's [MediationNativeAdUnit] runs the auction via the Prebid native
- * adapter. Rendering through the SDK's native view keeps impression/click
+ * a Prebid [NativeAdUnit] runs the auction and hands the bid to the Prebid
+ * native adapter through the AdMob request's extras. Rendering through the SDK's native view keeps impression/click
  * tracking intact.
  */
 internal class AdMobNativeAdViewFactory(private val messenger: BinaryMessenger) :
@@ -59,7 +59,7 @@ internal class AdMobNativePlatformView(
 
     private val nativeAdView = NativeAdView(context)
     private val methodChannel: MethodChannel
-    private var adUnit: MediationNativeAdUnit? = null
+    private var adUnit: NativeAdUnit? = null
     private var nativeAd: NativeAd? = null
 
     // Set once Flutter disposes the view: async SDK callbacks that land later
@@ -81,10 +81,13 @@ internal class AdMobNativePlatformView(
         buildLayout(context)
 
         val extras = Bundle()
-        val adUnit = MediationNativeAdUnit(configId, extras)
+        // What Prebid's MediationNativeAdUnit does (fetchDemand with the extras
+        // bundle), without its wrapper, which hides the ORTB config setters.
+        val adUnit = NativeAdUnit(configId)
         NativeContext.from(params).applyTo(adUnit)
-        // MediationNativeAdUnit has no ORTB config setters: those are iOS only.
         NativeRequestOptions(params).applyTo(adUnit)
+        (params["impOrtbConfig"] as? String)?.let(adUnit::setImpOrtbConfig)
+        (params["globalOrtbConfig"] as? String)?.let(adUnit::setGlobalOrtbConfig)
         (nativeAssetsFrom(params["assets"]) ?: nativeAssets()).forEach { adUnit.addAsset(it) }
         (nativeTrackersFrom(params["eventTrackers"]) ?: defaultNativeTrackers()).forEach { adUnit.addEventTracker(it) }
         this.adUnit = adUnit
@@ -138,7 +141,7 @@ internal class AdMobNativePlatformView(
         if (!PrebidMobile.isSdkInitialized()) {
             methodChannel.invokeMethod("onAdFailed", failure(PluginErrors.NOT_INITIALIZED))
         } else {
-            adUnit.fetchDemand {
+            adUnit.fetchDemand(extras) {
                 if (disposed) return@fetchDemand
                 adLoader.loadAd(request)
             }

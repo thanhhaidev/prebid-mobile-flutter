@@ -245,6 +245,52 @@ class ExternalUserIdsTests: XCTestCase {
     }
 }
 
+/// app.name / app.bundle: Prebid iOS has no setters, so the plugin merges
+/// them into the global ORTB config it hands the SDK.
+class AppOverridesTests: XCTestCase {
+    private let api = TargetingHostApiImpl()
+
+    override func tearDown() {
+        try? api.setAppName(name: nil)
+        try? api.setBundleName(bundleName: nil)
+        try? api.setGlobalOrtbConfig(ortbConfig: nil)
+        super.tearDown()
+    }
+
+    private func sentApp() throws -> [String: Any]? {
+        let json = try XCTUnwrap(Targeting.shared.getGlobalORTBConfig())
+        let root = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
+        return root["app"] as? [String: Any]
+    }
+
+    func testBundleNameIsSentAsAppBundle() throws {
+        try api.setBundleName(bundleName: "com.prod")
+
+        XCTAssertEqual(try sentApp()?["bundle"] as? String, "com.prod")
+        XCTAssertEqual(try api.getBundleName(), "com.prod")
+    }
+
+    func testOverridesMergeIntoTheCallersConfigWhichWins() throws {
+        try api.setGlobalOrtbConfig(ortbConfig: #"{"app":{"name":"Mine"},"ext":{"k":1}}"#)
+        try api.setAppName(name: "Other")
+        try api.setBundleName(bundleName: "com.prod")
+
+        let app = try XCTUnwrap(sentApp())
+        XCTAssertEqual(app["name"] as? String, "Mine")
+        XCTAssertEqual(app["bundle"] as? String, "com.prod")
+        XCTAssertEqual(try api.getGlobalOrtbConfig(), #"{"app":{"name":"Mine"},"ext":{"k":1}}"#)
+    }
+
+    func testClearingTheOverridesRestoresTheCallersConfig() throws {
+        try api.setGlobalOrtbConfig(ortbConfig: #"{"ext":{"k":1}}"#)
+        try api.setBundleName(bundleName: "com.prod")
+        try api.setBundleName(bundleName: nil)
+
+        XCTAssertEqual(Targeting.shared.getGlobalORTBConfig(), #"{"ext":{"k":1}}"#)
+        XCTAssertNil(try api.getBundleName())
+    }
+}
+
 /// A messenger for Pigeon Flutter APIs that never send in these tests.
 private final class SilentMessenger: NSObject, FlutterBinaryMessenger {
     func send(onChannel channel: String, message: Data?) {}

@@ -17,7 +17,6 @@ import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeImageAsset
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.api.data.Position
-import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 
 /*
  * JVM unit tests of the channel argument parsing. Run them from
@@ -298,33 +297,5 @@ internal class PrebidRequestsTest {
                 config.ext,
             ),
         )
-    }
-
-    @Test
-    fun nativeRequestOptions_appliesEveryOptionToAMediationNativeAdUnit() {
-        val unit = mock(MediationNativeAdUnit::class.java)
-        NativeRequestOptions(
-            mapOf(
-                "placementCount" to 3,
-                "sequence" to 2,
-                "assetUrlSupport" to true,
-                "dUrlSupport" to false,
-                "privacy" to true,
-                "ext" to """{"k":1}""",
-            ),
-        ).applyTo(unit)
-        verify(unit).setPlacementCount(3)
-        verify(unit).setSeq(2)
-        verify(unit).setAUrlSupport(true)
-        verify(unit).setDUrlSupport(false)
-        verify(unit).setPrivacy(true)
-        verify(unit).setExt(argThat<Any> { (it as JSONObject).getInt("k") == 1 })
-    }
-
-    @Test
-    fun nativeRequestOptions_setsNothingOnAMediationNativeAdUnitWithoutOptions() {
-        val unit = mock(MediationNativeAdUnit::class.java)
-        NativeRequestOptions(emptyMap<String, Any>()).applyTo(unit)
-        verifyNoInteractions(unit)
     }
 }

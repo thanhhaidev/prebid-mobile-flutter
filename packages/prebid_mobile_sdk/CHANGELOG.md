@@ -6,8 +6,6 @@ All notable changes to this package are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-12
-
 ### Added
 
 - `PrebidBannerAdUnit(bannerApi: ...)`: the banner's API frameworks
@@ -29,6 +27,11 @@ All notable changes to this package are documented here. The format follows
   `PrebidNativeImage` and `PrebidNativeData`.
 - `flatSizes` (companion library): the `additionalSizes` creation param of
   the native banner views.
+- iOS: `PrebidTargeting.setBundleName` overrides `app.bundle` (through the
+  global OpenRTB config, like `setAppName`), and `getBundleName` returns it;
+  both were Android only.
+- iOS: `winningBid` on `PrebidInterstitialAd` and `PrebidRewardedAd`; it was
+  Android only.
 
 ### Fixed
 

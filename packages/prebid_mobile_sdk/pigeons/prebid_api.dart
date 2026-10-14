@@ -63,8 +63,7 @@ class AdEvent {
   final RewardData? reward;
   final NativeAdData? nativeAd;
 
-  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
-  /// the SDK exposes it (Android only).
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid.
   final WinningBidData? winningBid;
 }
 
@@ -569,7 +568,8 @@ abstract class TargetingHostApi {
   void setSourceApp(String? sourceApp);
   void setItunesId(String? itunesId);
 
-  /// Android only: overrides `app.bundle`; null restores the app's own.
+  /// Overrides `app.bundle` (iOS: through the global ORTB config); null
+  /// restores the app's own.
   void setBundleName(String? bundleName);
   String? getBundleName();
 

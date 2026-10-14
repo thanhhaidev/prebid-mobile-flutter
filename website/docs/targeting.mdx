@@ -83,12 +83,12 @@ For a single ad unit, pass `impOrtbConfig` to the ad instead; it is merged into 
 | `setAppName(String?)` | `app.name`, by default the app's label (Android) or bundle display name (iOS); `null` restores it |
 | `setOmidPartnerName(String?)`, `setOmidPartnerVersion(String?)` | `source.ext.omidpn`, `source.ext.omidpv` |
 
-Prebid iOS has no app-name setter, so on iOS `setAppName` merges `{"app":{"name":…}}` into the global OpenRTB config the plugin hands the SDK; `getGlobalOrtbConfig()` still returns your own JSON. On both platforms an `app.name` in your global OpenRTB config wins over `setAppName`.
+Prebid iOS has no app-name or bundle setter, so on iOS `setAppName` and `setBundleName` merge `{"app":{"name":…,"bundle":…}}` into the global OpenRTB config the plugin hands the SDK; `getGlobalOrtbConfig()` still returns your own JSON. On both platforms an `app.name` or `app.bundle` in your global OpenRTB config wins over these setters.
 
 Prebid 3.4 has no setter for `app.content.url`; send it with `setGlobalOrtbConfig('{"app":{"content":{"url":"https://example.com/article"}}}')`.
 | `setSourceApp(String?)` <Only platform="ios" /> | SKAdNetwork `sourceapp` |
 | `setItunesId(String?)` <Only platform="ios" /> | Your app's iTunes ID, needed for SKAdNetwork bids when `Info.plist` lists `SKAdNetworkItems` |
-| `setBundleName(String?)` <Only platform="android" /> | `app.bundle`, by default the package name; e.g. to test against a Prebid Server account set up for your production app |
+| `setBundleName(String?)` | `app.bundle`, by default the package name or bundle ID; e.g. to test against a Prebid Server account set up for your production app |
 
 ## Location
 
@@ -102,7 +102,7 @@ await PrebidTargeting.setLocationPrecision(2); // decimal places, null = full
 
 ## Reading the values
 
-`PrebidTargeting` has getters for what you set: `getAppExtData()`, `getAccessControlList()`, `getPublisherName()`, `getStoreUrl()`, `getDomain()`, `getOmidPartnerName()`, `getOmidPartnerVersion()`, `getSendSharedId()`, `getUserLatLng()` (a `(latitude, longitude)` record), `getLocationPrecision()`, `getBundleName()` (Android), and `getAppKeywords()`, `getSourceApp()` and `getItunesId()` (iOS), next to the existing consent and keyword getters.
+`PrebidTargeting` has getters for what you set: `getAppExtData()`, `getAccessControlList()`, `getPublisherName()`, `getStoreUrl()`, `getDomain()`, `getOmidPartnerName()`, `getOmidPartnerVersion()`, `getSendSharedId()`, `getUserLatLng()` (a `(latitude, longitude)` record), `getLocationPrecision()`, `getBundleName()`, and `getAppKeywords()`, `getSourceApp()` and `getItunesId()` (iOS), next to the existing consent and keyword getters.
 
 ## User IDs
 

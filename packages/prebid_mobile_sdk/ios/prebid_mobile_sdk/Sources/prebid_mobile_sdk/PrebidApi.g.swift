@@ -343,8 +343,7 @@ struct AdEvent: Hashable, CustomStringConvertible {
   var error: String? = nil
   var reward: RewardData? = nil
   var nativeAd: NativeAdData? = nil
-  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid, when
-  /// the SDK exposes it (Android only).
+  /// `onAdLoaded` of an interstitial or rewarded ad: its winning bid.
   var winningBid: WinningBidData? = nil
 
 
@@ -2553,7 +2552,8 @@ protocol TargetingHostApi {
   /// `app.storeurl` iTunes ID.
   func setSourceApp(sourceApp: String?) throws
   func setItunesId(itunesId: String?) throws
-  /// Android only: overrides `app.bundle`; null restores the app's own.
+  /// Overrides `app.bundle` (iOS: through the global ORTB config); null
+  /// restores the app's own.
   func setBundleName(bundleName: String?) throws
   func getBundleName() throws -> String?
   func setOmidPartnerName(name: String?) throws
@@ -3224,7 +3224,8 @@ class TargetingHostApiSetup {
     } else {
       setItunesIdChannel.setMessageHandler(nil)
     }
-    /// Android only: overrides `app.bundle`; null restores the app's own.
+    /// Overrides `app.bundle` (iOS: through the global ORTB config); null
+    /// restores the app's own.
     let setBundleNameChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.prebid_mobile_sdk.TargetingHostApi.setBundleName\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setBundleNameChannel.setMessageHandler { message, reply in

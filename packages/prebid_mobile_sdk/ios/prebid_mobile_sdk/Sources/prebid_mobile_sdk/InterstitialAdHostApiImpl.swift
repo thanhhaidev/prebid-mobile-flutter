@@ -26,11 +26,12 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         // A reload replaces the previous unit, which must stop sending events
         // under this ad id.
         try destroy(adId: adId)
+        let handler = BidKeepingInterstitialHandler()
         let adUnit: InterstitialRenderingAdUnit
         if let minSize = controls?.minSizePercentage {
-            adUnit = InterstitialRenderingAdUnit(configID: configId, minSizePercentage: minSize)
+            adUnit = InterstitialRenderingAdUnit(configID: configId, minSizePercentage: minSize, eventHandler: handler)
         } else {
-            adUnit = InterstitialRenderingAdUnit(configID: configId)
+            adUnit = InterstitialRenderingAdUnit(configID: configId, eventHandler: handler)
         }
         // Prebid iOS has no pbAdSlot setter on rendering units: send it in the imp.
         if let config = impOrtb(impOrtbConfig, pbAdSlot: pbAdSlot) { adUnit.setImpORTBConfig(config) }
@@ -42,7 +43,7 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
         // (reference-type) parameters, so configure it in place.
         videoConfig?.apply(to: adUnit.videoParameters)
 
-        let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi)
+        let delegate = InterstitialDelegate(adId: adId, flutterApi: flutterApi, handler: handler)
         if let pos = adPosition.flatMap({ AdPosition(rawValue: Int($0)) }) { adUnit.adPosition = pos }
         adUnit.delegate = delegate
 
@@ -62,14 +63,17 @@ final class InterstitialAdHostApiImpl: InterstitialAdHostApi {
 private final class InterstitialDelegate: NSObject, InterstitialAdUnitDelegate {
     let adId: Int64
     let flutterApi: AdFlutterApi
+    let handler: BidKeepingInterstitialHandler
 
-    init(adId: Int64, flutterApi: AdFlutterApi) {
+    init(adId: Int64, flutterApi: AdFlutterApi, handler: BidKeepingInterstitialHandler) {
         self.adId = adId
         self.flutterApi = flutterApi
+        self.handler = handler
     }
 
     func interstitialDidReceiveAd(_ interstitial: InterstitialRenderingAdUnit) {
-        flutterApi.onAdEvent(event: AdEvent(adId: adId, eventName: "onAdLoaded")) { _ in }
+        let event = AdEvent(adId: adId, eventName: "onAdLoaded", winningBid: handler.bidResponse?.winningBidData)
+        flutterApi.onAdEvent(event: event) { _ in }
     }
 
     func interstitial(_ interstitial: InterstitialRenderingAdUnit, didFailToReceiveAdWithError error: Error?) {

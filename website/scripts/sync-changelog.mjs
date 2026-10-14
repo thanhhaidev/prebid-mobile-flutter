@@ -153,7 +153,7 @@ for (const {name, page, label, about} of packages) {
       .replace(/^(#{3,6}) +\*\*(.+?)\*\*:?\s*$/gm, '$1 $2')
       .replace(/^(#{3,6}) +(.+?):\s*$/gm, '$1 $2');
 
-    out.push(`## ${version ? `v${version}` : heading}`, '', `<p className="release-meta">${meta.join(' · ')}</p>`, '', cleaned, '');
+    out.push(`## ${version ? `v${version}` : heading.replace(/^\[(.*)\]$/, '$1')}`, '', `<p className="release-meta">${meta.join(' · ')}</p>`, '', cleaned, '');
     total++;
   });
 

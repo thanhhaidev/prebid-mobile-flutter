@@ -11,6 +11,11 @@ const readJson = <T,>(path: string): T => JSON.parse(readFileSync(new URL(path, 
 const coreVersion = readJson<{packages: Record<string, {releases: {version: string}[]}>}>('./src/data/compatibility.json')
   .packages.prebid_mobile_sdk.releases[0].version;
 const snapshots = existsSync(new URL('./versions.json', import.meta.url)) ? readJson<string[]>('./versions.json') : [];
+// Between a version bump and its release, `docs/` runs ahead of pub.dev: it
+// is labeled "Unreleased" and the newest snapshot is still the latest release.
+const coreReleased =
+  coreVersion in readJson<Record<string, {versions: Record<string, string>}>>('./src/data/releases.json').prebid_mobile_sdk.versions;
+const currentLabel = coreReleased ? `v${coreVersion}` : 'Unreleased';
 
 /** Matches the given docs pages ('' is the intro page), in any docs version. */
 const docsPage = (pages: string[]) => {
@@ -63,8 +68,10 @@ const config: Config = {
           editUrl: ({version, docPath}) => (version === 'current' ? `${repo}/tree/main/website/docs/${docPath}` : undefined),
           lastVersion: 'current',
           versions: {
-            current: {label: `v${coreVersion}`},
-            ...Object.fromEntries(snapshots.map((v) => [v, {label: `v${v}`, banner: 'unmaintained' as const}])),
+            current: {label: currentLabel},
+            ...Object.fromEntries(
+              snapshots.map((v, i) => [v, {label: `v${v}`, banner: i === 0 && !coreReleased ? ('none' as const) : ('unmaintained' as const)}]),
+            ),
           },
         },
         blog: false,
@@ -114,7 +121,7 @@ const config: Config = {
               className: 'navbar-version-dropdown',
               dropdownItemsAfter: [{to: '/changelog', label: 'Changelog'}],
             }
-          : {to: '/changelog', label: `v${coreVersion}`, position: 'right', className: 'navbar-version-dropdown'},
+          : {to: '/changelog', label: currentLabel, position: 'right', className: 'navbar-version-dropdown'},
         {href: repo, position: 'right', className: 'navbar-github', 'aria-label': 'GitHub repository'},
       ],
     },

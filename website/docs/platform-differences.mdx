@@ -16,16 +16,16 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `PrebidFullscreenControls.supportSKOverlay` | Ignored | ✓ (core and GAM) |
 | `PrebidFullscreenControls.isAutoCloseOnCompletionEnabled` | Ignored | ✓ (interstitials only) |
 | Rewarded skip controls | ✓ | Ignored |
-| Rewarded `adFormats` (core) and minimum size (`PrebidFullscreenControls.minSizePercentage`, core and GAM; AdMob and MAX rewarded have none) | Ignored | ✓ |
-| Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` on a request mixing formats (a `PrebidMultiformatAd` with two or more of banner, video and native) | Ignored: Prebid Android's multiformat `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig`. Single-format units send them on both | ✓ |
-| AdMob native `impOrtbConfig`, `globalOrtbConfig` | Ignored: no setter on Prebid's mediation native unit | ✓ |
+| Rewarded `adFormats` (core; Android always requests banner and video) and minimum size (`PrebidFullscreenControls.minSizePercentage`, core and GAM; AdMob and MAX rewarded have none) | Ignored | ✓ |
+| Original API `pbAdSlot`, `impOrtbConfig`, `globalOrtbConfig` on a `PrebidMultiformatAd` that Prebid Android serves with its multiformat `PrebidAdUnit`: native with any other format or with `isInterstitial` / `isRewarded`, rewarded with a banner, and video without banner sizes outside a fullscreen ad | Ignored: `PrebidAdUnit` has no setters; use `PrebidTargeting.setGlobalOrtbConfig`. Other units send them on both, and `gpid` is sent on both in every case | ✓ |
+| AdMob native `impOrtbConfig`, `globalOrtbConfig`, and the `pbAdSlot` and `gpid` sent through `impOrtbConfig` | Ignored: no setter on Prebid's mediation native unit | ✓ |
 | Native response image `width` / `height` (`PrebidNativeImage`) | `null` | ✓ |
 | Interstitial / rewarded `winningBid` (core) | ✓ | `null`: Prebid iOS keeps the bid internal |
-| Interstitial / rewarded `adPosition` (core) | Ignored: no setter on Prebid Android's fullscreen units | ✓ |
-| `PrebidMobile.setDebugLogFileEnabled` | Ignored | ✓ |
+| Interstitial / rewarded `adPosition` (core) | Always fullscreen (`pos` 7): no setter on Prebid Android's fullscreen units | ✓ |
+| `PrebidMobile.setDebugLogFileEnabled` | Ignored (`getDebugLogFileEnabled` returns `null`) | ✓ |
 | `PrebidMobile.getTimeoutMillisDynamic` | `null`: Prebid Android writes Prebid Server's timeout into `getTimeoutMillis` | ✓ |
-| `PrebidTargeting.setBundleName` (`app.bundle` override) | ✓ | Ignored: iOS sends the bundle ID or the iTunes ID |
-| `PrebidMobile.setLocationUpdatesEnabled` | Ignored: Android reads the last known location | ✓ |
+| `PrebidTargeting.setBundleName` (`app.bundle` override) | ✓ | Ignored (`getBundleName` returns `null`): iOS sends the bundle ID or the iTunes ID |
+| `PrebidMobile.setLocationUpdatesEnabled` | Ignored (`getLocationUpdatesEnabled` returns `null`): Android reads the last known location | ✓ |
 | `PrebidTargeting.getAppKeywords`, `getSourceApp`, `getItunesId` | Empty / `null` | ✓ |
 | `PrebidInstreamVideoAd.generateInstreamUriForGam` sizes | Any | 400x300, 640x480 and 320x480 only (others throw) |
 | Banner `videoParameters` (core, GAM, AdMob, MAX) | SDK defaults | ✓ |
@@ -41,7 +41,7 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | Original API auto-refresh | Prebid Android's `PrebidAdUnit` can't refresh; iOS ignores intervals under 30 s | Refresh works on both, clamped to 30–120 s |
 | Status check disabled | iOS reports "skipped" | `succeeded` on both |
 | Empty seat bid | Android reports success | `prebidDemandNoBids` on both |
-| Requests before init | Android drops them silently | `onAdFailed` / `prebidSdkNotInitialized`, in every package (GAM native: `onFetchDemandFailed('prebidSdkNotInitialized')`, then the GAM ad loads alone) |
+| Requests before init | Android drops them silently; iOS runs them | On Android, in every package: `onAdFailed` ("The Prebid SDK is not initialized"), or `prebidSdkNotInitialized` from the Original API, `PrebidMultiformatAd` and instream video. GAM native reports `onFetchDemandFailed('prebidSdkNotInitialized')`, then loads the GAM ad alone |
 | Native impression | Fired when a tracker request succeeds (never without trackers) | `PrebidNativeAdView`: viewability, half the view for 1 s, including Flutter's clipping, once per ad. `PrebidGamNativeAd` keeps Prebid's tracker callback |
 | Banner `onAdClicked` | iOS reports a click that leaves the app through a separate callback | `onAdClicked` for every click, once (core and GAM banners) |
 | Native custom layout clicks | Prebid Android clicks a registered view; Prebid iOS has no click API | `PrebidNativeAd.performClick` on both |
@@ -49,27 +49,30 @@ The plugin reports the same callbacks and result codes on both platforms. Where 
 | `PrebidTargeting.setAppName` | Prebid iOS has no app-name setter | Sent on both; on iOS through the global OpenRTB config (your own `app.name` there wins on both) |
 | Creative factory timeouts | iOS stores seconds | Milliseconds on both |
 | `pbAdSlot` on interstitial / rewarded (every package) and on AdMob / MAX banners | Prebid iOS has no setter on these units | Set on both; on iOS through `imp.ext.data.pbadslot` in `impOrtbConfig` (yours wins) |
-| `gpid` on the core banner, interstitial and rewarded ads | Neither SDK has a setter on these units | Set on both through `imp.ext.gpid` in `impOrtbConfig` (yours wins) |
+| `gpid` on banners, interstitials and rewarded ads (every package) and on MAX native | Neither SDK has a setter on these units | Set on both through `imp.ext.gpid` in `impOrtbConfig` (yours wins) |
 | `PrebidTargeting.setUSPrivacyString` | Neither SDK has a setter: both read `IABUSPrivacy_String` from the IAB storage | Written to the IAB storage (`SharedPreferences` / `UserDefaults`), so it persists across launches until cleared with `null`, like a CMP's value |
 | Google Mobile Ads version check | Prebid checks the GMA version only when the app passes it | With GMA linked, `initializeSdk` passes it on both (a warning in the log if Prebid doesn't support it) |
-| Log level `none` | Prebid iOS has no such level | Silent on both |
+| Log level `none` | Prebid iOS has no such level; Prebid Android's `NONE` logs everything | Silent on both |
+| Log level or listener changed after `initializeSdk` | Prebid Android applies them only when it initializes | Applied right away on both |
 | `PrebidMobile.setLogListener` | Android filters by level before its logger; iOS's logger replaces the console one | Messages at or above the log level, instead of the console, on both |
 
 ## Remaining differences
 
 - **Banner refresh bounds:** Prebid clamps the banner interval to 30–120 s on Android and 15–120 s on iOS.
-- **Banner impression tracker (Original API):** iOS tracks the current bid; Android attaches the GAM view when the next auction starts. See [impression tracking](/docs/original-api#impression-tracking).
-- **Runtime server switch (iOS):** `setPrebidServerUrl` throws for a malformed URL and leaves the `nonTrackingUrl` from `initializeSdk` in place; `getPrebidServerUrl` returns the URL the current user's auctions use.
+- **Banner impression tracker (Original API):** iOS tracks the current bid; Android attaches the GAM view when the next auction's bids arrive. See [impression tracking](/docs/original-api#impression-tracking).
+- **Runtime server switch:** on iOS `setPrebidServerUrl` throws for a malformed URL and leaves the `nonTrackingUrl` from `initializeSdk` in place, and `getPrebidServerUrl` returns the URL the current user's auctions use. Android accepts any string.
+- **Calling `initializeSdk` again:** Android reports `succeeded` without a new status check (and waits for an initialization that native code started); iOS runs the initialization and the status check again.
+- **Creative timeouts from Prebid Server:** Android applies `cftbanner` / `cftprerender` from the response's `ext.prebid.passthrough` (and `getCreativeFactoryTimeout` returns them); Prebid iOS reads them but doesn't use them.
 - **Rendering API caching (iOS):** creating an Original API ad unit turns `useCacheForReportingWithRenderingApi` on.
 - **Native request `ext` fields:** an asset's `ext` (on its `title`, `img` or `data` object) is sent on both platforms; `NativeAsset.assetExt` and `NativeEventTracker.ext` only on Android, because Prebid iOS has no asset-level `ext` and doesn't serialize the tracker's.
 - **Log levels:** Android has no `verbose` or `severe`: they log at `debug` and `error`.
 - **Interstitial and rewarded "leaving the app":** iOS reports it separately from the click; the plugin reports the click (`onAdClicked`) on both and doesn't forward it.
-- **Result codes:** both platforms report the same names for the same outcome. A few exist on one platform only: `prebidInvalidContext`, `prebidInvalidAdObject` and `prebidInvalidNativeRequest` on Android; `prebidUnknownError`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData` and `prebidSDKMisuse` on iOS.
+- **Result codes:** both platforms report the same names for the same outcome. A few exist on one platform only: `prebidInvalidContext`, `prebidInvalidAdObject`, `prebidInvalidNativeRequest` and `prebidSdkNotInitialized` on Android; `prebidServerNotSpecified`, `prebidInvalidResponseStructure`, `prebidInternalSDKError`, `prebidWrongArguments`, `prebidNoVastTagInMediaData` and `prebidSDKMisuse` on iOS. `prebidUnknownError` is an iOS code; on Android it only stands for a code from a newer Prebid than the plugin knows.
 - **Prebid version:** Android pins an exact Prebid version, iOS accepts a range. See [Compatibility](/docs/compatibility).
 
 ## Not exposed, on purpose
 
-- **Prebid Android's `PrebidMobile.setPbsConfig`** (not exposed by the plugin): Prebid writes it from Prebid Server's response (`ext.prebid.passthrough`), overwriting any value the app sets. Set the creative timeouts with `setCreativeFactoryTimeout` and `setCreativeFactoryTimeoutPreRenderContent`.
+- **Prebid Android's `PrebidMobile.setPbsConfig`** (not exposed by the plugin): Prebid writes it from Prebid Server's response (`ext.prebid.passthrough`), and its timeouts take precedence over the app's. Set the creative timeouts with `setCreativeFactoryTimeout` and `setCreativeFactoryTimeoutPreRenderContent`.
 - **`BannerView.setStoredAuctionResponse` (iOS):** it sets the process-wide stored auction response, not one for the banner. Use `PrebidMobile.setStoredAuctionResponse`.
 - **Native `getWinEvent` / `getImpEvent` (Android):** Prebid fires the win and impression events itself. The Original API returns them in `PrebidBidResponse.events` for apps that report them on their own.
-- **Plugin renderers (`registerPluginRenderer`):** a renderer is a native object, so register it from the app's native code (`MainActivity` / `AppDelegate`) before loading ads; Prebid then uses it for the plugin's ads too. The plugin's views don't forward the renderers' own events (`PluginEventListener`).
+- **Plugin renderers (`registerPluginRenderer`):** a renderer is a native object, so register it from the app's native code (`MainActivity` / `AppDelegate`) before loading ads; Prebid then uses it for the plugin's ads too. The plugin's views don't forward the renderers' own events (`PluginEventListener` on Android, `PluginEventDelegate` on iOS).

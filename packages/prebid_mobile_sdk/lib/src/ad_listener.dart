@@ -78,10 +78,7 @@ class PrebidBannerAdListener {
   /// ready to display.
   final void Function()? onAdLoaded;
 
-  /// Called when the banner ad has been rendered on screen.
-  ///
-  /// On Android this is a distinct event fired after [onAdLoaded]. iOS reports
-  /// load and render as a single event, so on iOS this fires together with
+  /// Called when the banner ad has been rendered on screen, after
   /// [onAdLoaded].
   final void Function()? onAdDisplayed;
 

@@ -83,12 +83,12 @@ class PrebidAdMobNativeAd extends StatefulWidget {
   /// only: Prebid Android's mediation native ad unit has no setter for it.
   final String? impOrtbConfig;
 
-  /// Prebid ad slot (`imp.ext.data.pbadslot`). Sent in [impOrtbConfig]; a
-  /// `pbadslot` already there wins.
+  /// Prebid ad slot (`imp.ext.data.pbadslot`). Sent in [impOrtbConfig], so
+  /// iOS only; a `pbadslot` already there wins.
   final String? pbAdSlot;
 
   /// Global Placement ID (`imp.ext.gpid`), e.g. `/1111/home`. Sent in
-  /// [impOrtbConfig]; a `gpid` already there wins.
+  /// [impOrtbConfig], so iOS only; a `gpid` already there wins.
   final String? gpid;
 
   /// Request-level OpenRTB JSON for this ad unit only. iOS only, as

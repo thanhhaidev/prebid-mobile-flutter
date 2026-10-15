@@ -168,7 +168,10 @@ internal class GamNativePlatformView(
                 // Prebid Android reports SUCCESS even when no bid won (iOS
                 // reports no-bids); without hb_* keys on the request there is
                 // no Prebid demand, so report it as no-bids on both platforms.
-                val hasBid = adRequest.customTargeting.keySet().any { it.startsWith("hb_") }
+                // hb_cache_id_local alone isn't a bid: Prebid caches the
+                // response of a native unit (and sets that key) either way.
+                val hasBid = adRequest.customTargeting.keySet()
+                    .any { it.startsWith("hb_") && it != "hb_cache_id_local" }
                 when {
                     resultCode != ResultCode.SUCCESS -> send("fetchDemandFailed", resultCode.toDartCode())
                     hasBid -> send("fetchDemandSuccess")

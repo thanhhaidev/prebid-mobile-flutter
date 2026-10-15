@@ -35,6 +35,11 @@ All notable changes to this package are documented here. The format follows
 
 ### Fixed
 
+- Android: a native request without a bid reports `prebidDemandNoBids`.
+  `PrebidNativeAd` reported "Failed to parse native ad" (and the Original
+  API a success with a native cache id), because Prebid Android caches the
+  response of a native unit, with its `hb_cache_id_local` keyword, even
+  when no bid won.
 - `PrebidNativeAdUnit.fetchDemand()` responses carry `receivedAt`, so
   `expiresAt` and `isExpired` work for native bids as for the other units
   (they were always `null` / `false`).

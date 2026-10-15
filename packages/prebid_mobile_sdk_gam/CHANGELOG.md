@@ -18,6 +18,9 @@ All notable changes to this package are documented here. The format follows
 
 ### Fixed
 
+- Android: `PrebidGamNativeAd` reports `onFetchDemandFailed('prebidDemandNoBids')`
+  when no bid won; Prebid's `hb_cache_id_local` keyword, set either way,
+  made it report `onFetchDemandSuccess`.
 - A GAM custom-format native ad without a Prebid creative records its
   impression once half of it has been on screen for a second, Flutter's
   clips (a scroll viewport, `ClipRect`) included, instead of as soon as it

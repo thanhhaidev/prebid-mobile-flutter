@@ -54,17 +54,20 @@ internal val notInitializedResult
     get() = MultiformatBidResult(resultCode = PluginErrors.NOT_INITIALIZED_CODE, targetingKeywords = emptyMap())
 
 /**
- * Result code for a fetchDemand [BidInfo].
- * Prebid Android's Original API reports SUCCESS even for an empty seatbid
- * (no winning bid); iOS reports no-bids. Treat SUCCESS without targeting
- * keywords as no-bids so both platforms agree.
+ * Whether a fetchDemand [BidInfo] holds a bid. Prebid Android's Original API
+ * reports SUCCESS even for an empty seatbid (iOS reports no-bids), and for a
+ * native unit it then caches the whole response under a
+ * [NATIVE_CACHE_ID_KEY] keyword anyway: that key alone is no bid.
  */
+internal val BidInfo.hasBid: Boolean
+    get() = targetingKeywords.orEmpty().keys.any { it != NATIVE_CACHE_ID_KEY }
+
+/** The keyword Prebid Android adds with a native unit's cache id. */
+internal const val NATIVE_CACHE_ID_KEY = "hb_cache_id_local"
+
+/** Result code for a fetchDemand [BidInfo]: no-bids without one, as on iOS. */
 internal fun BidInfo.dartResultCode(): String =
-    if (resultCode == ResultCode.SUCCESS && targetingKeywords.isNullOrEmpty()) {
-        "prebidDemandNoBids"
-    } else {
-        resultCode.toDartCode()
-    }
+    if (resultCode == ResultCode.SUCCESS && !hasBid) "prebidDemandNoBids" else resultCode.toDartCode()
 
 /** Builds Prebid video parameters from the Pigeon config. */
 internal fun VideoParametersConfig.toVideoParameters(): VideoParameters {
@@ -238,8 +241,9 @@ internal fun PrebidNativeAd.toNativeAdData() = NativeAdData(
 internal fun BidInfo.toMultiformatResult() = MultiformatBidResult(
     resultCode = dartResultCode(),
     winningFormat = targetingKeywords?.get("hb_format"),
-    targetingKeywords = targetingKeywords?.mapKeys { it.key } ?: emptyMap(),
-    nativeAdCacheId = nativeCacheId,
+    // Without a bid, the cache id points at the cached error response.
+    targetingKeywords = targetingKeywords?.takeIf { hasBid }?.mapKeys { it.key } ?: emptyMap(),
+    nativeAdCacheId = nativeCacheId?.takeIf { hasBid },
     exp = exp?.toDouble(),
     topBidFiltered = isTopBidFiltered,
     events = events?.takeIf { it.isNotEmpty() },

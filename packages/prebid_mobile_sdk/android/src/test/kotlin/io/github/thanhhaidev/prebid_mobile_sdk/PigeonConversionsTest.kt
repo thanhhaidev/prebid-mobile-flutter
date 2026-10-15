@@ -5,12 +5,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.json.JSONObject
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.prebid.mobile.AdSize
 import org.prebid.mobile.NativeAdUnit
 import org.prebid.mobile.NativeDataAsset
 import org.prebid.mobile.NativeEventTracker
 import org.prebid.mobile.NativeTitleAsset
 import org.prebid.mobile.ResultCode
+import org.prebid.mobile.api.data.BidInfo
 
 internal class PigeonConversionsTest {
     @Test
@@ -213,5 +216,37 @@ internal class PigeonConversionsTest {
         assertEquals(1, config.ext.getInt("e"))
         assertEquals("/slot", unit.pbAdSlot)
         assertEquals("/gpid", unit.gpid)
+    }
+
+    private fun bidInfo(keywords: Map<String, String>?, cacheId: String? = null): BidInfo =
+        mock(BidInfo::class.java).also {
+            `when`(it.resultCode).thenReturn(ResultCode.SUCCESS)
+            `when`(it.targetingKeywords).thenReturn(keywords)
+            `when`(it.nativeCacheId).thenReturn(cacheId)
+        }
+
+    @Test
+    fun dartResultCode_isNoBidsForSuccessWithoutKeywords() {
+        assertEquals("prebidDemandNoBids", bidInfo(null).dartResultCode())
+        assertEquals("prebidDemandNoBids", bidInfo(emptyMap()).dartResultCode())
+    }
+
+    @Test
+    fun dartResultCode_isNoBidsWithOnlyTheNativeCacheId() {
+        // Prebid Android caches a native unit's response without a bid too.
+        val info = bidInfo(mapOf("hb_cache_id_local" to "Prebid_1"), cacheId = "Prebid_1")
+
+        assertEquals("prebidDemandNoBids", info.dartResultCode())
+        val result = info.toMultiformatResult()
+        assertNull(result.nativeAdCacheId)
+        assertEquals(emptyMap(), result.targetingKeywords)
+    }
+
+    @Test
+    fun dartResultCode_isSuccessWithABid() {
+        val info = bidInfo(mapOf("hb_pb" to "0.10", "hb_cache_id_local" to "Prebid_1"), cacheId = "Prebid_1")
+
+        assertEquals("prebidDemandFetchSuccess", info.dartResultCode())
+        assertEquals("Prebid_1", info.toMultiformatResult().nativeAdCacheId)
     }
 }

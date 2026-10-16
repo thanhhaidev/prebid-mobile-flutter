@@ -33,6 +33,8 @@ pubspec.lock
 .flutter-plugins-dependencies
 build/
 coverage/
+# Written by DevTools; commit it once the repo enables a DevTools extension.
+devtools_options.yaml
 
 # Swift Package Manager (resolved by the consuming app, not the plugin)
 .build/

@@ -48,3 +48,5 @@ Package.resolved
 .gradle/
 .cxx/
 local.properties
+# Android Studio's daemon JVM criteria; CI and the Flutter CLI pick the JDK.
+gradle-daemon-jvm.properties

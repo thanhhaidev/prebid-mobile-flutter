@@ -80,7 +80,7 @@ android {
 dependencies {
     // Prebid MAX adapters. Pulls in the AppLovin MAX SDK (applovin-sdk)
     // transitively — the reason this is a separate package.
-    implementation("org.prebid:prebid-mobile-sdk-max-adapters:3.4.0")
+    implementation("org.prebid:prebid-mobile-sdk-max-adapters:3.4.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
     // The real org.json: android.jar only has stubs that throw in unit tests.

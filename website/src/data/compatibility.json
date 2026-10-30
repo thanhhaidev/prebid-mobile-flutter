@@ -8,7 +8,7 @@
       "releases": [
         {
           "version": "1.1.0",
-          "prebidAndroid": "3.4.0",
+          "prebidAndroid": "3.4.1",
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "androidMinSdk": 24,
           "iosMin": "15.0",
@@ -34,7 +34,7 @@
       "releases": [
         {
           "version": "1.1.0",
-          "prebidAndroid": "3.4.0",
+          "prebidAndroid": "3.4.1",
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "play-services-ads 25.5.0",
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
@@ -66,7 +66,7 @@
       "releases": [
         {
           "version": "1.1.0",
-          "prebidAndroid": "3.4.0",
+          "prebidAndroid": "3.4.1",
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "play-services-ads 25.5.0",
           "adSdkIos": "Google-Mobile-Ads-SDK >= 13.0.0",
@@ -98,7 +98,7 @@
       "releases": [
         {
           "version": "1.1.0",
-          "prebidAndroid": "3.4.0",
+          "prebidAndroid": "3.4.1",
           "prebidIos": {"min": "3.4.1", "below": "4.0"},
           "adSdkAndroid": "applovin-sdk 13.1.0",
           "adSdkIos": "AppLovinSDK >= 13.0.0",

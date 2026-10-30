@@ -78,7 +78,7 @@ android {
 dependencies {
     // Prebid GAM event handlers. Pulls in the Google Mobile Ads SDK
     // (play-services-ads) transitively — the reason this is a separate package.
-    implementation("org.prebid:prebid-mobile-sdk-gam-event-handlers:3.4.0")
+    implementation("org.prebid:prebid-mobile-sdk-gam-event-handlers:3.4.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
     // The real org.json: android.jar only has stubs that throw in unit tests.

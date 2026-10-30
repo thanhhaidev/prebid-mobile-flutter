@@ -34,10 +34,10 @@ The Prebid Mobile SDK each package release bundles:
 
 | Package | Version | Prebid Android | Prebid iOS | Bundled ad SDK |
 | --- | --- | --- | --- | --- |
-| [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) | 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | none |
-| [`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam) | 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | Google Mobile Ads: `play-services-ads 25.5.0` / `Google-Mobile-Ads-SDK >= 13.0.0` |
-| [`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob) | 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | Google Mobile Ads: `play-services-ads 25.5.0` / `Google-Mobile-Ads-SDK >= 13.0.0` |
-| [`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max) | 1.1.0 | `3.4.0` | `>= 3.4.1, < 4.0` | AppLovin MAX: `applovin-sdk 13.1.0` / `AppLovinSDK >= 13.0.0` |
+| [`prebid_mobile_sdk`](https://pub.dev/packages/prebid_mobile_sdk) | 1.1.0 | `3.4.1` | `>= 3.4.1, < 4.0` | none |
+| [`prebid_mobile_sdk_gam`](https://pub.dev/packages/prebid_mobile_sdk_gam) | 1.1.0 | `3.4.1` | `>= 3.4.1, < 4.0` | Google Mobile Ads: `play-services-ads 25.5.0` / `Google-Mobile-Ads-SDK >= 13.0.0` |
+| [`prebid_mobile_sdk_admob`](https://pub.dev/packages/prebid_mobile_sdk_admob) | 1.1.0 | `3.4.1` | `>= 3.4.1, < 4.0` | Google Mobile Ads: `play-services-ads 25.5.0` / `Google-Mobile-Ads-SDK >= 13.0.0` |
+| [`prebid_mobile_sdk_max`](https://pub.dev/packages/prebid_mobile_sdk_max) | 1.1.0 | `3.4.1` | `>= 3.4.1, < 4.0` | AppLovin MAX: `applovin-sdk 13.1.0` / `AppLovinSDK >= 13.0.0` |
 
 Android resolves exactly the listed Prebid version. On iOS, CocoaPods and Swift Package Manager pick the newest PrebidMobile release in the range, so a fresh `pod install` can resolve a newer 3.x patch.
 

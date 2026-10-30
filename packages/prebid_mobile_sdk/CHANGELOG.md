@@ -33,6 +33,10 @@ All notable changes to this package are documented here. The format follows
 - iOS: `winningBid` on `PrebidInterstitialAd` and `PrebidRewardedAd`; it was
   Android only.
 
+### Changed
+
+- Android: Prebid Mobile SDK 3.4.1 (was 3.4.0).
+
 ### Fixed
 
 - Android: a native request without a bid reports `prebidDemandNoBids`.

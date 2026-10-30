@@ -15,6 +15,7 @@ All notable changes to this package are documented here. The format follows
 ### Changed
 
 - Requires `prebid_mobile_sdk` 1.1.0 or later.
+- Android: Prebid Mobile SDK 3.4.1 (was 3.4.0).
 
 ### Fixed
 
